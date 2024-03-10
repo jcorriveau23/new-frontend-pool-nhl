@@ -5,6 +5,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NavigationBar } from "@/components/navigation-bar";
 import "../lib/i18n";
+import DailyGameFeed from "@/components/daily-game-feed";
+import { DateProvider } from "../context/date-context";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html suppressHydrationWarning lang="en">
       <body>
         <ThemeProvider
           attribute="class"
@@ -27,8 +29,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <NavigationBar />
-          <div>{children}</div>
+          <DateProvider>
+            <NavigationBar />
+            <DailyGameFeed />
+            <div>{children}</div>
+          </DateProvider>
         </ThemeProvider>
       </body>
     </html>

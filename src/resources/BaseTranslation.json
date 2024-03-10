@@ -20,7 +20,10 @@
       "Forgot password?": "Forgot password?",
       "Don't have an account? Sign Up": "Don't have an account? Sign Up",
       "or": "or",
-      "Menu": "Menu"
+      "Menu": "Menu",
+      "No game on that date": "There is no game on that date.",
+      "Not current date selected": "The current date is not currently selected, click here to update the date.",
+      "Pick a date": "Pick a date."
     }
   },
   "fr": {
@@ -44,7 +47,10 @@
       "Forgot password?": "Mot de passe oublié?",
       "Don't have an account? Sign Up": "Pas de compte? S'enregistrer",
       "or": "ou",
-      "Menu": "Menu"
+      "Menu": "Menu",
+      "No game on that date": "Il n'y a pas de match à cette date.",
+      "Not current date selected": "La date selectionnée n'est pas la date d'aujourd'hui, clickez ici pour choisir la date d'aujourd'hui.",
+      "Pick a date": "Choisissez une date."
     }
   }
 }
