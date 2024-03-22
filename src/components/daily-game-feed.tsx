@@ -1,19 +1,20 @@
+"use client";
 import React, { useEffect } from "react";
 import { ChevronRightIcon, ChevronLeftIcon } from "@radix-ui/react-icons";
 
 // component
-import { Game } from "../data/nhl/game";
+import { Game } from "@/data/nhl/game";
 import GameItem from "./game-item";
 import { Separator } from "./ui/separator";
-import { useDateContext } from "../context/date-context";
+import { useDateContext } from "@/context/date-context";
 import { DatePicker } from "./ui/date-picker";
 import { format } from "date-fns";
 import { Button } from "./ui/button";
 import { LoadingSpinner } from "./ui/loading-spinner";
-import { useTranslation } from "next-i18next";
+import { useTranslations } from "next-intl";
 
 export default function DailyGameFeed() {
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const { currentDate, selectedDate, updateDate } = useDateContext();
   const [gamesStats, setGamesStats] = React.useState<Game[] | null>(null);
@@ -79,8 +80,9 @@ export default function DailyGameFeed() {
           t("No game on that date")
         )}
       </div>
-
-      <Separator />
+      <div className="pt-2">
+        <Separator />
+      </div>
     </div>
   );
 }

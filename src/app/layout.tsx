@@ -1,14 +1,8 @@
 "use client";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { NavigationBar } from "@/components/navigation-bar";
-import "../lib/i18n";
-import DailyGameFeed from "@/components/daily-game-feed";
-import { DateProvider } from "../context/date-context";
-
-const inter = Inter({ subsets: ["latin"] });
+import { DateProvider } from "@/context/date-context";
 
 const metadata: Metadata = {
   title: "NHL pool",
@@ -21,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html suppressHydrationWarning lang="en">
+    <html>
       <body>
         <ThemeProvider
           attribute="class"
@@ -30,8 +24,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <DateProvider>
-            <NavigationBar />
-            <DailyGameFeed />
             <div>{children}</div>
           </DateProvider>
         </ThemeProvider>

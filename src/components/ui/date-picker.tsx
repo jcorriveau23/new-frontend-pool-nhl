@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { CalendarIcon } from "@radix-ui/react-icons";
 import { AlertTriangle } from "lucide-react";
@@ -21,10 +19,10 @@ import {
 } from "@/components/ui/tooltip";
 
 import { DateContextProps } from "@/context/date-context";
-import { useTranslation } from "next-i18next";
+import { useTranslations } from "next-intl";
 
 export function DatePicker(props: DateContextProps) {
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const handleSelectCurrentDate = (
     event: React.MouseEvent<SVGSVGElement, MouseEvent>
