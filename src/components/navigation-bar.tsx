@@ -12,11 +12,11 @@ import {
   SheetTrigger,
 } from "./ui/sheet";
 
-import { useTranslation } from "next-i18next";
+import { useTranslations } from "next-intl";
 import { LanguageSelector } from "./language-selector";
 
 export function NavigationBar() {
-  const { t, i18n } = useTranslation();
+  const t = useTranslations();
   return (
     <>
       <div className="m-2 grid gap-2 grid-cols-2">

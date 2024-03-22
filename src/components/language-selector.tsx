@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { MagicWandIcon } from "@radix-ui/react-icons";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,21 +9,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useTranslation } from "next-i18next";
+import { useTranslations } from "next-intl";
+import { Languages } from "lucide-react";
+import { useRouter, usePathname } from "@/navigation";
 
 export function LanguageSelector() {
   // translations states
-  const { t, i18n } = useTranslation();
+  const t = useTranslations();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleChangeLanguage = (language: string) => {
-    i18n.changeLanguage(language);
+    router.replace(pathname, { locale: language });
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm">
-          <MagicWandIcon />
+          <Languages />
           <span className="sr-only">Toggle Language</span>
         </Button>
       </DropdownMenuTrigger>

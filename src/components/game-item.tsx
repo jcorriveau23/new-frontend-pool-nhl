@@ -1,7 +1,7 @@
 import React from "react";
 
-import { Game, GameState } from "../data/nhl/game";
-import { useRouter } from "next/navigation";
+import { Game, GameState } from "@/data/nhl/game";
+import { useRouter } from "@/navigation";
 import Image from "next/image";
 interface Props {
   game: Game;
@@ -34,13 +34,9 @@ export default function GameItem(props: Props) {
       }
       case GameState.OFF:
       case GameState.FINAL: {
-        return `Final
-              ${
-                props.game.periodDescriptor &&
-                props.game.periodDescriptor.periodType !== "REG"
-                  ? ` (${props.game.periodDescriptor.periodType})`
-                  : ""
-              }`;
+        return props.game.periodDescriptor
+          ? props.game.periodDescriptor.periodType
+          : "";
       }
       default: {
         return getGameTime(props.game.startTimeUTC);
@@ -50,7 +46,7 @@ export default function GameItem(props: Props) {
 
   return (
     <div
-      className="shrink-0 w-24 h-24 p-2 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted "
+      className="shrink-0 min-w-[80px] h-[80px] p-2 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted text-sm"
       onClick={() => router.push(`/game/${props.game.id}`)}
     >
       <table width="100%">
