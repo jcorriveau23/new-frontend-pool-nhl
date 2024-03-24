@@ -1,3 +1,4 @@
+"use client";
 import * as React from "react";
 import { HamburgerMenuIcon } from "@radix-ui/react-icons";
 import { Button } from "./ui/button";
@@ -7,13 +8,16 @@ import { Separator } from "./ui/separator";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetClose,
 } from "./ui/sheet";
 
 import { useTranslations } from "next-intl";
 import { LanguageSelector } from "./language-selector";
+import { Link } from "@/navigation";
 
 export function NavigationBar() {
   const t = useTranslations();
@@ -31,6 +35,13 @@ export function NavigationBar() {
               <SheetHeader>
                 <SheetTitle>{t("Menu")}</SheetTitle>
               </SheetHeader>
+              <SheetDescription>
+                <div className="p-2">
+                  <SheetClose asChild>
+                    <Link href="/pools">{t("Pool List")}</Link>
+                  </SheetClose>
+                </div>
+              </SheetDescription>
             </SheetContent>
           </Sheet>
           <Input type="search" placeholder="Search..." />

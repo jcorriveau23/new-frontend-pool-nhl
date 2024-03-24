@@ -2,63 +2,78 @@
 import { GoalieStats, SkaterStats } from "@/data/nhl/gameBoxScore";
 import { ColumnDef } from "@tanstack/react-table";
 
+import { DataTableColumnHeader } from "@/components/ui/column-header";
+
 export const skaterColumns: ColumnDef<SkaterStats>[] = [
   {
     accessorKey: "player",
     header: "Player",
-    enablePinning: true,
     cell: ({ row }) => {
       const player = row.original;
-      return player.name.default;
+      return <div className="w-[75px] sm:w-full">{player.name.default}</div>;
     },
   },
   {
     accessorKey: "goals",
-    header: "G",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="G" />,
   },
   {
     accessorKey: "assists",
-    header: "A",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="A" />,
   },
   {
     accessorKey: "points",
-    header: "P",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="P" />,
   },
   {
     accessorKey: "plusMinus",
-    header: "+/-",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="+/-" />
+    ),
   },
   {
     accessorKey: "pim",
-    header: "PIM",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="PIM" />
+    ),
   },
   {
     accessorKey: "shots",
-    header: "SOG",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="SOG" />
+    ),
   },
   {
     accessorKey: "hits",
-    header: "H",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="H" />,
   },
   {
     accessorKey: "blockedShots",
-    header: "B",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="B" />,
   },
   {
     accessorKey: "faceoffWinningPctg",
-    header: "F%",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="F%" />
+    ),
   },
   {
     accessorKey: "toi",
-    header: "TOI",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="TOI" />
+    ),
   },
   {
     accessorKey: "powerPlayToi",
-    header: "PP TOI",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="PP TOI" />
+    ),
   },
   {
     accessorKey: "shorthandedToi",
-    header: "SH TOI",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="SH TOI" />
+    ),
   },
 ];
 
@@ -66,22 +81,23 @@ export const goalieColumns: ColumnDef<GoalieStats>[] = [
   {
     accessorKey: "player",
     header: "Player",
-    enablePinning: true,
     cell: ({ row }) => {
       const player = row.original;
-      return player.name.default;
+      return <div className="w-[75px]">{player.name.default}</div>;
     },
   },
   {
     accessorKey: "saveShotsAgainst",
-    header: "S",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="S" />,
   },
   {
     accessorKey: "savePctg",
-    header: "%",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="%" />,
   },
   {
     accessorKey: "toi",
-    header: "TOI",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="TOI" />
+    ),
   },
 ];
