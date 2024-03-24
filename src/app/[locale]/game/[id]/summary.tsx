@@ -36,7 +36,8 @@ export const getServerSideGameLanding = async (gameId: string) => {
   Query game landing for a specific game id on the server side. 
   */
   const res = await fetch(
-    `http://192.168.0.75/api-rust/game/landing/${gameId}`
+    `http://192.168.0.75/api-rust/game/landing/${gameId}`,
+    { next: { revalidate: 180 } }
   );
   if (!res.ok) {
     return null;
@@ -182,15 +183,15 @@ export default async function GameSummary(props: Props) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2">
-      <div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 p-0 sm:p-2">
+      <div className="py-5 px-0 sm:px-5">
         {LineScoreTable(
           gameLanding.summary.linescore,
           gameLanding.awayTeam.logo,
           gameLanding.homeTeam.logo
         )}
       </div>
-      <div>
+      <div className="py-5 px-0 sm:px-5">
         {gameLanding.summary.scoring
           .filter(
             (period) => period.periodDescriptor.periodType !== PeriodType.SO

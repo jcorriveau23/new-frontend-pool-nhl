@@ -6,16 +6,11 @@ import {
 } from "@/data/nhl/gameBoxScore";
 
 import { DataTable } from "@/components/ui/data-table";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import Image from "next/image";
 
 import { getTranslations } from "next-intl/server";
 import { skaterColumns, goalieColumns } from "./boxscore-columns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Props {
   gameId: string;
@@ -26,7 +21,8 @@ export const getServerSideBoxScore = async (gameId: string) => {
   Query game boxscore for a specific game id on the server side. 
   */
   const res = await fetch(
-    `http://192.168.0.75/api-rust/game/boxscore/${gameId}`
+    `http://192.168.0.75/api-rust/game/boxscore/${gameId}`,
+    { next: { revalidate: 180 } }
   );
   if (!res.ok) {
     return null;
@@ -50,59 +46,94 @@ export default async function GameBoxscore(props: Props) {
     );
   }
 
-  const SkaterTable = (skaters: SkaterStats[]) => (
+  const SkaterTable = (skaters: SkaterStats[], title: string) => (
     <DataTable
       data={skaters}
       columns={skaterColumns}
-      initialState={{ columnPinning: { left: ["player"] } }}
+      initialState={{
+        columnPinning: { left: ["player"] },
+        sorting: [
+          {
+            id: "points",
+            desc: true,
+          },
+        ],
+      }}
+      meta={null}
+      title={title}
     />
   );
 
-  const GoalieTable = (goalies: GoalieStats[]) => (
+  const GoalieTable = (goalies: GoalieStats[], title: string) => (
     <DataTable
       data={goalies}
       columns={goalieColumns}
-      initialState={{ columnPinning: { left: ["player"] } }}
+      initialState={{
+        columnPinning: { left: ["player"] },
+        sorting: [
+          {
+            id: "toi",
+            desc: true,
+          },
+        ],
+      }}
+      meta={null}
+      title={title}
     />
   );
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2">
-      <Accordion type="single" collapsible defaultValue="all">
-        <AccordionItem value="all">
-          <AccordionTrigger>
+    <div className="py-5 px-0 sm:px-5">
+      <Tabs defaultValue="awayTeam">
+        <TabsList>
+          <TabsTrigger value="awayTeam">
             <Image
-              width={50}
-              height={50}
+              width={30}
+              height={30}
               alt="home-team"
               src={boxscore.awayTeam.logo}
             />
-          </AccordionTrigger>
-          <AccordionContent>
-            {SkaterTable(boxscore.boxscore.playerByGameStats.awayTeam.forwards)}
-            {SkaterTable(boxscore.boxscore.playerByGameStats.awayTeam.defense)}
-            {GoalieTable(boxscore.boxscore.playerByGameStats.awayTeam.goalies)}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-      <Accordion type="single" collapsible defaultValue="all">
-        <AccordionItem value="all">
-          <AccordionTrigger>
+            {t("Away Team")}
+          </TabsTrigger>
+          <TabsTrigger value="homeTeam">
             <Image
-              width={50}
-              height={50}
+              width={30}
+              height={30}
               alt="home-team"
               src={boxscore.homeTeam.logo}
             />
-          </AccordionTrigger>
-
-          <AccordionContent>
-            {SkaterTable(boxscore.boxscore.playerByGameStats.homeTeam.forwards)}
-            {SkaterTable(boxscore.boxscore.playerByGameStats.homeTeam.defense)}
-            {GoalieTable(boxscore.boxscore.playerByGameStats.homeTeam.goalies)}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+            {t("Home Team")}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="awayTeam">
+          {SkaterTable(
+            boxscore.boxscore.playerByGameStats.awayTeam.forwards,
+            t("Forwards stats")
+          )}
+          {SkaterTable(
+            boxscore.boxscore.playerByGameStats.awayTeam.defense,
+            t("Defenses stats")
+          )}
+          {GoalieTable(
+            boxscore.boxscore.playerByGameStats.awayTeam.goalies,
+            t("Goalies stats")
+          )}
+        </TabsContent>
+        <TabsContent value="homeTeam">
+          {SkaterTable(
+            boxscore.boxscore.playerByGameStats.homeTeam.forwards,
+            t("Forwards stats")
+          )}
+          {SkaterTable(
+            boxscore.boxscore.playerByGameStats.homeTeam.defense,
+            t("Defenses stats")
+          )}
+          {GoalieTable(
+            boxscore.boxscore.playerByGameStats.homeTeam.goalies,
+            t("Goalies stats")
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

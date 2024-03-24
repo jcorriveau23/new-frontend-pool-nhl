@@ -71,7 +71,7 @@ export default function DailyGameFeed() {
           <ChevronRightIcon className="h-4 w-4" />
         </Button>
       </div>
-      <div className="flex overflow-auto gap-1 mt-2">
+      <div className="flex overflow-auto gap-1 mt-2 py-2">
         {gamesStats === null ? (
           <LoadingSpinner />
         ) : gamesStats.length > 0 ? (
