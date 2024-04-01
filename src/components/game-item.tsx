@@ -26,7 +26,7 @@ export default function GameItem(props: Props) {
       case GameState.LIVE:
       case GameState.CRIT: {
         return props.game && props.game.period && props.game.clock
-          ? `Period ${props.game.period} | ${props.game.clock.timeRemaining}`
+          ? `P. ${props.game.period} | ${props.game.clock.timeRemaining}`
           : getGameTime(props.game.startTimeUTC);
       }
       case GameState.PPD: {
