@@ -4,6 +4,7 @@ const locales = ["en", "fr"];
 import { NavigationBar } from "@/components/navigation-bar";
 import DailyGameFeed from "@/components/daily-game-feed";
 import { NextIntlClientProvider, useMessages } from "next-intl";
+import { GamesNightProvider } from "@/context/games-night-context";
 import { unstable_setRequestLocale } from "next-intl/server";
 
 export function generateStaticParams() {
@@ -28,8 +29,10 @@ export default function LocaleLayout({
     <>
       <NextIntlClientProvider locale={locale} messages={messages}>
         <NavigationBar />
-        <DailyGameFeed />
-        <div>{children}</div>
+        <GamesNightProvider>
+          <DailyGameFeed />
+          <div>{children}</div>
+        </GamesNightProvider>
       </NextIntlClientProvider>
     </>
   );

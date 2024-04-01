@@ -48,7 +48,7 @@ export function DatePicker(props: DateContextProps) {
             <span>{t("Pick a date")}</span>
           )}
           {props.currentDate.toDateString() ===
-          props.selectedDate.toDateString() ? null : (
+          props.selectedDate?.toDateString() ? null : (
             <div className="ml-auto">
               <TooltipProvider>
                 <Tooltip>

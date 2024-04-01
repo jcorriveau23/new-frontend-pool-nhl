@@ -5,20 +5,12 @@ import * as React from "react";
 import { Pool, PoolState } from "@/data/pool/model";
 import { db } from "@/db";
 import InProgressPool from "./in-progress-pool";
+import { PoolContextProvider } from "@/context/pool-context";
+import { UserData } from "@/data/user/model";
 
 export default function Pool({ params }: { params: { name: string } }) {
   const [poolInfo, setPoolInfo] = React.useState<Pool | null>(null);
-  const [dictUsers, setDictUsers] = React.useState<Record<
-    string,
-    string
-  > | null>(null);
-
-  // While still not processed, the value will be -2.
-  // That way we will know if the user is a pool participant or not.
-  // -2 (Processing)
-  // -1 (user is not a pool participant / or not connected)
-  //  0 and more (index of the user in the list of participants)
-  const [userIndex, setUserIndex] = React.useState<Number>(-2);
+  const [users, setUsers] = React.useState<UserData[] | null>(null);
 
   const findLastDateInDb = (pool: Pool | null) => {
     // This function looks if there is a date player's stats that have already be stored in the local database.
@@ -45,18 +37,16 @@ export default function Pool({ params }: { params: { name: string } }) {
     return null;
   };
 
-  const getUsers = async (participants: String[]) => {
+  const getUsers = async (participants: String[] | null) => {
+    if (participants === null) {
+      return [];
+    }
     const res = await fetch(`/api-rust/users/${participants.join(",")}`);
     if (!res.ok) {
-      return {};
+      return [];
     }
     const data = await res.json();
-    const dictUsersTmp: Record<string, string> = {};
-    data.forEach((u: any) => {
-      dictUsersTmp[u._id] = u.name;
-    });
-
-    setDictUsers(dictUsersTmp);
+    setUsers(data);
   };
 
   React.useEffect(() => {
@@ -109,77 +99,62 @@ export default function Pool({ params }: { params: { name: string } }) {
       db.pools.put(data, "name");
 
       // Fetch the users name so that we can display a user name instead of a user id.
-      if (data.participants) {
-        getUsers(data.participants);
-        //setUserIndex(res.data.participants.findIndex(participant => participant === user?._id));
-      } // Get the list of users that are in the pool.
-      else {
-        //setUserIndex(-1);
-      }
+      getUsers(data.participants);
     };
 
     fetchPoolInfo();
   }, [params.name]);
 
-  if (poolInfo === null || dictUsers === null) {
+  const getPoolContent = (poolInfo: Pool) => {
+    switch (poolInfo.status) {
+      case PoolState.Created:
+      // return (
+      //   <CreatedPool
+      //     user={user}
+      //     hasOwnerRights={hasOwnerRights}
+      //     poolInfo={poolInfo}
+      //     setPoolInfo={setPoolInfo}
+      //   />
+      // );
+      case PoolState.Draft:
+      // return (
+      //   <DraftPool
+      //     user={user}
+      //     poolInfo={poolInfo}
+      //     setPoolInfo={setPoolInfo}
+      //     injury={injury}
+      //   />
+      // );
+      case PoolState.InProgress:
+      case PoolState.Final:
+        return (
+          <InProgressPool
+            // user={user}
+            // hasOwnerRights={hasOwnerRights}
+            poolInfo={poolInfo}
+            // injury={injury}
+            // setPoolUpdate={setPoolUpdate}
+          />
+        );
+      case PoolState.Dynastie:
+      // return (
+      //   <DynastiePool
+      //     user={user}
+      //     poolInfo={poolInfo}
+      //     setPoolUpdate={setPoolUpdate}
+      //     injury={injury}
+      //   />
+      // );
+    }
+  };
+
+  if (poolInfo === null || users === null) {
     return <h1>Loading...</h1>;
   }
 
-  switch (poolInfo.status) {
-    case PoolState.Created:
-    // return (
-    //   <CreatedPool
-    //     user={user}
-    //     hasOwnerRights={hasOwnerRights}
-    //     DictUsers={DictUsers}
-    //     setDictUsers={setDictUsers}
-    //     poolName={poolName}
-    //     poolInfo={poolInfo}
-    //     setPoolInfo={setPoolInfo}
-    //   />
-    // );
-    case PoolState.Draft:
-    // return (
-    //   <DraftPool
-    //     user={user}
-    //     DictUsers={DictUsers}
-    //     poolName={poolName}
-    //     poolInfo={poolInfo}
-    //     setPoolInfo={setPoolInfo}
-    //     playersIdToPoolerMap={playersIdToPoolerMap}
-    //     injury={injury}
-    //     userIndex={userIndex}
-    //   />
-    // );
-    case PoolState.InProgress:
-    case PoolState.Final:
-      return (
-        <InProgressPool
-          // user={user}
-          // hasOwnerRights={hasOwnerRights}
-          dictUsers={dictUsers}
-          poolInfo={poolInfo}
-          // playersIdToPoolerMap={playersIdToPoolerMap}
-          // injury={injury}
-          // userIndex={userIndex}
-          // formatDate={formatDate}
-          // todayFormatDate={todayFormatDate}
-          // gameStatus={gameStatus}
-          // setPoolUpdate={setPoolUpdate}
-          // DictTeamAgainst={DictTeamAgainst}
-        />
-      );
-    case PoolState.Dynastie:
-    // return (
-    //   <DynastiePool
-    //     user={user}
-    //     DictUsers={DictUsers}
-    //     poolInfo={poolInfo}
-    //     playersIdToPoolerMap={playersIdToPoolerMap}
-    //     setPoolUpdate={setPoolUpdate}
-    //     injury={injury}
-    //     userIndex={userIndex}
-    //   />
-    // );
-  }
+  return (
+    <PoolContextProvider poolInfo={poolInfo} users={users}>
+      {getPoolContent(poolInfo)}
+    </PoolContextProvider>
+  );
 }

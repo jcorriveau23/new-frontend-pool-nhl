@@ -41,7 +41,7 @@ export default async function GameBoxscore(props: Props) {
   if (boxscore == null) {
     return (
       <h1>
-        {t("No game landing found with game")} {props.gameId}.
+        {t("No boxscore found with game")} {props.gameId}.
       </h1>
     );
   }
@@ -107,29 +107,29 @@ export default async function GameBoxscore(props: Props) {
         </TabsList>
         <TabsContent value="awayTeam">
           {SkaterTable(
-            boxscore.boxscore.playerByGameStats.awayTeam.forwards,
+            boxscore.playerByGameStats.awayTeam.forwards,
             t("Forwards stats")
           )}
           {SkaterTable(
-            boxscore.boxscore.playerByGameStats.awayTeam.defense,
+            boxscore.playerByGameStats.awayTeam.defense,
             t("Defenses stats")
           )}
           {GoalieTable(
-            boxscore.boxscore.playerByGameStats.awayTeam.goalies,
+            boxscore.playerByGameStats.awayTeam.goalies,
             t("Goalies stats")
           )}
         </TabsContent>
         <TabsContent value="homeTeam">
           {SkaterTable(
-            boxscore.boxscore.playerByGameStats.homeTeam.forwards,
+            boxscore.playerByGameStats.homeTeam.forwards,
             t("Forwards stats")
           )}
           {SkaterTable(
-            boxscore.boxscore.playerByGameStats.homeTeam.defense,
+            boxscore.playerByGameStats.homeTeam.defense,
             t("Defenses stats")
           )}
           {GoalieTable(
-            boxscore.boxscore.playerByGameStats.homeTeam.goalies,
+            boxscore.playerByGameStats.homeTeam.goalies,
             t("Goalies stats")
           )}
         </TabsContent>

@@ -1,0 +1,531 @@
+import { ColumnDef } from "@tanstack/react-table";
+import {
+  SkaterDailyInfo,
+  GoalieDailyInfo,
+  TotalDailyPoints,
+} from "./stats-content";
+import { Pool } from "@/data/pool/model";
+import { DataTableColumnHeader } from "@/components/ui/column-header";
+import { DailyGoalie, DailySkater } from "@/data/dailyLeaders/model";
+import { TeamLogo } from "@/components/team-logo";
+
+const getPlayerCell = (
+  player: SkaterDailyInfo | GoalieDailyInfo,
+  poolInfo: Pool
+) => (
+  <div>
+    <span>{poolInfo.context?.players[player.id].name}</span>
+  </div>
+);
+
+const getTeamCell = (
+  player: SkaterDailyInfo | GoalieDailyInfo,
+  poolInfo: Pool
+) => (
+  <TeamLogo
+    teamId={poolInfo.context?.players[player.id].team}
+    width={30}
+    height={30}
+  />
+);
+
+export const ForwardsColumn: ColumnDef<SkaterDailyInfo>[] = [
+  {
+    accessorKey: "player",
+    header: "Player",
+    cell: ({ row, table }) => {
+      return getPlayerCell(row.original, table.options.meta?.props as Pool);
+    },
+  },
+  {
+    accessorKey: "team",
+    header: "",
+    cell: ({ row, table }) => {
+      return getTeamCell(row.original, table.options.meta?.props as Pool);
+    },
+  },
+  {
+    accessorKey: "goals",
+    header: "G",
+  },
+  {
+    accessorKey: "assists",
+    header: "A",
+  },
+  {
+    accessorKey: "shootoutGoals",
+    header: "G*",
+  },
+  {
+    accessorKey: "poolPoints",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="PTS*" />
+    ),
+  },
+];
+
+export const DefenseColumn: ColumnDef<SkaterDailyInfo>[] = [
+  {
+    accessorKey: "player",
+    header: "Player",
+    cell: ({ row, table }) => {
+      return getPlayerCell(row.original, table.options.meta?.props as Pool);
+    },
+  },
+  {
+    accessorKey: "team",
+    header: "",
+    cell: ({ row, table }) => {
+      return getTeamCell(row.original, table.options.meta?.props as Pool);
+    },
+  },
+  {
+    accessorKey: "goals",
+    header: "G",
+  },
+  {
+    accessorKey: "assists",
+    header: "A",
+  },
+  {
+    accessorKey: "shootoutGoals",
+    header: "G*",
+  },
+  {
+    accessorKey: "poolPoints",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="PTS*" />
+    ),
+  },
+];
+
+export const GoaliesColumn: ColumnDef<GoalieDailyInfo>[] = [
+  {
+    accessorKey: "player",
+    header: "Player",
+    cell: ({ row, table }) => {
+      return getPlayerCell(row.original, table.options.meta?.props as Pool);
+    },
+  },
+  {
+    accessorKey: "team",
+    header: "",
+    cell: ({ row, table }) => {
+      return getTeamCell(row.original, table.options.meta?.props as Pool);
+    },
+  },
+  {
+    accessorKey: "goals",
+    header: "G",
+  },
+  {
+    accessorKey: "assists",
+    header: "A",
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+  },
+  {
+    accessorKey: "poolPoints",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="PTS*" />
+    ),
+  },
+];
+
+export const TotalDailyColumn: ColumnDef<TotalDailyPoints>[] = [
+  {
+    accessorKey: "ranking",
+    header: "#",
+    cell: ({ row, table }) => {
+      return (
+        (table
+          ?.getSortedRowModel()
+          ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
+      );
+    },
+  },
+  {
+    accessorKey: "pooler",
+    header: "Pooler",
+    cell: ({ row, table }) => {
+      const ranking = row.original;
+      return table.options.meta?.props?.dictUsers[ranking.participant];
+    },
+  },
+  {
+    id: "1",
+    header: ({ table }) => table.options.meta?.t("Forwards"),
+    columns: [
+      {
+        accessorKey: "forwardGamePlayed",
+        header: ({ table }) => table.options.meta?.t("GP"),
+        accessorFn: (ranking) => ranking.forwards.numberOfGame,
+      },
+      {
+        accessorKey: "forwardPoints",
+        header: "PTS*",
+        accessorFn: (ranking) => ranking.forwards.totalPoolPoints,
+      },
+    ],
+  },
+  {
+    id: "2",
+    header: ({ table }) => table.options.meta?.t("Defense"),
+    columns: [
+      {
+        accessorKey: "defenseGamePlayed",
+        header: ({ table }) => table.options.meta?.t("GP"),
+        accessorFn: (ranking) => ranking.defense.numberOfGame,
+      },
+      {
+        accessorKey: "defensePoints",
+        header: "PTS*",
+        accessorFn: (ranking) => ranking.defense.totalPoolPoints,
+      },
+    ],
+  },
+  {
+    id: "3",
+    header: ({ table }) => table.options.meta?.t("Goalies"),
+    columns: [
+      {
+        accessorKey: "goaliesGamePlayed",
+        header: ({ table }) => table.options.meta?.t("GP"),
+        accessorFn: (ranking) => ranking.goalies.numberOfGame,
+      },
+      {
+        accessorKey: "goaliesPoints",
+        header: "PTS*",
+        accessorFn: (ranking) => ranking.goalies.totalPoolPoints,
+      },
+    ],
+  },
+  {
+    id: "4",
+    header: ({ table }) => table.options.meta?.t("Total"),
+    columns: [
+      {
+        accessorKey: "gamePlayed",
+        header: ({ table }) => table.options.meta?.t("GP"),
+        accessorFn: (ranking) =>
+          ranking.forwards.numberOfGame +
+          ranking.defense.numberOfGame +
+          ranking.goalies.numberOfGame,
+      },
+      {
+        accessorKey: "totalPoolPoints",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="PTS*" />
+        ),
+        accessorFn: (ranking) => ranking.totalPoolPoints,
+      },
+      {
+        accessorKey: "totalPoolPointsPerGame",
+        header: ({ table }) => table.options.meta?.t("PTS*/G"),
+        accessorFn: (ranking) =>
+          (
+            ranking.totalPoolPoints /
+            (ranking.forwards.numberOfGame +
+              ranking.defense.numberOfGame +
+              ranking.goalies.numberOfGame)
+          ).toFixed(3),
+      },
+    ],
+  },
+];
+
+export const ForwardsDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
+  {
+    accessorKey: "ranking",
+    header: "#",
+    cell: ({ row, table }) => {
+      return (
+        (table
+          ?.getSortedRowModel()
+          ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
+      );
+    },
+  },
+  {
+    accessorKey: "pooler",
+    header: "Pooler",
+    cell: ({ row, table }) => {
+      const ranking = row.original;
+      return table.options.meta?.props?.dictUsers[ranking.participant];
+    },
+  },
+  {
+    accessorKey: "gamePlayed",
+    header: ({ table }) => table.options.meta?.t("GP"),
+    accessorFn: (ranking) => ranking.forwards.numberOfGame,
+  },
+  {
+    accessorKey: "goals",
+    header: ({ table }) => table.options.meta?.t("G"),
+    accessorFn: (ranking) => ranking.forwards.goals,
+  },
+  {
+    accessorKey: "assists",
+    header: "A",
+    accessorFn: (ranking) => ranking.forwards.assists,
+  },
+  {
+    accessorKey: "totalPoints",
+    header: "PTS",
+    accessorFn: (ranking) => ranking.forwards.totalPoints,
+  },
+  {
+    accessorKey: "hattricks",
+    header: "HT",
+    accessorFn: (ranking) => ranking.forwards.hattricks,
+  },
+  {
+    accessorKey: "shootoutGoals",
+    header: ({ table }) => table.options.meta?.t("G*"),
+    accessorFn: (ranking) => ranking.forwards.shootoutGoals,
+  },
+  {
+    accessorKey: "totalPoolPoints",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="PTS*" />
+    ),
+    accessorFn: (ranking) => ranking.forwards.totalPoolPoints,
+  },
+  {
+    accessorKey: "totalPoolPointsPerGame",
+    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    accessorFn: (ranking) =>
+      (
+        ranking.forwards.totalPoolPoints / ranking.forwards.numberOfGame
+      ).toFixed(3),
+  },
+];
+
+export const DefensesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
+  {
+    accessorKey: "ranking",
+    header: "#",
+    cell: ({ row, table }) => {
+      return (
+        (table
+          ?.getSortedRowModel()
+          ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
+      );
+    },
+  },
+  {
+    accessorKey: "pooler",
+    header: "Pooler",
+    cell: ({ row, table }) => {
+      const ranking = row.original;
+      return table.options.meta?.props?.dictUsers[ranking.participant];
+    },
+  },
+  {
+    accessorKey: "gamePlayed",
+    header: ({ table }) => table.options.meta?.t("GP"),
+    accessorFn: (ranking) => ranking.defense.numberOfGame,
+  },
+  {
+    accessorKey: "goals",
+    header: ({ table }) => table.options.meta?.t("G"),
+    accessorFn: (ranking) => ranking.defense.goals,
+  },
+  {
+    accessorKey: "assists",
+    header: "A",
+    accessorFn: (ranking) => ranking.defense.assists,
+  },
+  {
+    accessorKey: "totalPoints",
+    header: "PTS",
+    accessorFn: (ranking) => ranking.defense.totalPoints,
+  },
+  {
+    accessorKey: "hattricks",
+    header: "HT",
+    accessorFn: (ranking) => ranking.defense.hattricks,
+  },
+  {
+    accessorKey: "shootoutGoals",
+    header: ({ table }) => table.options.meta?.t("G*"),
+    accessorFn: (ranking) => ranking.defense.shootoutGoals,
+  },
+  {
+    accessorKey: "totalPoolPoints",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="PTS*" />
+    ),
+    accessorFn: (ranking) => ranking.defense.totalPoolPoints,
+  },
+  {
+    accessorKey: "totalPoolPointsPerGame",
+    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    accessorFn: (ranking) =>
+      (ranking.defense.totalPoolPoints / ranking.defense.numberOfGame).toFixed(
+        3
+      ),
+  },
+];
+
+export const GoaliesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
+  {
+    accessorKey: "ranking",
+    header: "#",
+    cell: ({ row, table }) => {
+      return (
+        (table
+          ?.getSortedRowModel()
+          ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
+      );
+    },
+  },
+  {
+    accessorKey: "pooler",
+    header: "Pooler",
+    cell: ({ row, table }) => {
+      const ranking = row.original;
+      return table.options.meta?.props?.dictUsers[ranking.participant];
+    },
+  },
+  {
+    accessorKey: "gamePlayed",
+    header: ({ table }) => table.options.meta?.t("GP"),
+    accessorFn: (ranking) => ranking.goalies.numberOfGame,
+  },
+  {
+    accessorKey: "wins",
+    header: ({ table }) => table.options.meta?.t("W"),
+    accessorFn: (ranking) => ranking.goalies.wins,
+  },
+  {
+    accessorKey: "shutout",
+    header: "SO",
+    accessorFn: (ranking) => ranking.goalies.shutouts,
+  },
+  {
+    accessorKey: "overtimeLosses",
+    header: "OT",
+    accessorFn: (ranking) => ranking.goalies.overtimeLosses,
+  },
+  {
+    accessorKey: "goals",
+    header: ({ table }) => table.options.meta?.t("G"),
+    accessorFn: (ranking) => ranking.goalies.goals,
+  },
+  {
+    accessorKey: "assists",
+    header: "A",
+    accessorFn: (ranking) => ranking.goalies.assists,
+  },
+  {
+    accessorKey: "totalPoolPoints",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="PTS*" />
+    ),
+    accessorFn: (ranking) => ranking.goalies.totalPoolPoints,
+  },
+  {
+    accessorKey: "totalPoolPointsPerGame",
+    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    accessorFn: (ranking) =>
+      (ranking.goalies.totalPoolPoints / ranking.goalies.numberOfGame).toFixed(
+        3
+      ),
+  },
+];
+
+export const DailyScoringLeadersColumn: ColumnDef<DailySkater>[] = [
+  {
+    accessorKey: "ranking",
+    header: "#",
+    cell: ({ row, table }) => {
+      return (
+        (table
+          ?.getSortedRowModel()
+          ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
+      );
+    },
+  },
+  {
+    accessorKey: "name",
+    header: ({ table }) => table.options.meta?.t("Player"),
+  },
+  {
+    accessorKey: "team",
+    header: ({ table }) => table.options.meta?.t("T"),
+    cell: ({ row }) => (
+      <TeamLogo teamId={row.original.team} width={30} height={30} />
+    ),
+  },
+  {
+    accessorKey: "owner",
+    header: ({ table }) => table.options.meta?.t("Owner"),
+    cell: ({ row, table }) => {
+      return table.options.meta?.props.dictUsers?.[
+        table.options.meta?.props.playersOwner[row.original.id]
+      ];
+    },
+  },
+  {
+    accessorKey: "goals",
+    header: ({ table }) => table.options.meta?.t("G"),
+    accessorFn: (row) => row.stats.goals,
+  },
+  {
+    accessorKey: "assists",
+    header: "A",
+    accessorFn: (row) => row.stats.assists,
+  },
+  {
+    accessorKey: "points",
+    header: "PTS",
+    accessorFn: (row) => row.stats.goals + row.stats.assists,
+  },
+];
+
+export const DailyGoaliesLeadersColumn: ColumnDef<DailyGoalie>[] = [
+  {
+    accessorKey: "ranking",
+    header: "#",
+    cell: ({ row, table }) => {
+      return (
+        (table
+          ?.getSortedRowModel()
+          ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
+      );
+    },
+  },
+  {
+    accessorKey: "name",
+    header: ({ table }) => table.options.meta?.t("Player"),
+  },
+  {
+    accessorKey: "team",
+    header: ({ table }) => table.options.meta?.t("T"),
+    cell: ({ row }) => (
+      <TeamLogo teamId={row.original.team} width={30} height={30} />
+    ),
+  },
+  {
+    accessorKey: "owner",
+    header: ({ table }) => table.options.meta?.t("Owner"),
+    cell: ({ row, table }) => {
+      return table.options.meta?.props.dictUsers?.[
+        table.options.meta?.props.playersOwner[row.original.id]
+      ];
+    },
+  },
+  {
+    accessorKey: "decision",
+    header: "",
+    accessorFn: (row) => row.stats.decision,
+  },
+  {
+    accessorKey: "savePercentage",
+    header: ({ table }) => table.options.meta?.t("s%"),
+    accessorFn: (row) => row.stats.savePercentage,
+  },
+];

@@ -15,17 +15,10 @@ export interface SkaterStats {
     plusMinus: number;
     pim?: number | null;
     hits: number;
-    blockedShots: number;
     powerPlayGoals: number;
-    powerPlayPoints: number;
-    shorthandedGoals: number;
-    shPoints: number;
     shots: number;
-    faceoffs: string;
     faceoffWinningPctg: number;
     toi: string;
-    powerPlayToi: string;
-    shorthandedToi: string;
 }
 
 export interface GoalieStats {
@@ -57,13 +50,9 @@ export interface PlayerByGameStats {
     homeTeam: TeamBoxScore;
 }
 
-export interface BoxScore {
-    playerByGameStats: PlayerByGameStats;
-}
-
 export interface GameBoxScore {
     id: number;
     awayTeam: TeamInfo;
     homeTeam: TeamInfo;
-    boxscore: BoxScore;
+    playerByGameStats: PlayerByGameStats;
 }

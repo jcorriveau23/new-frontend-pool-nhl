@@ -2,7 +2,12 @@
 
 "use client";
 import * as React from "react";
-import { Pool, PoolSettings } from "@/data/pool/model";
+import {
+  GoaliesSettings,
+  Pool,
+  PoolSettings,
+  SkaterSettings,
+} from "@/data/pool/model";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   TotalPointsColumn,
@@ -25,14 +30,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
 import { Row } from "@tanstack/react-table";
 
 export interface Props {
   poolInfo: Pool;
-  dictUsers: Record<string, string>;
 }
 import { useTranslations } from "next-intl";
+import { usePoolContext } from "@/context/pool-context";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -72,21 +76,16 @@ export class SkaterInfo {
 
   status: PlayerStatus;
 
-  public getTotalPts(): number {
+  public getTotalPoints(): number {
     return this.goals + this.assists;
   }
 
-  public getTotalPoolPts(
-    pointsPerGoals: number,
-    pointsPerAssists: number,
-    pointsPerHatTricks: number,
-    pointsPerShootoutGoals: number
-  ): number {
+  public getTotalPoolPoints(skaters_settings: SkaterSettings): number {
     return (
-      this.goals * pointsPerGoals +
-      this.assists * pointsPerAssists +
-      this.hattricks * pointsPerHatTricks +
-      this.shootoutGoals * pointsPerShootoutGoals
+      this.goals * skaters_settings.points_per_goals +
+      this.assists * skaters_settings.points_per_assists +
+      this.hattricks * skaters_settings.points_per_hattricks +
+      this.shootoutGoals * skaters_settings.points_per_shootout_goals
     );
   }
 }
@@ -116,13 +115,13 @@ export class GoalieInfo {
 
   status: PlayerStatus;
 
-  public getTotalPoolPts(settings: PoolSettings): number {
+  public getTotalPoolPoints(settings: GoaliesSettings): number {
     return (
-      this.goals * settings.goalies_pts_goals +
-      this.assists * settings.goalies_pts_assists +
-      this.wins * settings.goalies_pts_wins +
-      this.shutouts * settings.goalies_pts_shutouts +
-      this.overtimeLosses * settings.goalies_pts_overtimes
+      this.goals * settings.points_per_goals +
+      this.assists * settings.points_per_assists +
+      this.wins * settings.points_per_wins +
+      this.shutouts * settings.points_per_shutouts +
+      this.overtimeLosses * settings.points_per_overtimes
     );
   }
 }
@@ -130,22 +129,16 @@ export class GoalieInfo {
 export class ParticipantsRoster {
   constructor() {
     this.forwards = [];
-    this.defenses = [];
+    this.defense = [];
     this.goalies = [];
   }
   forwards: SkaterInfo[];
-  defenses: SkaterInfo[];
+  defense: SkaterInfo[];
   goalies: GoalieInfo[];
 }
 
 export class SkaterTotal {
-  constructor(
-    skaters: SkaterInfo[],
-    pointsPerGoals: number,
-    pointsPerAssists: number,
-    pointsPerHatTricks: number,
-    pointsPerShootoutGoals: number
-  ) {
+  constructor(skaters: SkaterInfo[], skaters_settings: SkaterSettings) {
     this.numberOfGame = skaters.reduce(
       (acc, skater) => acc + skater.numberOfGame,
       0
@@ -162,43 +155,33 @@ export class SkaterTotal {
     this.shootoutGoals = skaters
       .filter((skater) => skater.status !== PlayerStatus.PointsIgnored)
       .reduce((acc, skater) => acc + skater.shootoutGoals, 0);
-    this.totalPts = this.getTotalPts();
-    this.totalPoolPts = this.getTotalPoolPts(
-      pointsPerGoals,
-      pointsPerAssists,
-      pointsPerHatTricks,
-      pointsPerShootoutGoals
-    );
+    this.totalPoints = this.getTotalPoints();
+    this.totalPoolPoints = this.getTotalPoolPoints(skaters_settings);
   }
   numberOfGame: number;
   goals: number;
   assists: number;
   hattricks: number;
   shootoutGoals: number;
-  totalPts: number;
-  totalPoolPts: number;
+  totalPoints: number;
+  totalPoolPoints: number;
 
-  public getTotalPts(): number {
+  public getTotalPoints(): number {
     return this.goals + this.assists;
   }
 
-  public getTotalPoolPts(
-    pointsPerGoals: number,
-    pointsPerAssists: number,
-    pointsPerHatTricks: number,
-    pointsPerShootoutGoals: number
-  ): number {
+  public getTotalPoolPoints(skaters_settings: SkaterSettings): number {
     return (
-      this.goals * pointsPerGoals +
-      this.assists * pointsPerAssists +
-      this.hattricks * pointsPerHatTricks +
-      this.shootoutGoals * pointsPerShootoutGoals
+      this.goals * skaters_settings.points_per_goals +
+      this.assists * skaters_settings.points_per_assists +
+      this.hattricks * skaters_settings.points_per_hattricks +
+      this.shootoutGoals * skaters_settings.points_per_shootout_goals
     );
   }
 }
 
 export class GoalieTotal {
-  constructor(goalies: GoalieInfo[], settings: PoolSettings) {
+  constructor(goalies: GoalieInfo[], settings: GoaliesSettings) {
     this.numberOfGame = goalies.reduce(
       (acc, goalie) => acc + goalie.numberOfGame,
       0
@@ -218,7 +201,7 @@ export class GoalieTotal {
     this.overtimeLosses = goalies
       .filter((skater) => skater.status !== PlayerStatus.PointsIgnored)
       .reduce((acc, goalie) => acc + goalie.overtimeLosses, 0);
-    this.totalPoolPts = this.getTotalPoolPts(settings);
+    this.totalPoolPoints = this.getTotalPoolPoints(settings);
   }
   numberOfGame: number;
   goals: number;
@@ -226,15 +209,15 @@ export class GoalieTotal {
   wins: number;
   shutouts: number;
   overtimeLosses: number;
-  totalPoolPts: number;
+  totalPoolPoints: number;
 
-  public getTotalPoolPts(settings: PoolSettings): number {
+  public getTotalPoolPoints(settings: GoaliesSettings): number {
     return (
-      this.goals * settings.goalies_pts_goals +
-      this.assists * settings.goalies_pts_assists +
-      this.wins * settings.goalies_pts_wins +
-      this.shutouts * settings.goalies_pts_shutouts +
-      this.overtimeLosses * settings.goalies_pts_overtimes
+      this.goals * settings.points_per_goals +
+      this.assists * settings.points_per_assists +
+      this.wins * settings.points_per_wins +
+      this.shutouts * settings.points_per_shutouts +
+      this.overtimeLosses * settings.points_per_overtimes
     );
   }
 }
@@ -243,38 +226,26 @@ export class TotalRanking {
   constructor(
     participant: string,
     forwards: SkaterInfo[],
-    defenses: SkaterInfo[],
+    defense: SkaterInfo[],
     goalies: GoalieInfo[],
     settings: PoolSettings
   ) {
     this.participant = participant;
-    this.forwards = new SkaterTotal(
-      forwards,
-      settings.forward_pts_goals,
-      settings.forward_pts_assists,
-      settings.forward_pts_hattricks,
-      settings.forward_pts_shootout_goals
-    );
-    this.defenses = new SkaterTotal(
-      defenses,
-      settings.defender_pts_goals,
-      settings.defender_pts_assists,
-      settings.defender_pts_hattricks,
-      settings.defender_pts_shootout_goals
-    );
-    this.goalies = new GoalieTotal(goalies, settings);
+    this.forwards = new SkaterTotal(forwards, settings.forwards_settings);
+    this.defense = new SkaterTotal(defense, settings.defense_settings);
+    this.goalies = new GoalieTotal(goalies, settings.goalies_settings);
   }
   participant: string;
 
   forwards: SkaterTotal;
-  defenses: SkaterTotal;
+  defense: SkaterTotal;
   goalies: GoalieTotal;
 
-  public getTotalPoolPts(): number {
+  public getTotalPoolPoints(): number {
     return (
-      this.forwards.totalPoolPts +
-      this.defenses.totalPoolPts +
-      this.goalies.totalPoolPts
+      this.forwards.totalPoolPoints +
+      this.defense.totalPoolPoints +
+      this.goalies.totalPoolPoints
     );
   }
 }
@@ -286,9 +257,8 @@ export default function CumulativeTab(props: Props) {
     ParticipantsRoster
   > | null>(null);
   const [ranking, setRanking] = React.useState<TotalRanking[] | null>(null);
-
-  // tab Indexes
-  const [selectedPooler, setSelectedPooler] = React.useState("0");
+  const { selectedParticipant, updateSelectedParticipant, dictUsers } =
+    usePoolContext();
 
   React.useEffect(() => {
     const calculatePoolStats = async () => {
@@ -340,7 +310,7 @@ export default function CumulativeTab(props: Props) {
               j
             ];
 
-          stats[participant].defenses.push(
+          stats[participant].defense.push(
             new SkaterInfo(playerId, PlayerStatus.InAlignment)
           );
         }
@@ -443,7 +413,7 @@ export default function CumulativeTab(props: Props) {
               if (player) {
                 const playerId = Number(key);
 
-                let index = stats[participant].defenses.findIndex(
+                let index = stats[participant].defense.findIndex(
                   (p) => p.id === playerId
                 );
 
@@ -453,7 +423,7 @@ export default function CumulativeTab(props: Props) {
                   ].chosen_reservists.findIndex((p) => p === playerId);
 
                   index =
-                    stats[participant].defenses.push(
+                    stats[participant].defense.push(
                       new SkaterInfo(
                         playerId,
                         indexReservist >= 0
@@ -463,12 +433,12 @@ export default function CumulativeTab(props: Props) {
                     ) - 1;
                 }
 
-                stats[participant].defenses[index].numberOfGame += 1;
-                stats[participant].defenses[index].goals += player.G;
-                stats[participant].defenses[index].assists += player.A;
-                stats[participant].defenses[index].hattricks +=
+                stats[participant].defense[index].numberOfGame += 1;
+                stats[participant].defense[index].goals += player.G;
+                stats[participant].defense[index].assists += player.A;
+                stats[participant].defense[index].hattricks +=
                   player.G >= 3 ? 1 : 0;
-                stats[participant].defenses[index].shootoutGoals +=
+                stats[participant].defense[index].shootoutGoals +=
                   player.SOG ?? 0;
               }
             });
@@ -531,34 +501,26 @@ export default function CumulativeTab(props: Props) {
         for (let j = 0; j < stats[participant].forwards.length; j += 1) {
           stats[participant].forwards[j].poolPoints = stats[
             participant
-          ].forwards[j].getTotalPoolPts(
-            props.poolInfo.settings.forward_pts_goals,
-            props.poolInfo.settings.forward_pts_assists,
-            props.poolInfo.settings.forward_pts_hattricks,
-            props.poolInfo.settings.forward_pts_shootout_goals
+          ].forwards[j].getTotalPoolPoints(
+            props.poolInfo.settings.forwards_settings
           );
         }
 
-        for (let j = 0; j < stats[participant].defenses.length; j += 1) {
-          stats[participant].defenses[j].poolPoints = stats[
-            participant
-          ].defenses[j].getTotalPoolPts(
-            props.poolInfo.settings.defender_pts_goals,
-            props.poolInfo.settings.defender_pts_assists,
-            props.poolInfo.settings.defender_pts_hattricks,
-            props.poolInfo.settings.defender_pts_shootout_goals
-          );
+        for (let j = 0; j < stats[participant].defense.length; j += 1) {
+          stats[participant].defense[j].poolPoints = stats[participant].defense[
+            j
+          ].getTotalPoolPoints(props.poolInfo.settings.defense_settings);
         }
 
         for (let j = 0; j < stats[participant].goalies.length; j += 1) {
           stats[participant].goalies[j].poolPoints = stats[participant].goalies[
             j
-          ].getTotalPoolPts(props.poolInfo.settings);
+          ].getTotalPoolPoints(props.poolInfo.settings.goalies_settings);
         }
 
         // Sort and change state of players that should be considered ignore from the settings.
         stats[participant].forwards.sort((a, b) => b.poolPoints - a.poolPoints);
-        stats[participant].defenses.sort((a, b) => b.poolPoints - a.poolPoints);
+        stats[participant].defense.sort((a, b) => b.poolPoints - a.poolPoints);
         stats[participant].goalies.sort((a, b) => b.poolPoints - a.poolPoints);
 
         // Now change the ignore settings base on the
@@ -574,12 +536,12 @@ export default function CumulativeTab(props: Props) {
 
         for (
           let i =
-            stats[participant].defenses.length -
+            stats[participant].defense.length -
             props.poolInfo.settings.number_worst_defenders_to_ignore;
-          i < stats[participant].defenses.length;
+          i < stats[participant].defense.length;
           i += 1
         ) {
-          stats[participant].defenses[i].status = PlayerStatus.PointsIgnored;
+          stats[participant].defense[i].status = PlayerStatus.PointsIgnored;
         }
 
         for (
@@ -596,13 +558,13 @@ export default function CumulativeTab(props: Props) {
           new TotalRanking(
             participant,
             stats[participant].forwards,
-            stats[participant].defenses,
+            stats[participant].defense,
             stats[participant].goalies,
             props.poolInfo.settings
           )
         );
 
-        rank.sort((a, b) => b.getTotalPoolPts() - a.getTotalPoolPts());
+        rank.sort((a, b) => b.getTotalPoolPoints() - a.getTotalPoolPoints());
       }
 
       setPlayerStats(stats);
@@ -627,30 +589,21 @@ export default function CumulativeTab(props: Props) {
       initialState={{
         sorting: [
           {
-            id: "totalPoolPts",
+            id: "totalPoolPoints",
             desc: true,
           },
         ],
         columnPinning: { left: ["ranking", "pooler"] },
       }}
       meta={{
-        props,
+        props: { dictUsers, poolInfo: props.poolInfo },
         getRowStyles: (row: Row<TotalRanking>) => {
-          if (
-            props.poolInfo.participants &&
-            row.original.participant ===
-              props.poolInfo.participants[Number(selectedPooler)]
-          ) {
+          if (row.original.participant === selectedParticipant) {
             return "bg-selection hover:bg-selection";
           }
         },
         onRowClick: (row: Row<TotalRanking>) => {
-          const index = props.poolInfo.participants?.indexOf(
-            row.original.participant
-          );
-          if (index !== undefined) {
-            setSelectedPooler(index.toString());
-          }
+          updateSelectedParticipant(row.original.participant);
         },
         t: t,
       }}
@@ -717,7 +670,10 @@ export default function CumulativeTab(props: Props) {
             {PlayerTable(
               playerStats[participant].forwards,
               ForwardColumn,
-              t("Forwards stats")
+              getFormatedPlayersTableTitle(
+                participant,
+                "Total points made by forwards for"
+              )
             )}
           </AccordionContent>
         </AccordionItem>
@@ -725,7 +681,7 @@ export default function CumulativeTab(props: Props) {
       <Accordion type="single" collapsible defaultValue="defense">
         <AccordionItem value="defense">
           <AccordionTrigger>{`${t("Defense")} (${
-            playerStats[participant].defenses.filter(
+            playerStats[participant].defense.filter(
               (player) =>
                 player.status === PlayerStatus.InAlignment ||
                 player.status === PlayerStatus.PointsIgnored
@@ -733,9 +689,12 @@ export default function CumulativeTab(props: Props) {
           }/${props.poolInfo.settings.number_defenders})`}</AccordionTrigger>
           <AccordionContent>
             {PlayerTable(
-              playerStats[participant].defenses,
+              playerStats[participant].defense,
               DefenseColumn,
-              t("Defenses stats")
+              getFormatedPlayersTableTitle(
+                participant,
+                "Total points made by defense for"
+              )
             )}
           </AccordionContent>
         </AccordionItem>
@@ -753,7 +712,10 @@ export default function CumulativeTab(props: Props) {
             {PlayerTable(
               playerStats[participant].goalies,
               GoalieColumn,
-              t("Goalies stats")
+              getFormatedPlayersTableTitle(
+                participant,
+                "Total points made by goalies for"
+              )
             )}
           </AccordionContent>
         </AccordionItem>
@@ -772,7 +734,8 @@ export default function CumulativeTab(props: Props) {
       </Accordion>
     </>
   );
-
+  const getFormatedPlayersTableTitle = (participant: string, title: string) =>
+    `${t(title)} ${dictUsers[participant]}`;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2">
       <div className="py-5 px-0 sm:px-5">
@@ -801,21 +764,23 @@ export default function CumulativeTab(props: Props) {
       </div>
       <div className="py-5 px-0 sm:px-5">
         <Tabs
-          defaultValue={selectedPooler}
-          value={selectedPooler}
-          onValueChange={(i) => setSelectedPooler(i)}
+          defaultValue={selectedParticipant}
+          value={selectedParticipant}
+          onValueChange={(participant) =>
+            updateSelectedParticipant(participant)
+          }
         >
           <div className="overflow-auto">
             <TabsList>
-              {props.poolInfo.participants?.map((participant, index) => (
-                <TabsTrigger key={participant} value={String(index)}>
-                  {props.dictUsers[participant]}
+              {props.poolInfo.participants?.map((participant) => (
+                <TabsTrigger key={participant} value={participant}>
+                  {dictUsers[participant]}
                 </TabsTrigger>
               ))}
             </TabsList>
           </div>
-          {props.poolInfo.participants?.map((participant, index) => (
-            <TabsContent key={participant} value={String(index)}>
+          {props.poolInfo.participants?.map((participant) => (
+            <TabsContent key={participant} value={participant}>
               {ParticipantRoster(participant)}
             </TabsContent>
           ))}

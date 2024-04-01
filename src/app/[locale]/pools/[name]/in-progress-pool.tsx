@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Pool } from "@/data/pool/model";
-import CumulativeTab from "./cumulative-tab";
-import DailyTab from "./daily-tab";
+import CumulativeTab from "./in-progress/cumulative-tab/cumulative-tab";
+import DailyTab from "./in-progress/daily-tab/daily-tab";
 import TradeTab from "./trade-tab";
 import HistoryTab from "./history-tab";
 import DraftTab from "./draft-tab";
@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
 interface Props {
   poolInfo: Pool;
-  dictUsers: Record<string, string>;
 }
 
 export default function InProgressPool(props: Props) {
@@ -29,40 +28,22 @@ export default function InProgressPool(props: Props) {
           </TabsList>
         </div>
         <TabsContent value="cumulative">
-          <CumulativeTab
-            poolInfo={props.poolInfo}
-            dictUsers={props.dictUsers}
-          ></CumulativeTab>
+          <CumulativeTab poolInfo={props.poolInfo}></CumulativeTab>
         </TabsContent>
         <TabsContent value="daily">
-          <DailyTab
-            poolInfo={props.poolInfo}
-            dictUsers={props.dictUsers}
-          ></DailyTab>
+          <DailyTab poolInfo={props.poolInfo}></DailyTab>
         </TabsContent>
         <TabsContent value="trade">
-          <TradeTab
-            poolInfo={props.poolInfo}
-            dictUsers={props.dictUsers}
-          ></TradeTab>
+          <TradeTab poolInfo={props.poolInfo}></TradeTab>
         </TabsContent>
         <TabsContent value="history">
-          <HistoryTab
-            poolInfo={props.poolInfo}
-            dictUsers={props.dictUsers}
-          ></HistoryTab>
+          <HistoryTab poolInfo={props.poolInfo}></HistoryTab>
         </TabsContent>
         <TabsContent value="draft">
-          <DraftTab
-            poolInfo={props.poolInfo}
-            dictUsers={props.dictUsers}
-          ></DraftTab>
+          <DraftTab poolInfo={props.poolInfo}></DraftTab>
         </TabsContent>
         <TabsContent value="settings">
-          <SettingsTab
-            poolInfo={props.poolInfo}
-            dictUsers={props.dictUsers}
-          ></SettingsTab>
+          <SettingsTab poolInfo={props.poolInfo}></SettingsTab>
         </TabsContent>
       </Tabs>
     </div>
