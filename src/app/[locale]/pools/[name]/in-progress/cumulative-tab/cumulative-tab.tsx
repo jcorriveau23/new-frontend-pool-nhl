@@ -676,7 +676,7 @@ export default function CumulativeTab(props: Props) {
         Object.keys(round)
           .filter((from) => round[from] === participant)
           .map((from) => (
-            <TableRow>
+            <TableRow key={`${from}-${index}`}>
               <TableCell>{index + 1}</TableCell>
               <TableCell>{dictUsers[from]}</TableCell>
             </TableRow>
