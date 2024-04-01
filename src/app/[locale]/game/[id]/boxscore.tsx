@@ -20,10 +20,9 @@ export const getServerSideBoxScore = async (gameId: string) => {
   /* 
   Query game boxscore for a specific game id on the server side. 
   */
-  const res = await fetch(
-    `http://192.168.0.75/api-rust/game/boxscore/${gameId}`,
-    { next: { revalidate: 180 } }
-  );
+  const res = await fetch(`http://localhost/api-rust/game/boxscore/${gameId}`, {
+    next: { revalidate: 180 },
+  });
   if (!res.ok) {
     return null;
   }

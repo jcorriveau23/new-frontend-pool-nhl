@@ -36,10 +36,9 @@ export const getServerSideGameLanding = async (gameId: string) => {
   /* 
   Query game landing for a specific game id on the server side. 
   */
-  const res = await fetch(
-    `http://192.168.0.75/api-rust/game/landing/${gameId}`,
-    { next: { revalidate: 180 } }
-  );
+  const res = await fetch(`http://localhost/api-rust/game/landing/${gameId}`, {
+    next: { revalidate: 180 },
+  });
   if (!res.ok) {
     return null;
   }
