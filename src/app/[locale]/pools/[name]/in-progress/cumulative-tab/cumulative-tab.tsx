@@ -37,6 +37,14 @@ export interface Props {
 }
 import { useTranslations } from "next-intl";
 import { usePoolContext } from "@/context/pool-context";
+import {
+  Table,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -655,6 +663,28 @@ export default function CumulativeTab(props: Props) {
     />
   );
 
+  const PoolerPicks = (participant: string) => (
+    <Table>
+      <TableCaption>{`${t("Liste of picks owned by")} ${
+        dictUsers[participant]
+      }`}</TableCaption>
+      <TableHeader>
+        <TableHead>{t("Round")}</TableHead>
+        <TableHead>{t("From")}</TableHead>
+      </TableHeader>
+      {props.poolInfo.context?.tradable_picks?.map((round, index) =>
+        Object.keys(round)
+          .filter((from) => round[from] === participant)
+          .map((from) => (
+            <TableRow>
+              <TableCell>{index + 1}</TableCell>
+              <TableCell>{dictUsers[from]}</TableCell>
+            </TableRow>
+          ))
+      )}
+    </Table>
+  );
+
   const ParticipantRoster = (participant: string) => (
     <>
       <Accordion type="single" collapsible defaultValue="forwards">
@@ -732,10 +762,20 @@ export default function CumulativeTab(props: Props) {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+      {props.poolInfo.settings.dynastie_settings?.tradable_picks ? (
+        <Accordion type="single" collapsible defaultValue="picks">
+          <AccordionItem value="picks">
+            <AccordionTrigger>{t("Next season picks")}</AccordionTrigger>
+            <AccordionContent>{PoolerPicks(participant)}</AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      ) : null}
     </>
   );
+
   const getFormatedPlayersTableTitle = (participant: string, title: string) =>
     `${t(title)} ${dictUsers[participant]}`;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2">
       <div className="py-5 px-0 sm:px-5">
