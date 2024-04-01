@@ -48,10 +48,6 @@ export const skaterColumns: ColumnDef<SkaterStats>[] = [
     header: ({ column }) => <DataTableColumnHeader column={column} title="H" />,
   },
   {
-    accessorKey: "blockedShots",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="B" />,
-  },
-  {
     accessorKey: "faceoffWinningPctg",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="F%" />
@@ -61,18 +57,6 @@ export const skaterColumns: ColumnDef<SkaterStats>[] = [
     accessorKey: "toi",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="TOI" />
-    ),
-  },
-  {
-    accessorKey: "powerPlayToi",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PP TOI" />
-    ),
-  },
-  {
-    accessorKey: "shorthandedToi",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="SH TOI" />
     ),
   },
 ];

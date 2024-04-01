@@ -1,12 +1,10 @@
 "use client";
 
 import { ColumnDef, TableMeta } from "@tanstack/react-table";
-import { team_info } from "@/lib/teams";
 
 import { GoalieInfo, PlayerStatus, SkaterInfo } from "./cumulative-tab";
 import { Pool } from "@/data/pool/model";
 import { DataTableColumnHeader } from "@/components/ui/column-header";
-import Image from "next/image";
 
 import { LucideAlertOctagon } from "lucide-react";
 import {
@@ -14,6 +12,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+
+import { TeamLogo } from "@/components/team-logo";
 
 const getWarningColor = (playerStatus: PlayerStatus) => {
   switch (playerStatus) {
@@ -67,11 +67,10 @@ const getPlayerCell = (player: SkaterInfo | GoalieInfo, poolInfo: Pool) => (
 );
 
 const getTeamCell = (player: SkaterInfo | GoalieInfo, poolInfo: Pool) => (
-  <Image
+  <TeamLogo
+    teamId={poolInfo.context?.players[player.id].team}
     width={30}
     height={30}
-    alt="player team"
-    src={team_info[poolInfo.context?.players[player.id].team ?? 0].logo}
   />
 );
 
@@ -127,7 +126,7 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
     accessorKey: "points",
     header: "PTS",
     aggregationFn: "sum",
-    accessorFn: (player) => player.getTotalPts(),
+    accessorFn: (player) => player.getTotalPoints(),
   },
   {
     accessorKey: "hattricks",
@@ -203,7 +202,7 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
   {
     accessorKey: "points",
     header: "PTS",
-    accessorFn: (player) => player.getTotalPts(),
+    accessorFn: (player) => player.getTotalPoints(),
   },
   {
     accessorKey: "hattricks",
@@ -324,13 +323,10 @@ export const ReservistColumn: ColumnDef<number>[] = [
     cell: ({ row, table }) => {
       const poolInfo = table.options.meta?.props as Pool;
       return (
-        <Image
+        <TeamLogo
+          teamId={poolInfo.context?.players[row.original].team}
           width={30}
           height={30}
-          alt="player team"
-          src={
-            team_info[poolInfo.context?.players[row.original].team ?? 0].logo
-          }
         />
       );
     },

@@ -2,7 +2,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { TotalRanking } from "./cumulative-tab";
 import { DataTableColumnHeader } from "@/components/ui/column-header";
-import { Props } from "./cumulative-tab";
 
 export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
   {
@@ -21,9 +20,7 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
     header: "Pooler",
     cell: ({ row, table }) => {
       const ranking = row.original;
-      return (table.options.meta?.props as Props)?.dictUsers[
-        ranking.participant
-      ];
+      return table.options.meta?.props?.dictUsers[ranking.participant];
     },
   },
   {
@@ -38,7 +35,7 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
       {
         accessorKey: "forwardPoints",
         header: "PTS*",
-        accessorFn: (ranking) => ranking.forwards.totalPoolPts,
+        accessorFn: (ranking) => ranking.forwards.totalPoolPoints,
       },
     ],
   },
@@ -49,12 +46,12 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
       {
         accessorKey: "defenseGamePlayed",
         header: ({ table }) => table.options.meta?.t("GP"),
-        accessorFn: (ranking) => ranking.defenses.numberOfGame,
+        accessorFn: (ranking) => ranking.defense.numberOfGame,
       },
       {
         accessorKey: "defensePoints",
         header: "PTS*",
-        accessorFn: (ranking) => ranking.defenses.totalPoolPts,
+        accessorFn: (ranking) => ranking.defense.totalPoolPoints,
       },
     ],
   },
@@ -70,7 +67,7 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
       {
         accessorKey: "goaliesPoints",
         header: "PTS*",
-        accessorFn: (ranking) => ranking.goalies.totalPoolPts,
+        accessorFn: (ranking) => ranking.goalies.totalPoolPoints,
       },
     ],
   },
@@ -83,24 +80,24 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
         header: ({ table }) => table.options.meta?.t("GP"),
         accessorFn: (ranking) =>
           ranking.forwards.numberOfGame +
-          ranking.defenses.numberOfGame +
+          ranking.defense.numberOfGame +
           ranking.goalies.numberOfGame,
       },
       {
-        accessorKey: "totalPoolPts",
+        accessorKey: "totalPoolPoints",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="PTS*" />
         ),
-        accessorFn: (ranking) => ranking.getTotalPoolPts(),
+        accessorFn: (ranking) => ranking.getTotalPoolPoints(),
       },
       {
-        accessorKey: "totalPoolPtsPerGame",
+        accessorKey: "totalPoolPointsPerGame",
         header: ({ table }) => table.options.meta?.t("PTS*/G"),
         accessorFn: (ranking) =>
           (
-            ranking.getTotalPoolPts() /
+            ranking.getTotalPoolPoints() /
             (ranking.forwards.numberOfGame +
-              ranking.defenses.numberOfGame +
+              ranking.defense.numberOfGame +
               ranking.goalies.numberOfGame)
           ).toFixed(3),
       },
@@ -125,9 +122,7 @@ export const ForwardsTotalColumn: ColumnDef<TotalRanking>[] = [
     header: "Pooler",
     cell: ({ row, table }) => {
       const ranking = row.original;
-      return (table.options.meta?.props as Props)?.dictUsers[
-        ranking.participant
-      ];
+      return table.options.meta?.props?.dictUsers[ranking.participant];
     },
   },
   {
@@ -146,9 +141,9 @@ export const ForwardsTotalColumn: ColumnDef<TotalRanking>[] = [
     accessorFn: (ranking) => ranking.forwards.assists,
   },
   {
-    accessorKey: "totalPts",
+    accessorKey: "totalPoints",
     header: "PTS",
-    accessorFn: (ranking) => ranking.forwards.getTotalPts(),
+    accessorFn: (ranking) => ranking.forwards.getTotalPoints(),
   },
   {
     accessorKey: "hattricks",
@@ -161,19 +156,19 @@ export const ForwardsTotalColumn: ColumnDef<TotalRanking>[] = [
     accessorFn: (ranking) => ranking.forwards.shootoutGoals,
   },
   {
-    accessorKey: "totalPoolPts",
+    accessorKey: "totalPoolPoints",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="PTS*" />
     ),
-    accessorFn: (ranking) => ranking.forwards.totalPoolPts,
+    accessorFn: (ranking) => ranking.forwards.totalPoolPoints,
   },
   {
-    accessorKey: "totalPoolPtsPerGame",
+    accessorKey: "totalPoolPointsPerGame",
     header: ({ table }) => table.options.meta?.t("PTS*/G"),
     accessorFn: (ranking) =>
-      (ranking.forwards.totalPoolPts / ranking.forwards.numberOfGame).toFixed(
-        3
-      ),
+      (
+        ranking.forwards.totalPoolPoints / ranking.forwards.numberOfGame
+      ).toFixed(3),
   },
 ];
 
@@ -194,53 +189,51 @@ export const DefensesTotalColumn: ColumnDef<TotalRanking>[] = [
     header: "Pooler",
     cell: ({ row, table }) => {
       const ranking = row.original;
-      return (table.options.meta?.props as Props)?.dictUsers[
-        ranking.participant
-      ];
+      return table.options.meta?.props?.dictUsers[ranking.participant];
     },
   },
   {
     accessorKey: "gamePlayed",
     header: ({ table }) => table.options.meta?.t("GP"),
-    accessorFn: (ranking) => ranking.defenses.numberOfGame,
+    accessorFn: (ranking) => ranking.defense.numberOfGame,
   },
   {
     accessorKey: "goals",
     header: ({ table }) => table.options.meta?.t("G"),
-    accessorFn: (ranking) => ranking.defenses.goals,
+    accessorFn: (ranking) => ranking.defense.goals,
   },
   {
     accessorKey: "assists",
     header: "A",
-    accessorFn: (ranking) => ranking.defenses.assists,
+    accessorFn: (ranking) => ranking.defense.assists,
   },
   {
-    accessorKey: "totalPts",
+    accessorKey: "totalPoints",
     header: "PTS",
-    accessorFn: (ranking) => ranking.defenses.getTotalPts(),
+    accessorFn: (ranking) => ranking.defense.getTotalPoints(),
   },
   {
     accessorKey: "hattricks",
     header: "HT",
-    accessorFn: (ranking) => ranking.defenses.hattricks,
+    accessorFn: (ranking) => ranking.defense.hattricks,
   },
   {
     accessorKey: "shootoutGoals",
     header: ({ table }) => table.options.meta?.t("G*"),
-    accessorFn: (ranking) => ranking.defenses.shootoutGoals,
+    accessorFn: (ranking) => ranking.defense.shootoutGoals,
   },
   {
-    accessorKey: "totalPoolPts",
+    accessorKey: "totalPoolPoints",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="PTS*" />
     ),
-    accessorFn: (ranking) => ranking.defenses.totalPoolPts,
+    accessorFn: (ranking) => ranking.defense.totalPoolPoints,
   },
   {
-    accessorKey: "totalPoolPtsPerGame",
+    accessorKey: "totalPoolPointsPerGame",
     header: ({ table }) => table.options.meta?.t("PTS*/G"),
     accessorFn: (ranking) =>
-      (ranking.defenses.totalPoolPts / ranking.defenses.numberOfGame).toFixed(
+      (ranking.defense.totalPoolPoints / ranking.defense.numberOfGame).toFixed(
         3
       ),
   },
@@ -263,9 +256,7 @@ export const GoaliesTotalColumn: ColumnDef<TotalRanking>[] = [
     header: "Pooler",
     cell: ({ row, table }) => {
       const ranking = row.original;
-      return (table.options.meta?.props as Props)?.dictUsers[
-        ranking.participant
-      ];
+      return table.options.meta?.props?.dictUsers[ranking.participant];
     },
   },
   {
@@ -299,16 +290,18 @@ export const GoaliesTotalColumn: ColumnDef<TotalRanking>[] = [
     accessorFn: (ranking) => ranking.goalies.assists,
   },
   {
-    accessorKey: "totalPoolPts",
+    accessorKey: "totalPoolPoints",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="PTS*" />
     ),
-    accessorFn: (ranking) => ranking.goalies.totalPoolPts,
+    accessorFn: (ranking) => ranking.goalies.totalPoolPoints,
   },
   {
-    accessorKey: "totalPoolPtsPerGame",
+    accessorKey: "totalPoolPointsPerGame",
     header: ({ table }) => table.options.meta?.t("PTS*/G"),
     accessorFn: (ranking) =>
-      (ranking.goalies.totalPoolPts / ranking.goalies.numberOfGame).toFixed(3),
+      (ranking.goalies.totalPoolPoints / ranking.goalies.numberOfGame).toFixed(
+        3
+      ),
   },
 ];

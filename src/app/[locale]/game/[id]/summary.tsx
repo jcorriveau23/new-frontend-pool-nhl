@@ -6,7 +6,7 @@ import {
   Linescore,
   ShootoutInfo,
 } from "@/data/nhl/gameLanding";
-import { team_info, abbrevToTeamId } from "@/lib/teams";
+import { abbrevToTeamId } from "@/lib/teams";
 import {
   Accordion,
   AccordionContent,
@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getTranslations } from "next-intl/server";
+import { TeamLogo } from "@/components/team-logo";
 
 interface Props {
   gameId: string;
@@ -61,11 +62,10 @@ export default async function GameSummary(props: Props) {
         </Avatar>
       </div>
       <div>
-        <Image
+        <TeamLogo
+          teamId={abbrevToTeamId[goalInfo.teamAbbrev.default]}
           width={30}
           height={30}
-          alt="team"
-          src={team_info[abbrevToTeamId[goalInfo.teamAbbrev.default]].logo}
         />
       </div>
       <div className="text-left">
@@ -157,11 +157,10 @@ export default async function GameSummary(props: Props) {
           <TableRow key={attempt.playerId}>
             <TableCell className="text-left">{attempt.sequence}</TableCell>
             <TableCell>
-              <Image
+              <TeamLogo
+                teamId={abbrevToTeamId[attempt.teamAbbrev]}
                 width={30}
                 height={30}
-                alt="team"
-                src={team_info[abbrevToTeamId[attempt.teamAbbrev]].logo}
               />
             </TableCell>
             <TableCell className="text-left">

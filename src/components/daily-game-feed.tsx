@@ -7,6 +7,7 @@ import { Game } from "@/data/nhl/game";
 import GameItem from "./game-item";
 import { Separator } from "./ui/separator";
 import { useDateContext } from "@/context/date-context";
+import { useGamesNightContext } from "@/context/games-night-context";
 import { DatePicker } from "./ui/date-picker";
 import { format } from "date-fns";
 import { Button } from "./ui/button";
@@ -18,6 +19,7 @@ export default function DailyGameFeed() {
 
   const { currentDate, selectedDate, updateDate } = useDateContext();
   const [gamesStats, setGamesStats] = React.useState<Game[] | null>(null);
+  const { updateGamesNightContext } = useGamesNightContext();
 
   useEffect(() => {
     const getDailyGames = async () => {
@@ -31,11 +33,14 @@ export default function DailyGameFeed() {
         if (res.ok) {
           const result = await res.json();
           setGamesStats(result.games);
+          updateGamesNightContext(result.games);
         } else {
           setGamesStats([]);
+          updateGamesNightContext([]);
         }
       } catch (e: any) {
         setGamesStats([]);
+        updateGamesNightContext([]);
       }
     };
     getDailyGames();

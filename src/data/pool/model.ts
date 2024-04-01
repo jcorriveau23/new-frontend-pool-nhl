@@ -9,6 +9,21 @@ export interface DynastieSettings {
     tradable_picks: number;
 }
 
+export interface SkaterSettings {
+    points_per_goals: number,
+    points_per_assists: number,
+    points_per_hattricks: number,
+    points_per_shootout_goals: number,
+}
+
+export interface GoaliesSettings {
+    points_per_wins: number,
+    points_per_shutouts: number,
+    points_per_overtimes: number,
+    points_per_goals: number,
+    points_per_assists: number,
+}
+
 export interface PoolSettings {
     assistants: string[];
     number_forwards: number;
@@ -19,19 +34,11 @@ export interface PoolSettings {
     number_worst_defenders_to_ignore: number;
     number_worst_goalies_to_ignore: number;
     roster_modification_date: string[];
-    forward_pts_goals: number;
-    forward_pts_assists: number;
-    forward_pts_hattricks: number;
-    forward_pts_shootout_goals: number;
-    defender_pts_goals: number;
-    defender_pts_assists: number;
-    defender_pts_hattricks: number;
-    defender_pts_shootout_goals: number;
-    goalies_pts_wins: number;
-    goalies_pts_shutouts: number;
-    goalies_pts_overtimes: number;
-    goalies_pts_goals: number;
-    goalies_pts_assists: number;
+
+    forwards_settings: SkaterSettings;
+    defense_settings: SkaterSettings;
+    goalies_settings: GoaliesSettings;
+    
     can_trade: boolean;
     dynastie_settings: DynastieSettings | null;
 }

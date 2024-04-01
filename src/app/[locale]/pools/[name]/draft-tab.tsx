@@ -3,7 +3,6 @@ import { Pool } from "@/data/pool/model";
 
 interface Props {
   poolInfo: Pool;
-  dictUsers: Record<string, string>;
 }
 
 export default function DraftTab(props: Props) {
