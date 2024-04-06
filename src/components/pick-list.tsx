@@ -49,11 +49,11 @@ export default function PickList(props: Props) {
                           className="p-0 m-0"
                         />
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent align="start">
                         {t("pickTraded", {
-                          newOwner: dictUsers[from],
+                          newOwner: dictUsers[roundPicksOwner[from]],
                           round: index + 1,
-                          oldOwner: dictUsers[roundPicksOwner[from]],
+                          oldOwner: dictUsers[from],
                         })}
                       </PopoverContent>
                     </Popover>

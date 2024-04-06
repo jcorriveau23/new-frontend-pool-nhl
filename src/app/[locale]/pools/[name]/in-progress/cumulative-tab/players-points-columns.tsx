@@ -52,7 +52,7 @@ const getWarningCell = (
       <PopoverTrigger asChild>
         <LucideAlertOctagon color={getWarningColor(player.status)} />
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent align="start">
         {meta?.props.context?.players[player.id].name}{" "}
         {meta?.t(getWarningMessage(player.status))}
       </PopoverContent>
