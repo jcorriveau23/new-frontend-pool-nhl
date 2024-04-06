@@ -98,5 +98,7 @@
     "Next season picks": "Next season picks",
     "Liste of picks owned by": "Liste of picks owned by",
     "From": "From",
-    "Round": "Round"
+    "Round": "Round",
+    "pickTraded": "{newOwner} will be able to pick at round {round} {oldOwner}'s turn.",
+    "notCumulatedYet": "Points for selected date '{selectedDate}' have not been cumulated yet."
 }

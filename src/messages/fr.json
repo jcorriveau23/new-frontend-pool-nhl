@@ -99,5 +99,7 @@
     "Next season picks": "Choix pour la saison prochaine",
     "Liste of picks owned by": "Liste des choix au repêchage de",
     "From": "De",
-    "Round": "Ronde"
+    "Round": "Ronde",
+    "pickTraded": "{newOwner} va pouvoir sélectionner à la ronde {round} à la place de {oldOwner}.",
+    "notCumulatedYet": "Points for selected date '{selectedDate}' have not been cumulated yet."
 }
