@@ -777,7 +777,7 @@ export default function CumulativeTab(props: Props) {
                   <PopoverTrigger asChild>
                     <LucideAlertOctagon color="yellow" />
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent align="start">
                     {t("notCumulatedYet", {
                       selectedDate: selectedDate.toISOString().slice(0, 10),
                     })}
