@@ -44,10 +44,7 @@ export default function PickList(props: Props) {
                   {from === roundPicksOwner[from] ? null : (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <LucideAlertOctagon
-                          color={"yellow"}
-                          className="p-0 m-0"
-                        />
+                        <LucideAlertOctagon color="red" className="p-0 m-0" />
                       </PopoverTrigger>
                       <PopoverContent align="start">
                         {t("pickTraded", {

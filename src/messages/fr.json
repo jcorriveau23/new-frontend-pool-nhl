@@ -101,5 +101,6 @@
     "From": "De",
     "Round": "Ronde",
     "pickTraded": "{newOwner} va pouvoir sélectionner à la ronde {round} à la place de {oldOwner}.",
-    "notCumulatedYet": "Les points de la journée sélectionnée {selectedDate} n'ont pas encore été cumulé."
+    "notCumulatedYet": "Les points de la journée sélectionnée {selectedDate} n'ont pas encore été cumulé.",
+    "liveGame": "matchs en direct en cours"
 }
