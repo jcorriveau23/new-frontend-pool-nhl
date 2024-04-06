@@ -31,20 +31,20 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Row } from "@tanstack/react-table";
+import { LucideAlertOctagon } from "lucide-react";
 
 export interface Props {
   poolInfo: Pool;
 }
 import { useTranslations } from "next-intl";
 import { usePoolContext } from "@/context/pool-context";
+import PickList from "@/components/pick-list";
+import { useDateContext } from "@/context/date-context";
 import {
-  Table,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -260,6 +260,7 @@ export class TotalRanking {
 
 export default function CumulativeTab(props: Props) {
   const t = useTranslations();
+  const { selectedDate } = useDateContext();
   const [playerStats, setPlayerStats] = React.useState<Record<
     string,
     ParticipantsRoster
@@ -344,7 +345,7 @@ export default function CumulativeTab(props: Props) {
 
       // Now parse all the pool date from the start of the season to the current date.
       const startDate = new Date(props.poolInfo.season_start);
-      let endDate = new Date();
+      let endDate = new Date(selectedDate);
       if (endDate < startDate) {
         endDate = new Date(props.poolInfo.season_start);
       }
@@ -580,7 +581,7 @@ export default function CumulativeTab(props: Props) {
     };
 
     calculatePoolStats();
-  }, []);
+  }, [selectedDate]);
 
   if (ranking === null || playerStats === null) {
     return <h1>Loading...</h1>;
@@ -661,28 +662,6 @@ export default function CumulativeTab(props: Props) {
       }}
       title={t("Available reservists")}
     />
-  );
-
-  const PoolerPicks = (participant: string) => (
-    <Table>
-      <TableCaption>{`${t("Liste of picks owned by")} ${
-        dictUsers[participant]
-      }`}</TableCaption>
-      <TableHeader>
-        <TableHead>{t("Round")}</TableHead>
-        <TableHead>{t("From")}</TableHead>
-      </TableHeader>
-      {props.poolInfo.context?.tradable_picks?.map((round, index) =>
-        Object.keys(round)
-          .filter((from) => round[from] === participant)
-          .map((from) => (
-            <TableRow key={`${from}-${index}`}>
-              <TableCell>{index + 1}</TableCell>
-              <TableCell>{dictUsers[from]}</TableCell>
-            </TableRow>
-          ))
-      )}
-    </Table>
   );
 
   const ParticipantRoster = (participant: string) => (
@@ -766,7 +745,12 @@ export default function CumulativeTab(props: Props) {
         <Accordion type="single" collapsible defaultValue="picks">
           <AccordionItem value="picks">
             <AccordionTrigger>{t("Next season picks")}</AccordionTrigger>
-            <AccordionContent>{PoolerPicks(participant)}</AccordionContent>
+            <AccordionContent>
+              <PickList
+                participant={selectedParticipant}
+                poolInfo={props.poolInfo}
+              />
+            </AccordionContent>
           </AccordionItem>
         </Accordion>
       ) : null}
@@ -786,6 +770,20 @@ export default function CumulativeTab(props: Props) {
               <TabsTrigger value="forwardRanking">{t("Forwards")}</TabsTrigger>
               <TabsTrigger value="defenseRanking">{t("Defense")}</TabsTrigger>
               <TabsTrigger value="goaliesRanking">{t("Goalies")}</TabsTrigger>
+              {props.poolInfo.context?.score_by_day?.[
+                selectedDate.toISOString().slice(0, 10)
+              ]?.[selectedParticipant]?.is_cumulated ? null : (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <LucideAlertOctagon color="yellow" />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    {t("notCumulatedYet", {
+                      selectedDate: selectedDate.toISOString().slice(0, 10),
+                    })}
+                  </PopoverContent>
+                </Popover>
+              )}
             </TabsList>
           </div>
           <TabsContent value="totalRanking">
