@@ -775,7 +775,7 @@ export default function CumulativeTab(props: Props) {
               ]?.[selectedParticipant]?.is_cumulated ? null : (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <LucideAlertOctagon color="yellow" />
+                    <LucideAlertOctagon color="red" />
                   </PopoverTrigger>
                   <PopoverContent align="start">
                     {t("notCumulatedYet", {

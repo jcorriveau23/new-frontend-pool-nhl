@@ -8,19 +8,49 @@ import DraftTab from "./draft-tab";
 import SettingsTab from "./settings-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
+import {
+  GamesNightStatus,
+  useGamesNightContext,
+} from "@/context/games-night-context";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { LucideAlertOctagon } from "lucide-react";
+
 interface Props {
   poolInfo: Pool;
 }
 
 export default function InProgressPool(props: Props) {
   const t = useTranslations();
+  const { gamesNightStatus } = useGamesNightContext();
   return (
     <div className="items-center text-center">
-      <Tabs defaultValue="cumulative">
+      <Tabs
+        defaultValue={
+          gamesNightStatus == GamesNightStatus.LIVE ? "daily" : "cumulative"
+        }
+      >
         <div className="overflow-auto">
           <TabsList>
             <TabsTrigger value="cumulative">{t("Cumulative")}</TabsTrigger>
-            <TabsTrigger value="daily">{t("Daily")}</TabsTrigger>
+            <TabsTrigger value="daily">
+              {t("Daily")}
+              <div className="pl-1">
+                {gamesNightStatus === GamesNightStatus.LIVE ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <LucideAlertOctagon color="red" />
+                    </PopoverTrigger>
+                    <PopoverContent align="start">
+                      {t("liveGame")}
+                    </PopoverContent>
+                  </Popover>
+                ) : null}
+              </div>
+            </TabsTrigger>
             <TabsTrigger value="trade">{t("Trade")}</TabsTrigger>
             <TabsTrigger value="history">{t("History")}</TabsTrigger>
             <TabsTrigger value="draft">{t("Draft")}</TabsTrigger>
