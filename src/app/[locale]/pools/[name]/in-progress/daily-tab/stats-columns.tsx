@@ -5,7 +5,6 @@ import {
   TotalDailyPoints,
 } from "./stats-content";
 import { Pool } from "@/data/pool/model";
-import { DataTableColumnHeader } from "@/components/ui/column-header";
 import { DailyGoalie, DailySkater } from "@/data/dailyLeaders/model";
 import { TeamLogo } from "@/components/team-logo";
 
@@ -61,9 +60,7 @@ export const SkaterDailyColumn: ColumnDef<SkaterDailyInfo>[] = [
   },
   {
     accessorKey: "poolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
     accessorFn: (row) => (row.played ? row.poolPoints : null),
     sortingFn: (row1, row2) => {
       const player1 = row1.original;
@@ -109,9 +106,7 @@ export const GoaliesColumn: ColumnDef<GoalieDailyInfo>[] = [
   },
   {
     accessorKey: "poolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
     accessorFn: (row) => (row.played ? row.poolPoints : null),
     sortingFn: (row1, row2) => {
       const player1 = row1.original;
@@ -208,9 +203,7 @@ export const TotalDailyColumn: ColumnDef<TotalDailyPoints>[] = [
       },
       {
         accessorKey: "totalPoolPoints",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="PTS*" />
-        ),
+        header: "PTS*",
         accessorFn: (ranking) => ranking.totalPoolPoints,
       },
       {
@@ -280,9 +273,7 @@ export const ForwardsDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
     accessorFn: (ranking) => ranking.forwards.totalPoolPoints,
   },
   {
@@ -347,9 +338,7 @@ export const DefensesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
     accessorFn: (ranking) => ranking.defense.totalPoolPoints,
   },
   {
@@ -414,9 +403,7 @@ export const GoaliesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
     accessorFn: (ranking) => ranking.goalies.totalPoolPoints,
   },
   {

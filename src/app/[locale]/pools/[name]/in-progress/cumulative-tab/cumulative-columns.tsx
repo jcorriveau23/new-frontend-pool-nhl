@@ -1,7 +1,6 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
 import { TotalRanking } from "./cumulative-tab";
-import { DataTableColumnHeader } from "@/components/ui/column-header";
 
 export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
   {
@@ -85,9 +84,7 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
       },
       {
         accessorKey: "totalPoolPoints",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="PTS*" />
-        ),
+        header: "PTS*",
         accessorFn: (ranking) => ranking.getTotalPoolPoints(),
       },
       {
@@ -157,9 +154,7 @@ export const ForwardsTotalColumn: ColumnDef<TotalRanking>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
     accessorFn: (ranking) => ranking.forwards.totalPoolPoints,
   },
   {
@@ -224,9 +219,7 @@ export const DefensesTotalColumn: ColumnDef<TotalRanking>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
     accessorFn: (ranking) => ranking.defense.totalPoolPoints,
   },
   {
@@ -291,9 +284,7 @@ export const GoaliesTotalColumn: ColumnDef<TotalRanking>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
     accessorFn: (ranking) => ranking.goalies.totalPoolPoints,
   },
   {

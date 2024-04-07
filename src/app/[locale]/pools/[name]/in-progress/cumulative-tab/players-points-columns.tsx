@@ -4,7 +4,6 @@ import { ColumnDef, TableMeta } from "@tanstack/react-table";
 
 import { GoalieInfo, PlayerStatus, SkaterInfo } from "./cumulative-tab";
 import { Pool } from "@/data/pool/model";
-import { DataTableColumnHeader } from "@/components/ui/column-header";
 
 import { LucideAlertOctagon } from "lucide-react";
 import {
@@ -140,9 +139,7 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
   },
   {
     accessorKey: "poolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
     aggregationFn: "sum",
   },
   {
@@ -214,9 +211,7 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
   },
   {
     accessorKey: "poolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
   },
   {
     accessorKey: "totalPoolPtsPerGame",
@@ -285,9 +280,7 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
   },
   {
     accessorKey: "poolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
+    header: "PTS*",
   },
   {
     accessorKey: "totalPoolPtsPerGame",
