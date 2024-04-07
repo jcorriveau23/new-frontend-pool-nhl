@@ -28,8 +28,13 @@ interface DateProviderProps {
 }
 
 export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
-  const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
   const currentDate = new Date();
+
+  // The default selected date is the current minus 12 hours.
+  // We want to display the games pool info of yesterdays before 12PM.
+  const [selectedDate, setSelectedDate] = React.useState<Date>(
+    new Date(currentDate.getTime() - 12 * 60 * 60 * 1000)
+  );
 
   const updateDate = (newDate: Date) => {
     setSelectedDate(newDate);
