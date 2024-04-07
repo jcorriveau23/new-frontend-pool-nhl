@@ -290,7 +290,10 @@ export default function DailyStatsContent(props: Props) {
       return skaterDailyStats;
     }
 
-    return new SkaterDailyInfo(Number(playerId), false);
+    return new SkaterDailyInfo(
+      Number(playerId),
+      leaders.played.includes(Number(playerId))
+    );
   };
 
   const getDailyGoalieStatsWithCumulative = (
@@ -349,7 +352,10 @@ export default function DailyStatsContent(props: Props) {
       return goalieDailyStats;
     }
 
-    return new GoalieDailyInfo(Number(playerId), false);
+    return new GoalieDailyInfo(
+      Number(playerId),
+      leaders.played.includes(Number(playerId))
+    );
   };
 
   const getDailySkatersStatsWithCumulative = (
