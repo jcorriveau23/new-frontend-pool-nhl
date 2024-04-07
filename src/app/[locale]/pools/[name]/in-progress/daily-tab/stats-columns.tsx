@@ -29,7 +29,7 @@ const getTeamCell = (
   />
 );
 
-export const ForwardsColumn: ColumnDef<SkaterDailyInfo>[] = [
+export const SkaterDailyColumn: ColumnDef<SkaterDailyInfo>[] = [
   {
     accessorKey: "player",
     header: "Player",
@@ -47,55 +47,34 @@ export const ForwardsColumn: ColumnDef<SkaterDailyInfo>[] = [
   {
     accessorKey: "goals",
     header: "G",
+    accessorFn: (row) => (row.played ? row.goals : null),
   },
   {
     accessorKey: "assists",
     header: "A",
+    accessorFn: (row) => (row.played ? row.assists : null),
   },
   {
     accessorKey: "shootoutGoals",
     header: "G*",
+    accessorFn: (row) => (row.played ? row.shootoutGoals : null),
   },
   {
     accessorKey: "poolPoints",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="PTS*" />
     ),
-  },
-];
+    accessorFn: (row) => (row.played ? row.poolPoints : null),
+    sortingFn: (row1, row2) => {
+      const player1 = row1.original;
+      const player2 = row2.original;
 
-export const DefenseColumn: ColumnDef<SkaterDailyInfo>[] = [
-  {
-    accessorKey: "player",
-    header: "Player",
-    cell: ({ row, table }) => {
-      return getPlayerCell(row.original, table.options.meta?.props as Pool);
+      return (
+        player1.poolPoints +
+        Number(player1.played) * 0.01 -
+        (player2.poolPoints + Number(player2.played) * 0.01)
+      );
     },
-  },
-  {
-    accessorKey: "team",
-    header: "",
-    cell: ({ row, table }) => {
-      return getTeamCell(row.original, table.options.meta?.props as Pool);
-    },
-  },
-  {
-    accessorKey: "goals",
-    header: "G",
-  },
-  {
-    accessorKey: "assists",
-    header: "A",
-  },
-  {
-    accessorKey: "shootoutGoals",
-    header: "G*",
-  },
-  {
-    accessorKey: "poolPoints",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS*" />
-    ),
   },
 ];
 
@@ -117,10 +96,12 @@ export const GoaliesColumn: ColumnDef<GoalieDailyInfo>[] = [
   {
     accessorKey: "goals",
     header: "G",
+    accessorFn: (row) => (row.played ? row.goals : null),
   },
   {
     accessorKey: "assists",
     header: "A",
+    accessorFn: (row) => (row.played ? row.assists : null),
   },
   {
     accessorKey: "status",
@@ -131,6 +112,17 @@ export const GoaliesColumn: ColumnDef<GoalieDailyInfo>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="PTS*" />
     ),
+    accessorFn: (row) => (row.played ? row.poolPoints : null),
+    sortingFn: (row1, row2) => {
+      const player1 = row1.original;
+      const player2 = row2.original;
+
+      return (
+        player1.poolPoints +
+        Number(player1.played) * 0.01 -
+        (player2.poolPoints + Number(player2.played) * 0.01)
+      );
+    },
   },
 ];
 

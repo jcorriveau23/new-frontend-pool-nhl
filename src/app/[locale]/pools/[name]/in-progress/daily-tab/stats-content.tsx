@@ -16,9 +16,8 @@ import React from "react";
 import {
   DailyGoaliesLeadersColumn,
   DailyScoringLeadersColumn,
-  DefenseColumn,
   DefensesDailyTotalColumn,
-  ForwardsColumn,
+  SkaterDailyColumn,
   ForwardsDailyTotalColumn,
   GoaliesColumn,
   GoaliesDailyTotalColumn,
@@ -695,7 +694,7 @@ export default function DailyStatsContent(props: Props) {
                       <AccordionContent>
                         {SkatersTable(
                           forwardsDailyStats[participant],
-                          ForwardsColumn,
+                          SkaterDailyColumn,
                           getFormatedDateTitle(
                             participant,
                             "Daily points made by forwards for"
@@ -715,7 +714,7 @@ export default function DailyStatsContent(props: Props) {
                       <AccordionContent>
                         {SkatersTable(
                           defendersDailyStats[participant],
-                          DefenseColumn,
+                          SkaterDailyColumn,
                           getFormatedDateTitle(
                             participant,
                             "Daily points made by defense for"
