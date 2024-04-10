@@ -2,6 +2,7 @@ import React from "react";
 
 import {
   Table,
+  TableBody,
   TableCaption,
   TableCell,
   TableHead,
@@ -29,37 +30,41 @@ export default function PickList(props: Props) {
         dictUsers[props.participant]
       }`}</TableCaption>
       <TableHeader>
-        <TableHead>{t("Round")}</TableHead>
-        <TableHead>{t("From")}</TableHead>
+        <TableRow>
+          <TableHead>{t("Round")}</TableHead>
+          <TableHead>{t("From")}</TableHead>
+        </TableRow>
       </TableHeader>
-      {props.poolInfo.context?.tradable_picks?.map((roundPicksOwner, index) =>
-        Object.keys(roundPicksOwner)
-          .filter((from) => roundPicksOwner[from] === props.participant)
-          .map((from) => (
-            <TableRow key={`${from}-${index}`}>
-              <TableCell>{index + 1}</TableCell>
-              <TableCell>
-                <div>{dictUsers[from]}</div>
-                <div>
-                  {from === roundPicksOwner[from] ? null : (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <LucideAlertOctagon color="red" className="p-0 m-0" />
-                      </PopoverTrigger>
-                      <PopoverContent align="start">
-                        {t("pickTraded", {
-                          newOwner: dictUsers[roundPicksOwner[from]],
-                          round: index + 1,
-                          oldOwner: dictUsers[from],
-                        })}
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          ))
-      )}
+      <TableBody>
+        {props.poolInfo.context?.tradable_picks?.map((roundPicksOwner, index) =>
+          Object.keys(roundPicksOwner)
+            .filter((from) => roundPicksOwner[from] === props.participant)
+            .map((from) => (
+              <TableRow key={`${from}-${index}`}>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>
+                  <div>{dictUsers[from]}</div>
+                  <div>
+                    {from === roundPicksOwner[from] ? null : (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <LucideAlertOctagon color="red" className="p-0 m-0" />
+                        </PopoverTrigger>
+                        <PopoverContent align="start">
+                          {t("pickTraded", {
+                            newOwner: dictUsers[roundPicksOwner[from]],
+                            round: index + 1,
+                            oldOwner: dictUsers[from],
+                          })}
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+        )}
+      </TableBody>
     </Table>
   );
 }

@@ -209,13 +209,15 @@ export const TotalDailyColumn: ColumnDef<TotalDailyPoints>[] = [
       {
         accessorKey: "totalPoolPointsPerGame",
         header: ({ table }) => table.options.meta?.t("PTS*/G"),
-        accessorFn: (ranking) =>
-          (
-            ranking.totalPoolPoints /
-            (ranking.forwards.numberOfGame +
-              ranking.defense.numberOfGame +
-              ranking.goalies.numberOfGame)
-          ).toFixed(3),
+        accessorFn: (ranking) => {
+          const numberOfGame =
+            ranking.forwards.numberOfGame +
+            ranking.defense.numberOfGame +
+            ranking.goalies.numberOfGame;
+          return (
+            numberOfGame ? ranking.totalPoolPoints / numberOfGame : 0
+          ).toFixed(3);
+        },
       },
     ],
   },

@@ -52,6 +52,7 @@ export const skaterColumns: ColumnDef<SkaterStats>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="F%" />
     ),
+    accessorFn: (row) => row.faceoffWinningPctg.toFixed(3),
   },
   {
     accessorKey: "toi",
