@@ -319,10 +319,11 @@ export interface SkaterCurrentTeamRoster {
 
 const getServerSidePlayerInfo = async (playerId: string) => {
   /* 
-    Query game boxscore for a specific game id on the server side. 
+    Query the player info of a specific player id. 
     */
   const res = await fetch(
-    `https://api-web.nhle.com/v1/player/${playerId}/landing`
+    `https://api-web.nhle.com/v1/player/${playerId}/landing`,
+    { next: { revalidate: 21600 } } // revalidate each 6 hours
   );
   if (!res.ok) {
     return null;
@@ -367,19 +368,21 @@ export default async function Player({ params }: { params: { id: string } }) {
         <TableRow>
           <TableCell className="text-left">{t("BirthCity")}</TableCell>
           <TableCell className="text-left">
-            {playerInfo.birthCity.default},{" "}
-            {playerInfo.birthStateProvince.default}, {playerInfo.birthCountry}
+            {playerInfo.birthCity?.default},{" "}
+            {playerInfo.birthStateProvince?.default}, {playerInfo?.birthCountry}
           </TableCell>
         </TableRow>
         <TableRow>
           <TableCell className="text-left">{t("Drafted")}</TableCell>
           <TableCell className="text-left">
-            {t("DraftDetail", {
-              pick: playerInfo.draftDetails.pickInRound,
-              round: playerInfo.draftDetails.round,
-              team: playerInfo.draftDetails.teamAbbrev,
-              year: playerInfo.draftDetails.year,
-            })}
+            {playerInfo.draftDetails
+              ? t("DraftDetail", {
+                  pick: playerInfo.draftDetails.pickInRound,
+                  round: playerInfo.draftDetails.round,
+                  team: playerInfo.draftDetails.teamAbbrev,
+                  year: playerInfo.draftDetails.year,
+                })
+              : null}
           </TableCell>
         </TableRow>
       </TableBody>
