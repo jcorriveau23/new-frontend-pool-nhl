@@ -13,56 +13,36 @@ export const skaterColumns: ColumnDef<
   },
   {
     accessorKey: "teamName",
-    header: "teamName",
+    header: "T.",
     accessorFn: (row) => row.teamName.default,
   },
   {
     accessorKey: "leagueAbbrev",
-    header: "leagueAbbrev",
+    header: "League",
   },
   {
     accessorKey: "gamesPlayed",
-    header: "gamesPlayed",
+    header: "GP",
   },
   {
     accessorKey: "goals",
-    header: "goals",
+    header: "G",
   },
   {
     accessorKey: "assists",
-    header: "assists",
+    header: "A",
   },
   {
     accessorKey: "points",
-    header: "points",
+    header: "PTS",
   },
   {
     accessorKey: "plusMinus",
-    header: "plusMinus",
+    header: "+/-",
   },
   {
     accessorKey: "pim",
     header: "pim",
-  },
-  {
-    accessorKey: "plusMinus",
-    header: "plusMinus",
-  },
-  {
-    accessorKey: "plusMinus",
-    header: "plusMinus",
-  },
-  {
-    accessorKey: "plusMinus",
-    header: "plusMinus",
-  },
-  {
-    accessorKey: "plusMinus",
-    header: "plusMinus",
-  },
-  {
-    accessorKey: "plusMinus",
-    header: "plusMinus",
   },
 ];
 
@@ -77,43 +57,35 @@ export const goalieColumns: ColumnDef<
   },
   {
     accessorKey: "teamName",
-    header: "teamName",
+    header: "T.",
     accessorFn: (row) => row.teamName.default,
   },
   {
     accessorKey: "leagueAbbrev",
-    header: "leagueAbbrev",
+    header: "League",
   },
   {
     accessorKey: "gamesPlayed",
-    header: "gamesPlayed",
+    header: "GP",
   },
   {
     accessorKey: "goalsAgainst",
-    header: "goalsAgainst",
+    header: "GA",
   },
   {
     accessorKey: "goalsAgainstAvg",
-    header: "goalsAgainstAvg",
-  },
-  {
-    accessorKey: "plusMinus",
-    header: "plusMinus",
+    header: "GAVV",
   },
   {
     accessorKey: "wins",
-    header: "wins",
+    header: "W",
   },
   {
     accessorKey: "losses",
-    header: "losses",
+    header: "L",
   },
   {
     accessorKey: "savePctg",
-    header: "savePctg",
-  },
-  {
-    accessorKey: "plusMinus",
-    header: "plusMinus",
+    header: "S%",
   },
 ];
