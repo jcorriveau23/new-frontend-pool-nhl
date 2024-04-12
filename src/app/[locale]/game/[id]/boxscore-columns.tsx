@@ -3,6 +3,7 @@ import { GoalieStats, SkaterStats } from "@/data/nhl/gameBoxScore";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { DataTableColumnHeader } from "@/components/ui/column-header";
+import PlayerLink from "@/components/player-link";
 
 export const skaterColumns: ColumnDef<SkaterStats>[] = [
   {
@@ -10,7 +11,15 @@ export const skaterColumns: ColumnDef<SkaterStats>[] = [
     header: "Player",
     cell: ({ row }) => {
       const player = row.original;
-      return <div className="w-[75px] sm:w-full">{player.name.default}</div>;
+      return (
+        <div className="w-[75px] sm:w-full">
+          <PlayerLink
+            name={player.name.default}
+            id={player.playerId}
+            textStyle={null}
+          />
+        </div>
+      );
     },
   },
   {
@@ -68,7 +77,15 @@ export const goalieColumns: ColumnDef<GoalieStats>[] = [
     header: "Player",
     cell: ({ row }) => {
       const player = row.original;
-      return <div className="w-[75px]">{player.name.default}</div>;
+      return (
+        <div className="w-[75px]">
+          <PlayerLink
+            name={player.name.default}
+            id={player.playerId}
+            textStyle={null}
+          />
+        </div>
+      );
     },
   },
   {

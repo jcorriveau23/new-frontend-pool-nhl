@@ -1,6 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { PreviewPlayer, PreviewTotal } from "./preview-content";
 import { TeamLogo } from "@/components/team-logo";
+import PlayerLink from "@/components/player-link";
 
 export const TotalPreviewColumn: ColumnDef<PreviewTotal>[] = [
   {
@@ -57,6 +58,15 @@ export const PlayerPreviewColumn: ColumnDef<PreviewPlayer>[] = [
   {
     accessorKey: "name",
     header: ({ table }) => table.options.meta?.t("Player"),
+    cell: ({ row, table }) => {
+      return (
+        <PlayerLink
+          name={row.original.name}
+          id={row.original.id}
+          textStyle={null}
+        />
+      );
+    },
   },
   {
     accessorKey: "team",
