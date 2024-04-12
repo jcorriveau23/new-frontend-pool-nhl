@@ -102,5 +102,11 @@
     "Round": "Ronde",
     "pickTraded": "{newOwner} va pouvoir sélectionner à la ronde {round} à la place de {oldOwner}.",
     "notCumulatedYet": "Les points de la journée sélectionnée {selectedDate} n'ont pas encore été cumulé.",
-    "liveGame": "matchs en direct en cours"
+    "liveGame": "matchs en direct en cours",
+    "Position": "Position",
+    "BirthCity": "Ville de naissance",
+    "Drafted": "Repêchage",
+    "DraftDetail": "choix ({pick}) ronde ({round}) par {team} en {year}",
+    "RegularSeason": "Saison Régulière",
+    "Playoff": "Séries Éliminatoire"
 }

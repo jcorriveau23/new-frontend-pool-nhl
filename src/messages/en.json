@@ -101,5 +101,11 @@
     "Round": "Round",
     "pickTraded": "{newOwner} will be able to pick at round {round} {oldOwner}'s turn.",
     "notCumulatedYet": "Points made on the {selectedDate} have not been cumulated yet.",
-    "liveGame": "Live matches currently ongoing."
+    "liveGame": "Live matches currently ongoing.",
+    "Position": "Position",
+    "BirthCity": "Birth City",
+    "Drafted": "Drafted",
+    "DraftDetail": "pick {pick} round {round} by {team} in {year}",
+    "RegularSeason": "Regular Season",
+    "Playoff": "Playoff"
 }

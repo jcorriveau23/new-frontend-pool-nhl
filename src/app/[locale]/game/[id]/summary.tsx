@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { getTranslations } from "next-intl/server";
 import { TeamLogo } from "@/components/team-logo";
+import PlayerLink from "@/components/player-link";
 
 interface Props {
   gameId: string;
@@ -67,20 +68,19 @@ export default async function GameSummary(props: Props) {
       </div>
       <div className="text-left">
         <div>
-          <Link href="/" className="text-sm font-medium leading-none">
-            {`${goalInfo.firstName.default} ${goalInfo.lastName.default} (${goalInfo.goalsToDate})`}
-          </Link>
+          <PlayerLink
+            name={`${goalInfo.firstName.default} ${goalInfo.lastName.default} (${goalInfo.goalsToDate})`}
+            id={goalInfo.playerId}
+            textStyle={null}
+          />
         </div>
         <div>
           {goalInfo.assists.map((assistInfo) => (
-            <Link
-              key={assistInfo.playerId}
-              href="/"
-              className="text-sm text-muted-foreground"
-            >
-              {assistInfo.firstName.default} {assistInfo.lastName.default} (
-              {assistInfo.assistsToDate})
-            </Link>
+            <PlayerLink
+              name={`${assistInfo.firstName.default} ${assistInfo.lastName.default} (${assistInfo.assistsToDate})`}
+              id={assistInfo.playerId}
+              textStyle={"text-sm text-muted-foreground"}
+            />
           ))}
         </div>
       </div>

@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+import PlayerLink from "@/components/player-link";
 import { TeamLogo } from "@/components/team-logo";
 
 const getWarningColor = (playerStatus: PlayerStatus) => {
@@ -61,7 +62,11 @@ const getWarningCell = (
 
 const getPlayerCell = (player: SkaterInfo | GoalieInfo, poolInfo: Pool) => (
   <div className="w-[95px] sm:w-full">
-    <span>{poolInfo.context?.players[player.id].name}</span>
+    <PlayerLink
+      name={poolInfo.context?.players[player.id].name}
+      id={poolInfo.context?.players[player.id].id}
+      textStyle={null}
+    />
   </div>
 );
 

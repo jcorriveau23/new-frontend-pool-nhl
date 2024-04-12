@@ -7,13 +7,20 @@ import {
 import { Pool } from "@/data/pool/model";
 import { DailyGoalie, DailySkater } from "@/data/dailyLeaders/model";
 import { TeamLogo } from "@/components/team-logo";
+import PlayerLink from "@/components/player-link";
 
 const getPlayerCell = (
   player: SkaterDailyInfo | GoalieDailyInfo,
   poolInfo: Pool
 ) => (
   <div>
-    <span>{poolInfo.context?.players[player.id].name}</span>
+    <span>
+      <PlayerLink
+        name={poolInfo.context?.players[player.id].name}
+        id={poolInfo.context?.players[player.id].id}
+        textStyle={null}
+      />
+    </span>
   </div>
 );
 
@@ -433,6 +440,15 @@ export const DailyScoringLeadersColumn: ColumnDef<DailySkater>[] = [
   {
     accessorKey: "name",
     header: ({ table }) => table.options.meta?.t("Player"),
+    cell: ({ row }) => {
+      return (
+        <PlayerLink
+          name={row.original.name}
+          id={row.original.id}
+          textStyle={null}
+        />
+      );
+    },
   },
   {
     accessorKey: "team",
@@ -482,6 +498,15 @@ export const DailyGoaliesLeadersColumn: ColumnDef<DailyGoalie>[] = [
   {
     accessorKey: "name",
     header: ({ table }) => table.options.meta?.t("Player"),
+    cell: ({ row }) => {
+      return (
+        <PlayerLink
+          name={row.original.name}
+          id={row.original.id}
+          textStyle={null}
+        />
+      );
+    },
   },
   {
     accessorKey: "team",

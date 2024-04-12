@@ -21,10 +21,12 @@ import { Row } from "@tanstack/react-table";
 export class PreviewPlayer {
   constructor(player: Player, playingAgainst: Record<number, number>) {
     this.name = player.name;
+    this.id = player.id;
     this.team = player.team;
     this.playingAgainst = playingAgainst[player.team] ?? null;
   }
   name: string;
+  id: number;
   team: number;
   playingAgainst: number | null;
 }
