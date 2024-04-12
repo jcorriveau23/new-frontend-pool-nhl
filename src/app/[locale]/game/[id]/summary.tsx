@@ -53,7 +53,7 @@ export default async function GameSummary(props: Props) {
   const t = await getTranslations();
 
   const GoalItem = (goalInfo: Goal) => (
-    <div key={goalInfo.timeInPeriod} className="flex items-center space-x-4">
+    <div key={goalInfo.playerId} className="flex items-center space-x-4">
       <div>
         <Avatar>
           <AvatarImage src={goalInfo.headshot} />
@@ -77,6 +77,7 @@ export default async function GameSummary(props: Props) {
         <div>
           {goalInfo.assists.map((assistInfo) => (
             <PlayerLink
+              key={assistInfo.playerId}
               name={`${assistInfo.firstName.default} ${assistInfo.lastName.default} (${assistInfo.assistsToDate})`}
               id={assistInfo.playerId}
               textStyle={"text-sm text-muted-foreground"}

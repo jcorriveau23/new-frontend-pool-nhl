@@ -20,7 +20,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-export enum SeasonType {
+enum SeasonType {
   SEASON = 2,
   PLAYOFF = 3,
 }
@@ -317,7 +317,7 @@ export interface SkaterCurrentTeamRoster {
   playerSlug: string;
 }
 
-export const getServerSidePlayerInfo = async (playerId: string) => {
+const getServerSidePlayerInfo = async (playerId: string) => {
   /* 
     Query game boxscore for a specific game id on the server side. 
     */
