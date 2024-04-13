@@ -33,7 +33,7 @@ export function NavigationBar() {
             </SheetTrigger>
             <SheetContent side="left">
               <SheetHeader>
-                <SheetTitle>{t("Menu")}</SheetTitle>
+                <SheetTitle>{t("MainPages")}</SheetTitle>
               </SheetHeader>
               <SheetDescription>
                 <div className="p-2 space-y-2">
@@ -47,13 +47,25 @@ export function NavigationBar() {
                       <Link href="/pools">{t("Pool List")}</Link>
                     </SheetClose>
                   </div>
-                  <div className="hover:underline">
-                    <SheetClose asChild>
-                      <Link href="/standing/now">{t("Standing")}</Link>
-                    </SheetClose>
-                  </div>
                 </div>
               </SheetDescription>
+              <SheetHeader>
+                <SheetTitle>{t("NhlStatsPages")}</SheetTitle>
+                <SheetDescription>
+                  <div className="p-2 space-y-2">
+                    <div className="hover:underline">
+                      <SheetClose asChild>
+                        <Link href="/standing/now">{t("Standing")}</Link>
+                      </SheetClose>
+                    </div>
+                    <div className="hover:underline">
+                      <SheetClose asChild>
+                        <Link href="/draft/2023">{t("Draft")}</Link>
+                      </SheetClose>
+                    </div>
+                  </div>
+                </SheetDescription>
+              </SheetHeader>
             </SheetContent>
           </Sheet>
           <Input type="search" placeholder="Search..." />

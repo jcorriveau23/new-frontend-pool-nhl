@@ -19,6 +19,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Link } from "@/navigation";
 
 enum SeasonType {
   SEASON = 2,
@@ -353,7 +354,7 @@ export default async function Player({ params }: { params: { id: string } }) {
               <Image
                 width={30}
                 height={30}
-                alt="home-team"
+                alt="team"
                 src={playerInfo.teamLogo}
               />
             </div>
@@ -375,14 +376,19 @@ export default async function Player({ params }: { params: { id: string } }) {
         <TableRow>
           <TableCell className="text-left">{t("Drafted")}</TableCell>
           <TableCell className="text-left">
-            {playerInfo.draftDetails
-              ? t("DraftDetail", {
+            {playerInfo.draftDetails ? (
+              <Link
+                className="hover:underline"
+                href={`/draft/${playerInfo.draftDetails.year}`}
+              >
+                {t("DraftDetail", {
                   pick: playerInfo.draftDetails.pickInRound,
                   round: playerInfo.draftDetails.round,
                   team: playerInfo.draftDetails.teamAbbrev,
                   year: playerInfo.draftDetails.year,
-                })
-              : null}
+                })}
+              </Link>
+            ) : null}
           </TableCell>
         </TableRow>
       </TableBody>
