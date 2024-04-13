@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import React from "react";
+import { useTranslations } from "next-intl";
 
 declare module "@tanstack/table-core" {
   interface TableMeta<TData extends unknown> {
@@ -72,6 +73,7 @@ export function DataTable<TData, TValue>({
       right: [],
     }
   );
+  const t = useTranslations();
 
   const table = useReactTable({
     data,
@@ -151,7 +153,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {t("NoData")}
                 </TableCell>
               </TableRow>
             )}

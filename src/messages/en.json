@@ -107,5 +107,8 @@
     "Drafted": "Drafted",
     "DraftDetail": "pick {pick} round {round} by {team} in {year}",
     "RegularSeason": "Regular Season",
-    "Playoff": "Playoff"
+    "Playoff": "Playoff",
+    "Standing": "Standing",
+    "RECORD": "RECORD",
+    "NoData": "No data found"
 }

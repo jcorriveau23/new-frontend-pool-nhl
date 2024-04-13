@@ -108,5 +108,8 @@
     "Drafted": "Repêchage",
     "DraftDetail": "choix ({pick}) ronde ({round}) par {team} en {year}",
     "RegularSeason": "Saison Régulière",
-    "Playoff": "Séries Éliminatoire"
+    "Playoff": "Séries Éliminatoire",
+    "Standing": "Classement",
+    "RECORD": "FICHE",
+    "NoData": "Pas d'information trouvé"
 }
