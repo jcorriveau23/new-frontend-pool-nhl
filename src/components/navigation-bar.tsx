@@ -36,10 +36,22 @@ export function NavigationBar() {
                 <SheetTitle>{t("Menu")}</SheetTitle>
               </SheetHeader>
               <SheetDescription>
-                <div className="p-2">
-                  <SheetClose asChild>
-                    <Link href="/pools">{t("Pool List")}</Link>
-                  </SheetClose>
+                <div className="p-2 space-y-2">
+                  <div className="hover:underline">
+                    <SheetClose asChild>
+                      <Link href="/">{t("Home")}</Link>
+                    </SheetClose>
+                  </div>
+                  <div className="hover:underline">
+                    <SheetClose asChild>
+                      <Link href="/pools">{t("Pool List")}</Link>
+                    </SheetClose>
+                  </div>
+                  <div className="hover:underline">
+                    <SheetClose asChild>
+                      <Link href="/standing/now">{t("Standing")}</Link>
+                    </SheetClose>
+                  </div>
                 </div>
               </SheetDescription>
             </SheetContent>
