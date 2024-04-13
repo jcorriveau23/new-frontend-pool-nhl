@@ -111,5 +111,11 @@
     "Playoff": "Séries Éliminatoire",
     "Standing": "Classement",
     "RECORD": "FICHE",
-    "NoData": "Pas d'information trouvé"
+    "NoData": "Pas d'information trouvé",
+    "Home": "Menu Principale",
+    "Weight": "poid (lb)",
+    "Height": "taille",
+    "NoDraftInfoForYear": "Aucune information de draft a été trouvé pour l'année {year}.",
+    "MainPages": "Pages Principales",
+    "NhlStatsPages": "Pages de statistique NHL"
 }

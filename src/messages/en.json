@@ -110,5 +110,11 @@
     "Playoff": "Playoff",
     "Standing": "Standing",
     "RECORD": "RECORD",
-    "NoData": "No data found"
+    "NoData": "No data found",
+    "Home": "Menu Principale",
+    "Weight": "weight (lb)",
+    "Height": "Height",
+    "NoDraftInfoForYear": "No draft information found for year {year}.",
+    "MainPages": "Main Pages",
+    "NhlStatsPages": "Nhl Stats Pages"
 }
