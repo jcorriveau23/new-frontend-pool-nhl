@@ -117,5 +117,6 @@
     "Height": "taille",
     "NoDraftInfoForYear": "Aucune information de draft a été trouvé pour l'année {year}.",
     "MainPages": "Pages Principales",
-    "NhlStatsPages": "Pages de statistique NHL"
+    "NhlStatsPages": "Pages de statistique NHL",
+    "NotDrafted": "Pas drafté"
 }

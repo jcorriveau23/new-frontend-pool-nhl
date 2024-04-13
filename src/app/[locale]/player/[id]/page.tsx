@@ -352,8 +352,8 @@ export default async function Player({ params }: { params: { id: string } }) {
                 <AvatarImage src={playerInfo.headshot} />
               </Avatar>
               <Image
-                width={30}
-                height={30}
+                width={60}
+                height={60}
                 alt="team"
                 src={playerInfo.teamLogo}
               />
@@ -388,7 +388,9 @@ export default async function Player({ params }: { params: { id: string } }) {
                   year: playerInfo.draftDetails.year,
                 })}
               </Link>
-            ) : null}
+            ) : (
+              t("NotDrafted")
+            )}
           </TableCell>
         </TableRow>
       </TableBody>
@@ -397,7 +399,9 @@ export default async function Player({ params }: { params: { id: string } }) {
 
   const PlayerPoints = (seasonType: SeasonType) => (
     <DataTable
-      data={playerInfo.seasonTotals.filter((s) => s.gameTypeId === seasonType)}
+      data={playerInfo.seasonTotals.filter(
+        (s) => s.gameTypeId === seasonType && s.leagueAbbrev === "NHL"
+      )}
       columns={playerInfo.position !== "G" ? skaterColumns : goalieColumns}
       initialState={{
         columnPinning: { left: ["season"] },

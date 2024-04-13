@@ -17,10 +17,6 @@ export const skaterColumns: ColumnDef<
     accessorFn: (row) => row.teamName.default,
   },
   {
-    accessorKey: "leagueAbbrev",
-    header: "League",
-  },
-  {
     accessorKey: "gamesPlayed",
     header: "GP",
   },
@@ -59,10 +55,6 @@ export const goalieColumns: ColumnDef<
     accessorKey: "teamName",
     header: "T.",
     accessorFn: (row) => row.teamName.default,
-  },
-  {
-    accessorKey: "leagueAbbrev",
-    header: "League",
   },
   {
     accessorKey: "gamesPlayed",

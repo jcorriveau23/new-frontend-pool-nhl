@@ -116,5 +116,6 @@
     "Height": "Height",
     "NoDraftInfoForYear": "No draft information found for year {year}.",
     "MainPages": "Main Pages",
-    "NhlStatsPages": "Nhl Stats Pages"
+    "NhlStatsPages": "Nhl Stats Pages",
+    "NotDrafted": "Not drafted"
 }
