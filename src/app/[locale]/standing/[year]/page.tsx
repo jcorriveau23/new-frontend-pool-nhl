@@ -167,8 +167,8 @@ export default async function Standing({
           <TableHead colSpan={4}></TableHead>
           <TableHead>{t("GP")}</TableHead>
           <TableHead>{t("RECORD")}</TableHead>
-          <TableHead>{t("PTS")}</TableHead>
-          <TableHead>{t("DIFF")}</TableHead>
+          <TableHead>PTS</TableHead>
+          <TableHead>DIFF</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

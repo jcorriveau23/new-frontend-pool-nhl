@@ -51,21 +51,21 @@ export function NavigationBar() {
               </SheetDescription>
               <SheetHeader>
                 <SheetTitle>{t("NhlStatsPages")}</SheetTitle>
-                <SheetDescription>
-                  <div className="p-2 space-y-2">
-                    <div className="hover:underline">
-                      <SheetClose asChild>
-                        <Link href="/standing/now">{t("Standing")}</Link>
-                      </SheetClose>
-                    </div>
-                    <div className="hover:underline">
-                      <SheetClose asChild>
-                        <Link href="/draft/2023">{t("Draft")}</Link>
-                      </SheetClose>
-                    </div>
-                  </div>
-                </SheetDescription>
               </SheetHeader>
+              <SheetDescription>
+                <div className="p-2 space-y-2">
+                  <div className="hover:underline">
+                    <SheetClose asChild>
+                      <Link href="/standing/now">{t("Standing")}</Link>
+                    </SheetClose>
+                  </div>
+                  <div className="hover:underline">
+                    <SheetClose asChild>
+                      <Link href="/draft/2023">{t("Draft")}</Link>
+                    </SheetClose>
+                  </div>
+                </div>
+              </SheetDescription>
             </SheetContent>
           </Sheet>
           <Input type="search" placeholder="Search..." />
