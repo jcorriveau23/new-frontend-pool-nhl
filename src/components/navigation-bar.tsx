@@ -18,6 +18,7 @@ import {
 import { useTranslations } from "next-intl";
 import { LanguageSelector } from "./language-selector";
 import { Link } from "@/navigation";
+import { LAST_NHL_SEASON } from "@/lib/nhl";
 
 export function NavigationBar() {
   const t = useTranslations();
@@ -62,6 +63,18 @@ export function NavigationBar() {
                   <div className="hover:underline">
                     <SheetClose asChild>
                       <Link href="/draft/2023">{t("Draft")}</Link>
+                    </SheetClose>
+                  </div>
+
+                  <div className="hover:underline">
+                    <SheetClose asChild>
+                      <Link
+                        href={`/roster/${LAST_NHL_SEASON}${
+                          LAST_NHL_SEASON + 1
+                        }`}
+                      >
+                        {t("Rosters")}
+                      </Link>
                     </SheetClose>
                   </div>
                 </div>

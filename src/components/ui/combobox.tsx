@@ -64,7 +64,9 @@ export function Combobox(props: Props) {
                   value={s.value}
                   onSelect={(newValue) => {
                     props.linkTo
-                      ? router.push(`${props.linkTo}/${newValue}`)
+                      ? router.push(
+                          `${props.linkTo.replace("${value}", newValue)}`
+                        )
                       : setValue(newValue === value ? "" : newValue);
                     setOpen(false);
                   }}

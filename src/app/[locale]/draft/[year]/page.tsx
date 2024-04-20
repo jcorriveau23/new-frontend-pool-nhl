@@ -167,7 +167,7 @@ export default async function Standing({
       }))}
       defaultSelectedValue={params.year}
       emptyText=""
-      linkTo="/draft"
+      linkTo={`/draft/\${value}`}
     />
   );
 
