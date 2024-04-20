@@ -194,6 +194,7 @@ export default async function Standing({
 
   return (
     <div className="items-center text-center">
+      {t("Season")}
       <Combobox
         selections={standingSeasons.seasons.reverse().map((s) => ({
           value: s.standingsEnd,

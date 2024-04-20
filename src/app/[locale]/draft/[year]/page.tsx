@@ -160,15 +160,18 @@ export default async function Standing({
   };
 
   const YearInputs = () => (
-    <Combobox
-      selections={getListOfYears().map((y) => ({
-        value: y.toString(),
-        label: y.toString(),
-      }))}
-      defaultSelectedValue={params.year}
-      emptyText=""
-      linkTo={`/draft/\${value}`}
-    />
+    <div>
+      {t("Year")}
+      <Combobox
+        selections={getListOfYears().map((y) => ({
+          value: y.toString(),
+          label: y.toString(),
+        }))}
+        defaultSelectedValue={params.year}
+        emptyText=""
+        linkTo={`/draft/\${value}`}
+      />
+    </div>
   );
 
   const RoundTable = (round: number) => (

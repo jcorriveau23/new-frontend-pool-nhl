@@ -37,7 +37,7 @@ export function NavigationBar() {
                 <SheetTitle>{t("MainPages")}</SheetTitle>
               </SheetHeader>
               <SheetDescription>
-                <div className="p-2 space-y-2">
+                <div className="p-2 space-y-3">
                   <div className="hover:underline">
                     <SheetClose asChild>
                       <Link href="/">{t("Home")}</Link>
@@ -54,7 +54,7 @@ export function NavigationBar() {
                 <SheetTitle>{t("NhlStatsPages")}</SheetTitle>
               </SheetHeader>
               <SheetDescription>
-                <div className="p-2 space-y-2">
+                <div className="p-2 space-y-3">
                   <div className="hover:underline">
                     <SheetClose asChild>
                       <Link href="/standing/now">{t("Standing")}</Link>
