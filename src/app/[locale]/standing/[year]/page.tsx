@@ -141,8 +141,6 @@ const getServerSideStanding = async (date: string) => {
     `https://api-web.nhle.com/v1/standings/${date}`,
     { next: { revalidate: 21600 } } // revalidate each 6 hours
   );
-  console.log(date);
-  console.log(res);
   if (!res.ok) {
     return null;
   }
@@ -207,7 +205,7 @@ export default async function Standing({
             : params.year
         }
         emptyText=""
-        linkTo="/standing"
+        linkTo={`/standing/\${value}`}
       />
 
       {StandingLeague()}

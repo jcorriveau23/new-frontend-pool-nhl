@@ -48,6 +48,7 @@
     "Goalies Ranking": "Goalies Ranking",
     "Forwards": "Forwards",
     "Defense": "Defense",
+    "Skaters": "Skaters",
     "Goalies": "Goalies",
     "Cumulative": "Cumulative",
     "Daily":"Daily",
@@ -117,5 +118,6 @@
     "NoDraftInfoForYear": "No draft information found for year {year}.",
     "MainPages": "Main Pages",
     "NhlStatsPages": "Nhl Stats Pages",
-    "NotDrafted": "Not drafted"
+    "NotDrafted": "Not drafted",
+    "Rosters": "Rosters"
 }

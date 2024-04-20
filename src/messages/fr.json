@@ -48,6 +48,7 @@
     "Goalies Ranking": "Classement des Gardiens de but",
     "Forwards": "Attaquants",
     "Defense": "Défenseurs",
+    "Skaters": "Patineurs",
     "Goalies": "Gardiens",
     "Cumulative": "Cumulatif",
     "Daily":"Quotidien",
@@ -118,5 +119,7 @@
     "NoDraftInfoForYear": "Aucune information de draft a été trouvé pour l'année {year}.",
     "MainPages": "Pages Principales",
     "NhlStatsPages": "Pages de statistique NHL",
-    "NotDrafted": "Pas drafté"
+    "NotDrafted": "Pas drafté",
+    "Rosters": "Alignements",
+    "NoRosterInfoForSeason": "Pas d'alignement disponible pour les {team} avec saison {season}."
 }

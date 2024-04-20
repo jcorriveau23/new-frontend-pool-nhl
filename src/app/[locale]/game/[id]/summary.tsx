@@ -14,7 +14,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Link } from "@/navigation";
 import Image from "next/image";
 import {
   Table,
