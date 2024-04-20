@@ -121,5 +121,7 @@
     "NhlStatsPages": "Pages de statistique NHL",
     "NotDrafted": "Pas drafté",
     "Rosters": "Alignements",
-    "NoRosterInfoForSeason": "Pas d'alignement disponible pour les {team} avec saison {season}."
+    "NoRosterInfoForSeason": "Pas d'alignement disponible pour les {team} avec saison {season}.",
+    "Season": "Season",
+    "Year": "Année"
 }

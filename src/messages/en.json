@@ -119,5 +119,8 @@
     "MainPages": "Main Pages",
     "NhlStatsPages": "Nhl Stats Pages",
     "NotDrafted": "Not drafted",
-    "Rosters": "Rosters"
+    "Rosters": "Rosters",
+    "NoRosterInfoForSeason": "No rosters information for {team} found for season {season}.",
+    "Season": "Season",
+    "Year": "Year"
 }

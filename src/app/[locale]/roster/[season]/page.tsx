@@ -9,15 +9,17 @@ import team_info from "@/lib/teams";
 import { getAllYears } from "@/lib/nhl";
 import { Combobox } from "@/components/ui/combobox";
 import { Link } from "@/navigation";
+import { getTranslations } from "next-intl/server";
 
 export default async function Rosters({
   params,
 }: {
   params: { season: string };
 }) {
+  const t = await getTranslations();
   const YearInputs = () => (
     <div>
-      Season:{" "}
+      {t("Season")}
       <Combobox
         selections={getAllYears().map((season) => ({
           value: `${season}${season + 1}`,
