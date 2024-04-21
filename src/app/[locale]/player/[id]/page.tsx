@@ -378,7 +378,7 @@ export default async function Player({ params }: { params: { id: string } }) {
           <TableCell className="text-left">
             {playerInfo.draftDetails ? (
               <Link
-                className="hover:underline"
+                className="text-link hover:underline"
                 href={`/draft/${playerInfo.draftDetails.year}`}
               >
                 {t("DraftDetail", {

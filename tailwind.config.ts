@@ -56,6 +56,10 @@ const config = {
           DEFAULT: "hsl(var(--selection))",
           foreground: "hsl(var(--selection-foreground))",
         },
+        link: {
+          DEFAULT: "hsl(var(--link))",
+          foreground: "hsl(var(--link-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -34,6 +34,9 @@
 
     --selection: 0 50% 75%;
     --selection-foreground: 210 40% 98%;
+
+    --link: 210 75% 50%;
+    --link-foreground: 210 100% 50%;
  
     --radius: 0.5rem;
   }
@@ -69,6 +72,9 @@
 
     --selection: 0 50% 25%;
     --selection-foreground: 210 40% 65%;
+
+    --link: 210 100% 50%;
+    --link-foreground: 210 75% 50%;
   }
 }
  
