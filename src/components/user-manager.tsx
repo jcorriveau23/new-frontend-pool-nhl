@@ -36,7 +36,7 @@ export function UserManager() {
       </DropdownMenuContent>
     </DropdownMenu>
   ) : (
-    <Button variant="ghost" size="sm" onClick={() => router.push("login")}>
+    <Button variant="ghost" size="sm" onClick={() => router.push("/login")}>
       <LogInIcon />
     </Button>
   );
