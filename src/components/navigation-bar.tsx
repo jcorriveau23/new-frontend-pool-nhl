@@ -19,6 +19,7 @@ import { useTranslations } from "next-intl";
 import { LanguageSelector } from "./language-selector";
 import { Link } from "@/navigation";
 import { LAST_NHL_SEASON } from "@/lib/nhl";
+import { UserManager } from "./user-manager";
 
 export function NavigationBar() {
   const t = useTranslations();
@@ -87,6 +88,7 @@ export function NavigationBar() {
           <div className="float-right">
             <LanguageSelector />
             <ModeToggle />
+            <UserManager />
           </div>
         </div>
       </div>
