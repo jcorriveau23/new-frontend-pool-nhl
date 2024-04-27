@@ -1,8 +1,5 @@
 /*
 Module that share context related to the selected pool.
-
-TODO: there should be a way to hadle the selected date in a url param so that the state related to 
-that is also server side.
 */
 "use client";
 import { Pool } from "@/data/pool/model";
