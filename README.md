@@ -1,6 +1,8 @@
 # Free NHL pool 
 built with next-js shadcn and rust.
 
+hockeypool.live
+
 ## Getting Started
 
 First, run the development server:
