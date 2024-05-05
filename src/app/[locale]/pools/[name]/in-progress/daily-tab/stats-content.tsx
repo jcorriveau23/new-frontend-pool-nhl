@@ -36,6 +36,7 @@ import { Props } from "./daily-tab";
 import { ColumnDef } from "@tanstack/react-table";
 import { usePoolContext } from "@/context/pool-context";
 import { Row } from "@tanstack/react-table";
+import { getServerSideDailyLeaders } from "@/app/actions/daily-leaders";
 
 export class SkatersDailyTotalPoints {
   constructor(skaters: SkaterDailyInfo[], skaters_settings: SkaterSettings) {
@@ -241,12 +242,7 @@ export default function DailyStatsContent(props: Props) {
 
   const getDailyStats = async (keyDay: string) => {
     // Get the daily stats information. This is being called to query the daily pool scorer.
-
-    const res = await fetch(`/api-rust/daily_leaders/${keyDay}`);
-    if (!res.ok) {
-      return null;
-    }
-    const data = await res.json();
+    const data = await getServerSideDailyLeaders(keyDay);
     setDailyLeaders(data);
   };
 
