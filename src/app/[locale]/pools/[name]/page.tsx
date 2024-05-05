@@ -7,6 +7,7 @@ import { db } from "@/db";
 import InProgressPool from "./in-progress-pool";
 import { PoolContextProvider } from "@/context/pool-context";
 import { UserData } from "@/data/user/model";
+import { getServerSideUsers } from "@/app/actions/users";
 
 export default function PoolPage({ params }: { params: { name: string } }) {
   const [poolInfo, setPoolInfo] = React.useState<Pool | null>(null);
@@ -37,15 +38,8 @@ export default function PoolPage({ params }: { params: { name: string } }) {
     return null;
   };
 
-  const getUsers = async (participants: String[] | null) => {
-    if (participants === null) {
-      return [];
-    }
-    const res = await fetch(`/api-rust/users/${participants.join(",")}`);
-    if (!res.ok) {
-      return [];
-    }
-    const data = await res.json();
+  const getUsers = async (participants: string[] | null) => {
+    const data = await getServerSideUsers(participants);
     setUsers(data);
   };
 

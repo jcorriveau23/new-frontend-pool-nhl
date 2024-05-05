@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { Button } from "./ui/button";
 import { LoadingSpinner } from "./ui/loading-spinner";
 import { useTranslations } from "next-intl";
+import { getServerSideDailyGames } from "@/app/actions/daily-games";
 
 export default function DailyGameFeed() {
   const t = useTranslations();
@@ -21,28 +22,15 @@ export default function DailyGameFeed() {
   const { updateGamesNightContext } = useGamesNightContext();
 
   useEffect(() => {
-    const getDailyGames = async () => {
-      /* 
-      Query the list of games of a specific date. 
-      */
-      try {
-        const res = await fetch(
-          `/api-rust/daily_games/${format(selectedDate, "yyyy-MM-dd")}`
-        );
-        if (res.ok) {
-          const result = await res.json();
-          setGamesStats(result.games);
-          updateGamesNightContext(result.games);
-        } else {
-          setGamesStats([]);
-          updateGamesNightContext([]);
-        }
-      } catch (e: any) {
-        setGamesStats([]);
-        updateGamesNightContext([]);
-      }
+    const getServerActionGames = async () => {
+      const games = await getServerSideDailyGames(
+        format(selectedDate, "yyyy-MM-dd")
+      );
+      updateGamesNightContext(games);
+      setGamesStats(games);
     };
-    getDailyGames();
+
+    getServerActionGames();
   }, [selectedDate]);
 
   const changeDate = (difference: number) => {
