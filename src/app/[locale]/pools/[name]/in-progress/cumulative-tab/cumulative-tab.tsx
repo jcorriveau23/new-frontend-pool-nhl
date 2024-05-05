@@ -761,7 +761,7 @@ export default function CumulativeTab(props: Props) {
     `${t(title)} ${dictUsers[participant]}`;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2">
+    <div>
       <div className="py-5 px-0 sm:px-5">
         <Tabs defaultValue="totalRanking">
           <div className="overflow-auto">

@@ -623,7 +623,7 @@ export default function DailyStatsContent(props: Props) {
     )})`;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2">
+    <div>
       <div className="py-5 px-0 sm:px-5">
         {totalDailyPoints ? (
           <Tabs defaultValue="totalRanking">

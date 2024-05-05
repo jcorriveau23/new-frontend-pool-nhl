@@ -4,7 +4,6 @@ import { HamburgerMenuIcon } from "@radix-ui/react-icons";
 import { Button } from "./ui/button";
 import { ModeToggle } from "./theme-toggle";
 import { Input } from "./ui/input";
-import { Separator } from "./ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -92,7 +91,6 @@ export function NavigationBar() {
           </div>
         </div>
       </div>
-      <Separator />
     </>
   );
 }
