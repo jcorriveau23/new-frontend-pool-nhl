@@ -8,7 +8,7 @@ import InProgressPool from "./in-progress-pool";
 import { PoolContextProvider } from "@/context/pool-context";
 import { UserData } from "@/data/user/model";
 
-export default function Pool({ params }: { params: { name: string } }) {
+export default function PoolPage({ params }: { params: { name: string } }) {
   const [poolInfo, setPoolInfo] = React.useState<Pool | null>(null);
   const [users, setUsers] = React.useState<UserData[] | null>(null);
 
