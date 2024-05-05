@@ -200,7 +200,7 @@ export default function DailyPreviewContent(props: Props) {
   }, [playingAgainst]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2">
+    <div>
       <div className="py-5 px-0 sm:px-5">
         {totalPreview
           ? PreviewTotalTable(

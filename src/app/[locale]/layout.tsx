@@ -6,6 +6,8 @@ import DailyGameFeed from "@/components/daily-game-feed";
 import { NextIntlClientProvider, useMessages } from "next-intl";
 import { GamesNightProvider } from "@/context/games-night-context";
 import { unstable_setRequestLocale } from "next-intl/server";
+import Footer from "@/components/footer";
+import { Separator } from "@/components/ui/separator";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -29,10 +31,16 @@ export default function LocaleLayout({
     <>
       <NextIntlClientProvider locale={locale} messages={messages}>
         <NavigationBar />
+        <Separator />
         <GamesNightProvider>
           <DailyGameFeed />
-          <div>{children}</div>
+          <Separator />
+          <div className="py-4 px-0 sm:px:4 md:px-6 mx-auto max-w-5xl">
+            {children}
+          </div>
         </GamesNightProvider>
+        <Separator />
+        <Footer />
       </NextIntlClientProvider>
     </>
   );

@@ -5,7 +5,6 @@ import { ChevronRightIcon, ChevronLeftIcon } from "@radix-ui/react-icons";
 // component
 import { Game } from "@/data/nhl/game";
 import GameItem from "./game-item";
-import { Separator } from "./ui/separator";
 import { useDateContext } from "@/context/date-context";
 import { useGamesNightContext } from "@/context/games-night-context";
 import { DatePicker } from "./ui/date-picker";
@@ -84,9 +83,6 @@ export default function DailyGameFeed() {
         ) : (
           t("No game on that date")
         )}
-      </div>
-      <div className="pt-2">
-        <Separator />
       </div>
     </div>
   );
