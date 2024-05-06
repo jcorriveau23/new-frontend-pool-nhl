@@ -8,7 +8,7 @@ export async function getServerSideDailyLeaders(keyDay: string) {
     const res = await fetch(
       `http://localhost/api-rust/daily_leaders/${keyDay}`,
       {
-        next: { revalidate: 180 },
+        next: { revalidate: 60 },
       }
     );
     if (!res.ok) {

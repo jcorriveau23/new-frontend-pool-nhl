@@ -8,7 +8,7 @@ export async function getServerSideDailyGames(keyDate: string) {
     const res = await fetch(
       `http://localhost/api-rust/daily_games/${keyDate}`,
       {
-        next: { revalidate: 180 },
+        next: { revalidate: 60 },
       }
     );
     if (!res.ok) {
