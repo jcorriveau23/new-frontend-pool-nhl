@@ -186,5 +186,9 @@
     "YourRightsAndChoices2": "To exercise these rights, please contact us at ",
     "PrivacyPolicyChanges": "Changes to this Policy",
     "PrivacyPolicyChangesDescription": "We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on our website. Your continued use of our services after any such changes constitutes your acceptance of the new policy.",
-    "PrivacyPolicyQuestions": "If you have any questions or concerns about our privacy practices, please contact us at "
+    "PrivacyPolicyQuestions": "If you have any questions or concerns about our privacy practices, please contact us at ",
+    "NEW": "New",
+    "ACCEPTED": "Accepted",
+    "CANCELLED": "Cancelled",
+    "REFUSED": "Refused"
 }
