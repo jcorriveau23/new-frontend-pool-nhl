@@ -2,7 +2,7 @@ import * as React from "react";
 import { Pool } from "@/data/pool/model";
 import CumulativeTab from "./in-progress/cumulative-tab/cumulative-tab";
 import DailyTab from "./in-progress/daily-tab/daily-tab";
-import TradeTab from "./trade-tab";
+import TradeTab from "./in-progress/trade-tab/trade-tab";
 import HistoryTab from "./history-tab";
 import DraftTab from "./draft-tab";
 import SettingsTab from "./settings-tab";
@@ -63,9 +63,11 @@ export default function InProgressPool(props: Props) {
         <TabsContent value="daily">
           <DailyTab poolInfo={props.poolInfo}></DailyTab>
         </TabsContent>
-        <TabsContent value="trade">
-          <TradeTab poolInfo={props.poolInfo}></TradeTab>
-        </TabsContent>
+        {props.poolInfo.trades ? (
+          <TabsContent value="trade">
+            <TradeTab poolInfo={props.poolInfo}></TradeTab>
+          </TabsContent>
+        ) : null}
         <TabsContent value="history">
           <HistoryTab poolInfo={props.poolInfo}></HistoryTab>
         </TabsContent>

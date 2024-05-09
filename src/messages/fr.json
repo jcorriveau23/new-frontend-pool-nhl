@@ -187,5 +187,9 @@
     "YourRightsAndChoices2": "Pour exercer ces droits, veuillez nous contacter à ",
     "PrivacyPolicyChanges": "Modifications de cette politique",
     "PrivacyPolicyChangesDescription": "Nous pouvons mettre à jour cette politique de confidentialité de temps à autre. Nous vous informerons de tout changement en publiant la nouvelle politique sur notre site Web. Votre utilisation continue de nos services après de tels changements constitue votre acceptation de la nouvelle politique.",
-    "PrivacyPolicyQuestions": "Si vous avez des questions ou des préoccupations concernant nos pratiques de confidentialité, veuillez nous contacter à "
+    "PrivacyPolicyQuestions": "Si vous avez des questions ou des préoccupations concernant nos pratiques de confidentialité, veuillez nous contacter à ",
+    "NEW": "Créé",
+    "ACCEPTED": "Acceptée",
+    "CANCELLED": "Cancellée",
+    "REFUSED": "Refusée"
 }
