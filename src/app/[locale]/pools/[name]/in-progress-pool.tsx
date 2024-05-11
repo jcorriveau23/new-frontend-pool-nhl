@@ -3,7 +3,7 @@ import { Pool } from "@/data/pool/model";
 import CumulativeTab from "./in-progress/cumulative-tab/cumulative-tab";
 import DailyTab from "./in-progress/daily-tab/daily-tab";
 import TradeTab from "./in-progress/trade-tab/trade-tab";
-import HistoryTab from "./history-tab";
+import HistoryTab from "./in-progress/history-tab/history-tab";
 import DraftTab from "./draft-tab";
 import SettingsTab from "./settings-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,8 +51,13 @@ export default function InProgressPool(props: Props) {
                 ) : null}
               </div>
             </TabsTrigger>
-            <TabsTrigger value="trade">{t("Trade")}</TabsTrigger>
-            <TabsTrigger value="history">{t("History")}</TabsTrigger>
+            {props.poolInfo.settings.can_trade ? (
+              <TabsTrigger value="trade">{t("Trade")}</TabsTrigger>
+            ) : null}
+            {props.poolInfo.settings.can_trade ||
+            props.poolInfo.settings.roster_modification_date.length > 0 ? (
+              <TabsTrigger value="history">{t("History")}</TabsTrigger>
+            ) : null}
             <TabsTrigger value="draft">{t("Draft")}</TabsTrigger>
             <TabsTrigger value="settings">{t("Settings")}</TabsTrigger>
           </TabsList>
@@ -63,14 +68,17 @@ export default function InProgressPool(props: Props) {
         <TabsContent value="daily">
           <DailyTab poolInfo={props.poolInfo}></DailyTab>
         </TabsContent>
-        {props.poolInfo.trades ? (
+        {props.poolInfo.settings.can_trade ? (
           <TabsContent value="trade">
             <TradeTab poolInfo={props.poolInfo}></TradeTab>
           </TabsContent>
         ) : null}
-        <TabsContent value="history">
-          <HistoryTab poolInfo={props.poolInfo}></HistoryTab>
-        </TabsContent>
+        {props.poolInfo.settings.can_trade ||
+        props.poolInfo.settings.roster_modification_date.length > 0 ? (
+          <TabsContent value="history">
+            <HistoryTab poolInfo={props.poolInfo}></HistoryTab>
+          </TabsContent>
+        ) : null}
         <TabsContent value="draft">
           <DraftTab poolInfo={props.poolInfo}></DraftTab>
         </TabsContent>

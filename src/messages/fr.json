@@ -191,5 +191,7 @@
     "NEW": "Créé",
     "ACCEPTED": "Acceptée",
     "CANCELLED": "Cancellée",
-    "REFUSED": "Refusée"
+    "REFUSED": "Refusée",
+    "Added": "Ajouté(s)",
+    "Removed": "Retiré(s)"
 }

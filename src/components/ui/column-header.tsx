@@ -27,18 +27,11 @@ export function DataTableColumnHeader<TData, TValue>({
     <div className={cn("", className)}>
       <Button
         variant="ghost"
-        size="sm"
+        size={null}
         className="h-8 data-[state=open]:bg-accent"
         onClick={() => column.toggleSorting()}
       >
         <span className="text-xs sm:text-base">{title}</span>
-        {column.getIsSorted() === "desc" ? (
-          <ArrowDownIcon className="ml-2 h-3 w-3" />
-        ) : column.getIsSorted() === "asc" ? (
-          <ArrowUpIcon className="ml-2 h-3 w-3" />
-        ) : (
-          <CaretSortIcon className="ml-2 h-3 w-3" />
-        )}
       </Button>
     </div>
   );

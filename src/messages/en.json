@@ -190,5 +190,7 @@
     "NEW": "New",
     "ACCEPTED": "Accepted",
     "CANCELLED": "Cancelled",
-    "REFUSED": "Refused"
+    "REFUSED": "Refused",
+    "Added": "Added",
+    "Removed": "Removed"
 }
