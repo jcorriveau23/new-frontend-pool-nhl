@@ -5,6 +5,7 @@ import {
   PeriodType,
   Linescore,
   ShootoutInfo,
+  PeriodShots,
 } from "@/data/nhl/gameLanding";
 import { abbrevToTeamId } from "@/lib/teams";
 import {
@@ -55,19 +56,19 @@ export default async function GameSummary(props: Props) {
 
   const GoalItem = (goalInfo: Goal) => (
     <div key={goalInfo.playerId} className="flex items-center space-x-4">
-      <div>
+      <div className="w-2/12">
         <Avatar>
           <AvatarImage src={goalInfo.headshot} />
         </Avatar>
       </div>
-      <div>
+      <div className="w-2/12">
         <TeamLogo
           teamId={abbrevToTeamId[goalInfo.teamAbbrev.default]}
           width={30}
           height={30}
         />
       </div>
-      <div className="text-left">
+      <div className="text-left w-6/12">
         <div>
           <PlayerLink
             name={`${goalInfo.firstName.default} ${goalInfo.lastName.default} (${goalInfo.goalsToDate})`}
@@ -86,6 +87,7 @@ export default async function GameSummary(props: Props) {
           ))}
         </div>
       </div>
+      <div className="text-right w-2/12">{goalInfo.timeInPeriod}</div>
     </div>
   );
 
@@ -95,10 +97,10 @@ export default async function GameSummary(props: Props) {
     homeLogo: string
   ) => (
     <Table>
-      <TableCaption>{t("Score per period table")}</TableCaption>
+      <TableCaption>{t("ScorePerPeriod")}</TableCaption>
       <TableHeader>
         <TableRow>
-          <TableHead>{t("Team")}</TableHead>
+          <TableHead className="w-5/12">{t("Team")}</TableHead>
           {linescore.byPeriod.map((period) => (
             <TableHead key={period.periodDescriptor.number}>
               P.{period.periodDescriptor.number}
@@ -135,6 +137,61 @@ export default async function GameSummary(props: Props) {
             </TableCell>
           ))}
           <TableCell className="text-left">{linescore.totals.home}</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  );
+
+  const ShotsPerPeriodTable = (
+    shotsPerPeriod: PeriodShots[],
+    awayLogo: string,
+    homeLogo: string
+  ) => (
+    <Table>
+      <TableCaption>{t("ShotsPerPeriod")}</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-5/12">{t("Team")}</TableHead>
+          {shotsPerPeriod.map((period) => (
+            <TableHead key={period.periodDescriptor.number}>
+              P.{period.periodDescriptor.number}
+            </TableHead>
+          ))}
+          <TableHead>{t("Total")}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableRow>
+          <TableCell className="text-left">
+            <Image width={30} height={30} alt="team" src={awayLogo} />
+          </TableCell>
+          {shotsPerPeriod.map((period) => (
+            <TableCell
+              key={period.periodDescriptor.number}
+              className="text-left"
+            >
+              {period.away}
+            </TableCell>
+          ))}
+          <TableCell className="text-left">
+            {shotsPerPeriod.reduce((acc, period) => acc + period.away, 0)}
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell className="text-left">
+            <Image width={30} height={30} alt="team" src={homeLogo} />
+          </TableCell>
+          {shotsPerPeriod.map((period) => (
+            <TableCell
+              key={period.periodDescriptor.number}
+              className="text-left"
+            >
+              {period.home}
+            </TableCell>
+          ))}
+          <TableCell className="text-left">
+            {shotsPerPeriod.reduce((acc, period) => acc + period.home, 0)}
+          </TableCell>
         </TableRow>
       </TableBody>
     </Table>
@@ -185,6 +242,11 @@ export default async function GameSummary(props: Props) {
       <div className="py-5 px-0 sm:px-5">
         {LineScoreTable(
           gameLanding.summary.linescore,
+          gameLanding.awayTeam.logo,
+          gameLanding.homeTeam.logo
+        )}
+        {ShotsPerPeriodTable(
+          gameLanding.summary.shotsByPeriod,
           gameLanding.awayTeam.logo,
           gameLanding.homeTeam.logo
         )}
