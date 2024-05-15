@@ -73,8 +73,14 @@ export interface Linescore {
 
 export interface TeamGameStats {
   category: string;
-  awayValue: string;
-  homeValue: string;
+  awayValue: string | number;
+  homeValue: string | number;
+}
+
+export interface PeriodShots {
+  periodDescriptor: PeriodDescriptor,
+  away: number,
+  home: number,
 }
 
 export interface GameSummary {
@@ -82,6 +88,7 @@ export interface GameSummary {
   scoring: PeriodScoring[];
   shootout: ShootoutInfo[];
   teamGameStats: TeamGameStats[];
+  shotsByPeriod: PeriodShots[];
 }
 
 export interface GameLanding {
