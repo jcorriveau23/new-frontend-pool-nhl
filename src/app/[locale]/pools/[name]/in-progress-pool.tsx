@@ -4,7 +4,7 @@ import CumulativeTab from "./in-progress/cumulative-tab/cumulative-tab";
 import DailyTab from "./in-progress/daily-tab/daily-tab";
 import TradeTab from "./in-progress/trade-tab/trade-tab";
 import HistoryTab from "./in-progress/history-tab/history-tab";
-import DraftTab from "./draft-tab";
+import DraftTab from "./in-progress/draft-tab/draft-tab";
 import SettingsTab from "./settings-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
