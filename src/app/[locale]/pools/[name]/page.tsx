@@ -4,14 +4,18 @@
 import * as React from "react";
 import { Pool, PoolState } from "@/data/pool/model";
 import { db } from "@/db";
-import InProgressPool from "./in-progress-pool";
+import InProgressPool from "./in-progress/in-progress-pool";
+import CreatedPool from "./created/created-pool";
 import { PoolContextProvider } from "@/context/pool-context";
 import { UserData } from "@/data/user/model";
 import { getServerSideUsers } from "@/app/actions/users";
 
+import { useTranslations } from "next-intl";
+
 export default function PoolPage({ params }: { params: { name: string } }) {
   const [poolInfo, setPoolInfo] = React.useState<Pool | null>(null);
   const [users, setUsers] = React.useState<UserData[] | null>(null);
+  const t = useTranslations();
 
   const findLastDateInDb = (pool: Pool | null) => {
     // This function looks if there is a date player's stats that have already be stored in the local database.
@@ -58,9 +62,18 @@ export default function PoolPage({ params }: { params: { name: string } }) {
           ? `/api-rust/pool/${params.name}/${poolDb.season_start}/${lastFormatDate}`
           : `/api-rust/pool/${params.name}`
       );
+
       if (!res.ok) {
+        const error = await res.text();
+        alert(
+          t("CouldNotGetPoolInfoError", {
+            pool: params.name,
+            error: error,
+          })
+        );
         return {};
       }
+
       let data = await res.json();
 
       if (poolDb) {
@@ -68,9 +81,18 @@ export default function PoolPage({ params }: { params: { name: string } }) {
         // from the server, we will force a server update.
         if (data.date_updated !== poolDb.date_updated) {
           res = await fetch(`/api-rust/pool/${params.name}`);
+
           if (!res.ok) {
+            const error = await res.text();
+            alert(
+              t("CouldNotGetPoolInfoError", {
+                pool: params.name,
+                error: error,
+              })
+            );
             return {};
           }
+
           data = await res.json();
         } else if (lastFormatDate) {
           // This is in the case we called the pool information for only a range of date since the rest of the date
@@ -102,14 +124,7 @@ export default function PoolPage({ params }: { params: { name: string } }) {
   const getPoolContent = (poolInfo: Pool) => {
     switch (poolInfo.status) {
       case PoolState.Created:
-      // return (
-      //   <CreatedPool
-      //     user={user}
-      //     hasOwnerRights={hasOwnerRights}
-      //     poolInfo={poolInfo}
-      //     setPoolInfo={setPoolInfo}
-      //   />
-      // );
+        return <CreatedPool poolInfo={poolInfo} />;
       case PoolState.Draft:
       // return (
       //   <DraftPool
@@ -121,15 +136,7 @@ export default function PoolPage({ params }: { params: { name: string } }) {
       // );
       case PoolState.InProgress:
       case PoolState.Final:
-        return (
-          <InProgressPool
-            // user={user}
-            // hasOwnerRights={hasOwnerRights}
-            poolInfo={poolInfo}
-            // injury={injury}
-            // setPoolUpdate={setPoolUpdate}
-          />
-        );
+        return <InProgressPool poolInfo={poolInfo} />;
       case PoolState.Dynastie:
       // return (
       //   <DynastiePool

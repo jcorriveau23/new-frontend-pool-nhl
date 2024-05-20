@@ -536,7 +536,7 @@ export default function CumulativeTab(props: Props) {
         for (
           let i =
             stats[participant].forwards.length -
-            props.poolInfo.settings.number_worst_forwards_to_ignore;
+            (props.poolInfo.settings.ignore_x_worst_players?.forwards ?? 0);
           i < stats[participant].forwards.length;
           i += 1
         ) {
@@ -546,7 +546,7 @@ export default function CumulativeTab(props: Props) {
         for (
           let i =
             stats[participant].defense.length -
-            props.poolInfo.settings.number_worst_defenders_to_ignore;
+            (props.poolInfo.settings.ignore_x_worst_players?.defense ?? 0);
           i < stats[participant].defense.length;
           i += 1
         ) {
@@ -556,7 +556,7 @@ export default function CumulativeTab(props: Props) {
         for (
           let i =
             stats[participant].goalies.length -
-            props.poolInfo.settings.number_worst_goalies_to_ignore;
+            (props.poolInfo.settings.ignore_x_worst_players?.goalies ?? 0);
           i < stats[participant].goalies.length;
           i += 1
         ) {
