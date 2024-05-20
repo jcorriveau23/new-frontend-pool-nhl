@@ -4,6 +4,13 @@ export interface ProjectedPoolShort {
     status: PoolState;
 }
 
+export interface PlayerTypeSettings {
+    forwards: number,
+    defense: number,
+    goalies: number,
+}
+
+
 export interface DynastieSettings {
     next_season_number_players_protected: number;
     tradable_picks: number;
@@ -24,15 +31,25 @@ export interface GoaliesSettings {
     points_per_assists: number,
 }
 
+export enum DraftType {
+    // In Serpentine, every round the order gets reversed,
+    // the impact of having the first pick is less an advantage than in standard mode.
+    // In dynasty mode, serpentine will be applied for the initial draft only. (Not for following years)
+    SERPENTINE = "Serpentine",
+  
+    STANDARD = "Standard",
+  }
+  
+
 export interface PoolSettings {
+    number_poolers: number,
+    draft_type: DraftType,
+
     assistants: string[];
     number_forwards: number;
     number_defenders: number;
     number_goalies: number;
     number_reservists: number;
-    number_worst_forwards_to_ignore: number;
-    number_worst_defenders_to_ignore: number;
-    number_worst_goalies_to_ignore: number;
     roster_modification_date: string[];
 
     forwards_settings: SkaterSettings;
@@ -40,6 +57,7 @@ export interface PoolSettings {
     goalies_settings: GoaliesSettings;
     
     can_trade: boolean;
+    ignore_x_worst_players:  PlayerTypeSettings | null;
     dynastie_settings: DynastieSettings | null;
 }
 

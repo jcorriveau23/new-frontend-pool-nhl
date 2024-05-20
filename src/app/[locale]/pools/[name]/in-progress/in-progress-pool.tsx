@@ -1,11 +1,11 @@
 import * as React from "react";
 import { Pool } from "@/data/pool/model";
-import CumulativeTab from "./in-progress/cumulative-tab/cumulative-tab";
-import DailyTab from "./in-progress/daily-tab/daily-tab";
-import TradeTab from "./in-progress/trade-tab/trade-tab";
-import HistoryTab from "./in-progress/history-tab/history-tab";
-import DraftTab from "./in-progress/draft-tab/draft-tab";
-import SettingsTab from "./settings-tab";
+import CumulativeTab from "./cumulative-tab/cumulative-tab";
+import DailyTab from "./daily-tab/daily-tab";
+import TradeTab from "./trade-tab/trade-tab";
+import HistoryTab from "./history-tab/history-tab";
+import DraftTab from "./draft-tab/draft-tab";
+import SettingsTab from "./settings-tab/settings-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
 import {

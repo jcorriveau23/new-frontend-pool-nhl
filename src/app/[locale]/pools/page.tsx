@@ -10,7 +10,9 @@ const getServersidePoolList = async () => {
   /* 
     Query game boxscore for a specific game id on the server side. 
     */
-  const res = await fetch(`http://localhost/api-rust/pools`);
+  const res = await fetch(`http://localhost/api-rust/pools`, {
+    cache: "no-store",
+  });
   if (!res.ok) {
     return null;
   }

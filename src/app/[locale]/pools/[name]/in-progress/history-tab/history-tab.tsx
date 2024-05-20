@@ -187,40 +187,44 @@ export default function HistoryTab(props: Props) {
   }
 
   const Movements = (movements: DailyMovements) => (
-    <div className="border space-y-4">
-      <div>{dictUsers[movements.participant]}</div>
+    <div key={movements.participant} className="border space-y-4">
+      <div>
+        <h1 className="text-lg">{dictUsers[movements.participant]}</h1>
+      </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <div className="flex">
-            <ShieldPlus size={20} color="green" />
-            {t("Added")}
-          </div>
           {movements.addedPlayerIds.map((playerId) => (
             <div key={playerId}>
-              <PlayerLink
-                name={`${props.poolInfo.context?.players[playerId].name}  (${t(
-                  props.poolInfo.context?.players[playerId].position
-                )})`}
-                id={Number(playerId)}
-                textStyle=""
-              />
+              <div className="flex">
+                <ShieldPlus size={20} color="green" />
+                <PlayerLink
+                  name={`${
+                    props.poolInfo.context?.players[playerId].name
+                  }  (${t(
+                    props.poolInfo.context?.players[playerId].position
+                  )})`}
+                  id={Number(playerId)}
+                  textStyle=""
+                />
+              </div>
             </div>
           ))}
         </div>
         <div>
-          <div className="flex">
-            <BadgeMinus size={20} color="red" />
-            {t("Removed")}
-          </div>
           {movements.removedPlayerIds.map((playerId) => (
             <div key={playerId}>
-              <PlayerLink
-                name={`${props.poolInfo.context?.players[playerId].name}  (${t(
-                  props.poolInfo.context?.players[playerId].position
-                )})`}
-                id={Number(playerId)}
-                textStyle=""
-              />
+              <div className="flex">
+                <BadgeMinus size={20} color="red" />
+                <PlayerLink
+                  name={`${
+                    props.poolInfo.context?.players[playerId].name
+                  }  (${t(
+                    props.poolInfo.context?.players[playerId].position
+                  )})`}
+                  id={Number(playerId)}
+                  textStyle=""
+                />
+              </div>
             </div>
           ))}
         </div>

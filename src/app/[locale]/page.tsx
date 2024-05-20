@@ -28,7 +28,7 @@ export default function Home({ params: { locale } }) {
               </p>
               <p className="text-gray-500 md:text-xl dark:text-gray-400">
                 {t("GetStartedNow")}
-                <Link href="/pools" className="text-link hover:underline">
+                <Link href="/create-pool" className="text-link hover:underline">
                   {t("CreateYourOwnPool")}
                 </Link>
               </p>
