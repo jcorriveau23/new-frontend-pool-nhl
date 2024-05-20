@@ -30,7 +30,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@radix-ui/react-popover";
+} from "@/components/ui/popover";
 import { LucideAlertOctagon } from "lucide-react";
 import Cookies from "js-cookie";
 import { useUserContext } from "@/context/user-context";
@@ -514,10 +514,10 @@ export default function PoolSettingsComponent(props: Props) {
                 <RadioGroupItem value={PoolType.DYNASTY} id="r2" />
                 <Label htmlFor="r2">{t("Dynasty")} </Label>
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <LucideAlertOctagon color="yellow" />
+                  <PopoverTrigger className="hover:cursor-pointer" asChild>
+                    <LucideAlertOctagon />
                   </PopoverTrigger>
-                  <PopoverContent className="w-[200px] bg-black p-0">
+                  <PopoverContent className="p-0">
                     {t("DynastyPoolTypeDescription")}
                   </PopoverContent>
                 </Popover>
@@ -531,10 +531,10 @@ export default function PoolSettingsComponent(props: Props) {
                 <RadioGroupItem value={DraftType.SERPENTINE} />
                 <Label>{t("Serpentine")}</Label>
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <LucideAlertOctagon color="yellow" />
+                  <PopoverTrigger className="hover:cursor-pointer" asChild>
+                    <LucideAlertOctagon />
                   </PopoverTrigger>
-                  <PopoverContent className="w-[200px] bg-black p-0">
+                  <PopoverContent className="p-0">
                     {t("SerpentinDescription")}
                   </PopoverContent>
                 </Popover>
@@ -652,10 +652,10 @@ export default function PoolSettingsComponent(props: Props) {
           />
           <Label>{t("IgnoreWorstPlayers")}</Label>
           <Popover>
-            <PopoverTrigger asChild>
-              <LucideAlertOctagon color="yellow" />
+            <PopoverTrigger className="hover:cursor-pointer" asChild>
+              <LucideAlertOctagon />
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] bg-black p-0">
+            <PopoverContent className="p-0">
               {t("IgnoreWorstPlayersDescription")}
             </PopoverContent>
           </Popover>
@@ -866,10 +866,10 @@ export default function PoolSettingsComponent(props: Props) {
                   <div className="flex items-center gap-2">
                     <FormLabel>{t("TradableDraftPicks")}</FormLabel>
                     <Popover>
-                      <PopoverTrigger asChild>
-                        <LucideAlertOctagon color="yellow" />
+                      <PopoverTrigger className="hover:cursor-pointer" asChild>
+                        <LucideAlertOctagon />
                       </PopoverTrigger>
-                      <PopoverContent className="w-[200px] bg-black p-0">
+                      <PopoverContent className="p-0">
                         {t("TradablePicksDescription")}
                       </PopoverContent>
                     </Popover>
@@ -897,10 +897,10 @@ export default function PoolSettingsComponent(props: Props) {
                   <div className="flex items-center gap-2">
                     <FormLabel>{t("NumberOfProtectedPlayers")}</FormLabel>
                     <Popover>
-                      <PopoverTrigger asChild>
-                        <LucideAlertOctagon color="yellow" />
+                      <PopoverTrigger className="hover:cursor-pointer" asChild>
+                        <LucideAlertOctagon />
                       </PopoverTrigger>
-                      <PopoverContent className="w-[200px] bg-black p-0">
+                      <PopoverContent className="p-0">
                         {t("NumberOfPlayersToProtectDescription")}
                       </PopoverContent>
                     </Popover>
