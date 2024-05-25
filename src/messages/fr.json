@@ -247,9 +247,9 @@
     "NumberOfDefenders": "Nombre de défenseurs",
     "NumberOfGoalies": "Nombre de gardiens",
     "NumberOfReservists": "Nombre de réservistes",
-    "DynastyPoolTypeDescription": "Les pools de type dynastie durent plusieurs saisons. Le pooler qui a gagné repêchera dernier la saison suivante. Les choix au repêches peuvent être ajoutés aux échanges. Un certains nombre de joueurs seront protégés par tous les poolers à la fin de la saison.",
-    "SerpentinDescription": "L'ordre du repêchage est inversé à chaque tour. Repêcher premier est moins un avantage dans ce type de repêchage.",
-    "IgnoreWorstPlayersDescription": "Le pool ignorera les pires X joueurs de chaque position. Les blessures impactent moins les poolers.",
+    "DynastyPoolTypeDescription": "Les pools de type dynastie durent plusieurs saisons. Le pooler qui a gagné repêchera dernier la saison suivante. Les choix de repêchage de la saison suivante peuvent être ajoutés aux échanges. Un certains nombre de joueurs seront protégés par tous les poolers à la fin de la saison.",
+    "SerpentinDescription": "L'ordre du repêchage est inversé à chaque ronde. Repêcher premier est moins un avantage dans ce type de repêchage.",
+    "IgnoreWorstPlayersDescription": "Le pool ignorera les pires X joueurs de chaque position. Les blessures impactent moins les poolers avec cette option active.",
     "TradablePicksDescription": "Le nombre de choix de repêchage de la saison suivante qui peuvent être ajoutés aux échanges entre pooler.",
     "NumberOfPlayersToProtectDescription": "Le nombre de joueurs que les poolers pourront protéger à la fin de la saison. Les joueurs non protégés sont disponnible dans le draft par tous les poolers.",
     "MustBeConnectedToCreatePool": "Vous devez être connecté à votre compte pour créer un nouveau pool."

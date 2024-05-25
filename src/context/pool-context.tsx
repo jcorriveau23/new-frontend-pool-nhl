@@ -5,6 +5,7 @@ Module that share context related to the selected pool.
 import { Pool } from "@/data/pool/model";
 import { UserData } from "@/data/user/model";
 import React, { createContext, useContext, ReactNode } from "react";
+import { useRouter } from "@/navigation";
 
 export interface PoolContextProps {
   // keeps the information of which participant is selected across the pool.
@@ -75,8 +76,27 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   poolInfo,
   users,
 }) => {
+  const getInitialSelectedParticipant = (): string => {
+    // Return the initial selected participant.
+    if (poolInfo.participants === null || poolInfo.participants.length === 0)
+      return "";
+
+    const queryParams = new URLSearchParams(location.search);
+    const initialSelectedParticipant = queryParams.get("selectedParticipant");
+
+    if (
+      initialSelectedParticipant === null ||
+      !poolInfo.participants.includes(initialSelectedParticipant)
+    )
+      return poolInfo.participants[0];
+
+    return initialSelectedParticipant;
+  };
+
+  const router = useRouter();
+
   const [selectedParticipant, setSelectedParticipant] = React.useState<string>(
-    poolInfo.participants?.[0] ?? ""
+    getInitialSelectedParticipant()
   );
   const [playersOwner, setPlayersOwner] = React.useState<
     Record<number, string>
@@ -90,6 +110,9 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   };
   const updateSelectedParticipant = (participant: string) => {
     setSelectedParticipant(participant);
+    const queryParams = new URLSearchParams(window.location.search);
+    queryParams.set("selectedParticipant", participant);
+    router.push(`/pools/${poolInfo.name}/?${queryParams.toString()}`);
   };
   const updateUsers = (users: UserData[]) => {
     setDictUsers(getUserName(users));
