@@ -89,7 +89,6 @@ export default function HistoryTab(props: Props) {
 
   const GetAllHistory = async () => {
     // Parse all history of the pool.
-    console.log("test");
     if (
       props.poolInfo.context === null ||
       props.poolInfo.participants === null

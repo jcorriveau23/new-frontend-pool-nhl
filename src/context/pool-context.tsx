@@ -81,7 +81,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     if (poolInfo.participants === null || poolInfo.participants.length === 0)
       return "";
 
-    const queryParams = new URLSearchParams(location.search);
+    const queryParams = new URLSearchParams(window.location.search);
     const initialSelectedParticipant = queryParams.get("selectedParticipant");
 
     if (
@@ -94,7 +94,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   };
 
   const router = useRouter();
-
   const [selectedParticipant, setSelectedParticipant] = React.useState<string>(
     getInitialSelectedParticipant()
   );
