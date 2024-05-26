@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { LucideAlertOctagon } from "lucide-react";
 import { useRouter } from "@/navigation";
+import { usePoolContext } from "@/context/pool-context";
 
 interface Props {
   poolInfo: Pool;
@@ -37,11 +38,10 @@ export default function InProgressPool(props: Props) {
   const t = useTranslations();
   const router = useRouter();
   const { gamesNightStatus } = useGamesNightContext();
+  const { updateSelectedParticipant } = usePoolContext();
 
   const getInitialSelectedTab = (): string => {
     // Return the initial tab selection using the url parameters if it exist.
-    // That way if the user go into antoher page and come back using the "Go Back"
-    // option in the browser he will be in  the selected tab.
     const queryParams = new URLSearchParams(window.location.search);
     const initialTab = queryParams.get("activeTab");
 
@@ -65,6 +65,30 @@ export default function InProgressPool(props: Props) {
     queryParams.set("activeTab", value);
     router.push(`/pools/${props.poolInfo.name}/?${queryParams.toString()}`);
   };
+
+  React.useEffect(() => {
+    // Use effect is used here to manage the popstate event listener.
+    // That way if the user go into antoher page and come back using the "Go Back" or "Go forward"
+    // options in the browser he will be in the selected tab.
+    const handlePopState = (event: PopStateEvent) => {
+      console.log(event.state);
+      const queryParams = new URLSearchParams(window.location.search);
+      const newActiveTab = queryParams.get("activeTab");
+      const newSelectedParticipant = queryParams.get("selectedParticipant");
+
+      if (newActiveTab && newActiveTab !== activeTab)
+        setActiveTab(newActiveTab);
+      if (newSelectedParticipant)
+        updateSelectedParticipant(newSelectedParticipant);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    // Cleanup the event listener on component unmount
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 
   return (
     <div className="items-center text-center">
