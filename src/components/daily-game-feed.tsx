@@ -69,7 +69,7 @@ export default function DailyGameFeed() {
         ) : gamesStats.length > 0 ? (
           gamesStats.map((game) => <GameItem key={game.id} game={game} />)
         ) : (
-          t("No game on that date")
+          t("NoGameOnThatDate")
         )}
       </div>
     </div>

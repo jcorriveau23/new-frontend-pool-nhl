@@ -49,6 +49,9 @@ interface Props {
   oldPoolSettings: PoolSettings | null;
 }
 
+export const POOL_NAME_MIN_LENGTH = 5;
+export const POOL_NAME_MAX_LENGTH = 16;
+
 export default function PoolSettingsComponent(props: Props) {
   const t = useTranslations();
   const { user } = useUserContext();
@@ -60,8 +63,6 @@ export default function PoolSettingsComponent(props: Props) {
   // The validation and default values of the form for the pool settings are listed here.
   // 1) General Settings
   const DEFAULT_POOL_NAME = props.poolName ?? "";
-  const POOL_NAME_MIN_LENGTH = 5;
-  const POOL_NAME_MAX_LENGTH = 16;
 
   const DEFAULT_POOLER_NUMBER = props.oldPoolSettings?.number_poolers ?? 6;
   const MIN_POOLER_NUMBER = 2;
@@ -441,7 +442,8 @@ export default function PoolSettingsComponent(props: Props) {
     if (!res.ok) {
       const error = await res.text();
       alert(
-        t("CouldNotRegisterError", {
+        t("CouldNotGeneratePoolError", {
+          name: values.name,
           error: error,
         })
       );

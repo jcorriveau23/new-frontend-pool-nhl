@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/accordion";
 import { getTranslations } from "next-intl/server";
 import { getAllYearsForTeam } from "@/lib/nhl";
+import { seasonFormat, seasonWithYearFormat } from "@/app/utils/formating";
 
 // https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=false&sort=[{%22property%22:%22points%22,%22direction%22:%22DESC%22},{%22property%22:%22goals%22,%22direction%22:%22DESC%22},{%22property%22:%22assists%22,%22direction%22:%22DESC%22},{%22property%22:%22playerId%22,%22direction%22:%22ASC%22}]&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=teamId=8%20and%20gameTypeId=2%20and%20seasonId%3C=20172018%20and%20seasonId%3E=20172018
 
@@ -93,7 +94,7 @@ export default async function Standing({
       <Combobox
         selections={getAllYearsForTeam(Number(params.teamId)).map((season) => ({
           value: `${season}${season + 1}`,
-          label: `${season.toString()}-${(season + 1).toString().slice(2)}`,
+          label: seasonWithYearFormat(season),
         }))}
         defaultSelectedValue={params.season}
         emptyText=""
@@ -114,7 +115,7 @@ export default async function Standing({
         <h1>
           {t("NoRosterInfoForSeason", {
             team: team_info[Number(params.teamId)]?.fullName,
-            season: `${params.season.slice(0, 4)}-${params.season.slice(6)}`,
+            season: seasonFormat(Number(params.season), 0),
           })}
         </h1>
       </div>

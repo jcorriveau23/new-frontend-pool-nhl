@@ -12,10 +12,6 @@ import { usePoolContext } from "@/context/pool-context";
 import { useTranslations } from "next-intl";
 import { TradeItem } from "@/components/trade";
 
-interface Props {
-  poolInfo: Pool;
-}
-
 interface DailyMovements {
   // Daily movements for a specific date and pooler
   participant: string;
@@ -30,8 +26,8 @@ interface DailyHistory {
   dailyTrades: Trade[];
 }
 
-export default function HistoryTab(props: Props) {
-  const { dictUsers } = usePoolContext();
+export default function HistoryTab() {
+  const { poolInfo, dictUsers } = usePoolContext();
   const t = useTranslations();
   const [history, setHistory] = React.useState<DailyHistory[] | null>(null);
 
@@ -53,34 +49,34 @@ export default function HistoryTab(props: Props) {
 
   const getDailyRoster = (participant: string, jDate: string): string[] => {
     // Get the daily roster of a participant for a specific date.
-    if (!props.poolInfo.context?.score_by_day?.[jDate]) {
+    if (!poolInfo.context?.score_by_day?.[jDate]) {
       return [];
     }
 
     const forwards = Object.keys(
-      props.poolInfo.context.score_by_day[jDate][participant].roster.F
+      poolInfo.context.score_by_day[jDate][participant].roster.F
     );
     const defenders = Object.keys(
-      props.poolInfo.context.score_by_day[jDate][participant].roster.D
+      poolInfo.context.score_by_day[jDate][participant].roster.D
     );
     const goalies = Object.keys(
-      props.poolInfo.context.score_by_day[jDate][participant].roster.G
+      poolInfo.context.score_by_day[jDate][participant].roster.G
     );
     return forwards.concat(defenders, goalies);
   };
 
   const getLatestRoster = (participant: string): string[] => {
     // Get the current roster of a participant.
-    if (!props.poolInfo.context?.pooler_roster[participant]) {
+    if (!poolInfo.context?.pooler_roster[participant]) {
       return [];
     }
-    const forwards = props.poolInfo.context.pooler_roster[
+    const forwards = poolInfo.context.pooler_roster[
       participant
     ].chosen_forwards.map((playerId) => playerId.toString());
-    const defenders = props.poolInfo.context.pooler_roster[
+    const defenders = poolInfo.context.pooler_roster[
       participant
     ].chosen_defenders.map((playerId) => playerId.toString());
-    const goalies = props.poolInfo.context.pooler_roster[
+    const goalies = poolInfo.context.pooler_roster[
       participant
     ].chosen_goalies.map((playerId) => playerId.toString());
 
@@ -89,14 +85,11 @@ export default function HistoryTab(props: Props) {
 
   const GetAllHistory = async () => {
     // Parse all history of the pool.
-    if (
-      props.poolInfo.context === null ||
-      props.poolInfo.participants === null
-    ) {
+    if (poolInfo.context === null || poolInfo.participants === null) {
       return null;
     }
 
-    const startDate = new Date(props.poolInfo.season_start);
+    const startDate = new Date(poolInfo.season_start);
     const endDate = new Date();
 
     const currentRoster: Map<string, string[]> = new Map();
@@ -107,7 +100,7 @@ export default function HistoryTab(props: Props) {
 
       const dailyMovements = []; // Will capture all movement that happened on this date.
       const dailyTrades =
-        props.poolInfo.trades?.filter(
+        poolInfo.trades?.filter(
           (trade) =>
             trade.status === "ACCEPTED" &&
             new Date(trade.date_accepted + 3600000)
@@ -116,12 +109,12 @@ export default function HistoryTab(props: Props) {
         ) ?? [];
 
       if (
-        props.poolInfo.context.score_by_day &&
-        props.poolInfo.context.score_by_day[jDate] &&
-        props.poolInfo.participants
+        poolInfo.context.score_by_day &&
+        poolInfo.context.score_by_day[jDate] &&
+        poolInfo.participants
       ) {
-        for (let i = 0; i < props.poolInfo.participants.length; i += 1) {
-          const participant = props.poolInfo.participants[i];
+        for (let i = 0; i < poolInfo.participants.length; i += 1) {
+          const participant = poolInfo.participants[i];
           const newRoster = getDailyRoster(participant, jDate);
 
           const oldRoster = currentRoster.get(participant);
@@ -151,8 +144,8 @@ export default function HistoryTab(props: Props) {
     // Make sure that we count current roster (for days that roster modifications are allowed we will see them in real time)
     // TODO: this could be generalize by creating a function centralizing logic between this and the for loop above.
     const dailyMovements = []; // Will capture all movement that happened on this date.
-    for (let i = 0; i < props.poolInfo.participants.length; i += 1) {
-      const participant = props.poolInfo.participants[i];
+    for (let i = 0; i < poolInfo.participants.length; i += 1) {
+      const participant = poolInfo.participants[i];
 
       const latestRoster = getLatestRoster(participant);
       const oldRoster = currentRoster.get(participant);
@@ -197,10 +190,8 @@ export default function HistoryTab(props: Props) {
               <div className="flex">
                 <ShieldPlus size={20} color="green" />
                 <PlayerLink
-                  name={`${
-                    props.poolInfo.context?.players[playerId].name
-                  }  (${t(
-                    props.poolInfo.context?.players[playerId].position
+                  name={`${poolInfo.context?.players[playerId].name}  (${t(
+                    poolInfo.context?.players[playerId].position
                   )})`}
                   id={Number(playerId)}
                   textStyle=""
@@ -215,10 +206,8 @@ export default function HistoryTab(props: Props) {
               <div className="flex">
                 <BadgeMinus size={20} color="red" />
                 <PlayerLink
-                  name={`${
-                    props.poolInfo.context?.players[playerId].name
-                  }  (${t(
-                    props.poolInfo.context?.players[playerId].position
+                  name={`${poolInfo.context?.players[playerId].name}  (${t(
+                    poolInfo.context?.players[playerId].position
                   )})`}
                   id={Number(playerId)}
                   textStyle=""
@@ -243,7 +232,7 @@ export default function HistoryTab(props: Props) {
         <AccordionContent>
           {dailyHistory.dailyMovements.map((movements) => Movements(movements))}
           {dailyHistory.dailyTrades.map((trade) => (
-            <TradeItem key={trade.id} trade={trade} poolInfo={props.poolInfo} />
+            <TradeItem key={trade.id} trade={trade} poolInfo={poolInfo} />
           ))}
         </AccordionContent>
       </AccordionItem>

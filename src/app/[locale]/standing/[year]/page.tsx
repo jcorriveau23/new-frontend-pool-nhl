@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import Image from "next/image";
-import { Combobox, Selection } from "@/components/ui/combobox";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Table,
   TableBody,
@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getTranslations } from "next-intl/server";
+import { seasonFormat } from "@/app/utils/formating";
 
 interface Season {
   id: number;
@@ -198,7 +199,7 @@ export default async function Standing({
       <Combobox
         selections={standingSeasons.seasons.reverse().map((s) => ({
           value: s.standingsEnd,
-          label: `${s.id.toString().slice(0, 4)}-${s.id.toString().slice(6)}`,
+          label: seasonFormat(s.id, 0),
         }))}
         defaultSelectedValue={
           params.year === "now" // If now is selected take the latest date.

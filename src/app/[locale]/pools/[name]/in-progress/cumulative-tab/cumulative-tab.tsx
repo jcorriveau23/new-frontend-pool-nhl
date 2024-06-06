@@ -4,8 +4,8 @@
 import * as React from "react";
 import {
   GoaliesSettings,
-  Pool,
   PoolSettings,
+  PoolState,
   SkaterSettings,
 } from "@/data/pool/model";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,11 +33,8 @@ import {
 import { Row } from "@tanstack/react-table";
 import { LucideAlertOctagon } from "lucide-react";
 
-export interface Props {
-  poolInfo: Pool;
-}
 import { useTranslations } from "next-intl";
-import { usePoolContext } from "@/context/pool-context";
+import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
 import PickList from "@/components/pick-list";
 import { useDateContext } from "@/context/date-context";
 import {
@@ -45,6 +42,35 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import Cookies from "js-cookie";
+import { useUserContext } from "@/context/user-context";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@radix-ui/react-dialog";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  POOL_NAME_MAX_LENGTH,
+  POOL_NAME_MIN_LENGTH,
+} from "@/components/pool-settings";
+import { seasonFormat } from "@/app/utils/formating";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -258,23 +284,103 @@ export class TotalRanking {
   }
 }
 
-export default function CumulativeTab(props: Props) {
+export default function CumulativeTab() {
   const t = useTranslations();
-  const { selectedDate } = useDateContext();
+  const { selectedDate, currentDate } = useDateContext();
   const [playerStats, setPlayerStats] = React.useState<Record<
     string,
     ParticipantsRoster
   > | null>(null);
   const [ranking, setRanking] = React.useState<TotalRanking[] | null>(null);
-  const { selectedParticipant, updateSelectedParticipant, dictUsers } =
-    usePoolContext();
+  const {
+    poolInfo,
+    updatePoolInfo,
+    selectedParticipant,
+    updateSelectedParticipant,
+    dictUsers,
+  } = usePoolContext();
+
+  const { user } = useUserContext();
+
+  const formSchema = z.object({
+    name: z
+      .string()
+      .min(POOL_NAME_MIN_LENGTH, {
+        message: t("PoolNameMinLenghtValidation", {
+          value: POOL_NAME_MIN_LENGTH,
+        }),
+      })
+      .max(POOL_NAME_MAX_LENGTH, {
+        message: t("PoolNameMaxLenghtValidation", {
+          value: POOL_NAME_MAX_LENGTH,
+        }),
+      })
+      .default(""),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+    },
+  });
+
+  const markAsFinal = async () => {
+    const res = await fetch("/api-rust/mark-as-final", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Cookies.get(`auth-${user?._id}`)}`,
+      },
+      body: JSON.stringify({
+        pool_name: poolInfo.name,
+      }),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      alert(
+        t("CouldNotMarkAsFinalPoolError", {
+          name: poolInfo.name,
+          error: error,
+        })
+      );
+      return;
+    }
+    const data = await res.json();
+    updatePoolInfo(data);
+  };
+
+  const generateDynastie = async (newPoolName: string) => {
+    const res = await fetch("/api-rust/generate-dynasty", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Cookies.get(`auth-${user?._id}`)}`,
+      },
+      body: JSON.stringify({
+        pool_name: poolInfo.name,
+        new_pool_name: newPoolName,
+      }),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      alert(
+        t("CouldNotGeneratePoolError", {
+          name: newPoolName,
+          error: error,
+        })
+      );
+      return;
+    }
+    const data = await res.json();
+    updatePoolInfo(data);
+  };
 
   React.useEffect(() => {
     const calculatePoolStats = async () => {
-      if (
-        props.poolInfo.participants === null ||
-        props.poolInfo.context === null
-      ) {
+      if (poolInfo.participants === null || poolInfo.context === null) {
         return;
       }
       const stats: Record<string, ParticipantsRoster> = {};
@@ -283,8 +389,8 @@ export default function CumulativeTab(props: Props) {
       // to be able to fill up the tables that display pooler points between the beginning of the season and the selected date.
 
       // First Add the players that are currently owned by the player either in reservists or in the alignment.
-      for (let i = 0; i < props.poolInfo.participants.length; i += 1) {
-        const participant = props.poolInfo.participants[i];
+      for (let i = 0; i < poolInfo.participants.length; i += 1) {
+        const participant = poolInfo.participants[i];
 
         stats[participant] = new ParticipantsRoster();
 
@@ -292,14 +398,11 @@ export default function CumulativeTab(props: Props) {
         for (
           let j = 0;
           j <
-          props.poolInfo.context?.pooler_roster[participant].chosen_forwards
-            .length;
+          poolInfo.context?.pooler_roster[participant].chosen_forwards.length;
           j += 1
         ) {
           const playerId =
-            props.poolInfo.context?.pooler_roster[participant].chosen_forwards[
-              j
-            ];
+            poolInfo.context?.pooler_roster[participant].chosen_forwards[j];
 
           stats[participant].forwards.push(
             new SkaterInfo(playerId, PlayerStatus.InAlignment)
@@ -310,14 +413,11 @@ export default function CumulativeTab(props: Props) {
         for (
           let j = 0;
           j <
-          props.poolInfo.context?.pooler_roster[participant].chosen_defenders
-            .length;
+          poolInfo.context?.pooler_roster[participant].chosen_defenders.length;
           j += 1
         ) {
           const playerId =
-            props.poolInfo.context?.pooler_roster[participant].chosen_defenders[
-              j
-            ];
+            poolInfo.context?.pooler_roster[participant].chosen_defenders[j];
 
           stats[participant].defense.push(
             new SkaterInfo(playerId, PlayerStatus.InAlignment)
@@ -328,14 +428,11 @@ export default function CumulativeTab(props: Props) {
         for (
           let j = 0;
           j <
-          props.poolInfo.context?.pooler_roster[participant].chosen_goalies
-            .length;
+          poolInfo.context?.pooler_roster[participant].chosen_goalies.length;
           j += 1
         ) {
           const playerId =
-            props.poolInfo.context?.pooler_roster[participant].chosen_goalies[
-              j
-            ];
+            poolInfo.context?.pooler_roster[participant].chosen_goalies[j];
 
           stats[participant].goalies.push(
             new GoalieInfo(playerId, PlayerStatus.InAlignment)
@@ -344,35 +441,34 @@ export default function CumulativeTab(props: Props) {
       }
 
       // Now parse all the pool date from the start of the season to the current date.
-      const startDate = new Date(props.poolInfo.season_start);
+      const startDate = new Date(poolInfo.season_start);
       let endDate = new Date(selectedDate);
       if (endDate < startDate) {
-        endDate = new Date(props.poolInfo.season_start);
+        endDate = new Date(poolInfo.season_start);
       }
 
       for (let j = startDate; j <= endDate; j.setDate(j.getDate() + 1)) {
         const jDate = j.toISOString().slice(0, 10);
 
-        for (let i = 0; i < props.poolInfo.participants.length; i += 1) {
-          const participant = props.poolInfo.participants[i];
+        for (let i = 0; i < poolInfo.participants.length; i += 1) {
+          const participant = poolInfo.participants[i];
 
           if (
-            props.poolInfo.context?.score_by_day &&
-            jDate in props.poolInfo.context.score_by_day
+            poolInfo.context?.score_by_day &&
+            jDate in poolInfo.context.score_by_day
           ) {
             // Forwards
             Object.keys(
-              props.poolInfo.context?.score_by_day[jDate][participant].roster.F
+              poolInfo.context?.score_by_day[jDate][participant].roster.F
             ).map((key) => {
               if (
-                props.poolInfo.context === null ||
-                props.poolInfo.context.score_by_day === null
+                poolInfo.context === null ||
+                poolInfo.context.score_by_day === null
               ) {
                 return null;
               }
               const player =
-                props.poolInfo.context.score_by_day[jDate][participant].roster
-                  .F[key];
+                poolInfo.context.score_by_day[jDate][participant].roster.F[key];
               if (player) {
                 const playerId = Number(key);
 
@@ -381,7 +477,7 @@ export default function CumulativeTab(props: Props) {
                 );
 
                 if (index === -1) {
-                  const indexReservist = props.poolInfo.context.pooler_roster[
+                  const indexReservist = poolInfo.context.pooler_roster[
                     participant
                   ].chosen_reservists.findIndex((p) => p === playerId);
 
@@ -408,17 +504,16 @@ export default function CumulativeTab(props: Props) {
 
             // Defenses
             Object.keys(
-              props.poolInfo.context.score_by_day[jDate][participant].roster.D
+              poolInfo.context.score_by_day[jDate][participant].roster.D
             ).map((key) => {
               if (
-                props.poolInfo.context === null ||
-                props.poolInfo.context.score_by_day === null
+                poolInfo.context === null ||
+                poolInfo.context.score_by_day === null
               ) {
                 return null;
               }
               const player =
-                props.poolInfo.context.score_by_day[jDate][participant].roster
-                  .D[key];
+                poolInfo.context.score_by_day[jDate][participant].roster.D[key];
               if (player) {
                 const playerId = Number(key);
 
@@ -427,7 +522,7 @@ export default function CumulativeTab(props: Props) {
                 );
 
                 if (index === -1) {
-                  const indexReservist = props.poolInfo.context.pooler_roster[
+                  const indexReservist = poolInfo.context.pooler_roster[
                     participant
                   ].chosen_reservists.findIndex((p) => p === playerId);
 
@@ -454,17 +549,16 @@ export default function CumulativeTab(props: Props) {
 
             // Goalies
             Object.keys(
-              props.poolInfo.context.score_by_day[jDate][participant].roster.G
+              poolInfo.context.score_by_day[jDate][participant].roster.G
             ).map((key) => {
               if (
-                props.poolInfo.context === null ||
-                props.poolInfo.context.score_by_day === null
+                poolInfo.context === null ||
+                poolInfo.context.score_by_day === null
               ) {
                 return null;
               }
               const player =
-                props.poolInfo.context.score_by_day[jDate][participant].roster
-                  .G[key];
+                poolInfo.context.score_by_day[jDate][participant].roster.G[key];
               if (player) {
                 const playerId = Number(key);
 
@@ -473,7 +567,7 @@ export default function CumulativeTab(props: Props) {
                 );
 
                 if (index === -1) {
-                  const indexReservist = props.poolInfo.context.pooler_roster[
+                  const indexReservist = poolInfo.context.pooler_roster[
                     participant
                   ].chosen_reservists.findIndex((p) => p === playerId);
 
@@ -504,27 +598,25 @@ export default function CumulativeTab(props: Props) {
 
       // Now Create the Ranking table data class.
       // This require to cumulate the total points into each players base on the pool settings.
-      for (let i = 0; i < props.poolInfo.participants.length; i += 1) {
-        const participant = props.poolInfo.participants[i];
+      for (let i = 0; i < poolInfo.participants.length; i += 1) {
+        const participant = poolInfo.participants[i];
 
         for (let j = 0; j < stats[participant].forwards.length; j += 1) {
           stats[participant].forwards[j].poolPoints = stats[
             participant
-          ].forwards[j].getTotalPoolPoints(
-            props.poolInfo.settings.forwards_settings
-          );
+          ].forwards[j].getTotalPoolPoints(poolInfo.settings.forwards_settings);
         }
 
         for (let j = 0; j < stats[participant].defense.length; j += 1) {
           stats[participant].defense[j].poolPoints = stats[participant].defense[
             j
-          ].getTotalPoolPoints(props.poolInfo.settings.defense_settings);
+          ].getTotalPoolPoints(poolInfo.settings.defense_settings);
         }
 
         for (let j = 0; j < stats[participant].goalies.length; j += 1) {
           stats[participant].goalies[j].poolPoints = stats[participant].goalies[
             j
-          ].getTotalPoolPoints(props.poolInfo.settings.goalies_settings);
+          ].getTotalPoolPoints(poolInfo.settings.goalies_settings);
         }
 
         // Sort and change state of players that should be considered ignore from the settings.
@@ -536,7 +628,7 @@ export default function CumulativeTab(props: Props) {
         for (
           let i =
             stats[participant].forwards.length -
-            (props.poolInfo.settings.ignore_x_worst_players?.forwards ?? 0);
+            (poolInfo.settings.ignore_x_worst_players?.forwards ?? 0);
           i < stats[participant].forwards.length;
           i += 1
         ) {
@@ -546,7 +638,7 @@ export default function CumulativeTab(props: Props) {
         for (
           let i =
             stats[participant].defense.length -
-            (props.poolInfo.settings.ignore_x_worst_players?.defense ?? 0);
+            (poolInfo.settings.ignore_x_worst_players?.defense ?? 0);
           i < stats[participant].defense.length;
           i += 1
         ) {
@@ -556,7 +648,7 @@ export default function CumulativeTab(props: Props) {
         for (
           let i =
             stats[participant].goalies.length -
-            (props.poolInfo.settings.ignore_x_worst_players?.goalies ?? 0);
+            (poolInfo.settings.ignore_x_worst_players?.goalies ?? 0);
           i < stats[participant].goalies.length;
           i += 1
         ) {
@@ -569,7 +661,7 @@ export default function CumulativeTab(props: Props) {
             stats[participant].forwards,
             stats[participant].defense,
             stats[participant].goalies,
-            props.poolInfo.settings
+            poolInfo.settings
           )
         );
 
@@ -605,7 +697,7 @@ export default function CumulativeTab(props: Props) {
         columnPinning: { left: ["ranking", "pooler"] },
       }}
       meta={{
-        props: { dictUsers, poolInfo: props.poolInfo },
+        props: { dictUsers, poolInfo: poolInfo },
         getRowStyles: (row: Row<TotalRanking>) => {
           if (row.original.participant === selectedParticipant) {
             return "bg-selection hover:bg-selection";
@@ -638,7 +730,7 @@ export default function CumulativeTab(props: Props) {
         columnPinning: { left: ["number", "status", "player"] },
       }}
       meta={{
-        props: props.poolInfo,
+        props: poolInfo,
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -655,7 +747,7 @@ export default function CumulativeTab(props: Props) {
         columnPinning: { left: ["number", "player"] },
       }}
       meta={{
-        props: props.poolInfo,
+        props: poolInfo,
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -674,7 +766,7 @@ export default function CumulativeTab(props: Props) {
                 player.status === PlayerStatus.InAlignment ||
                 player.status === PlayerStatus.PointsIgnored
             ).length
-          }/${props.poolInfo.settings.number_forwards})`}</AccordionTrigger>
+          }/${poolInfo.settings.number_forwards})`}</AccordionTrigger>
           <AccordionContent>
             {PlayerTable(
               playerStats[participant].forwards,
@@ -695,7 +787,7 @@ export default function CumulativeTab(props: Props) {
                 player.status === PlayerStatus.InAlignment ||
                 player.status === PlayerStatus.PointsIgnored
             ).length
-          }/${props.poolInfo.settings.number_defenders})`}</AccordionTrigger>
+          }/${poolInfo.settings.number_defenders})`}</AccordionTrigger>
           <AccordionContent>
             {PlayerTable(
               playerStats[participant].defense,
@@ -716,7 +808,7 @@ export default function CumulativeTab(props: Props) {
                 player.status === PlayerStatus.InAlignment ||
                 player.status === PlayerStatus.PointsIgnored
             ).length
-          }/${props.poolInfo.settings.number_goalies})`}</AccordionTrigger>
+          }/${poolInfo.settings.number_goalies})`}</AccordionTrigger>
           <AccordionContent>
             {PlayerTable(
               playerStats[participant].goalies,
@@ -734,22 +826,19 @@ export default function CumulativeTab(props: Props) {
           <AccordionTrigger>{t("Reservists")}</AccordionTrigger>
           <AccordionContent>
             {ReservistTable(
-              props.poolInfo.context?.pooler_roster[participant]
+              poolInfo.context?.pooler_roster[participant]
                 .chosen_reservists as number[],
               ReservistColumn
             )}
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-      {props.poolInfo.settings.dynastie_settings?.tradable_picks ? (
+      {poolInfo.settings.dynastie_settings?.tradable_picks ? (
         <Accordion type="single" collapsible defaultValue="picks">
           <AccordionItem value="picks">
             <AccordionTrigger>{t("Next season picks")}</AccordionTrigger>
             <AccordionContent>
-              <PickList
-                participant={selectedParticipant}
-                poolInfo={props.poolInfo}
-              />
+              <PickList participant={selectedParticipant} poolInfo={poolInfo} />
             </AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -760,47 +849,116 @@ export default function CumulativeTab(props: Props) {
   const getFormatedPlayersTableTitle = (participant: string, title: string) =>
     `${t(title)} ${dictUsers[participant]}`;
 
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    generateDynastie(values.name);
+  };
+
+  const GenerateDynastieDialog = () => (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          {t("ContinuePoolForNextSeason", {
+            season: seasonFormat(poolInfo.season, 1),
+          })}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>
+            {t("ContinuePoolForNextSeason", {
+              season: seasonFormat(poolInfo.season, 1),
+            })}
+          </DialogTitle>
+          <DialogDescription>
+            {t("ChoseTheNameOfPoolForNextSeason")}
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("PoolName")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t("PoolName")}
+                      {...field}
+                      defaultValue=""
+                    />
+                  </FormControl>
+                  <FormDescription />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit">{t("Generate")}</Button>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <div>
-      <div className="py-5 px-0 sm:px-5">
-        <Tabs defaultValue="totalRanking">
-          <div className="overflow-auto">
-            <TabsList>
-              <TabsTrigger value="totalRanking">{t("Total")}</TabsTrigger>
-              <TabsTrigger value="forwardRanking">{t("Forwards")}</TabsTrigger>
-              <TabsTrigger value="defenseRanking">{t("Defense")}</TabsTrigger>
-              <TabsTrigger value="goaliesRanking">{t("Goalies")}</TabsTrigger>
-              {props.poolInfo.context?.score_by_day?.[
+      <Tabs defaultValue="totalRanking">
+        {poolInfo.status === PoolState.InProgress &&
+        new Date(poolInfo.season_end) < currentDate &&
+        hasPoolPrivilege(user?._id, poolInfo) ? (
+          <Button onClick={markAsFinal}>{t("MarkAsFinal")}</Button>
+        ) : null}
+        {poolInfo.status === PoolState.Final &&
+        poolInfo.settings.dynastie_settings &&
+        !poolInfo.settings.dynastie_settings.next_season_pool_name &&
+        hasPoolPrivilege(user?._id, poolInfo)
+          ? GenerateDynastieDialog()
+          : null}
+        <div className="overflow-auto">
+          <TabsList>
+            <TabsTrigger value="totalRanking">{t("Total")}</TabsTrigger>
+            <TabsTrigger value="forwardRanking">{t("Forwards")}</TabsTrigger>
+            <TabsTrigger value="defenseRanking">{t("Defense")}</TabsTrigger>
+            <TabsTrigger value="goaliesRanking">{t("Goalies")}</TabsTrigger>
+            {poolInfo.status === PoolState.Final ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <LucideAlertOctagon color="red" />
+                </PopoverTrigger>
+                <PopoverContent align="start">
+                  {t("FinalPoolResult")}
+                </PopoverContent>
+              </Popover>
+            ) : poolInfo.context?.score_by_day?.[
                 selectedDate.toISOString().slice(0, 10)
               ]?.[selectedParticipant]?.is_cumulated ? null : (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <LucideAlertOctagon color="red" />
-                  </PopoverTrigger>
-                  <PopoverContent align="start">
-                    {t("notCumulatedYet", {
-                      selectedDate: selectedDate.toISOString().slice(0, 10),
-                    })}
-                  </PopoverContent>
-                </Popover>
-              )}
-            </TabsList>
-          </div>
-          <TabsContent value="totalRanking">
-            {TotalTable(ranking, TotalPointsColumn, t("Total Ranking"))}
-          </TabsContent>
-          <TabsContent value="forwardRanking">
-            {TotalTable(ranking, ForwardsTotalColumn, t("Forward Ranking"))}
-          </TabsContent>
-          <TabsContent value="defenseRanking">
-            {TotalTable(ranking, DefensesTotalColumn, t("Defense Ranking"))}
-          </TabsContent>
-          <TabsContent value="goaliesRanking">
-            {TotalTable(ranking, GoaliesTotalColumn, t("Goalies Ranking"))}
-          </TabsContent>
-        </Tabs>
-      </div>
-      <div className="py-5 px-0 sm:px-5">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <LucideAlertOctagon color="red" />
+                </PopoverTrigger>
+                <PopoverContent align="start">
+                  {t("notCumulatedYet", {
+                    selectedDate: selectedDate.toISOString().slice(0, 10),
+                  })}
+                </PopoverContent>
+              </Popover>
+            )}
+          </TabsList>
+        </div>
+        <TabsContent value="totalRanking">
+          {TotalTable(ranking, TotalPointsColumn, t("Total Ranking"))}
+        </TabsContent>
+        <TabsContent value="forwardRanking">
+          {TotalTable(ranking, ForwardsTotalColumn, t("Forward Ranking"))}
+        </TabsContent>
+        <TabsContent value="defenseRanking">
+          {TotalTable(ranking, DefensesTotalColumn, t("Defense Ranking"))}
+        </TabsContent>
+        <TabsContent value="goaliesRanking">
+          {TotalTable(ranking, GoaliesTotalColumn, t("Goalies Ranking"))}
+        </TabsContent>
+      </Tabs>
+      <div className="pt-3">
         <Tabs
           defaultValue={selectedParticipant}
           value={selectedParticipant}
@@ -810,14 +968,14 @@ export default function CumulativeTab(props: Props) {
         >
           <div className="overflow-auto">
             <TabsList>
-              {props.poolInfo.participants?.map((participant) => (
+              {poolInfo.participants?.map((participant) => (
                 <TabsTrigger key={participant} value={participant}>
                   {dictUsers[participant]}
                 </TabsTrigger>
               ))}
             </TabsList>
           </div>
-          {props.poolInfo.participants?.map((participant) => (
+          {poolInfo.participants?.map((participant) => (
             <TabsContent key={participant} value={participant}>
               {ParticipantRoster(participant)}
             </TabsContent>

@@ -1,6 +1,8 @@
 "use server";
 
-export async function getServerSideUsers(userIds: string[] | null) {
+import { UserData } from "@/data/user/model";
+
+export async function getServerSideUsers(userIds: string[] | null): Promise<UserData[]> {
   /* 
   Query the list of user infos with a list of user ids. 
   */
