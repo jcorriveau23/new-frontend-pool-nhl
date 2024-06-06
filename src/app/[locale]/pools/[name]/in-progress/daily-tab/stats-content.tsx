@@ -32,7 +32,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useTranslations } from "next-intl";
-import { Props } from "./daily-tab";
 import { ColumnDef } from "@tanstack/react-table";
 import { usePoolContext } from "@/context/pool-context";
 import { Row } from "@tanstack/react-table";
@@ -211,10 +210,11 @@ export class GoalieDailyInfo {
     return totalPoints;
   }
 }
-export default function DailyStatsContent(props: Props) {
+export default function DailyStatsContent() {
   const t = useTranslations();
   const { selectedDate } = useDateContext();
   const {
+    poolInfo,
     selectedParticipant,
     updateSelectedParticipant,
     playersOwner,
@@ -400,12 +400,12 @@ export default function DailyStatsContent(props: Props) {
 
   React.useEffect(() => {
     const keyDay = format(selectedDate, "yyyy-MM-dd");
-    const dayInfo = props.poolInfo.context?.score_by_day?.[keyDay];
+    const dayInfo = poolInfo.context?.score_by_day?.[keyDay];
 
     if (
       dayInfo === undefined ||
       dailyLeaders === null ||
-      props.poolInfo.participants == null
+      poolInfo.participants == null
     ) {
       return;
     }
@@ -415,9 +415,9 @@ export default function DailyStatsContent(props: Props) {
     const goaliesDailyStatsTemp: Record<string, GoalieDailyInfo[]> = {};
     const totalDailyPointsTemp: TotalDailyPoints[] = [];
 
-    for (var i = 0; i < props.poolInfo.participants.length; i += 1) {
+    for (var i = 0; i < poolInfo.participants.length; i += 1) {
       // Parse all participants daily locked roster to query its daily stats.
-      const participant = props.poolInfo.participants[i];
+      const participant = poolInfo.participants[i];
 
       if (dayInfo[participant].is_cumulated) {
         // the information is cumulated in the pool directly get it from there since it
@@ -425,16 +425,16 @@ export default function DailyStatsContent(props: Props) {
         forwardsDailyStatsTemp[participant] =
           getDailySkatersStatsWithCumulative(
             dayInfo[participant].roster.F,
-            props.poolInfo.settings.forwards_settings
+            poolInfo.settings.forwards_settings
           );
         defendersDailyStatsTemp[participant] =
           getDailySkatersStatsWithCumulative(
             dayInfo[participant].roster.D,
-            props.poolInfo.settings.defense_settings
+            poolInfo.settings.defense_settings
           );
         goaliesDailyStatsTemp[participant] = getDailyGoaliesStatsWithCumulative(
           dayInfo[participant].roster.G,
-          props.poolInfo.settings.goalies_settings
+          poolInfo.settings.goalies_settings
         );
       } else {
         // The players stats is not yet stored into the pool information
@@ -443,19 +443,19 @@ export default function DailyStatsContent(props: Props) {
           getDailySkaterStatsWithDailyLeaders(
             dayInfo[participant].roster.F,
             dailyLeaders,
-            props.poolInfo.settings.forwards_settings
+            poolInfo.settings.forwards_settings
           );
         defendersDailyStatsTemp[participant] =
           getDailySkaterStatsWithDailyLeaders(
             dayInfo[participant].roster.D,
             dailyLeaders,
-            props.poolInfo.settings.defense_settings
+            poolInfo.settings.defense_settings
           );
         goaliesDailyStatsTemp[participant] =
           getDailyGoaliesStatsWithDailyLeaders(
             dayInfo[participant].roster.G,
             dailyLeaders,
-            props.poolInfo.settings.goalies_settings
+            poolInfo.settings.goalies_settings
           );
       }
       totalDailyPointsTemp.push(
@@ -464,7 +464,7 @@ export default function DailyStatsContent(props: Props) {
           forwardsDailyStatsTemp[participant],
           defendersDailyStatsTemp[participant],
           goaliesDailyStatsTemp[participant],
-          props.poolInfo.settings
+          poolInfo.settings
         )
       );
     }
@@ -498,7 +498,7 @@ export default function DailyStatsContent(props: Props) {
         columnPinning: { left: ["player"] },
       }}
       meta={{
-        props: props.poolInfo,
+        props: poolInfo,
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -521,7 +521,7 @@ export default function DailyStatsContent(props: Props) {
         columnPinning: { left: ["player"] },
       }}
       meta={{
-        props: props.poolInfo,
+        props: poolInfo,
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -673,13 +673,13 @@ export default function DailyStatsContent(props: Props) {
           }
         >
           <TabsList>
-            {props.poolInfo.participants?.map((participant) => (
+            {poolInfo.participants?.map((participant) => (
               <TabsTrigger key={participant} value={participant}>
                 {dictUsers[participant]}
               </TabsTrigger>
             ))}
           </TabsList>
-          {props.poolInfo.participants?.map((participant) => (
+          {poolInfo.participants?.map((participant) => (
             <TabsContent key={participant} value={participant}>
               {forwardsDailyStats &&
               defendersDailyStats &&

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Pool } from "@/data/pool/model";
+import { Pool, PoolState } from "@/data/pool/model";
 import CumulativeTab from "./cumulative-tab/cumulative-tab";
 import DailyTab from "./daily-tab/daily-tab";
 import TradeTab from "./trade-tab/trade-tab";
@@ -21,10 +21,6 @@ import { LucideAlertOctagon } from "lucide-react";
 import { useRouter } from "@/navigation";
 import { usePoolContext } from "@/context/pool-context";
 
-interface Props {
-  poolInfo: Pool;
-}
-
 enum InProgressTabs {
   CUMULATIVE = "cumulative",
   DAILY = "daily",
@@ -34,11 +30,11 @@ enum InProgressTabs {
   SETTINGS = "settings",
 }
 
-export default function InProgressPool(props: Props) {
+export default function InProgressPool() {
   const t = useTranslations();
   const router = useRouter();
   const { gamesNightStatus } = useGamesNightContext();
-  const { updateSelectedParticipant } = usePoolContext();
+  const { poolInfo, updateSelectedParticipant } = usePoolContext();
 
   const getInitialSelectedTab = (): string => {
     // Return the initial tab selection using the url parameters if it exist.
@@ -49,9 +45,14 @@ export default function InProgressPool(props: Props) {
       initialTab === null ||
       !Object.values(InProgressTabs).includes(initialTab as InProgressTabs)
     ) {
+      // If the pool is complete, always show the cummulative tab.
+      if (poolInfo.status === PoolState.Final) {
+        return InProgressTabs.CUMULATIVE;
+      }
+
       return gamesNightStatus === GamesNightStatus.LIVE
-        ? "daily"
-        : "cumulative";
+        ? InProgressTabs.DAILY
+        : InProgressTabs.CUMULATIVE;
     }
 
     return initialTab;
@@ -63,7 +64,7 @@ export default function InProgressPool(props: Props) {
     setActiveTab(value);
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.set("activeTab", value);
-    router.push(`/pools/${props.poolInfo.name}/?${queryParams.toString()}`);
+    router.push(`/pools/${poolInfo.name}/?${queryParams.toString()}`);
   };
 
   React.useEffect(() => {
@@ -117,13 +118,13 @@ export default function InProgressPool(props: Props) {
                 ) : null}
               </div>
             </TabsTrigger>
-            {props.poolInfo.settings.can_trade ? (
+            {poolInfo.settings.can_trade ? (
               <TabsTrigger value={InProgressTabs.TRADE}>
                 {t("Trade")}
               </TabsTrigger>
             ) : null}
-            {props.poolInfo.settings.can_trade ||
-            props.poolInfo.settings.roster_modification_date.length > 0 ? (
+            {poolInfo.settings.can_trade ||
+            poolInfo.settings.roster_modification_date.length > 0 ? (
               <TabsTrigger value={InProgressTabs.HISTORY}>
                 {t("History")}
               </TabsTrigger>
@@ -135,27 +136,27 @@ export default function InProgressPool(props: Props) {
           </TabsList>
         </div>
         <TabsContent value={InProgressTabs.CUMULATIVE}>
-          <CumulativeTab poolInfo={props.poolInfo}></CumulativeTab>
+          <CumulativeTab />
         </TabsContent>
         <TabsContent value={InProgressTabs.DAILY}>
-          <DailyTab poolInfo={props.poolInfo}></DailyTab>
+          <DailyTab />
         </TabsContent>
-        {props.poolInfo.settings.can_trade ? (
+        {poolInfo.settings.can_trade ? (
           <TabsContent value={InProgressTabs.TRADE}>
-            <TradeTab poolInfo={props.poolInfo}></TradeTab>
+            <TradeTab />
           </TabsContent>
         ) : null}
-        {props.poolInfo.settings.can_trade ||
-        props.poolInfo.settings.roster_modification_date.length > 0 ? (
+        {poolInfo.settings.can_trade ||
+        poolInfo.settings.roster_modification_date.length > 0 ? (
           <TabsContent value={InProgressTabs.HISTORY}>
-            <HistoryTab poolInfo={props.poolInfo}></HistoryTab>
+            <HistoryTab />
           </TabsContent>
         ) : null}
         <TabsContent value={InProgressTabs.DRAFT}>
-          <DraftTab poolInfo={props.poolInfo}></DraftTab>
+          <DraftTab />
         </TabsContent>
         <TabsContent value={InProgressTabs.SETTINGS}>
-          <SettingsTab poolInfo={props.poolInfo}></SettingsTab>
+          <SettingsTab />
         </TabsContent>
       </Tabs>
     </div>

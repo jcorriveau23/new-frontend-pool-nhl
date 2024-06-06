@@ -10,6 +10,7 @@ import { getAllYears } from "@/lib/nhl";
 import { Combobox } from "@/components/ui/combobox";
 import { Link } from "@/navigation";
 import { getTranslations } from "next-intl/server";
+import { seasonWithYearFormat } from "@/app/utils/formating";
 
 export default async function Rosters({
   params,
@@ -23,7 +24,7 @@ export default async function Rosters({
       <Combobox
         selections={getAllYears().map((season) => ({
           value: `${season}${season + 1}`,
-          label: `${season.toString()}-${(season + 1).toString().slice(2)}`,
+          label: seasonWithYearFormat(season),
         }))}
         defaultSelectedValue={params.season}
         emptyText=""

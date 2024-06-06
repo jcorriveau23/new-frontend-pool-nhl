@@ -20,10 +20,6 @@ import team_info from "@/lib/teams";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
-interface Props {
-  poolInfo: Pool;
-}
-
 interface Round {
   round: number;
 
@@ -38,19 +34,19 @@ interface Draft {
   currentDrafter: string | null;
 }
 
-export default function Draft(props: Props) {
+export default function Draft() {
   const [draftInfo, setDraftInfo] = React.useState<Draft | null>(null);
-  const { dictUsers } = usePoolContext();
+  const { poolInfo, dictUsers } = usePoolContext();
   const t = useTranslations();
 
   // The max number of players per pooler is always the number of players minus the number of players protected
   // (only dynastie pool as a players protected !== 0)
   const numberPlayersToDraft =
-    props.poolInfo.settings.number_forwards +
-    props.poolInfo.settings.number_defenders +
-    props.poolInfo.settings.number_goalies +
-    props.poolInfo.settings.number_reservists -
-    (props.poolInfo.settings.dynastie_settings
+    poolInfo.settings.number_forwards +
+    poolInfo.settings.number_defenders +
+    poolInfo.settings.number_goalies +
+    poolInfo.settings.number_reservists -
+    (poolInfo.settings.dynastie_settings
       ?.next_season_number_players_protected ?? 0);
 
   const isDraftDone = (
@@ -70,8 +66,8 @@ export default function Draft(props: Props) {
 
   // Return the drafted player info for a specific draft index.
   const getDraftedPlayer = (draftIndex: number): Player | null =>
-    props.poolInfo.context?.players[
-      props.poolInfo.context?.players_name_drafted[draftIndex]
+    poolInfo.context?.players[
+      poolInfo.context?.players_name_drafted[draftIndex]
     ] ?? null;
 
   const getCurrentRoundIndex = (
@@ -79,7 +75,7 @@ export default function Draft(props: Props) {
   ): number | null => {
     // Return the current round. will be null if the draft is completed/
     const totalPlayerDrafted =
-      props.poolInfo.context?.players_name_drafted.length ?? 0;
+      poolInfo.context?.players_name_drafted.length ?? 0;
 
     if (totalPlayerDrafted >= numberOfPickPerRound * numberPlayersToDraft) {
       return null;
@@ -94,7 +90,7 @@ export default function Draft(props: Props) {
   ): string | null => {
     // Return the current drafter. Will be null if the draft is completed.
     const totalPlayerDrafted =
-      props.poolInfo.context?.players_name_drafted.length ?? 0;
+      poolInfo.context?.players_name_drafted.length ?? 0;
 
     const currentRoundIndex = getCurrentRoundIndex(numberOfPickPerRound);
     if (currentRoundIndex === null) {
@@ -112,20 +108,20 @@ export default function Draft(props: Props) {
     roundIndex: number
   ): string[] => {
     const drafters: string[] = [];
-    if (!props.poolInfo.context) {
+    if (!poolInfo.context) {
       return drafters;
     }
     // This is a dynastie type of draft, the final rank is being used as draft order.
     for (let j = 0; j < finalRank.length; j += 1) {
       if (
-        props.poolInfo.context.past_tradable_picks &&
-        roundIndex < props.poolInfo.context.past_tradable_picks.length
+        poolInfo.context.past_tradable_picks &&
+        roundIndex < poolInfo.context.past_tradable_picks.length
       ) {
         // we use tradable picks to find to process the next drafter, we are in the list of tradable picks right now.
         const nextDrafter = finalRank[finalRank.length - 1 - j];
 
         const realNextDrafter =
-          props.poolInfo.context.past_tradable_picks[roundIndex][nextDrafter];
+          poolInfo.context.past_tradable_picks[roundIndex][nextDrafter];
 
         draftedPlayerCountDictPerPooler.set(
           realNextDrafter,
@@ -174,10 +170,7 @@ export default function Draft(props: Props) {
   };
 
   const getRounds = (): Round[] => {
-    if (
-      props.poolInfo.participants === null ||
-      props.poolInfo.context === null
-    ) {
+    if (poolInfo.participants === null || poolInfo.context === null) {
       return [];
     }
 
@@ -189,24 +182,24 @@ export default function Draft(props: Props) {
     const rounds: Round[] = [];
     let roundIndex = 0; // roundIndex + 1 = round #
     while (
-      !isDraftDone(draftedPlayerCountDictPerPooler, props.poolInfo.participants)
+      !isDraftDone(draftedPlayerCountDictPerPooler, poolInfo.participants)
     ) {
       // The drafters for this round
       let drafters: string[] = [];
 
       // The list of drafters for the specific round.
-      if (props.poolInfo.final_rank) {
+      if (poolInfo.final_rank) {
         // This comes from a dynastie draft.
         drafters = getDynastieRoundDrafters(
           draftedPlayerCountDictPerPooler,
-          props.poolInfo.final_rank,
+          poolInfo.final_rank,
           roundIndex
         );
       } else {
         // This is logic is for new drafts.
         drafters = getRegularRoundDrafters(
           draftedPlayerCountDictPerPooler,
-          props.poolInfo.participants,
+          poolInfo.participants,
           roundIndex,
           true
         );
@@ -238,7 +231,7 @@ export default function Draft(props: Props) {
 
           return (
             <TableRow key={draftIndex + 1}>
-              <TableCell>{draftIndex}</TableCell>
+              <TableCell>{draftIndex + 1}</TableCell>
               <TableCell>{dictUsers[drafter]}</TableCell>
               <TableCell>
                 <PlayerLink
@@ -281,10 +274,10 @@ export default function Draft(props: Props) {
       rounds,
       currentDrafter: getCurrentDrafter(
         rounds,
-        props.poolInfo.participants?.length ?? 0
+        poolInfo.participants?.length ?? 0
       ),
     });
-  }, [props.poolInfo.context?.players_name_drafted]);
+  }, [poolInfo.context?.players_name_drafted]);
 
   if (draftInfo === null) {
     return <h1>Loading...</h1>;

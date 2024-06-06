@@ -1,6 +1,3 @@
-
-import { format } from "date-fns";
-
 export function ordinal(num: number, language: string = 'en'): string {
     const suffixes: { [key: string]: string[] } = {
         'en': ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'],
@@ -17,4 +14,17 @@ export function ordinal(num: number, language: string = 'en'): string {
     } else {
         return num + suffix[num % 10];
     }
+}
+
+export function seasonFormat(season: number, yearDelta: number): string {
+
+    // 20232024 + (1*10001) = 20242025
+    const updatedSeason = season + yearDelta*10001;
+
+    return `${updatedSeason.toString().slice(0, 4)}-${updatedSeason.toString().slice(6)}`
+}
+
+export function seasonWithYearFormat(year: number): string {
+    // 2023 -> 2023-24
+    return `${year.toString()}-${(year+1).toString().slice(2)}`
 }

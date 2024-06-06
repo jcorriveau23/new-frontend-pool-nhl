@@ -1,6 +1,7 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
 import { GoaliesSeasonTotal, SkaterSeasonTotal } from "./page";
+import { seasonFormat } from "@/app/utils/formating";
 
 export const skaterColumns: ColumnDef<
   SkaterSeasonTotal | GoaliesSeasonTotal
@@ -8,8 +9,7 @@ export const skaterColumns: ColumnDef<
   {
     accessorKey: "season",
     header: "season",
-    accessorFn: (row) =>
-      `${row.season.toString().slice(0, 4)}-${row.season.toString().slice(6)}`,
+    accessorFn: (row) => seasonFormat(row.season, 0),
   },
   {
     accessorKey: "teamName",
@@ -48,8 +48,7 @@ export const goalieColumns: ColumnDef<
   {
     accessorKey: "season",
     header: "season",
-    accessorFn: (row) =>
-      `${row.season.toString().slice(0, 4)}-${row.season.toString().slice(6)}`,
+    accessorFn: (row) => seasonFormat(row.season, 0),
   },
   {
     accessorKey: "teamName",

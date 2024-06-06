@@ -14,6 +14,9 @@ export interface PlayerTypeSettings {
 export interface DynastieSettings {
     next_season_number_players_protected: number;
     tradable_picks: number;
+    past_season_pool_name: String[],
+    next_season_pool_name: String | null,
+
 }
 
 export interface SkaterSettings {
@@ -62,6 +65,7 @@ export interface PoolSettings {
 }
 
 export interface Pool {
+    id: string
     name: string;
     owner: string;
     number_poolers: number;
@@ -76,6 +80,7 @@ export interface Pool {
     date_updated: number;
     season_start: string;
     season_end: string;
+    season: number
 }
 
 export enum PoolState {

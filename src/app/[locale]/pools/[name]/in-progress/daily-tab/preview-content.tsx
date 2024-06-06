@@ -10,7 +10,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { TotalPreviewColumn } from "./preview-columns";
-import { Props } from "./daily-tab";
 import { useTranslations } from "next-intl";
 import { useDateContext } from "@/context/date-context";
 import { format } from "date-fns";
@@ -55,12 +54,16 @@ export class PreviewTotal {
   goaliesPlaying: number;
 }
 
-export default function DailyPreviewContent(props: Props) {
+export default function DailyPreviewContent() {
   const t = useTranslations();
   const { playingAgainst } = useGamesNightContext();
   const { selectedDate } = useDateContext();
-  const { selectedParticipant, updateSelectedParticipant, dictUsers } =
-    usePoolContext();
+  const {
+    poolInfo,
+    selectedParticipant,
+    updateSelectedParticipant,
+    dictUsers,
+  } = usePoolContext();
   const [forwardsPreview, setForwardsPreview] = React.useState<Record<
     string,
     PreviewPlayer[]
@@ -78,7 +81,7 @@ export default function DailyPreviewContent(props: Props) {
   );
 
   const getPreviewInfo = () => {
-    if (props.poolInfo.participants === null) {
+    if (poolInfo.participants === null) {
       return;
     }
 
@@ -87,32 +90,32 @@ export default function DailyPreviewContent(props: Props) {
     const goaliesPreviewTemp: Record<string, PreviewPlayer[]> = {};
     const totalPreviewTemp = [];
     // First create a table for all players for each poolers
-    for (var i = 0; i < props.poolInfo.participants.length; i += 1) {
-      const participant = props.poolInfo.participants[i];
+    for (var i = 0; i < poolInfo.participants.length; i += 1) {
+      const participant = poolInfo.participants[i];
 
       // @ts-ignore
-      forwardsPreviewTemp[participant] = props.poolInfo.context?.pooler_roster[
+      forwardsPreviewTemp[participant] = poolInfo.context?.pooler_roster[
         participant
       ]?.chosen_forwards.map((playerId) => {
-        const player = props.poolInfo.context?.players[playerId];
+        const player = poolInfo.context?.players[playerId];
         if (player) {
           return new PreviewPlayer(player, playingAgainst);
         }
       });
       // @ts-ignore
-      defensePreviewTemp[participant] = props.poolInfo.context?.pooler_roster[
+      defensePreviewTemp[participant] = poolInfo.context?.pooler_roster[
         participant
       ].chosen_defenders.map((playerId) => {
-        const player = props.poolInfo.context?.players[playerId];
+        const player = poolInfo.context?.players[playerId];
         if (player) {
           return new PreviewPlayer(player, playingAgainst);
         }
       });
       // @ts-ignore
-      goaliesPreviewTemp[participant] = props.poolInfo.context?.pooler_roster[
+      goaliesPreviewTemp[participant] = poolInfo.context?.pooler_roster[
         participant
       ].chosen_goalies.map((playerId) => {
-        const player = props.poolInfo.context?.players[playerId];
+        const player = poolInfo.context?.players[playerId];
         if (player) {
           return new PreviewPlayer(player, playingAgainst);
         }
@@ -218,13 +221,13 @@ export default function DailyPreviewContent(props: Props) {
           }
         >
           <TabsList>
-            {props.poolInfo.participants?.map((participant) => (
+            {poolInfo.participants?.map((participant) => (
               <TabsTrigger key={participant} value={participant}>
                 {dictUsers[participant]}
               </TabsTrigger>
             ))}
           </TabsList>
-          {props.poolInfo.participants?.map((participant) => (
+          {poolInfo.participants?.map((participant) => (
             <TabsContent key={participant} value={participant}>
               {forwardsPreview && defensePreview && goaliesPreview ? (
                 <>
@@ -240,7 +243,7 @@ export default function DailyPreviewContent(props: Props) {
                           (p) => p.playingAgainst !== null
                         ).length
                       }/${
-                        props.poolInfo.settings.number_forwards
+                        poolInfo.settings.number_forwards
                       })`}</AccordionTrigger>
                       <AccordionContent>
                         {PreviewPlayersTable(
@@ -265,7 +268,7 @@ export default function DailyPreviewContent(props: Props) {
                           (p) => p.playingAgainst !== null
                         ).length
                       }/${
-                        props.poolInfo.settings.number_defenders
+                        poolInfo.settings.number_defenders
                       })`}</AccordionTrigger>
                       <AccordionContent>
                         {PreviewPlayersTable(
@@ -290,7 +293,7 @@ export default function DailyPreviewContent(props: Props) {
                           (p) => p.playingAgainst !== null
                         ).length
                       }/${
-                        props.poolInfo.settings.number_goalies
+                        poolInfo.settings.number_goalies
                       })`}</AccordionTrigger>
                       <AccordionContent>
                         {PreviewPlayersTable(

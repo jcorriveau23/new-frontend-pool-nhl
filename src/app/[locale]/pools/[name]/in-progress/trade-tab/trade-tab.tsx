@@ -9,17 +9,15 @@ import {
 } from "@/components/ui/accordion";
 import { format } from "date-fns";
 import { TradeItem } from "@/components/trade";
+import { usePoolContext } from "@/context/pool-context";
 
-interface Props {
-  poolInfo: Pool;
-}
-
-export default function TradeTab(props: Props) {
+export default function TradeTab() {
   const t = useTranslations();
+  const { poolInfo } = usePoolContext();
 
   return (
     <div>
-      {props.poolInfo.trades?.map((trade) => (
+      {poolInfo.trades?.map((trade) => (
         <Accordion
           key={trade.id}
           type="single"
@@ -36,7 +34,7 @@ export default function TradeTab(props: Props) {
               )})`}
             </AccordionTrigger>
             <AccordionContent>
-              <TradeItem trade={trade} poolInfo={props.poolInfo} />
+              <TradeItem trade={trade} poolInfo={poolInfo} />
             </AccordionContent>
           </AccordionItem>
         </Accordion>

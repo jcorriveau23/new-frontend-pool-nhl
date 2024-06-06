@@ -1,11 +1,6 @@
 import * as React from "react";
-import { Pool } from "@/data/pool/model";
 
-interface Props {
-  poolInfo: Pool;
-}
-
-export default function CreatedPool(props: Props) {
+export default function CreatedPool() {
   return (
     <div className="items-center text-center">
       TODO: Created Pool Status displaying pool settings and the list of pooler.
