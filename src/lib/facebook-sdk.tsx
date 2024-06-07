@@ -76,7 +76,7 @@ export const fbLogin = (): Promise<FbResponse> =>
       (response: FbResponse) => {
         resolve(response);
       },
-      { scope: "email,public_profile" }
+      { scope: "public_profile" }
     );
   });
 

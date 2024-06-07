@@ -118,6 +118,10 @@ export default function RegisterForm() {
       );
       return;
     }
+
+    const userInfo = await res.json();
+    connectUser(userInfo);
+    router.push("/"); // Navigate to the home page on success login.
   };
 
   return (
