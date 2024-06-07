@@ -105,6 +105,10 @@ export default function LoginForm() {
       );
       return;
     }
+
+    const userInfo = await res.json();
+    connectUser(userInfo);
+    router.push("/"); // Navigate to the home page on success login.
   };
 
   return (
