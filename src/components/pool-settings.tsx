@@ -449,7 +449,7 @@ export default function PoolSettingsComponent(props: Props) {
       );
       return;
     }
-    router.push(`/pools/${values.name}`);
+    router.push(`/pool/${values.name}`);
   };
 
   const GeneralSettings = () => (

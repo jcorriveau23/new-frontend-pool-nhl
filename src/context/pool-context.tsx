@@ -216,7 +216,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     setSelectedParticipant(participant);
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.set("selectedParticipant", participant);
-    router.push(`/pools/${poolInfo.name}/?${queryParams.toString()}`);
+    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
   };
   const updateUsers = (users: UserData[]) => {
     setDictUsers(getUserName(users));

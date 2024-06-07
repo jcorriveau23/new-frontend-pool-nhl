@@ -20,7 +20,7 @@ export default function Home({ params: { locale } }) {
               <p className="text-gray-500 md:text-xl dark:text-gray-400">
                 {t("AppDescription")}{" "}
                 <Link
-                  href="/pools/william"
+                  href="/pool/william"
                   className="text-link hover:underline"
                 >
                   {t("SeeDemo")}

@@ -261,5 +261,6 @@
     "ContinuePoolForNextSeason": "Continuer pour la saison {season}",
     "ChoseTheNameOfPoolForNextSeason": "Choisissez le nom du pool pour la prochaine saison.",
     "Generate": "Générer",
-    "MarkAsFinal": "Finaliser"
+    "MarkAsFinal": "Finaliser",
+    "NoPoolFound": "Pas de pool trouvé pour la saison {season}."
 }

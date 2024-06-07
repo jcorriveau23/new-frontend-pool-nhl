@@ -45,7 +45,7 @@ export function NavigationBar() {
                   </div>
                   <div className="hover:underline">
                     <SheetClose asChild>
-                      <Link href="/pools">{t("PoolList")}</Link>
+                      <Link href="/pools/20242025">{t("PoolList")}</Link>
                     </SheetClose>
                   </div>
                   <div className="hover:underline">
