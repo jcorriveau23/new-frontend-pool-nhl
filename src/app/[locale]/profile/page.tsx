@@ -7,7 +7,7 @@ const HankoProfile = dynamic(() => import("@/components/hanko-profile"), {
   ssr: false,
 });
 
-export default function LoginForm() {
+export default function ProfilePage() {
   const t = useTranslations();
 
   return (
