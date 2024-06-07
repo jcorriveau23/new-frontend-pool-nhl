@@ -195,21 +195,22 @@ export default async function Standing({
 
   return (
     <div className="items-center text-center">
-      {t("Season")}
-      <Combobox
-        selections={standingSeasons.seasons.reverse().map((s) => ({
-          value: s.standingsEnd,
-          label: seasonFormat(s.id, 0),
-        }))}
-        defaultSelectedValue={
-          params.year === "now" // If now is selected take the latest date.
-            ? standingSeasons.seasons[0].standingsEnd
-            : params.year
-        }
-        emptyText=""
-        linkTo={`/standing/\${value}`}
-      />
-
+      <div className="space-x-2">
+        {t("Season")}
+        <Combobox
+          selections={standingSeasons.seasons.reverse().map((s) => ({
+            value: s.standingsEnd,
+            label: seasonFormat(s.id, 0),
+          }))}
+          defaultSelectedValue={
+            params.year === "now" // If now is selected take the latest date.
+              ? standingSeasons.seasons[0].standingsEnd
+              : params.year
+          }
+          emptyText=""
+          linkTo={`/standing/\${value}`}
+        />
+      </div>
       {StandingLeague()}
     </div>
   );

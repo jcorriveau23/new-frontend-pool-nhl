@@ -19,7 +19,7 @@ export default async function Rosters({
 }) {
   const t = await getTranslations();
   const YearInputs = () => (
-    <div>
+    <div className="space-x-2">
       {t("Season")}
       <Combobox
         selections={getAllYears().map((season) => ({

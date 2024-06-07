@@ -351,7 +351,7 @@ export default function CumulativeTab() {
     updatePoolInfo(data);
   };
 
-  const generateDynastie = async (newPoolName: string) => {
+  const generateDynasty = async (newPoolName: string) => {
     const res = await fetch("/api-rust/generate-dynasty", {
       method: "POST",
       headers: {
@@ -850,10 +850,10 @@ export default function CumulativeTab() {
     `${t(title)} ${dictUsers[participant]}`;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    generateDynastie(values.name);
+    generateDynasty(values.name);
   };
 
-  const GenerateDynastieDialog = () => (
+  const GenerateDynastyDialog = () => (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline">
@@ -912,7 +912,7 @@ export default function CumulativeTab() {
         poolInfo.settings.dynastie_settings &&
         !poolInfo.settings.dynastie_settings.next_season_pool_name &&
         hasPoolPrivilege(user?._id, poolInfo)
-          ? GenerateDynastieDialog()
+          ? GenerateDynastyDialog()
           : null}
         <div className="overflow-auto">
           <TabsList>

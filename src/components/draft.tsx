@@ -102,7 +102,7 @@ export default function Draft() {
     ];
   };
 
-  const getDynastieRoundDrafters = (
+  const getDynastyRoundDrafters = (
     draftedPlayerCountDictPerPooler: Map<string, number>,
     finalRank: string[],
     roundIndex: number
@@ -190,7 +190,7 @@ export default function Draft() {
       // The list of drafters for the specific round.
       if (poolInfo.final_rank) {
         // This comes from a dynastie draft.
-        drafters = getDynastieRoundDrafters(
+        drafters = getDynastyRoundDrafters(
           draftedPlayerCountDictPerPooler,
           poolInfo.final_rank,
           roundIndex
