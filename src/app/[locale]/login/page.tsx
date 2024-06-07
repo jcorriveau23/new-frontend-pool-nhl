@@ -27,6 +27,7 @@ import { z } from "zod";
 
 import { useTranslations } from "next-intl";
 import { useUserContext } from "@/context/user-context";
+import { fbLogin } from "@/lib/facebook-sdk";
 
 export default function LoginForm() {
   const t = useTranslations();
@@ -81,8 +82,29 @@ export default function LoginForm() {
     alert("TODO: Ajout de la connection avec google.");
   };
 
-  const continueWithFacebook = () => {
-    alert("TODO: Ajout de la connection avec facebook.");
+  const continueWithFacebook = async () => {
+    const response = await fbLogin();
+    if (response.authResponse === null) {
+      alert(t("CouldNotQueryFacebookAuthentificationToken"));
+    }
+
+    const res = await fetch("/api-rust/user/social-login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(response.authResponse),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      alert(
+        t("CouldNotContinueWithFacebook", {
+          error: error,
+        })
+      );
+      return;
+    }
   };
 
   return (
@@ -128,13 +150,13 @@ export default function LoginForm() {
           </form>
         </Form>
         <Separator />
-        <Button
+        {/* <Button
           variant="outline"
           className="w-full"
           onClick={() => continueWithGoogle()}
         >
           {t("LoginWithGoogle")}
-        </Button>
+        </Button> */}
         <Button
           variant="outline"
           className="w-full"

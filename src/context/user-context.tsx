@@ -8,6 +8,11 @@ import React, {
 } from "react";
 import Cookies from "js-cookie";
 import { LoginResponse } from "@/data/user/response";
+import {
+  FbResponse,
+  getFacebookLoginStatus,
+  initFacebookSdk,
+} from "@/lib/facebook-sdk";
 
 // Create a Context object
 const UserContext = createContext<UserContextProps | undefined>(undefined);
@@ -34,10 +39,20 @@ interface UserProviderProps {
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // State to hold user data
   const [user, setUser] = useState<UserData | null>(null);
+  const [fbAuthResponse, setFbAuthResponse] = useState<FbResponse | null>(null);
 
   // Effect to load user data from localStorage on component mount
   useEffect(() => {
     const userData = localStorage.getItem("persist-account");
+
+    initFacebookSdk().then(() => {
+      getFacebookLoginStatus().then((response) => {
+        if (response !== null) {
+          setFbAuthResponse(response);
+        }
+      });
+    });
+
     if (userData) {
       // You might want to decode the token and extract user data here
       // For simplicity, I'm assuming the token directly contains user data

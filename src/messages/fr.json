@@ -262,5 +262,7 @@
     "ChoseTheNameOfPoolForNextSeason": "Choisissez le nom du pool pour la prochaine saison.",
     "Generate": "Générer",
     "MarkAsFinal": "Finaliser",
-    "NoPoolFound": "Pas de pool trouvé pour la saison {season}."
+    "NoPoolFound": "Pas de pool trouvé pour la saison {season}.",
+    "CouldNotQueryFacebookAuthentificationToken": "La requête à facebook pour recevoir le token d'authentification a échoué.",
+    "CouldNotContinueWithFacebook": "La requête pour se logger à l'application avec facebook a échoué: {error}."
 }
