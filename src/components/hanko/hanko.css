@@ -1,0 +1,5 @@
+.hanko-auth,
+.hanko-profile {
+  --color: var(--primary);
+  --background-color: var(--background);
+}
