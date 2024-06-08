@@ -9,16 +9,30 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUserContext } from "@/context/user-context";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/navigation";
+import { useUserData } from "@/hooks/useUserData";
+import LogoutBtn from "./hanko/logout-button";
+import { useSessionData } from "@/hooks/useSessionData";
 
 export function UserManager() {
-  const { user, disconnectUser } = useUserContext();
   const t = useTranslations();
   const router = useRouter();
+  const {
+    id,
+    email,
+    loading: userDataLoading,
+    error: userDataError,
+  } = useUserData();
+  const {
+    userID,
+    jwt,
+    isValid,
+    loading: sessionDataLoading,
+    error: sessionDataError,
+  } = useSessionData();
 
-  return user ? (
+  return isValid ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm">
@@ -26,12 +40,8 @@ export function UserManager() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          onClick={() => {
-            disconnectUser();
-          }}
-        >
-          {t("Disconnect")}
+        <DropdownMenuItem>
+          <LogoutBtn />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

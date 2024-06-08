@@ -33,8 +33,9 @@ import {
 } from "@/components/ui/popover";
 import { LucideAlertOctagon } from "lucide-react";
 import Cookies from "js-cookie";
-import { useUserContext } from "@/context/user-context";
 import { Link, useRouter } from "@/navigation";
+import { useUserData } from "@/hooks/useUserData";
+import { useSessionData } from "@/hooks/useSessionData";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -54,7 +55,20 @@ export const POOL_NAME_MAX_LENGTH = 16;
 
 export default function PoolSettingsComponent(props: Props) {
   const t = useTranslations();
-  const { user } = useUserContext();
+  const {
+    id,
+    email,
+    loading: userDataLoading,
+    error: userDataError,
+  } = useUserData();
+  const {
+    userID,
+    jwt,
+    isValid,
+    loading: sessionDataLoading,
+    error: sessionDataError,
+  } = useSessionData();
+
   const router = useRouter();
 
   const DISABLE_OPTIONS =
@@ -388,7 +402,7 @@ export default function PoolSettingsComponent(props: Props) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${Cookies.get(`auth-${user?._id}`)}`,
+        Authorization: `Bearer ${Cookies.get(`auth-${jwt}`)}`,
       },
       body: JSON.stringify({
         pool_name: values.name,
@@ -926,7 +940,7 @@ export default function PoolSettingsComponent(props: Props) {
     </Card>
   );
 
-  if (user === null) {
+  if (isValid === false) {
     return (
       <div className="text-left mx-auto space-y-8">
         <p>{t("MustBeConnectedToCreatePool")}</p>{" "}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useUserContext } from "@/context/user-context";
 
 import dynamic from "next/dynamic";
 const HankoAuth = dynamic(() => import("@/components/hanko/hanko-auth"), {
