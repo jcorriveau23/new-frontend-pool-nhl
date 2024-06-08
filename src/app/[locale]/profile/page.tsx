@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import dynamic from "next/dynamic";
-const HankoProfile = dynamic(() => import("@/components/hanko-profile"), {
+const HankoProfile = dynamic(() => import("@/components/hanko/hanko-profile"), {
   ssr: false,
 });
 
