@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/navigation";
 import { Hanko } from "@teamhanko/hanko-elements";
 
 const hankoApi = process.env.NEXT_PUBLIC_HANKO_API_URL;
