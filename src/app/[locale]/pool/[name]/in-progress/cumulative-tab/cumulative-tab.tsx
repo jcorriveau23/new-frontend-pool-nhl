@@ -43,7 +43,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Cookies from "js-cookie";
-import { useUserContext } from "@/context/user-context";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
 import {
@@ -71,6 +70,7 @@ import {
   POOL_NAME_MIN_LENGTH,
 } from "@/components/pool-settings";
 import { seasonFormat } from "@/app/utils/formating";
+import { useSessionData } from "@/hooks/useSessionData";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -300,7 +300,13 @@ export default function CumulativeTab() {
     dictUsers,
   } = usePoolContext();
 
-  const { user } = useUserContext();
+  const {
+    userID,
+    jwt,
+    isValid,
+    loading: sessionDataLoading,
+    error: sessionDataError,
+  } = useSessionData();
 
   const formSchema = z.object({
     name: z
@@ -330,7 +336,7 @@ export default function CumulativeTab() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${Cookies.get(`auth-${user?._id}`)}`,
+        Authorization: `Bearer ${Cookies.get(`auth-${jwt}`)}`,
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
@@ -356,7 +362,7 @@ export default function CumulativeTab() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${Cookies.get(`auth-${user?._id}`)}`,
+        Authorization: `Bearer ${Cookies.get(`auth-${jwt}`)}`,
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
@@ -905,13 +911,13 @@ export default function CumulativeTab() {
       <Tabs defaultValue="totalRanking">
         {poolInfo.status === PoolState.InProgress &&
         new Date(poolInfo.season_end) < currentDate &&
-        hasPoolPrivilege(user?._id, poolInfo) ? (
+        hasPoolPrivilege(userID, poolInfo) ? (
           <Button onClick={markAsFinal}>{t("MarkAsFinal")}</Button>
         ) : null}
         {poolInfo.status === PoolState.Final &&
         poolInfo.settings.dynastie_settings &&
         !poolInfo.settings.dynastie_settings.next_season_pool_name &&
-        hasPoolPrivilege(user?._id, poolInfo)
+        hasPoolPrivilege(userID, poolInfo)
           ? GenerateDynastyDialog()
           : null}
         <div className="overflow-auto">
