@@ -2,7 +2,7 @@
 Module that share the context of the selected date games context. 
 Tells if there is a live game, also keeps the information of which teams plays against which team.
 
-TODO: there should be a way to hadle the selected date in a url param so that the state related to 
+TODO: there should be a way to handle the selected date in a url param so that the state related to 
 that is also server side.
 */
 "use client";

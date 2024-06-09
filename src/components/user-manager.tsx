@@ -11,26 +11,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/navigation";
-import { useUserData } from "@/hooks/useUserData";
 import LogoutBtn from "./hanko/logout-button";
-import { useSessionData } from "@/hooks/useSessionData";
+import { useSession } from "@/context/useSessionData";
+import { LoadingSpinner } from "./ui/loading-spinner";
 
 export function UserManager() {
   const t = useTranslations();
   const router = useRouter();
-  const {
-    id,
-    email,
-    loading: userDataLoading,
-    error: userDataError,
-  } = useUserData();
-  const {
-    userID,
-    jwt,
-    isValid,
-    loading: sessionDataLoading,
-    error: sessionDataError,
-  } = useSessionData();
+  const { isValid, loading: sessionDataLoading } = useSession();
+
+  if (sessionDataLoading) {
+    return (
+      <Button variant="ghost" size="sm">
+        <LoadingSpinner />
+      </Button>
+    );
+  }
 
   return isValid ? (
     <DropdownMenu>

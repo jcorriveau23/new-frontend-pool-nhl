@@ -2,7 +2,7 @@
 Module that share the context of the current date, the selected date 
 and allow to update the selected date across the whole application.
 
-TODO: there should be a way to hadle the selected date in a url param so that the query related 
+TODO: there should be a way to handle the selected date in a url param so that the query related 
 to date are being made on the server side
 */
 import React, { createContext, useContext, ReactNode } from "react";
