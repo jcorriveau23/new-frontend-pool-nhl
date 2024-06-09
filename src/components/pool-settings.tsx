@@ -34,8 +34,8 @@ import {
 import { LucideAlertOctagon } from "lucide-react";
 import Cookies from "js-cookie";
 import { Link, useRouter } from "@/navigation";
-import { useUserData } from "@/hooks/useUserData";
-import { useSessionData } from "@/hooks/useSessionData";
+import { useUser } from "@/context/useUserData";
+import { useSession } from "@/context/useSessionData";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -60,14 +60,14 @@ export default function PoolSettingsComponent(props: Props) {
     email,
     loading: userDataLoading,
     error: userDataError,
-  } = useUserData();
+  } = useUser();
   const {
     userID,
     jwt,
     isValid,
     loading: sessionDataLoading,
     error: sessionDataError,
-  } = useSessionData();
+  } = useSession();
 
   const router = useRouter();
 

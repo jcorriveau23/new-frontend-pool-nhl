@@ -70,7 +70,7 @@ import {
   POOL_NAME_MIN_LENGTH,
 } from "@/components/pool-settings";
 import { seasonFormat } from "@/app/utils/formating";
-import { useSessionData } from "@/hooks/useSessionData";
+import { useSession } from "@/context/useSessionData";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -306,7 +306,7 @@ export default function CumulativeTab() {
     isValid,
     loading: sessionDataLoading,
     error: sessionDataError,
-  } = useSessionData();
+  } = useSession();
 
   const formSchema = z.object({
     name: z
