@@ -336,7 +336,7 @@ export default function CumulativeTab() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${Cookies.get(`auth-${jwt}`)}`,
+        Authorization: `Bearer ${jwt}`,
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
@@ -362,7 +362,7 @@ export default function CumulativeTab() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${Cookies.get(`auth-${jwt}`)}`,
+        Authorization: `Bearer ${jwt}`,
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
