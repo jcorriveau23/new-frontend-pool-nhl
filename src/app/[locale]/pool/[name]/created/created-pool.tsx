@@ -37,7 +37,7 @@ export default function CreatedPool() {
 
     console.log(jwt);
     const socketTmp = new WebSocket(
-      `wss://${window.location.host}/api-rust/ws/${jwt}`
+      `wss://${window.location.host}/api-rust/ws?token=${jwt}`
     );
 
     // Receiving message from the socket server.
