@@ -19,8 +19,7 @@ export const TotalPreviewColumn: ColumnDef<PreviewTotal>[] = [
     accessorKey: "pooler",
     header: "Pooler",
     cell: ({ row, table }) => {
-      const ranking = row.original;
-      return table.options.meta?.props?.dictUsers[ranking.participant];
+      return row.original.participant;
     },
   },
   {

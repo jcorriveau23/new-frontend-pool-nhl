@@ -17,14 +17,8 @@ export interface PoolContextProps {
   playersOwner: Record<number, string>;
   updatePlayersOwner: (poolInfo: Pool) => void;
 
-  // Map the user id to its user name.
-  dictUsers: Record<string, string>;
-  updateUsers: (users: UserData[]) => void;
-
   poolInfo: Pool;
   updatePoolInfo: (newPoolInfo: Pool) => void;
-
-  users: UserData[];
 }
 
 const PoolContext = createContext<PoolContextProps | undefined>(undefined);
@@ -40,7 +34,6 @@ export const usePoolContext = (): PoolContextProps => {
 interface PoolContextProviderProps {
   children: ReactNode;
   pool: Pool;
-  users: UserData[];
 }
 
 const getPlayersOwner = (poolInfo: Pool) => {
@@ -94,15 +87,6 @@ const findLastDateInDb = (pool: Pool | null) => {
   } while (i > 0);
 
   return null;
-};
-
-const getUserName = (users: UserData[]) => {
-  const dictUsersTmp: Record<string, string> = {};
-  users.map((u: any) => {
-    dictUsersTmp[u._id] = u.name;
-  });
-
-  return dictUsersTmp;
 };
 
 export const hasPoolPrivilege = (
@@ -178,7 +162,6 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
 export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   children,
   pool,
-  users,
 }) => {
   const [poolInfo, setPoolInfo] = useState<Pool>(pool);
 
@@ -206,9 +189,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     Record<number, string>
   >(getPlayersOwner(poolInfo));
 
-  const [dictUsers, setDictUsers] = React.useState<Record<string, string>>(
-    getUserName(users)
-  );
   const updatePlayersOwner = (poolInfo: Pool) => {
     setPlayersOwner(getPlayersOwner(poolInfo));
   };
@@ -217,9 +197,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.set("selectedParticipant", participant);
     router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
-  };
-  const updateUsers = (users: UserData[]) => {
-    setDictUsers(getUserName(users));
   };
 
   const updatePoolInfo = (newPoolInfo: Pool) => {
@@ -238,11 +215,8 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     updateSelectedParticipant,
     playersOwner,
     updatePlayersOwner,
-    dictUsers,
-    updateUsers,
     poolInfo,
     updatePoolInfo,
-    users,
   };
 
   return (

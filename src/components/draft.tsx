@@ -36,7 +36,7 @@ interface Draft {
 
 export default function Draft() {
   const [draftInfo, setDraftInfo] = React.useState<Draft | null>(null);
-  const { poolInfo, dictUsers } = usePoolContext();
+  const { poolInfo } = usePoolContext();
   const t = useTranslations();
 
   // The max number of players per pooler is always the number of players minus the number of players protected
@@ -232,7 +232,7 @@ export default function Draft() {
           return (
             <TableRow key={draftIndex + 1}>
               <TableCell>{draftIndex + 1}</TableCell>
-              <TableCell>{dictUsers[drafter]}</TableCell>
+              <TableCell>{drafter}</TableCell>
               <TableCell>
                 <PlayerLink
                   name={getDraftedPlayer(draftIndex)?.name}

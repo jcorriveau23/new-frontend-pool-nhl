@@ -218,7 +218,6 @@ export default function DailyStatsContent() {
     selectedParticipant,
     updateSelectedParticipant,
     playersOwner,
-    dictUsers,
   } = usePoolContext();
 
   const [dailyLeaders, setDailyLeaders] = React.useState<DailyLeaders | null>(
@@ -548,7 +547,7 @@ export default function DailyStatsContent() {
         columnPinning: { left: ["ranking", "pooler"] },
       }}
       meta={{
-        props: { dictUsers },
+        props: {},
         getRowStyles: (row: Row<TotalDailyPoints>) => {
           if (row.original.participant === selectedParticipant) {
             return "bg-selection hover:bg-selection";
@@ -577,7 +576,7 @@ export default function DailyStatsContent() {
         columnPinning: { left: ["ranking", "name"] },
       }}
       meta={{
-        props: { dictUsers, playersOwner },
+        props: { playersOwner },
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -600,7 +599,7 @@ export default function DailyStatsContent() {
         columnPinning: { left: ["ranking", "name"] },
       }}
       meta={{
-        props: { dictUsers, playersOwner },
+        props: { playersOwner },
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -613,10 +612,7 @@ export default function DailyStatsContent() {
     `${t(title)} (${format(selectedDate, "yyyy-MM-dd")})`;
 
   const getFormatedDateTitle = (participant: string, title: string) =>
-    `${t(title)} ${dictUsers[participant]} (${format(
-      selectedDate,
-      "yyyy-MM-dd"
-    )})`;
+    `${t(title)} ${participant} (${format(selectedDate, "yyyy-MM-dd")})`;
 
   return (
     <div>
@@ -675,7 +671,7 @@ export default function DailyStatsContent() {
           <TabsList>
             {poolInfo.participants?.map((participant) => (
               <TabsTrigger key={participant} value={participant}>
-                {dictUsers[participant]}
+                {participant}
               </TabsTrigger>
             ))}
           </TabsList>

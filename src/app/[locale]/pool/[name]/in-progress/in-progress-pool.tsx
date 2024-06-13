@@ -64,7 +64,7 @@ export default function InProgressPool() {
     setActiveTab(value);
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.set("activeTab", value);
-    router.push(`/pools/${poolInfo.name}/?${queryParams.toString()}`);
+    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
   };
 
   React.useEffect(() => {

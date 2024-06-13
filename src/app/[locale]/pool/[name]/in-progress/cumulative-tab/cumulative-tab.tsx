@@ -297,7 +297,6 @@ export default function CumulativeTab() {
     updatePoolInfo,
     selectedParticipant,
     updateSelectedParticipant,
-    dictUsers,
   } = usePoolContext();
 
   const {
@@ -703,7 +702,7 @@ export default function CumulativeTab() {
         columnPinning: { left: ["ranking", "pooler"] },
       }}
       meta={{
-        props: { dictUsers, poolInfo: poolInfo },
+        props: { poolInfo: poolInfo },
         getRowStyles: (row: Row<TotalRanking>) => {
           if (row.original.participant === selectedParticipant) {
             return "bg-selection hover:bg-selection";
@@ -853,7 +852,7 @@ export default function CumulativeTab() {
   );
 
   const getFormatedPlayersTableTitle = (participant: string, title: string) =>
-    `${t(title)} ${dictUsers[participant]}`;
+    `${t(title)} ${participant}`;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     generateDynasty(values.name);
@@ -976,7 +975,7 @@ export default function CumulativeTab() {
             <TabsList>
               {poolInfo.participants?.map((participant) => (
                 <TabsTrigger key={participant} value={participant}>
-                  {dictUsers[participant]}
+                  {participant}
                 </TabsTrigger>
               ))}
             </TabsList>

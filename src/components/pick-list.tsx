@@ -21,13 +21,12 @@ interface Props {
 }
 
 export default function PickList(props: Props) {
-  const { dictUsers } = usePoolContext();
   const t = useTranslations();
 
   return (
     <Table>
       <TableCaption>{`${t("Liste of picks owned by")} ${
-        dictUsers[props.participant]
+        props.participant
       }`}</TableCaption>
       <TableHeader>
         <TableRow>
@@ -43,7 +42,7 @@ export default function PickList(props: Props) {
               <TableRow key={`${from}-${index}`}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
-                  <div>{dictUsers[from]}</div>
+                  <div>{from}</div>
                   <div>
                     {from === roundPicksOwner[from] ? null : (
                       <Popover>
@@ -52,9 +51,9 @@ export default function PickList(props: Props) {
                         </PopoverTrigger>
                         <PopoverContent align="start">
                           {t("pickTraded", {
-                            newOwner: dictUsers[roundPicksOwner[from]],
+                            newOwner: roundPicksOwner[from],
                             round: index + 1,
-                            oldOwner: dictUsers[from],
+                            oldOwner: from,
                           })}
                         </PopoverContent>
                       </Popover>

@@ -58,12 +58,8 @@ export default function DailyPreviewContent() {
   const t = useTranslations();
   const { playingAgainst } = useGamesNightContext();
   const { selectedDate } = useDateContext();
-  const {
-    poolInfo,
-    selectedParticipant,
-    updateSelectedParticipant,
-    dictUsers,
-  } = usePoolContext();
+  const { poolInfo, selectedParticipant, updateSelectedParticipant } =
+    usePoolContext();
   const [forwardsPreview, setForwardsPreview] = React.useState<Record<
     string,
     PreviewPlayer[]
@@ -151,7 +147,7 @@ export default function DailyPreviewContent() {
         columnPinning: { left: ["ranking", "pooler"] },
       }}
       meta={{
-        props: { dictUsers },
+        props: {},
         getRowStyles: (row: Row<PreviewTotal>) => {
           if (row.original.participant === selectedParticipant) {
             return "bg-selection hover:bg-selection";
@@ -180,7 +176,7 @@ export default function DailyPreviewContent() {
         columnPinning: { left: ["ranking", "name"] },
       }}
       meta={{
-        props: { dictUsers },
+        props: {},
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -193,10 +189,7 @@ export default function DailyPreviewContent() {
     `${t(title)} (${format(selectedDate, "yyyy-MM-dd")})`;
 
   const getFormatedDateTitle = (participant: string, title: string) =>
-    `${t(title)} ${dictUsers[participant]} (${format(
-      selectedDate,
-      "yyyy-MM-dd"
-    )})`;
+    `${t(title)} ${participant} (${format(selectedDate, "yyyy-MM-dd")})`;
 
   React.useEffect(() => {
     getPreviewInfo();
@@ -223,7 +216,7 @@ export default function DailyPreviewContent() {
           <TabsList>
             {poolInfo.participants?.map((participant) => (
               <TabsTrigger key={participant} value={participant}>
-                {dictUsers[participant]}
+                {participant}
               </TabsTrigger>
             ))}
           </TabsList>

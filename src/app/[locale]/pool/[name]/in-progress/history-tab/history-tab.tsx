@@ -27,7 +27,7 @@ interface DailyHistory {
 }
 
 export default function HistoryTab() {
-  const { poolInfo, dictUsers } = usePoolContext();
+  const { poolInfo } = usePoolContext();
   const t = useTranslations();
   const [history, setHistory] = React.useState<DailyHistory[] | null>(null);
 
@@ -181,7 +181,7 @@ export default function HistoryTab() {
   const Movements = (movements: DailyMovements) => (
     <div key={movements.participant} className="border space-y-4">
       <div>
-        <h1 className="text-lg">{dictUsers[movements.participant]}</h1>
+        <h1 className="text-lg">{movements.participant}</h1>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
