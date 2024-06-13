@@ -35,6 +35,7 @@ export default function CreatedPool() {
   React.useEffect(() => {
     if (!jwt || !poolInfo.name) return;
 
+    console.log(jwt);
     const socketTmp = new WebSocket(
       `wss://${window.location.host}/api-rust/ws/${jwt}`
     );
