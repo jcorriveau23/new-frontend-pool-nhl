@@ -10,8 +10,13 @@ import { useSession } from "@/context/useSessionData";
 import { usePoolContext } from "@/context/pool-context";
 import * as React from "react";
 import { PoolSettings } from "@/data/pool/model";
+import { Checkbox } from "@/components/ui/checkbox";
 
-interface RoomUser {}
+interface RoomUser {
+  id: string;
+  email: string | null;
+  is_ready: boolean;
+}
 
 export default function CreatedPool() {
   const [socket, setSocket] = React.useState<WebSocket | null>(null);
@@ -24,62 +29,92 @@ export default function CreatedPool() {
   const [poolSettingsUpdate, setPoolSettingsUpdate] =
     React.useState<PoolSettings | null>(null);
 
-  const create_socket_command = (command: string, arg: string) =>
+  const createSocketCommand = (command: string, arg: string) =>
     `{"${command}": ${arg}}`;
 
   React.useEffect(() => {
-    const socket_tmp = new WebSocket(
+    if (!jwt || !poolInfo.name) return;
+
+    const socketTmp = new WebSocket(
       `wss://${window.location.host}/api-rust/ws/${jwt}`
     );
 
     // Receiving message from the socket server.
-    socket_tmp.onmessage = (event) => {
+    socketTmp.onmessage = (event) => {
       try {
         const response = JSON.parse(event.data);
         if (response.Pool) {
           // This is a pool update
+          console.log("update pool");
           updatePoolInfo(response.Pool.pool);
         } else if (response.Users) {
+          console.log("update users");
           setRoomUsers(response.Users.room_users);
         }
       } catch (e) {
+        console.error("Failed to parse WebSocket message:", e);
         alert(event.data);
       }
     };
-    socket_tmp.onopen = () =>
-      socket_tmp.send(
-        create_socket_command("JoinRoom", `{"pool_name": "${poolInfo.name}"}`)
-      );
 
-    setSocket(socket_tmp);
+    socketTmp.onopen = () => {
+      console.log("join room");
+      socketTmp.send(
+        createSocketCommand("JoinRoom", `{"pool_name": "${poolInfo.name}"}`)
+      );
+    };
+
+    socketTmp.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      alert(error);
+    };
+
+    setSocket(socketTmp);
 
     return () => {
-      socket_tmp.send('"LeaveRoom"');
-      socket_tmp.close();
+      if (socketTmp.readyState === WebSocket.OPEN) {
+        console.log("leave room");
+        socketTmp.send(createSocketCommand("LeaveRoom", ""));
+      }
+      console.log("close socket");
+      socketTmp.close();
     };
   }, []);
 
-  const update_pool_settings = () => {
-    const newPoolSettings = { ...poolInfo.settings, ...poolSettingsUpdate };
-    socket?.send(
-      create_socket_command(
-        "OnPoolSettingChanges",
-        `{"pool_settings": ${JSON.stringify(newPoolSettings)}}`
-      )
-    );
+  const updatePoolSettings = () => {
+    if (socket && poolSettingsUpdate) {
+      const newPoolSettings = { ...poolInfo.settings, ...poolSettingsUpdate };
+      socket.send(
+        createSocketCommand(
+          "OnPoolSettingChanges",
+          `{"pool_settings": ${JSON.stringify(newPoolSettings)}}`
+        )
+      );
+    }
   };
 
-  const on_ready = () => {
+  const onReady = () => {
+    console.log("on ready!");
     socket?.send('"OnReady"');
   };
 
-  const start_draft = () => {
+  const startDraft = () => {
     socket?.send('"StartDraft"');
   };
 
   const renderUser = (roomUser: RoomUser) => (
-    <div>
-      <h1></h1>
+    <div key={roomUser.id}>
+      <h1>{roomUser.id}</h1>
+      <h1>{roomUser.email}</h1>
+      <h1>{roomUser.is_ready}</h1>
+      <Checkbox
+        id="is-ready"
+        defaultChecked={roomUser.is_ready}
+        onCheckedChange={(checkedState) =>
+          // @ts-ignore
+          onReady(checkedState)
+        }
+      />
     </div>
   );
 
