@@ -2,8 +2,7 @@
 Module that share context related to the selected pool.
 */
 "use client";
-import { Pool } from "@/data/pool/model";
-import { UserData } from "@/data/user/model";
+import { Pool, PoolUser } from "@/data/pool/model";
 import React, { createContext, useContext, ReactNode, useState } from "react";
 import { useRouter } from "@/navigation";
 import { db } from "@/db";
@@ -19,6 +18,8 @@ export interface PoolContextProps {
 
   poolInfo: Pool;
   updatePoolInfo: (newPoolInfo: Pool) => void;
+
+  dictUsers: Record<string, PoolUser>;
 }
 
 const PoolContext = createContext<PoolContextProps | undefined>(undefined);
@@ -43,7 +44,8 @@ const getPlayersOwner = (poolInfo: Pool) => {
 
   const playersOwner: Record<number, string> = {};
   for (let i = 0; i < poolInfo.participants.length; i += 1) {
-    const participant = poolInfo.participants[i];
+    const participant = poolInfo.participants[i].id;
+
     poolInfo.context?.pooler_roster[participant].chosen_forwards.map(
       (playerId) => (playersOwner[playerId] = participant)
     );
@@ -97,7 +99,6 @@ export const hasPoolPrivilege = (
 };
 
 const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
-  console.log("merged");
   // Merge score_by_day field. The pool database fields are being overided by the pool information.
   if (mergedPoolInfo.context === null) {
     mergedPoolInfo.context = poolDb.context;
@@ -165,6 +166,14 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
 }) => {
   const [poolInfo, setPoolInfo] = useState<Pool>(pool);
 
+  const dictUsers: Record<string, PoolUser> = pool.participants.reduce(
+    (acc: Record<string, PoolUser>, user) => {
+      acc[user.id] = user;
+      return acc;
+    },
+    {}
+  );
+
   const getInitialSelectedParticipant = (): string => {
     // Return the initial selected participant.
     if (poolInfo.participants === null || poolInfo.participants.length === 0)
@@ -175,9 +184,11 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
 
     if (
       initialSelectedParticipant === null ||
-      !poolInfo.participants.includes(initialSelectedParticipant)
+      !poolInfo.participants.some(
+        (user) => user.id === initialSelectedParticipant
+      )
     )
-      return poolInfo.participants[0];
+      return poolInfo.participants[0].name;
 
     return initialSelectedParticipant;
   };
@@ -217,6 +228,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     updatePlayersOwner,
     poolInfo,
     updatePoolInfo,
+    dictUsers,
   };
 
   return (

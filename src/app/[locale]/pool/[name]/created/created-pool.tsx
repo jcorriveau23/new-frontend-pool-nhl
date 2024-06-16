@@ -35,7 +35,6 @@ export default function CreatedPool() {
   React.useEffect(() => {
     if (!jwt || !poolInfo.name) return;
 
-    console.log(jwt);
     const socketTmp = new WebSocket(
       `wss://${window.location.host}/api-rust/ws/${jwt}`
     );
@@ -46,10 +45,8 @@ export default function CreatedPool() {
         const response = JSON.parse(event.data);
         if (response.Pool) {
           // This is a pool update
-          console.log("update pool");
           updatePoolInfo(response.Pool.pool);
         } else if (response.Users) {
-          console.log("update users");
           setRoomUsers(response.Users.room_users);
         }
       } catch (e) {
@@ -66,8 +63,7 @@ export default function CreatedPool() {
     };
 
     socketTmp.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      alert(error);
+      console.error("WebSocket errors:", error);
     };
 
     setSocket(socketTmp);

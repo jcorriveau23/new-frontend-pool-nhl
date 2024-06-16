@@ -6,6 +6,7 @@ import {
   GoaliesSettings,
   PoolSettings,
   PoolState,
+  PoolUser,
   SkaterSettings,
 } from "@/data/pool/model";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -258,13 +259,13 @@ export class GoalieTotal {
 
 export class TotalRanking {
   constructor(
-    participant: string,
+    userName: string,
     forwards: SkaterInfo[],
     defense: SkaterInfo[],
     goalies: GoalieInfo[],
     settings: PoolSettings
   ) {
-    this.participant = participant;
+    this.participant = userName;
     this.forwards = new SkaterTotal(forwards, settings.forwards_settings);
     this.defense = new SkaterTotal(defense, settings.defense_settings);
     this.goalies = new GoalieTotal(goalies, settings.goalies_settings);
@@ -395,7 +396,7 @@ export default function CumulativeTab() {
 
       // First Add the players that are currently owned by the player either in reservists or in the alignment.
       for (let i = 0; i < poolInfo.participants.length; i += 1) {
-        const participant = poolInfo.participants[i];
+        const participant = poolInfo.participants[i].id;
 
         stats[participant] = new ParticipantsRoster();
 
@@ -456,7 +457,7 @@ export default function CumulativeTab() {
         const jDate = j.toISOString().slice(0, 10);
 
         for (let i = 0; i < poolInfo.participants.length; i += 1) {
-          const participant = poolInfo.participants[i];
+          const participant = poolInfo.participants[i].id;
 
           if (
             poolInfo.context?.score_by_day &&
@@ -604,68 +605,68 @@ export default function CumulativeTab() {
       // Now Create the Ranking table data class.
       // This require to cumulate the total points into each players base on the pool settings.
       for (let i = 0; i < poolInfo.participants.length; i += 1) {
-        const participant = poolInfo.participants[i];
+        const user = poolInfo.participants[i];
 
-        for (let j = 0; j < stats[participant].forwards.length; j += 1) {
-          stats[participant].forwards[j].poolPoints = stats[
-            participant
-          ].forwards[j].getTotalPoolPoints(poolInfo.settings.forwards_settings);
+        for (let j = 0; j < stats[user.id].forwards.length; j += 1) {
+          stats[user.id].forwards[j].poolPoints = stats[user.id].forwards[
+            j
+          ].getTotalPoolPoints(poolInfo.settings.forwards_settings);
         }
 
-        for (let j = 0; j < stats[participant].defense.length; j += 1) {
-          stats[participant].defense[j].poolPoints = stats[participant].defense[
+        for (let j = 0; j < stats[user.id].defense.length; j += 1) {
+          stats[user.id].defense[j].poolPoints = stats[user.id].defense[
             j
           ].getTotalPoolPoints(poolInfo.settings.defense_settings);
         }
 
-        for (let j = 0; j < stats[participant].goalies.length; j += 1) {
-          stats[participant].goalies[j].poolPoints = stats[participant].goalies[
+        for (let j = 0; j < stats[user.id].goalies.length; j += 1) {
+          stats[user.id].goalies[j].poolPoints = stats[user.id].goalies[
             j
           ].getTotalPoolPoints(poolInfo.settings.goalies_settings);
         }
 
         // Sort and change state of players that should be considered ignore from the settings.
-        stats[participant].forwards.sort((a, b) => b.poolPoints - a.poolPoints);
-        stats[participant].defense.sort((a, b) => b.poolPoints - a.poolPoints);
-        stats[participant].goalies.sort((a, b) => b.poolPoints - a.poolPoints);
+        stats[user.id].forwards.sort((a, b) => b.poolPoints - a.poolPoints);
+        stats[user.id].defense.sort((a, b) => b.poolPoints - a.poolPoints);
+        stats[user.id].goalies.sort((a, b) => b.poolPoints - a.poolPoints);
 
         // Now change the ignore settings base on the
         for (
           let i =
-            stats[participant].forwards.length -
+            stats[user.id].forwards.length -
             (poolInfo.settings.ignore_x_worst_players?.forwards ?? 0);
-          i < stats[participant].forwards.length;
+          i < stats[user.id].forwards.length;
           i += 1
         ) {
-          stats[participant].forwards[i].status = PlayerStatus.PointsIgnored;
+          stats[user.id].forwards[i].status = PlayerStatus.PointsIgnored;
         }
 
         for (
           let i =
-            stats[participant].defense.length -
+            stats[user.id].defense.length -
             (poolInfo.settings.ignore_x_worst_players?.defense ?? 0);
-          i < stats[participant].defense.length;
+          i < stats[user.id].defense.length;
           i += 1
         ) {
-          stats[participant].defense[i].status = PlayerStatus.PointsIgnored;
+          stats[user.id].defense[i].status = PlayerStatus.PointsIgnored;
         }
 
         for (
           let i =
-            stats[participant].goalies.length -
+            stats[user.id].goalies.length -
             (poolInfo.settings.ignore_x_worst_players?.goalies ?? 0);
-          i < stats[participant].goalies.length;
+          i < stats[user.id].goalies.length;
           i += 1
         ) {
-          stats[participant].goalies[i].status = PlayerStatus.PointsIgnored;
+          stats[user.id].goalies[i].status = PlayerStatus.PointsIgnored;
         }
 
         rank.push(
           new TotalRanking(
-            participant,
-            stats[participant].forwards,
-            stats[participant].defense,
-            stats[participant].goalies,
+            user.name,
+            stats[user.id].forwards,
+            stats[user.id].defense,
+            stats[user.id].goalies,
             poolInfo.settings
           )
         );
@@ -761,12 +762,12 @@ export default function CumulativeTab() {
     />
   );
 
-  const ParticipantRoster = (participant: string) => (
+  const ParticipantRoster = (participant: PoolUser) => (
     <>
       <Accordion type="single" collapsible defaultValue="forwards">
         <AccordionItem value="forwards">
           <AccordionTrigger>{`${t("Forwards")} (${
-            playerStats[participant].forwards.filter(
+            playerStats[participant.id].forwards.filter(
               (player) =>
                 player.status === PlayerStatus.InAlignment ||
                 player.status === PlayerStatus.PointsIgnored
@@ -774,10 +775,10 @@ export default function CumulativeTab() {
           }/${poolInfo.settings.number_forwards})`}</AccordionTrigger>
           <AccordionContent>
             {PlayerTable(
-              playerStats[participant].forwards,
+              playerStats[participant.id].forwards,
               ForwardColumn,
               getFormatedPlayersTableTitle(
-                participant,
+                participant.name,
                 "Total points made by forwards for"
               )
             )}
@@ -787,7 +788,7 @@ export default function CumulativeTab() {
       <Accordion type="single" collapsible defaultValue="defense">
         <AccordionItem value="defense">
           <AccordionTrigger>{`${t("Defense")} (${
-            playerStats[participant].defense.filter(
+            playerStats[participant.id].defense.filter(
               (player) =>
                 player.status === PlayerStatus.InAlignment ||
                 player.status === PlayerStatus.PointsIgnored
@@ -795,10 +796,10 @@ export default function CumulativeTab() {
           }/${poolInfo.settings.number_defenders})`}</AccordionTrigger>
           <AccordionContent>
             {PlayerTable(
-              playerStats[participant].defense,
+              playerStats[participant.id].defense,
               DefenseColumn,
               getFormatedPlayersTableTitle(
-                participant,
+                participant.name,
                 "Total points made by defense for"
               )
             )}
@@ -808,7 +809,7 @@ export default function CumulativeTab() {
       <Accordion type="single" collapsible defaultValue="goalies">
         <AccordionItem value="goalies">
           <AccordionTrigger>{`${t("Goalies")} (${
-            playerStats[participant].goalies.filter(
+            playerStats[participant.id].goalies.filter(
               (player) =>
                 player.status === PlayerStatus.InAlignment ||
                 player.status === PlayerStatus.PointsIgnored
@@ -816,10 +817,10 @@ export default function CumulativeTab() {
           }/${poolInfo.settings.number_goalies})`}</AccordionTrigger>
           <AccordionContent>
             {PlayerTable(
-              playerStats[participant].goalies,
+              playerStats[participant.id].goalies,
               GoalieColumn,
               getFormatedPlayersTableTitle(
-                participant,
+                participant.name,
                 "Total points made by goalies for"
               )
             )}
@@ -831,14 +832,14 @@ export default function CumulativeTab() {
           <AccordionTrigger>{t("Reservists")}</AccordionTrigger>
           <AccordionContent>
             {ReservistTable(
-              poolInfo.context?.pooler_roster[participant]
+              poolInfo.context?.pooler_roster[participant.id]
                 .chosen_reservists as number[],
               ReservistColumn
             )}
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-      {poolInfo.settings.dynastie_settings?.tradable_picks ? (
+      {poolInfo.settings.dynasty_settings?.tradable_picks ? (
         <Accordion type="single" collapsible defaultValue="picks">
           <AccordionItem value="picks">
             <AccordionTrigger>{t("Next season picks")}</AccordionTrigger>
@@ -914,8 +915,8 @@ export default function CumulativeTab() {
           <Button onClick={markAsFinal}>{t("MarkAsFinal")}</Button>
         ) : null}
         {poolInfo.status === PoolState.Final &&
-        poolInfo.settings.dynastie_settings &&
-        !poolInfo.settings.dynastie_settings.next_season_pool_name &&
+        poolInfo.settings.dynasty_settings &&
+        !poolInfo.settings.dynasty_settings.next_season_pool_name &&
         hasPoolPrivilege(userID, poolInfo)
           ? GenerateDynastyDialog()
           : null}
@@ -967,22 +968,20 @@ export default function CumulativeTab() {
         <Tabs
           defaultValue={selectedParticipant}
           value={selectedParticipant}
-          onValueChange={(participant) =>
-            updateSelectedParticipant(participant)
-          }
+          onValueChange={(userName) => updateSelectedParticipant(userName)}
         >
           <div className="overflow-auto">
             <TabsList>
-              {poolInfo.participants?.map((participant) => (
-                <TabsTrigger key={participant} value={participant}>
-                  {participant}
+              {poolInfo.participants?.map((user) => (
+                <TabsTrigger key={user.id} value={user.name}>
+                  {user.name}
                 </TabsTrigger>
               ))}
             </TabsList>
           </div>
-          {poolInfo.participants?.map((participant) => (
-            <TabsContent key={participant} value={participant}>
-              {ParticipantRoster(participant)}
+          {poolInfo.participants?.map((user) => (
+            <TabsContent key={user.id} value={user.name}>
+              {ParticipantRoster(user)}
             </TabsContent>
           ))}
         </Tabs>

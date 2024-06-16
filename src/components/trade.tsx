@@ -12,11 +12,12 @@ interface Props {
 
 export function TradeItem(props: Props) {
   const t = useTranslations();
+  const { dictUsers } = usePoolContext();
 
   const TradedPicks = (picks: DraftPick[]) =>
     picks.map((p) => (
       <Badge key={`${p.from}${p.round}`} variant="secondary">
-        {ordinal(p.round + 1)} {`(${p.from})`}
+        {ordinal(p.round + 1)} {`(${dictUsers[p.from].name})`}
       </Badge>
     ));
 
@@ -38,11 +39,15 @@ export function TradeItem(props: Props) {
       <div className="flex p-2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
           <div className="border">
-            <h3 className="text-lg font-semibold">{props.trade.ask_to}</h3>
+            <h3 className="text-lg font-semibold">
+              {dictUsers[props.trade.ask_to].name}
+            </h3>
             {Side(props.trade.to_items)}
           </div>
           <div className="border">
-            <h3 className="text-lg font-semibold">{props.trade.proposed_by}</h3>
+            <h3 className="text-lg font-semibold">
+              {dictUsers[props.trade.proposed_by].name}
+            </h3>
             {Side(props.trade.from_items)}
           </div>
         </div>

@@ -87,11 +87,11 @@ export default function DailyPreviewContent() {
     const totalPreviewTemp = [];
     // First create a table for all players for each poolers
     for (var i = 0; i < poolInfo.participants.length; i += 1) {
-      const participant = poolInfo.participants[i];
+      const user = poolInfo.participants[i];
 
       // @ts-ignore
-      forwardsPreviewTemp[participant] = poolInfo.context?.pooler_roster[
-        participant
+      forwardsPreviewTemp[user.id] = poolInfo.context?.pooler_roster[
+        user.id
       ]?.chosen_forwards.map((playerId) => {
         const player = poolInfo.context?.players[playerId];
         if (player) {
@@ -99,8 +99,8 @@ export default function DailyPreviewContent() {
         }
       });
       // @ts-ignore
-      defensePreviewTemp[participant] = poolInfo.context?.pooler_roster[
-        participant
+      defensePreviewTemp[user.id] = poolInfo.context?.pooler_roster[
+        user.id
       ].chosen_defenders.map((playerId) => {
         const player = poolInfo.context?.players[playerId];
         if (player) {
@@ -108,8 +108,8 @@ export default function DailyPreviewContent() {
         }
       });
       // @ts-ignore
-      goaliesPreviewTemp[participant] = poolInfo.context?.pooler_roster[
-        participant
+      goaliesPreviewTemp[user.id] = poolInfo.context?.pooler_roster[
+        user.id
       ].chosen_goalies.map((playerId) => {
         const player = poolInfo.context?.players[playerId];
         if (player) {
@@ -119,10 +119,10 @@ export default function DailyPreviewContent() {
 
       totalPreviewTemp.push(
         new PreviewTotal(
-          participant,
-          forwardsPreviewTemp[participant],
-          defensePreviewTemp[participant],
-          goaliesPreviewTemp[participant]
+          user.name,
+          forwardsPreviewTemp[user.id],
+          defensePreviewTemp[user.id],
+          goaliesPreviewTemp[user.id]
         )
       );
 
@@ -209,30 +209,28 @@ export default function DailyPreviewContent() {
         <Tabs
           defaultValue={selectedParticipant}
           value={selectedParticipant}
-          onValueChange={(participant) =>
-            updateSelectedParticipant(participant)
-          }
+          onValueChange={(userName) => updateSelectedParticipant(userName)}
         >
           <TabsList>
-            {poolInfo.participants?.map((participant) => (
-              <TabsTrigger key={participant} value={participant}>
-                {participant}
+            {poolInfo.participants?.map((user) => (
+              <TabsTrigger key={user.id} value={user.name}>
+                {user.name}
               </TabsTrigger>
             ))}
           </TabsList>
-          {poolInfo.participants?.map((participant) => (
-            <TabsContent key={participant} value={participant}>
+          {poolInfo.participants?.map((user) => (
+            <TabsContent key={user.id} value={user.name}>
               {forwardsPreview && defensePreview && goaliesPreview ? (
                 <>
                   <Accordion
-                    key={`${participant}-forwards`}
+                    key={`${user.id}-forwards`}
                     type="single"
                     collapsible
                     defaultValue="forwards"
                   >
                     <AccordionItem value="forwards">
                       <AccordionTrigger>{`${t("Forwards")} (${
-                        forwardsPreview[participant].filter(
+                        forwardsPreview[user.id].filter(
                           (p) => p.playingAgainst !== null
                         ).length
                       }/${
@@ -240,9 +238,9 @@ export default function DailyPreviewContent() {
                       })`}</AccordionTrigger>
                       <AccordionContent>
                         {PreviewPlayersTable(
-                          forwardsPreview[participant],
+                          forwardsPreview[user.id],
                           getFormatedDateTitle(
-                            participant,
+                            user.name,
                             "List of forwards playing for"
                           )
                         )}
@@ -250,14 +248,14 @@ export default function DailyPreviewContent() {
                     </AccordionItem>
                   </Accordion>
                   <Accordion
-                    key={`${participant}-defense`}
+                    key={`${user.id}-defense`}
                     type="single"
                     collapsible
                     defaultValue="defense"
                   >
                     <AccordionItem value="defense">
                       <AccordionTrigger>{`${t("Defense")} (${
-                        defensePreview[participant].filter(
+                        defensePreview[user.id].filter(
                           (p) => p.playingAgainst !== null
                         ).length
                       }/${
@@ -265,9 +263,9 @@ export default function DailyPreviewContent() {
                       })`}</AccordionTrigger>
                       <AccordionContent>
                         {PreviewPlayersTable(
-                          defensePreview[participant],
+                          defensePreview[user.id],
                           getFormatedDateTitle(
-                            participant,
+                            user.name,
                             "List of defenseman playing for"
                           )
                         )}
@@ -275,14 +273,14 @@ export default function DailyPreviewContent() {
                     </AccordionItem>
                   </Accordion>
                   <Accordion
-                    key={`${participant}-goalies`}
+                    key={`${user.id}-goalies`}
                     type="single"
                     collapsible
                     defaultValue="goalies"
                   >
                     <AccordionItem value="goalies">
                       <AccordionTrigger>{`${t("Goalies")} (${
-                        goaliesPreview[participant].filter(
+                        goaliesPreview[user.id].filter(
                           (p) => p.playingAgainst !== null
                         ).length
                       }/${
@@ -290,9 +288,9 @@ export default function DailyPreviewContent() {
                       })`}</AccordionTrigger>
                       <AccordionContent>
                         {PreviewPlayersTable(
-                          goaliesPreview[participant],
+                          goaliesPreview[user.id],
                           getFormatedDateTitle(
-                            participant,
+                            user.name,
                             "List of goalies playing for"
                           )
                         )}

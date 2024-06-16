@@ -42,7 +42,7 @@ export default function PoolPage({ params }: { params: { name: string } }) {
       case PoolState.InProgress:
       case PoolState.Final:
         return <InProgressPool />;
-      case PoolState.Dynastie:
+      case PoolState.Dynasty:
         return <DynastyPool />;
     }
   };

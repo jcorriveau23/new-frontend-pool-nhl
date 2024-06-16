@@ -114,25 +114,21 @@ export default function HistoryTab() {
         poolInfo.participants
       ) {
         for (let i = 0; i < poolInfo.participants.length; i += 1) {
-          const participant = poolInfo.participants[i];
-          const newRoster = getDailyRoster(participant, jDate);
+          const user = poolInfo.participants[i];
+          const newRoster = getDailyRoster(user.id, jDate);
 
-          const oldRoster = currentRoster.get(participant);
+          const oldRoster = currentRoster.get(user.id);
 
           if (oldRoster) {
             // see if a changes was made to the roster and note it in historyTmp.
-            const movements = getDailyMovement(
-              participant,
-              oldRoster,
-              newRoster
-            );
+            const movements = getDailyMovement(user.name, oldRoster, newRoster);
             if (movements !== null) {
               dailyMovements.push(movements);
             }
           }
 
           // update the current roster.
-          currentRoster.set(participant, newRoster);
+          currentRoster.set(user.id, newRoster);
         }
 
         if (dailyMovements.length > 0 || dailyTrades.length > 0) {
@@ -145,18 +141,14 @@ export default function HistoryTab() {
     // TODO: this could be generalize by creating a function centralizing logic between this and the for loop above.
     const dailyMovements = []; // Will capture all movement that happened on this date.
     for (let i = 0; i < poolInfo.participants.length; i += 1) {
-      const participant = poolInfo.participants[i];
+      const user = poolInfo.participants[i];
 
-      const latestRoster = getLatestRoster(participant);
-      const oldRoster = currentRoster.get(participant);
+      const latestRoster = getLatestRoster(user.id);
+      const oldRoster = currentRoster.get(user.id);
 
       if (oldRoster) {
         // see if a changes was made to the roster and note it in historyTmp.
-        const movements = getDailyMovement(
-          participant,
-          oldRoster,
-          latestRoster
-        );
+        const movements = getDailyMovement(user.name, oldRoster, latestRoster);
         if (movements !== null) {
           dailyMovements.push(movements);
         }
