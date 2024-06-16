@@ -125,14 +125,14 @@ export default async function Pools({
         <div className="overflow-auto">
           <TabsList>
             {PoolTabTrigger(PoolState.InProgress)}
-            {PoolTabTrigger(PoolState.Dynastie)}
+            {PoolTabTrigger(PoolState.Dynasty)}
             {PoolTabTrigger(PoolState.Created)}
             {PoolTabTrigger(PoolState.Draft)}
             {PoolTabTrigger(PoolState.Final)}
           </TabsList>
         </div>
         {PoolTabContent(PoolState.InProgress)}
-        {PoolTabContent(PoolState.Dynastie)}
+        {PoolTabContent(PoolState.Dynasty)}
         {PoolTabContent(PoolState.Created)}
         {PoolTabContent(PoolState.Draft)}
         {PoolTabContent(PoolState.Final)}

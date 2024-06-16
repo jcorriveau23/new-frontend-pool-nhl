@@ -2,8 +2,7 @@
 Module that share context related to the selected pool.
 */
 "use client";
-import { Pool } from "@/data/pool/model";
-import { UserData } from "@/data/user/model";
+import { Pool, PoolUser } from "@/data/pool/model";
 import React, { createContext, useContext, ReactNode, useState } from "react";
 import { useRouter } from "@/navigation";
 import { db } from "@/db";
@@ -17,14 +16,10 @@ export interface PoolContextProps {
   playersOwner: Record<number, string>;
   updatePlayersOwner: (poolInfo: Pool) => void;
 
-  // Map the user id to its user name.
-  dictUsers: Record<string, string>;
-  updateUsers: (users: UserData[]) => void;
-
   poolInfo: Pool;
   updatePoolInfo: (newPoolInfo: Pool) => void;
 
-  users: UserData[];
+  dictUsers: Record<string, PoolUser>;
 }
 
 const PoolContext = createContext<PoolContextProps | undefined>(undefined);
@@ -40,7 +35,6 @@ export const usePoolContext = (): PoolContextProps => {
 interface PoolContextProviderProps {
   children: ReactNode;
   pool: Pool;
-  users: UserData[];
 }
 
 const getPlayersOwner = (poolInfo: Pool) => {
@@ -50,7 +44,8 @@ const getPlayersOwner = (poolInfo: Pool) => {
 
   const playersOwner: Record<number, string> = {};
   for (let i = 0; i < poolInfo.participants.length; i += 1) {
-    const participant = poolInfo.participants[i];
+    const participant = poolInfo.participants[i].id;
+
     poolInfo.context?.pooler_roster[participant].chosen_forwards.map(
       (playerId) => (playersOwner[playerId] = participant)
     );
@@ -96,15 +91,6 @@ const findLastDateInDb = (pool: Pool | null) => {
   return null;
 };
 
-const getUserName = (users: UserData[]) => {
-  const dictUsersTmp: Record<string, string> = {};
-  users.map((u: any) => {
-    dictUsersTmp[u._id] = u.name;
-  });
-
-  return dictUsersTmp;
-};
-
 export const hasPoolPrivilege = (
   user: string | undefined,
   pool: Pool
@@ -113,7 +99,6 @@ export const hasPoolPrivilege = (
 };
 
 const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
-  console.log("merged");
   // Merge score_by_day field. The pool database fields are being overided by the pool information.
   if (mergedPoolInfo.context === null) {
     mergedPoolInfo.context = poolDb.context;
@@ -178,9 +163,16 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
 export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   children,
   pool,
-  users,
 }) => {
   const [poolInfo, setPoolInfo] = useState<Pool>(pool);
+
+  const dictUsers: Record<string, PoolUser> = pool.participants.reduce(
+    (acc: Record<string, PoolUser>, user) => {
+      acc[user.id] = user;
+      return acc;
+    },
+    {}
+  );
 
   const getInitialSelectedParticipant = (): string => {
     // Return the initial selected participant.
@@ -192,9 +184,11 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
 
     if (
       initialSelectedParticipant === null ||
-      !poolInfo.participants.includes(initialSelectedParticipant)
+      !poolInfo.participants.some(
+        (user) => user.id === initialSelectedParticipant
+      )
     )
-      return poolInfo.participants[0];
+      return poolInfo.participants[0].name;
 
     return initialSelectedParticipant;
   };
@@ -206,9 +200,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     Record<number, string>
   >(getPlayersOwner(poolInfo));
 
-  const [dictUsers, setDictUsers] = React.useState<Record<string, string>>(
-    getUserName(users)
-  );
   const updatePlayersOwner = (poolInfo: Pool) => {
     setPlayersOwner(getPlayersOwner(poolInfo));
   };
@@ -217,9 +208,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.set("selectedParticipant", participant);
     router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
-  };
-  const updateUsers = (users: UserData[]) => {
-    setDictUsers(getUserName(users));
   };
 
   const updatePoolInfo = (newPoolInfo: Pool) => {
@@ -238,11 +226,9 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     updateSelectedParticipant,
     playersOwner,
     updatePlayersOwner,
-    dictUsers,
-    updateUsers,
     poolInfo,
     updatePoolInfo,
-    users,
+    dictUsers,
   };
 
   return (

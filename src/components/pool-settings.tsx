@@ -82,7 +82,7 @@ export default function PoolSettingsComponent(props: Props) {
   const MIN_POOLER_NUMBER = 2;
   const MAX_POOLER_NUMBER = 18;
 
-  const DEFAULT_POOL_TYPE = props.oldPoolSettings?.dynastie_settings
+  const DEFAULT_POOL_TYPE = props.oldPoolSettings?.dynasty_settings
     ? PoolType.DYNASTY
     : PoolType.STANDARD;
 
@@ -167,12 +167,12 @@ export default function PoolSettingsComponent(props: Props) {
 
   // 4) Dynasty Settings
   const DEFAULT_TRADABLE_DRAFT_PICKS =
-    props.oldPoolSettings?.dynastie_settings?.tradable_picks ?? 5;
+    props.oldPoolSettings?.dynasty_settings?.tradable_picks ?? 5;
   const TRADABLE_DRAFT_PICKS_MIN_VALUE = 0;
   const TRADABLE_DRAFT_PICKS_MAX_VALUE = 7;
 
   const DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT =
-    props.oldPoolSettings?.dynastie_settings
+    props.oldPoolSettings?.dynasty_settings
       ?.next_season_number_players_protected ?? 10;
   const NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE = 5;
   const NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE = 15;
@@ -442,7 +442,7 @@ export default function PoolSettingsComponent(props: Props) {
                 goalies: values.numberOfWorstGoaliesToIgnore,
               }
             : null,
-          dynastie_settings: showDynastySettings
+          dynasty_settings: showDynastySettings
             ? {
                 next_season_number_players_protected:
                   values.numberOfPlayersToProtect,
@@ -939,17 +939,6 @@ export default function PoolSettingsComponent(props: Props) {
       </CardContent>
     </Card>
   );
-
-  if (isValid === false) {
-    return (
-      <div className="text-left mx-auto space-y-8">
-        <p>{t("MustBeConnectedToCreatePool")}</p>{" "}
-        <Link href="/login" className="text-link hover:underline">
-          {t("Connect")}.
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="text-left mx-auto space-y-8">

@@ -18,8 +18,7 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
     accessorKey: "pooler",
     header: "Pooler",
     cell: ({ row, table }) => {
-      const ranking = row.original;
-      return table.options.meta?.props?.dictUsers[ranking.participant];
+      return row.original.participant;
     },
   },
   {
@@ -118,8 +117,7 @@ export const ForwardsTotalColumn: ColumnDef<TotalRanking>[] = [
     accessorKey: "pooler",
     header: "Pooler",
     cell: ({ row, table }) => {
-      const ranking = row.original;
-      return table.options.meta?.props?.dictUsers[ranking.participant];
+      return row.original.participant;
     },
   },
   {
@@ -183,8 +181,7 @@ export const DefensesTotalColumn: ColumnDef<TotalRanking>[] = [
     accessorKey: "pooler",
     header: "Pooler",
     cell: ({ row, table }) => {
-      const ranking = row.original;
-      return table.options.meta?.props?.dictUsers[ranking.participant];
+      return row.original.participant;
     },
   },
   {
@@ -248,8 +245,7 @@ export const GoaliesTotalColumn: ColumnDef<TotalRanking>[] = [
     accessorKey: "pooler",
     header: "Pooler",
     cell: ({ row, table }) => {
-      const ranking = row.original;
-      return table.options.meta?.props?.dictUsers[ranking.participant];
+      return row.original.participant;
     },
   },
   {

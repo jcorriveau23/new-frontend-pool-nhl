@@ -7,14 +7,11 @@ import InProgressPool from "./in-progress/in-progress-pool";
 import CreatedPool from "./created/created-pool";
 import { PoolContextProvider, fetchPoolInfo } from "@/context/pool-context";
 import { useTranslations } from "next-intl";
-import { getServerSideUsers } from "@/app/actions/users";
-import { UserData } from "@/data/user/model";
 import DynastyPool from "./dynasty/dynasty-pool";
 import DraftPool from "./draft/draft-pool";
 
 export default function PoolPage({ params }: { params: { name: string } }) {
   const [poolInfo, setPoolInfo] = React.useState<Pool | null>(null);
-  const [users, setUsers] = React.useState<UserData[] | null>(null);
   const t = useTranslations();
 
   React.useEffect(() => {
@@ -31,9 +28,7 @@ export default function PoolPage({ params }: { params: { name: string } }) {
         return;
       }
 
-      const users = await getServerSideUsers(poolResponse.participants);
       setPoolInfo(poolResponse);
-      setUsers(users);
     };
     getPoolInfo();
   }, [params.name]);
@@ -47,17 +42,17 @@ export default function PoolPage({ params }: { params: { name: string } }) {
       case PoolState.InProgress:
       case PoolState.Final:
         return <InProgressPool />;
-      case PoolState.Dynastie:
+      case PoolState.Dynasty:
         return <DynastyPool />;
     }
   };
 
-  if (poolInfo === null || users === null) {
+  if (poolInfo === null) {
     return <h1>Loading...</h1>;
   }
 
   return (
-    <PoolContextProvider pool={poolInfo} users={users}>
+    <PoolContextProvider pool={poolInfo}>
       {getPoolContent(poolInfo)}
     </PoolContextProvider>
   );

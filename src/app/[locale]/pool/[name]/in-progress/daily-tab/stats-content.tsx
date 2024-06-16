@@ -218,7 +218,6 @@ export default function DailyStatsContent() {
     selectedParticipant,
     updateSelectedParticipant,
     playersOwner,
-    dictUsers,
   } = usePoolContext();
 
   const [dailyLeaders, setDailyLeaders] = React.useState<DailyLeaders | null>(
@@ -402,11 +401,7 @@ export default function DailyStatsContent() {
     const keyDay = format(selectedDate, "yyyy-MM-dd");
     const dayInfo = poolInfo.context?.score_by_day?.[keyDay];
 
-    if (
-      dayInfo === undefined ||
-      dailyLeaders === null ||
-      poolInfo.participants == null
-    ) {
+    if (dayInfo === undefined || dailyLeaders === null) {
       return;
     }
 
@@ -417,53 +412,48 @@ export default function DailyStatsContent() {
 
     for (var i = 0; i < poolInfo.participants.length; i += 1) {
       // Parse all participants daily locked roster to query its daily stats.
-      const participant = poolInfo.participants[i];
+      const user = poolInfo.participants[i];
 
-      if (dayInfo[participant].is_cumulated) {
+      if (dayInfo[user.id].is_cumulated) {
         // the information is cumulated in the pool directly get it from there since it
         // is what is being used to display the cumulative page.
-        forwardsDailyStatsTemp[participant] =
-          getDailySkatersStatsWithCumulative(
-            dayInfo[participant].roster.F,
-            poolInfo.settings.forwards_settings
-          );
-        defendersDailyStatsTemp[participant] =
-          getDailySkatersStatsWithCumulative(
-            dayInfo[participant].roster.D,
-            poolInfo.settings.defense_settings
-          );
-        goaliesDailyStatsTemp[participant] = getDailyGoaliesStatsWithCumulative(
-          dayInfo[participant].roster.G,
+        forwardsDailyStatsTemp[user.id] = getDailySkatersStatsWithCumulative(
+          dayInfo[user.id].roster.F,
+          poolInfo.settings.forwards_settings
+        );
+        defendersDailyStatsTemp[user.id] = getDailySkatersStatsWithCumulative(
+          dayInfo[user.id].roster.D,
+          poolInfo.settings.defense_settings
+        );
+        goaliesDailyStatsTemp[user.id] = getDailyGoaliesStatsWithCumulative(
+          dayInfo[user.id].roster.G,
           poolInfo.settings.goalies_settings
         );
       } else {
         // The players stats is not yet stored into the pool information
         // we can take the information from the daiLeaders that is being update live.
-        forwardsDailyStatsTemp[participant] =
-          getDailySkaterStatsWithDailyLeaders(
-            dayInfo[participant].roster.F,
-            dailyLeaders,
-            poolInfo.settings.forwards_settings
-          );
-        defendersDailyStatsTemp[participant] =
-          getDailySkaterStatsWithDailyLeaders(
-            dayInfo[participant].roster.D,
-            dailyLeaders,
-            poolInfo.settings.defense_settings
-          );
-        goaliesDailyStatsTemp[participant] =
-          getDailyGoaliesStatsWithDailyLeaders(
-            dayInfo[participant].roster.G,
-            dailyLeaders,
-            poolInfo.settings.goalies_settings
-          );
+        forwardsDailyStatsTemp[user.id] = getDailySkaterStatsWithDailyLeaders(
+          dayInfo[user.id].roster.F,
+          dailyLeaders,
+          poolInfo.settings.forwards_settings
+        );
+        defendersDailyStatsTemp[user.id] = getDailySkaterStatsWithDailyLeaders(
+          dayInfo[user.id].roster.D,
+          dailyLeaders,
+          poolInfo.settings.defense_settings
+        );
+        goaliesDailyStatsTemp[user.id] = getDailyGoaliesStatsWithDailyLeaders(
+          dayInfo[user.id].roster.G,
+          dailyLeaders,
+          poolInfo.settings.goalies_settings
+        );
       }
       totalDailyPointsTemp.push(
         new TotalDailyPoints(
-          participant,
-          forwardsDailyStatsTemp[participant],
-          defendersDailyStatsTemp[participant],
-          goaliesDailyStatsTemp[participant],
+          user.name,
+          forwardsDailyStatsTemp[user.id],
+          defendersDailyStatsTemp[user.id],
+          goaliesDailyStatsTemp[user.id],
           poolInfo.settings
         )
       );
@@ -548,7 +538,7 @@ export default function DailyStatsContent() {
         columnPinning: { left: ["ranking", "pooler"] },
       }}
       meta={{
-        props: { dictUsers },
+        props: {},
         getRowStyles: (row: Row<TotalDailyPoints>) => {
           if (row.original.participant === selectedParticipant) {
             return "bg-selection hover:bg-selection";
@@ -577,7 +567,7 @@ export default function DailyStatsContent() {
         columnPinning: { left: ["ranking", "name"] },
       }}
       meta={{
-        props: { dictUsers, playersOwner },
+        props: { playersOwner },
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -600,7 +590,7 @@ export default function DailyStatsContent() {
         columnPinning: { left: ["ranking", "name"] },
       }}
       meta={{
-        props: { dictUsers, playersOwner },
+        props: { playersOwner },
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -613,10 +603,7 @@ export default function DailyStatsContent() {
     `${t(title)} (${format(selectedDate, "yyyy-MM-dd")})`;
 
   const getFormatedDateTitle = (participant: string, title: string) =>
-    `${t(title)} ${dictUsers[participant]} (${format(
-      selectedDate,
-      "yyyy-MM-dd"
-    )})`;
+    `${t(title)} ${participant} (${format(selectedDate, "yyyy-MM-dd")})`;
 
   return (
     <div>
@@ -668,25 +655,23 @@ export default function DailyStatsContent() {
         <Tabs
           defaultValue={selectedParticipant}
           value={selectedParticipant}
-          onValueChange={(participant) =>
-            updateSelectedParticipant(participant)
-          }
+          onValueChange={(userName) => updateSelectedParticipant(userName)}
         >
           <TabsList>
-            {poolInfo.participants?.map((participant) => (
-              <TabsTrigger key={participant} value={participant}>
-                {dictUsers[participant]}
+            {poolInfo.participants?.map((user) => (
+              <TabsTrigger key={user.id} value={user.name}>
+                {user.name}
               </TabsTrigger>
             ))}
           </TabsList>
-          {poolInfo.participants?.map((participant) => (
-            <TabsContent key={participant} value={participant}>
+          {poolInfo.participants?.map((user) => (
+            <TabsContent key={user.id} value={user.name}>
               {forwardsDailyStats &&
               defendersDailyStats &&
               goaliesDailyStats ? (
                 <>
                   <Accordion
-                    key={`${participant}-forwards`}
+                    key={`${user.id}-forwards`}
                     type="single"
                     collapsible
                     defaultValue="forwards"
@@ -695,10 +680,10 @@ export default function DailyStatsContent() {
                       <AccordionTrigger>{t("Forwards")}</AccordionTrigger>
                       <AccordionContent>
                         {SkatersTable(
-                          forwardsDailyStats[participant],
+                          forwardsDailyStats[user.id],
                           SkaterDailyColumn,
                           getFormatedDateTitle(
-                            participant,
+                            user.name,
                             "Daily points made by forwards for"
                           )
                         )}
@@ -706,7 +691,7 @@ export default function DailyStatsContent() {
                     </AccordionItem>
                   </Accordion>
                   <Accordion
-                    key={`${participant}-defense`}
+                    key={`${user.id}-defense`}
                     type="single"
                     collapsible
                     defaultValue="defense"
@@ -715,10 +700,10 @@ export default function DailyStatsContent() {
                       <AccordionTrigger>{t("Defense")}</AccordionTrigger>
                       <AccordionContent>
                         {SkatersTable(
-                          defendersDailyStats[participant],
+                          defendersDailyStats[user.id],
                           SkaterDailyColumn,
                           getFormatedDateTitle(
-                            participant,
+                            user.name,
                             "Daily points made by defense for"
                           )
                         )}
@@ -726,7 +711,7 @@ export default function DailyStatsContent() {
                     </AccordionItem>
                   </Accordion>
                   <Accordion
-                    key={`${participant}-goalies`}
+                    key={`${user.id}-goalies`}
                     type="single"
                     collapsible
                     defaultValue="goalies"
@@ -735,9 +720,9 @@ export default function DailyStatsContent() {
                       <AccordionTrigger>{t("Goalies")}</AccordionTrigger>
                       <AccordionContent>
                         {GoaliesTable(
-                          goaliesDailyStats[participant],
+                          goaliesDailyStats[user.id],
                           getFormatedDateTitle(
-                            participant,
+                            user.name,
                             "Daily points made by goalies for"
                           )
                         )}

@@ -64,7 +64,7 @@ export default function InProgressPool() {
     setActiveTab(value);
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.set("activeTab", value);
-    router.push(`/pools/${poolInfo.name}/?${queryParams.toString()}`);
+    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
   };
 
   React.useEffect(() => {
@@ -72,15 +72,16 @@ export default function InProgressPool() {
     // That way if the user go into antoher page and come back using the "Go Back" or "Go forward"
     // options in the browser he will be in the selected tab.
     const handlePopState = (event: PopStateEvent) => {
-      console.log(event.state);
       const queryParams = new URLSearchParams(window.location.search);
       const newActiveTab = queryParams.get("activeTab");
       const newSelectedParticipant = queryParams.get("selectedParticipant");
 
-      if (newActiveTab && newActiveTab !== activeTab)
+      if (newActiveTab && newActiveTab !== activeTab) {
         setActiveTab(newActiveTab);
-      if (newSelectedParticipant)
+      }
+      if (newSelectedParticipant) {
         updateSelectedParticipant(newSelectedParticipant);
+      }
     };
 
     window.addEventListener("popstate", handlePopState);

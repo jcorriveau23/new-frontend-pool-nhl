@@ -11,7 +11,7 @@ export interface PlayerTypeSettings {
 }
 
 
-export interface DynastieSettings {
+export interface DynastySettings {
     next_season_number_players_protected: number;
     tradable_picks: number;
     past_season_pool_name: String[],
@@ -61,7 +61,15 @@ export interface PoolSettings {
     
     can_trade: boolean;
     ignore_x_worst_players:  PlayerTypeSettings | null;
-    dynastie_settings: DynastieSettings | null;
+    dynasty_settings: DynastySettings | null;
+}
+
+export interface PoolUser {
+    id: string,
+    name: string,
+
+    // tells if the user is owned by an app users or manage by the pool owner
+    is_owned: boolean,
 }
 
 export interface Pool {
@@ -69,9 +77,10 @@ export interface Pool {
     name: string;
     owner: string;
     number_poolers: number;
-    participants: string[] | null;
+    participants: PoolUser[];
     settings: PoolSettings;
     status: PoolState;
+    draft_order: string[] | null;
     final_rank: string[] | null;
     nb_player_drafted: number;
     nb_trade: number;
@@ -86,7 +95,7 @@ export interface Pool {
 export enum PoolState {
     Final = 'Final',
     InProgress = 'InProgress',
-    Dynastie = 'Dynastie',
+    Dynasty = 'Dynasty',
     Draft = 'Draft',
     Created = 'Created',
 }

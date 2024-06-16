@@ -143,9 +143,8 @@ export const TotalDailyColumn: ColumnDef<TotalDailyPoints>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row, table }) => {
-      const ranking = row.original;
-      return table.options.meta?.props?.dictUsers[ranking.participant];
+    cell: ({ row }) => {
+      return row.original.participant;
     },
   },
   {
@@ -246,8 +245,7 @@ export const ForwardsDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
     accessorKey: "pooler",
     header: "Pooler",
     cell: ({ row, table }) => {
-      const ranking = row.original;
-      return table.options.meta?.props?.dictUsers[ranking.participant];
+      return row.original.participant;
     },
   },
   {
@@ -311,8 +309,7 @@ export const DefensesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
     accessorKey: "pooler",
     header: "Pooler",
     cell: ({ row, table }) => {
-      const ranking = row.original;
-      return table.options.meta?.props?.dictUsers[ranking.participant];
+      return row.original.participant;
     },
   },
   {
@@ -376,8 +373,7 @@ export const GoaliesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
     accessorKey: "pooler",
     header: "Pooler",
     cell: ({ row, table }) => {
-      const ranking = row.original;
-      return table.options.meta?.props?.dictUsers[ranking.participant];
+      return row.original.participant;
     },
   },
   {
@@ -461,9 +457,7 @@ export const DailyScoringLeadersColumn: ColumnDef<DailySkater>[] = [
     accessorKey: "owner",
     header: ({ table }) => table.options.meta?.t("Owner"),
     cell: ({ row, table }) => {
-      return table.options.meta?.props.dictUsers?.[
-        table.options.meta?.props.playersOwner[row.original.id]
-      ];
+      return table.options.meta?.props.playersOwner[row.original.id];
     },
   },
   {
@@ -519,9 +513,7 @@ export const DailyGoaliesLeadersColumn: ColumnDef<DailyGoalie>[] = [
     accessorKey: "owner",
     header: ({ table }) => table.options.meta?.t("Owner"),
     cell: ({ row, table }) => {
-      return table.options.meta?.props.dictUsers?.[
-        table.options.meta?.props.playersOwner[row.original.id]
-      ];
+      return table.options.meta?.props.playersOwner[row.original.id];
     },
   },
   {
