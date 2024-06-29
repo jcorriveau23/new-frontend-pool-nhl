@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { Button } from "./ui/button";
 import { LoadingSpinner } from "./ui/loading-spinner";
 import { useTranslations } from "next-intl";
-import { getServerSideDailyGames } from "@/app/actions/daily-games";
+import { getServerSideDailyGames } from "@/actions/daily-games";
 
 export default function DailyGameFeed() {
   const t = useTranslations();

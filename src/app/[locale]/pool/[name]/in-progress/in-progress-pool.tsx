@@ -119,12 +119,12 @@ export default function InProgressPool() {
                 ) : null}
               </div>
             </TabsTrigger>
-            {poolInfo.settings.can_trade ? (
+            {poolInfo.settings.dynasty_settings ? (
               <TabsTrigger value={InProgressTabs.TRADE}>
                 {t("Trade")}
               </TabsTrigger>
             ) : null}
-            {poolInfo.settings.can_trade ||
+            {poolInfo.settings.dynasty_settings ||
             poolInfo.settings.roster_modification_date.length > 0 ? (
               <TabsTrigger value={InProgressTabs.HISTORY}>
                 {t("History")}
@@ -142,12 +142,12 @@ export default function InProgressPool() {
         <TabsContent value={InProgressTabs.DAILY}>
           <DailyTab />
         </TabsContent>
-        {poolInfo.settings.can_trade ? (
+        {poolInfo.settings.dynasty_settings ? (
           <TabsContent value={InProgressTabs.TRADE}>
             <TradeTab />
           </TabsContent>
         ) : null}
-        {poolInfo.settings.can_trade ||
+        {poolInfo.settings.dynasty_settings ||
         poolInfo.settings.roster_modification_date.length > 0 ? (
           <TabsContent value={InProgressTabs.HISTORY}>
             <HistoryTab />

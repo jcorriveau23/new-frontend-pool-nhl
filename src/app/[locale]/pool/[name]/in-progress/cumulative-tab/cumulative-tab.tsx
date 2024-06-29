@@ -72,6 +72,7 @@ import {
 } from "@/components/pool-settings";
 import { seasonFormat } from "@/app/utils/formating";
 import { useSession } from "@/context/useSessionData";
+import { toast } from "@/hooks/use-toast";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -345,12 +346,14 @@ export default function CumulativeTab() {
 
     if (!res.ok) {
       const error = await res.text();
-      alert(
-        t("CouldNotMarkAsFinalPoolError", {
+      toast({
+        variant: "destructive",
+        title: t("CouldNotMarkAsFinalPoolError", {
           name: poolInfo.name,
           error: error,
-        })
-      );
+        }),
+        duration: 2000,
+      });
       return;
     }
     const data = await res.json();
@@ -372,12 +375,14 @@ export default function CumulativeTab() {
 
     if (!res.ok) {
       const error = await res.text();
-      alert(
-        t("CouldNotGeneratePoolError", {
+      toast({
+        variant: "destructive",
+        title: t("CouldNotGeneratePoolError", {
           name: newPoolName,
           error: error,
-        })
-      );
+        }),
+        duration: 2000,
+      });
       return;
     }
     const data = await res.json();
@@ -682,7 +687,7 @@ export default function CumulativeTab() {
   }, [selectedDate]);
 
   if (ranking === null || playerStats === null) {
-    return <h1>Loading...</h1>;
+    return <h1>Loading ranking and player stats...</h1>;
   }
 
   const TotalTable = (

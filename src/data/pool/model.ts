@@ -59,7 +59,6 @@ export interface PoolSettings {
     defense_settings: SkaterSettings;
     goalies_settings: GoaliesSettings;
     
-    can_trade: boolean;
     ignore_x_worst_players:  PlayerTypeSettings | null;
     dynasty_settings: DynastySettings | null;
 }

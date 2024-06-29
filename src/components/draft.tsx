@@ -283,7 +283,7 @@ export default function Draft() {
   }, [poolInfo.context?.players_name_drafted]);
 
   if (draftInfo === null) {
-    return <h1>Loading...</h1>;
+    return <h1>Loading draft info...</h1>;
   }
   return draftInfo.rounds.map((round) => RenderRound(round));
 }

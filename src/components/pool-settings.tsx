@@ -32,10 +32,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { LucideAlertOctagon } from "lucide-react";
-import Cookies from "js-cookie";
-import { Link, useRouter } from "@/navigation";
-import { useUser } from "@/context/useUserData";
+import { useRouter } from "@/navigation";
 import { useSession } from "@/context/useSessionData";
+import { toast } from "@/hooks/use-toast";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -55,19 +54,7 @@ export const POOL_NAME_MAX_LENGTH = 16;
 
 export default function PoolSettingsComponent(props: Props) {
   const t = useTranslations();
-  const {
-    id,
-    email,
-    loading: userDataLoading,
-    error: userDataError,
-  } = useUser();
-  const {
-    userID,
-    jwt,
-    isValid,
-    loading: sessionDataLoading,
-    error: sessionDataError,
-  } = useSession();
+  const { jwt } = useSession();
 
   const router = useRouter();
 
@@ -434,7 +421,6 @@ export default function PoolSettingsComponent(props: Props) {
             points_per_goals: values.goaliesPointsPerGoals,
             points_per_assists: values.goaliesPointsPerAssists,
           },
-          can_trade: true,
           ignore_x_worst_players: showIgnorePlayers
             ? {
                 forwards: values.numberOfWorstForwardsToIgnore,
@@ -455,12 +441,14 @@ export default function PoolSettingsComponent(props: Props) {
 
     if (!res.ok) {
       const error = await res.text();
-      alert(
-        t("CouldNotGeneratePoolError", {
+      toast({
+        variant: "destructive",
+        title: t("CouldNotGeneratePoolError", {
           name: values.name,
           error: error,
-        })
-      );
+        }),
+        duration: 2000,
+      });
       return;
     }
     router.push(`/pool/${values.name}`);
@@ -479,6 +467,7 @@ export default function PoolSettingsComponent(props: Props) {
           <FormField
             control={form.control}
             name="name"
+            disabled={!isCreationContext()}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("PoolName")}</FormLabel>
@@ -562,6 +551,80 @@ export default function PoolSettingsComponent(props: Props) {
             </RadioGroup>
           </div>
         </div>
+        {showDynastySettings ? (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <FormField
+                control={form.control}
+                name="tradableDraftPicks"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>{t("TradableDraftPicks")}</FormLabel>
+                      <Popover>
+                        <PopoverTrigger
+                          className="hover:cursor-pointer"
+                          asChild
+                        >
+                          <LucideAlertOctagon />
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0">
+                          {t("TradablePicksDescription")}
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        defaultValue={DEFAULT_TRADABLE_DRAFT_PICKS}
+                        min={TRADABLE_DRAFT_PICKS_MIN_VALUE}
+                        max={TRADABLE_DRAFT_PICKS_MAX_VALUE}
+                      />
+                    </FormControl>
+                    <FormDescription />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div>
+              <FormField
+                control={form.control}
+                name="numberOfPlayersToProtect"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>{t("NumberOfProtectedPlayers")}</FormLabel>
+                      <Popover>
+                        <PopoverTrigger
+                          className="hover:cursor-pointer"
+                          asChild
+                        >
+                          <LucideAlertOctagon />
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0">
+                          {t("NumberOfPlayersToProtectDescription")}
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number"
+                        defaultValue={DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT}
+                        min={NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE}
+                        max={NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE}
+                      />
+                    </FormControl>
+                    <FormDescription />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -863,90 +926,12 @@ export default function PoolSettingsComponent(props: Props) {
     </Card>
   );
 
-  const DynastySettings = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("DynastySettings")}</CardTitle>
-        {isCreationContext() ? (
-          <CardDescription>{t("DynastySettingsDescription")}</CardDescription>
-        ) : null}
-      </CardHeader>
-      <CardContent className="grid gap-6">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <FormField
-              control={form.control}
-              name="tradableDraftPicks"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-2">
-                    <FormLabel>{t("TradableDraftPicks")}</FormLabel>
-                    <Popover>
-                      <PopoverTrigger className="hover:cursor-pointer" asChild>
-                        <LucideAlertOctagon />
-                      </PopoverTrigger>
-                      <PopoverContent className="p-0">
-                        {t("TradablePicksDescription")}
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      defaultValue={DEFAULT_TRADABLE_DRAFT_PICKS}
-                      min={TRADABLE_DRAFT_PICKS_MIN_VALUE}
-                      max={TRADABLE_DRAFT_PICKS_MAX_VALUE}
-                    />
-                  </FormControl>
-                  <FormDescription />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div>
-            <FormField
-              control={form.control}
-              name="numberOfPlayersToProtect"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-2">
-                    <FormLabel>{t("NumberOfProtectedPlayers")}</FormLabel>
-                    <Popover>
-                      <PopoverTrigger className="hover:cursor-pointer" asChild>
-                        <LucideAlertOctagon />
-                      </PopoverTrigger>
-                      <PopoverContent className="p-0">
-                        {t("NumberOfPlayersToProtectDescription")}
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      defaultValue={DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT}
-                      min={NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE}
-                      max={NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE}
-                    />
-                  </FormControl>
-                  <FormDescription />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   return (
     <div className="text-left mx-auto space-y-8">
       <Form {...form}>
         <fieldset disabled={DISABLE_OPTIONS}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             {GeneralSettings()}
-            {showDynastySettings ? DynastySettings() : null}
             {PlayerSettings()}
             {PointsSettings()}
             <div className="flex justify-end gap-4 p-2">
