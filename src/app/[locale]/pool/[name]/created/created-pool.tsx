@@ -102,9 +102,11 @@ export default function CreatedPool() {
   });
 
   React.useEffect(() => {
-    socket.onerror = (error) => {
-      console.error("WebSocket errors:", error);
-    };
+    if (socket) {
+      socket.onerror = (error) => {
+        console.error("WebSocket errors:", error);
+      };
+    }
   }, []);
 
   const updatePoolSettings = () => {

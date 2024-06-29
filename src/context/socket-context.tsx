@@ -77,11 +77,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   children,
   jwt,
 }) => {
-  const [roomUsers, setRoomUsers] = React.useState<Record<
-    string,
-    RoomUser
-  > | null>(null);
-  const [socketStatus, setSocketStatus] = React.useState<SocketStatus>(
+  const [roomUsers, setRoomUsers] = useState<Record<string, RoomUser> | null>(
+    null
+  );
+  const [socketStatus, setSocketStatus] = useState<SocketStatus>(
     SocketStatus.Connecting
   );
 
@@ -89,8 +88,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const t = useTranslations();
 
   const socketUrl = `wss://${window.location.host}/api-rust/ws/${jwt}`;
-
-  const socketRef = useRef<WebSocket>(new WebSocket(socketUrl));
+  const socketRef = useRef<WebSocket | null>(null);
 
   const setupWebSocket = useCallback(
     (socket: WebSocket) => {
@@ -148,15 +146,23 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   );
 
   useEffect(() => {
-    const socket = socketRef.current;
-    setupWebSocket(socket);
+    if (
+      !socketRef.current ||
+      socketRef.current.readyState === WebSocket.CLOSED
+    ) {
+      const socket = new WebSocket(socketUrl);
+      socketRef.current = socket;
+      setupWebSocket(socket);
+    }
 
     return () => {
-      socket.close();
-      toast({
-        title: t("RoomLeft", { poolName: poolInfo.name }),
-        duration: 2000,
-      });
+      if (socketRef.current) {
+        socketRef.current.close();
+        toast({
+          title: t("RoomLeft", { poolName: poolInfo.name }),
+          duration: 2000,
+        });
+      }
     };
   }, []);
 
@@ -201,7 +207,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   );
 
   const contextValue: SocketContextProps = {
-    socket: socketRef.current,
+    socket: socketRef.current!,
     roomUsers,
   };
 
