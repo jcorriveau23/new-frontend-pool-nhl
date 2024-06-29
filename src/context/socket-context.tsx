@@ -85,7 +85,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const { poolInfo, updatePoolInfo } = usePoolContext();
   const t = useTranslations();
 
-  const socketUrl = `ws://192.168.0.75/api-rust/ws/${jwt}`;
+  const socketUrl = `wss://192.168.0.75/api-rust/ws/${jwt}`;
 
   const socketRef = useRef<WebSocket>(new WebSocket(socketUrl));
 
