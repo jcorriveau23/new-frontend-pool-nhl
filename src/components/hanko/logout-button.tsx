@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "@/navigation";
 import { Hanko } from "@teamhanko/hanko-elements";
+import { toast } from "@/hooks/use-toast";
 
 const hankoApi = process.env.NEXT_PUBLIC_HANKO_API_URL;
 
@@ -23,7 +24,11 @@ export default function LogoutBtn() {
       router.refresh();
       return;
     } catch (error) {
-      alert(`Error during logout: ${error}`);
+      toast({
+        variant: "destructive",
+        title: `Error during logout: ${error}`,
+        duration: 2000,
+      });
     }
   };
 

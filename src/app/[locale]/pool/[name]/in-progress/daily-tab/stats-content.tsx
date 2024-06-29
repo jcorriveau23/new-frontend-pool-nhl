@@ -35,7 +35,7 @@ import { useTranslations } from "next-intl";
 import { ColumnDef } from "@tanstack/react-table";
 import { usePoolContext } from "@/context/pool-context";
 import { Row } from "@tanstack/react-table";
-import { getServerSideDailyLeaders } from "@/app/actions/daily-leaders";
+import { getServerSideDailyLeaders } from "@/actions/daily-leaders";
 
 export class SkatersDailyTotalPoints {
   constructor(skaters: SkaterDailyInfo[], skaters_settings: SkaterSettings) {

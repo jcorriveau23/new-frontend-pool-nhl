@@ -50,7 +50,7 @@ export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
   >({});
 
   const updateGamesNightContext = (games: Game[]) => {
-    if (games.length == 0) {
+    if (games?.length === 0) {
       // If the list of game is empty, we consider there is no game.
       setGamesNightStatus(GamesNightStatus.NO_GAMES);
     }

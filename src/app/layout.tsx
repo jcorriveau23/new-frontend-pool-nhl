@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { DateProvider } from "@/context/date-context";
 import { UserProvider } from "@/context/useUserData";
 import { UserSessionProvider } from "@/context/useSessionData";
+import { Toaster } from "@/components/ui/toaster";
 
 const metadata: Metadata = {
   title: "NHL pool",
@@ -33,6 +34,7 @@ export default function RootLayout({
             </ThemeProvider>
           </UserSessionProvider>
         </UserProvider>
+        <Toaster />
       </body>
     </html>
   );
