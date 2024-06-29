@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 
 export interface RoomUser {
   id: string;
+  name: string;
   email: string | null;
   is_ready: boolean;
 }
@@ -38,6 +39,8 @@ export enum Command {
   JoinRoom = "JoinRoom",
   OnPoolSettingChanges = "OnPoolSettingChanges",
   OnReady = "OnReady",
+  AddUser = "AddUser",
+  RemoveUser = "RemoveUser",
   StartDraft = "StartDraft",
 }
 
@@ -204,7 +207,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
   return (
     <SocketContext.Provider value={contextValue}>
-      {renderSocketConnection(socketStatus)}
+      <div className="flex items-center justify-center">
+        {renderSocketConnection(socketStatus)}
+      </div>
       {children}
     </SocketContext.Provider>
   );

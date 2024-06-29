@@ -256,5 +256,11 @@
     "WebSocketConnection": "Web Socket",
     "RoomJoined": "The room {poolName} as been joined.",
     "RoomLeft": "The room {poolName} as been left.",
-    "ConnectionClosed": "The connection as been closed with room {poolName}."
+    "ConnectionClosed": "The connection as been closed with room {poolName}.",
+    "SpotAvailable": "Spot Avaible",
+    "AddUser": "Add a user",
+    "RemoveUser": "Remove a user",
+    "ChoseUsername": "Chose the user name. An hockeypool.live account could be link to this user in the future.",
+    "Username": "username",
+    "Add": "Add"
 }

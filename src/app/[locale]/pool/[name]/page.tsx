@@ -2,21 +2,16 @@
 
 "use client";
 import * as React from "react";
-import { Pool, PoolState } from "@/data/pool/model";
-import InProgressPool from "./in-progress/in-progress-pool";
-import CreatedPool from "./created/created-pool";
+import { Pool } from "@/data/pool/model";
 import { PoolContextProvider, fetchPoolInfo } from "@/context/pool-context";
 import { useTranslations } from "next-intl";
-import DynastyPool from "./dynasty/dynasty-pool";
-import DraftPool from "./draft/draft-pool";
 import { toast } from "@/hooks/use-toast";
-import { SocketProvider } from "@/context/socket-context";
-import { useSession } from "@/context/useSessionData";
+import PoolStatus from "./pool";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function PoolPage({ params }: { params: { name: string } }) {
   const [poolInfo, setPoolInfo] = React.useState<Pool | null>(null);
   const t = useTranslations();
-  const { jwt } = useSession();
 
   React.useEffect(() => {
     const getPoolInfo = async () => {
@@ -39,35 +34,15 @@ export default function PoolPage({ params }: { params: { name: string } }) {
     getPoolInfo();
   }, [params.name]);
 
-  const getPoolContent = (poolInfo: Pool) => {
-    switch (poolInfo.status) {
-      case PoolState.Created:
-        return (
-          <SocketProvider jwt={jwt}>
-            <CreatedPool />
-          </SocketProvider>
-        );
-      case PoolState.Draft:
-        return (
-          <SocketProvider jwt={jwt}>
-            <DraftPool />
-          </SocketProvider>
-        );
-      case PoolState.InProgress:
-      case PoolState.Final:
-        return <InProgressPool />;
-      case PoolState.Dynasty:
-        return <DynastyPool />;
-    }
-  };
-
-  if (poolInfo === null) {
-    return <h1>Loading pool info...</h1>;
-  }
-
   return (
-    <PoolContextProvider pool={poolInfo}>
-      {getPoolContent(poolInfo)}
-    </PoolContextProvider>
+    <div className="item-center text-center">
+      {poolInfo ? (
+        <PoolContextProvider pool={poolInfo}>
+          <PoolStatus />
+        </PoolContextProvider>
+      ) : (
+        <LoadingSpinner />
+      )}
+    </div>
   );
 }
