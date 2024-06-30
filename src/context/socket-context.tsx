@@ -92,7 +92,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const { poolInfo, updatePoolInfo } = usePoolContext();
   const t = useTranslations();
 
-  const socketUrl = `ws://${window.location.host}/api-rust/ws/${jwt}`;
+  const socketUrl = `wss://${window.location.host}/api-rust/ws/${jwt}`;
   const socketRef = useRef<WebSocket | null>(null);
 
   const setupWebSocket = useCallback(
