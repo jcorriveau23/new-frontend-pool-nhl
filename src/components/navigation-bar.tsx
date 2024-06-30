@@ -67,7 +67,7 @@ export function NavigationBar() {
                   </div>
                   <div className="hover:underline">
                     <SheetClose asChild>
-                      <Link href="/draft/2023">{t("Draft")}</Link>
+                      <Link href="/draft/2024">{t("Draft")}</Link>
                     </SheetClose>
                   </div>
 

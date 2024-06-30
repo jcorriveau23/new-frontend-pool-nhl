@@ -122,7 +122,7 @@ interface DraftData {
 }
 
 const FIRST_DRAFT_YEAR = 1963;
-const LAST_DRAFT_YEAR = 2023;
+const LAST_DRAFT_YEAR = 2024;
 
 const getServerSideSeasonDraft = async (year: string) => {
   /* 
