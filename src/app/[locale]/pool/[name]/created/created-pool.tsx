@@ -77,6 +77,7 @@ export default function CreatedPool() {
   const { toast } = useToast();
   const t = useTranslations();
   const { socket, roomUsers } = useSocketContext();
+  const [open, setOpen] = React.useState(false);
 
   const formSchema = z.object({
     name: z
@@ -172,7 +173,7 @@ export default function CreatedPool() {
   };
 
   const CreateUserDialog = () => (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
           <PlusCircledIcon className="h-4 w-4" />
@@ -180,7 +181,6 @@ export default function CreatedPool() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle></DialogTitle>
           <DialogDescription>{t("ChoseUsername")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -306,7 +306,7 @@ export default function CreatedPool() {
           {renderUserSpots(users)}
         </ul>
       </CardContent>
-      <CardFooter className="flex items-center justify-between">
+      <CardFooter className="flex justify-end">
         <Button
           onClick={() => startDraft()}
           disabled={!areAllUsersReady(users)}

@@ -193,7 +193,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
           <div className="text-sm font-medium">
             {t("WebSocketConnection", { socketStatus: t(socketStatus) })}
           </div>
-
           <div className="mt-3">
             {socketStatus === SocketStatus.Closed ? (
               <Button onClick={() => onSocketReconnect()}>
