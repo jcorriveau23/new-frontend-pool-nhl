@@ -32,18 +32,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Row } from "@tanstack/react-table";
-import { LucideAlertOctagon } from "lucide-react";
 
 import { useTranslations } from "next-intl";
 import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
 import PickList from "@/components/pick-list";
 import { useDateContext } from "@/context/date-context";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import Cookies from "js-cookie";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@radix-ui/react-dialog";
 import {
@@ -73,6 +66,7 @@ import {
 import { seasonFormat } from "@/app/utils/formating";
 import { useSession } from "@/context/useSessionData";
 import { toast } from "@/hooks/use-toast";
+import InformationIcon from "@/components/information-box";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -932,27 +926,15 @@ export default function CumulativeTab() {
             <TabsTrigger value="defenseRanking">{t("Defense")}</TabsTrigger>
             <TabsTrigger value="goaliesRanking">{t("Goalies")}</TabsTrigger>
             {poolInfo.status === PoolState.Final ? (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <LucideAlertOctagon color="red" />
-                </PopoverTrigger>
-                <PopoverContent align="start">
-                  {t("FinalPoolResult")}
-                </PopoverContent>
-              </Popover>
+              <InformationIcon text={t("FinalPoolResult")} />
             ) : poolInfo.context?.score_by_day?.[
                 selectedDate.toISOString().slice(0, 10)
               ]?.[selectedParticipant]?.is_cumulated ? null : (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <LucideAlertOctagon color="red" />
-                </PopoverTrigger>
-                <PopoverContent align="start">
-                  {t("notCumulatedYet", {
-                    selectedDate: selectedDate.toISOString().slice(0, 10),
-                  })}
-                </PopoverContent>
-              </Popover>
+              <InformationIcon
+                text={t("notCumulatedYet", {
+                  selectedDate: selectedDate.toISOString().slice(0, 10),
+                })}
+              />
             )}
           </TabsList>
         </div>

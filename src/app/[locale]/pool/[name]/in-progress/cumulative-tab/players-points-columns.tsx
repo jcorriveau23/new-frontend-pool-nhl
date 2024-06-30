@@ -4,16 +4,9 @@ import { ColumnDef, TableMeta } from "@tanstack/react-table";
 
 import { GoalieInfo, PlayerStatus, SkaterInfo } from "./cumulative-tab";
 import { Pool } from "@/data/pool/model";
-
-import { LucideAlertOctagon } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
 import PlayerLink from "@/components/player-link";
 import { TeamLogo } from "@/components/team-logo";
+import InformationIcon from "@/components/information-box";
 
 const getWarningColor = (playerStatus: PlayerStatus) => {
   switch (playerStatus) {
@@ -48,15 +41,11 @@ const getWarningCell = (
     return null;
   }
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <LucideAlertOctagon color={getWarningColor(player.status)} />
-      </PopoverTrigger>
-      <PopoverContent align="start">
-        {meta?.props.context?.players[player.id].name}{" "}
-        {meta?.t(getWarningMessage(player.status))}
-      </PopoverContent>
-    </Popover>
+    <InformationIcon
+      text={`${meta?.props.context?.players[player.id].name} ${meta?.t(
+        getWarningMessage(player.status)
+      )}`}
+    />
   );
 };
 
