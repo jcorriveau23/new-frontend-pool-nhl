@@ -9,11 +9,9 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { usePoolContext } from "@/context/pool-context";
 import { Pool } from "@/data/pool/model";
 import { useTranslations } from "next-intl";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { LucideAlertOctagon } from "lucide-react";
+import InformationIcon from "./information-box";
 
 interface Props {
   participant: string;
@@ -45,18 +43,13 @@ export default function PickList(props: Props) {
                   <div>{from}</div>
                   <div>
                     {from === roundPicksOwner[from] ? null : (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <LucideAlertOctagon color="red" className="p-0 m-0" />
-                        </PopoverTrigger>
-                        <PopoverContent align="start">
-                          {t("pickTraded", {
-                            newOwner: roundPicksOwner[from],
-                            round: index + 1,
-                            oldOwner: from,
-                          })}
-                        </PopoverContent>
-                      </Popover>
+                      <InformationIcon
+                        text={t("pickTraded", {
+                          newOwner: roundPicksOwner[from],
+                          round: index + 1,
+                          oldOwner: from,
+                        })}
+                      />
                     )}
                   </div>
                 </TableCell>

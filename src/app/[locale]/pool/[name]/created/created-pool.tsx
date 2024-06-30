@@ -260,16 +260,15 @@ export default function CreatedPool() {
   const renderUsers = (users: Record<string, RoomUser>) => (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>
-          {t("UsersForPool", { poolName: poolInfo.name })}
-          {copiedRoomUrl()}
-          {PoolSettingsDialog()}
-        </CardTitle>
         <CardDescription>
-          {t("UsersForPoolDescription", {
-            current: Object.keys(users).length,
-            expected: poolInfo.settings.number_poolers,
-          })}
+          <div className="p-2">
+            {t("UsersForPoolDescription", {
+              current: Object.keys(users).length,
+              expected: poolInfo.settings.number_poolers,
+            })}
+            {copiedRoomUrl()}
+            {PoolSettingsDialog()}
+          </div>
         </CardDescription>
       </CardHeader>
       <CardContent>

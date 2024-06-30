@@ -12,14 +12,9 @@ import {
   GamesNightStatus,
   useGamesNightContext,
 } from "@/context/games-night-context";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { LucideAlertOctagon } from "lucide-react";
 import { useRouter } from "@/navigation";
 import { usePoolContext } from "@/context/pool-context";
+import InformationIcon from "@/components/information-box";
 
 enum InProgressTabs {
   CUMULATIVE = "cumulative",
@@ -108,14 +103,7 @@ export default function InProgressPool() {
               {t("Daily")}
               <div className="pl-1">
                 {gamesNightStatus === GamesNightStatus.LIVE ? (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <LucideAlertOctagon color="red" />
-                    </PopoverTrigger>
-                    <PopoverContent align="start">
-                      {t("liveGame")}
-                    </PopoverContent>
-                  </Popover>
+                  <InformationIcon text={t("liveGame")} />
                 ) : null}
               </div>
             </TabsTrigger>

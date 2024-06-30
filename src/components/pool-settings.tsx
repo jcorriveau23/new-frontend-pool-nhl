@@ -26,15 +26,10 @@ import {
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Checkbox } from "./ui/checkbox";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { LucideAlertOctagon } from "lucide-react";
 import { useRouter } from "@/navigation";
 import { useSession } from "@/context/useSessionData";
 import { toast } from "@/hooks/use-toast";
+import InformationIcon from "./information-box";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -518,14 +513,7 @@ export default function PoolSettingsComponent(props: Props) {
               <div className="flex items-center gap-2">
                 <RadioGroupItem value={PoolType.DYNASTY} id="r2" />
                 <Label htmlFor="r2">{t("Dynasty")} </Label>
-                <Popover>
-                  <PopoverTrigger className="hover:cursor-pointer" asChild>
-                    <LucideAlertOctagon />
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0">
-                    {t("DynastyPoolTypeDescription")}
-                  </PopoverContent>
-                </Popover>
+                <InformationIcon text={t("DynastyPoolTypeDescription")} />
               </div>
             </RadioGroup>
           </div>
@@ -533,20 +521,13 @@ export default function PoolSettingsComponent(props: Props) {
             <Label>{t("DraftType")}</Label>
             <RadioGroup defaultValue={DEFAULT_DRAFT_TYPE}>
               <div className="flex items-center gap-2">
-                <RadioGroupItem value={DraftType.SERPENTINE} />
-                <Label>{t("Serpentine")}</Label>
-                <Popover>
-                  <PopoverTrigger className="hover:cursor-pointer" asChild>
-                    <LucideAlertOctagon />
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0">
-                    {t("SerpentinDescription")}
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="flex items-center gap-2">
                 <RadioGroupItem value={DraftType.STANDARD} />
                 <Label>Standard</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value={DraftType.SERPENTINE} />
+                <Label>{t("Serpentine")}</Label>
+                <InformationIcon text={t("SerpentinDescription")} />
               </div>
             </RadioGroup>
           </div>
@@ -561,17 +542,7 @@ export default function PoolSettingsComponent(props: Props) {
                   <FormItem>
                     <div className="flex items-center gap-2">
                       <FormLabel>{t("TradableDraftPicks")}</FormLabel>
-                      <Popover>
-                        <PopoverTrigger
-                          className="hover:cursor-pointer"
-                          asChild
-                        >
-                          <LucideAlertOctagon />
-                        </PopoverTrigger>
-                        <PopoverContent className="p-0">
-                          {t("TradablePicksDescription")}
-                        </PopoverContent>
-                      </Popover>
+                      <InformationIcon text={t("TradablePicksDescription")} />
                     </div>
                     <FormControl>
                       <Input
@@ -596,17 +567,9 @@ export default function PoolSettingsComponent(props: Props) {
                   <FormItem>
                     <div className="flex items-center gap-2">
                       <FormLabel>{t("NumberOfProtectedPlayers")}</FormLabel>
-                      <Popover>
-                        <PopoverTrigger
-                          className="hover:cursor-pointer"
-                          asChild
-                        >
-                          <LucideAlertOctagon />
-                        </PopoverTrigger>
-                        <PopoverContent className="p-0">
-                          {t("NumberOfPlayersToProtectDescription")}
-                        </PopoverContent>
-                      </Popover>
+                      <InformationIcon
+                        text={t("NumberOfPlayersToProtectDescription")}
+                      />
                     </div>
                     <FormControl>
                       <Input
@@ -730,14 +693,7 @@ export default function PoolSettingsComponent(props: Props) {
             }
           />
           <Label>{t("IgnoreWorstPlayers")}</Label>
-          <Popover>
-            <PopoverTrigger className="hover:cursor-pointer" asChild>
-              <LucideAlertOctagon />
-            </PopoverTrigger>
-            <PopoverContent className="p-0">
-              {t("IgnoreWorstPlayersDescription")}
-            </PopoverContent>
-          </Popover>
+          <InformationIcon text={t("IgnoreWorstPlayersDescription")} />
         </div>
         {showIgnorePlayers ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

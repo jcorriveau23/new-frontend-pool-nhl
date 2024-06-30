@@ -17,6 +17,11 @@ import { usePoolContext } from "./pool-context";
 import { toast } from "@/hooks/use-toast";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export interface RoomUser {
   id: string;
@@ -45,17 +50,17 @@ export enum Command {
 }
 
 enum SocketStatus {
-  Connecting = 0,
-  Opened = 1,
-  Closing = 2,
-  Closed = 3,
+  Connecting = "Connecting",
+  Opened = "Connected",
+  Closing = "Closing",
+  Closed = "Closed",
 }
 
 const SOCKET_STATUS_TO_COLOR: Record<SocketStatus, string> = {
-  [SocketStatus.Connecting]: "bg-yellow-500",
-  [SocketStatus.Opened]: "bg-green-500",
-  [SocketStatus.Closing]: "bg-orange-500",
-  [SocketStatus.Closed]: "bg-red-500",
+  [SocketStatus.Connecting]: "yellow",
+  [SocketStatus.Opened]: "green",
+  [SocketStatus.Closing]: "orange",
+  [SocketStatus.Closed]: "red",
 };
 
 export const useSocketContext = (): SocketContextProps => {
@@ -87,7 +92,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const { poolInfo, updatePoolInfo } = usePoolContext();
   const t = useTranslations();
 
-  const socketUrl = `wss://${window.location.host}/api-rust/ws/${jwt}`;
+  const socketUrl = `ws://${window.location.host}/api-rust/ws/${jwt}`;
   const socketRef = useRef<WebSocket | null>(null);
 
   const setupWebSocket = useCallback(
@@ -177,33 +182,28 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   };
 
   const renderSocketConnection = (socketStatus: SocketStatus) => (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-2">
-          <div>
-            <Signal className="h-4 w-4" />
+    <div className="fixed bottom-4 left-4">
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline">
+            <Signal color={SOCKET_STATUS_TO_COLOR[socketStatus]} />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent>
+          <div className="text-sm font-medium">
+            {t("WebSocketConnection", { socketStatus: t(socketStatus) })}
           </div>
-          <div className="text-sm font-medium">{t("WebSocketConnection")}</div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div
-            className={`h-3 w-3 rounded-full ${SOCKET_STATUS_TO_COLOR[socketStatus]}`}
-          />
-          <div className="text-sm">
-            {socketStatus === SocketStatus.Opened
-              ? t("Connected")
-              : t("Disconnected")}
-          </div>
-          <div>
+
+          <div className="mt-3">
             {socketStatus === SocketStatus.Closed ? (
               <Button onClick={() => onSocketReconnect()}>
                 {t("Reconnect")}
               </Button>
             ) : null}
           </div>
-        </div>
-      </CardHeader>
-    </Card>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 
   const contextValue: SocketContextProps = {
@@ -213,9 +213,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
   return (
     <SocketContext.Provider value={contextValue}>
-      <div className="flex items-center justify-center">
-        {renderSocketConnection(socketStatus)}
-      </div>
+      {renderSocketConnection(socketStatus)}
       {children}
     </SocketContext.Provider>
   );
