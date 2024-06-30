@@ -356,6 +356,12 @@ export const team_info: Record<number, TeamInfo> = {
       firstSeason: 20212022,
       lastSeason: null,
     },
+    59: {
+      logo: 'https://assets.nhle.com/logos/nhl/svg/UTA_dark.svg',
+      fullName: 'Utah Hockey Club',
+      firstSeason: 20242025,
+      lastSeason: null,
+    }
   };
   
   export const abbrevToTeamId: Record<string, number> = {
@@ -417,6 +423,7 @@ export const team_info: Record<number, TeamInfo> = {
     MIN: 30,
     VGK: 54,
     SEA: 55,
+    UTA: 59,
   };
   
   export default team_info;
