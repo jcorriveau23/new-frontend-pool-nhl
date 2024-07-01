@@ -268,7 +268,14 @@
     "Add": "Add",
     "PoolCreatedPageTitle": "Room for creation of pool {poolName}",
     "PoolDraftPageTitle": "Draft in progress for pool {poolName}",
-    "PoolInProgressPageTitle": "Pool in progress",
-    "PoolFinalPageTitle": "Final result for pool",
-    "PoolDynastyPageTitle": "Players protection for next season"
+    "PoolInProgressPageTitle": "Pool {PoolName}",
+    "PoolDynastyPageTitle": "Players protection for next season",
+    "PoolCreation": "Pool creatiion",
+    "NhlDraftPagePageTitle": "NHL Draft History",
+    "NhlGameInformationPageTitle": "NHL game information",
+    "NHLPlayerinformationPageTitle": "NHL Player information",
+    "PoolListPageTitle": "List of all pools",
+    "ProfilePageTitle": "Profile information",
+    "NhlTeamRosterPageTitle": "NHL Team roster informations",
+    "NhlStandingPageTitle": "NHL team standing"
 }

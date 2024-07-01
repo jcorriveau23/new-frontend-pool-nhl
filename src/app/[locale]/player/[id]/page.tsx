@@ -20,6 +20,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Link } from "@/navigation";
+import PageTitle from "@/components/page-title";
 
 enum SeasonType {
   SEASON = 2,
@@ -413,6 +414,7 @@ export default async function Player({ params }: { params: { id: string } }) {
 
   return (
     <div className="items-center text-center">
+      <PageTitle title={t("NHLPlayerinformationPageTitle")} />
       {PlayerBaseInfo()}
       <Accordion type="single" collapsible defaultValue="regularSeason">
         <AccordionItem value="regularSeason">

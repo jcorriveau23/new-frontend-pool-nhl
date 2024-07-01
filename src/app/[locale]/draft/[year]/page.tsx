@@ -20,6 +20,7 @@ import {
 import team_info from "@/lib/teams";
 import PlayerLink from "@/components/player-link";
 import { Combobox } from "@/components/ui/combobox";
+import PageTitle from "@/components/page-title";
 
 interface Player {
   id: number;
@@ -229,6 +230,7 @@ export default async function Standing({
 
   return (
     <div className="items-center text-center">
+      <PageTitle title={t("NhlDraftHistoryPageTitle")} />
       {YearInputs()}
       {rounds.map((r) => (
         <Accordion

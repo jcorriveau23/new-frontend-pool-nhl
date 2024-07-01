@@ -268,7 +268,14 @@
     "Add": "Ajouter",
     "PoolCreatedPageTitle": "Salle de création du pool {poolName}",
     "PoolDraftPageTitle": "Draft en cours pour le pool {poolName}",
-    "PoolInProgressPageTitle": "Pool {poolName} en cours",
-    "PoolFinalPageTitle": "Résultat final du pool {poolName}",
-    "PoolDynastyPageTitle": "Protection des joueurs pour la prochaine saison"
+    "PoolInProgressPageTitle": "Pool {poolName}",
+    "PoolDynastyPageTitle": "Protection des joueurs pour la prochaine saison",
+    "PoolCreationPageTitle": "Création de pool",
+    "NhlDraftHistoryPageTitle": "Historique des repêchages NHL",
+    "NhlGameInformationPageTitle": "Information du match NHL",
+    "NHLPlayerinformationPageTitle": "Information du joueur NHL",
+    "PoolListPageTitle": "Liste de tous les pools",
+    "ProfilePageTitle": "Information du profile",
+    "NhlTeamRosterPageTitle": "Information de l'alignement d'une équipe NHL",
+    "NhlStandingPageTitle": "Classement des équipe de la saison NHL"
     }

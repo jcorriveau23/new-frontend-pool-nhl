@@ -11,6 +11,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Link } from "@/navigation";
 import { getTranslations } from "next-intl/server";
 import { seasonWithYearFormat } from "@/app/utils/formating";
+import PageTitle from "@/components/page-title";
 
 export default async function Rosters({
   params,
@@ -18,6 +19,7 @@ export default async function Rosters({
   params: { season: string };
 }) {
   const t = await getTranslations();
+
   const YearInputs = () => (
     <div className="space-x-2">
       {t("Season")}
@@ -35,6 +37,7 @@ export default async function Rosters({
 
   return (
     <div className="items-center text-center space-y-2">
+      <PageTitle title={t("NhlTeamRosterPageTitle")} />
       {YearInputs()}
       {getAllTeamForSeason(Number(params.season)).map((teamId) => (
         <div

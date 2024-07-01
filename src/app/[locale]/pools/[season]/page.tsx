@@ -9,6 +9,7 @@ import { getAllYears } from "@/lib/nhl";
 import { seasonFormat, seasonWithYearFormat } from "@/app/utils/formating";
 import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
+import PageTitle from "@/components/page-title";
 
 const FIRST_POOL_SEASON = 2021;
 const CURRENT_POOL_SEASON = 2024;
@@ -120,23 +121,37 @@ export default async function Pools({
 
   return (
     <div className="items-center text-center space-y-2">
+      <PageTitle title={t("PoolListPageTitle")} />
       {YearCombo()}
-      <Tabs defaultValue={tabIndex}>
-        <div className="overflow-auto">
-          <TabsList>
-            {PoolTabTrigger(PoolState.InProgress)}
-            {PoolTabTrigger(PoolState.Dynasty)}
-            {PoolTabTrigger(PoolState.Created)}
-            {PoolTabTrigger(PoolState.Draft)}
-            {PoolTabTrigger(PoolState.Final)}
-          </TabsList>
+      {pools ? (
+        <Tabs defaultValue={tabIndex}>
+          <div className="overflow-auto">
+            <TabsList>
+              {PoolTabTrigger(PoolState.InProgress)}
+              {PoolTabTrigger(PoolState.Dynasty)}
+              {PoolTabTrigger(PoolState.Created)}
+              {PoolTabTrigger(PoolState.Draft)}
+              {PoolTabTrigger(PoolState.Final)}
+            </TabsList>
+          </div>
+          {PoolTabContent(PoolState.InProgress)}
+          {PoolTabContent(PoolState.Dynasty)}
+          {PoolTabContent(PoolState.Created)}
+          {PoolTabContent(PoolState.Draft)}
+          {PoolTabContent(PoolState.Final)}
+        </Tabs>
+      ) : (
+        <div className="items-center text-center space-y-2">
+          <h1>
+            {t("NoPoolFound", {
+              season: seasonFormat(Number(params.season), 0),
+            })}
+          </h1>
         </div>
-        {PoolTabContent(PoolState.InProgress)}
-        {PoolTabContent(PoolState.Dynasty)}
-        {PoolTabContent(PoolState.Created)}
-        {PoolTabContent(PoolState.Draft)}
-        {PoolTabContent(PoolState.Final)}
-      </Tabs>
+      )}
+      <Link href="/create-pool" className="text-link hover:underline">
+        {t("CreatePool")}
+      </Link>
     </div>
   );
 }

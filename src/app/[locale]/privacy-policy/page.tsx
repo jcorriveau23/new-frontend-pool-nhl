@@ -4,6 +4,7 @@
 
 import { unstable_setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
+import PageTitle from "@/components/page-title";
 
 // @ts-ignore
 export default function PrivacyPolicy({ params: { locale } }) {
@@ -14,7 +15,7 @@ export default function PrivacyPolicy({ params: { locale } }) {
     <main className="px-4">
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold">{t("PrivacyPolicy")}</h1>
+          <PageTitle title={t("PrivacyPolicy")} />
           <p className="mt-2 text-gray-500 dark:text-gray-400">
             {t("EffectiveDate")}
           </p>
