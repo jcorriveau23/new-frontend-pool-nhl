@@ -12,10 +12,10 @@ export default function PrivacyPolicy({ params: { locale } }) {
   const t = useTranslations();
 
   return (
-    <main className="px-4">
-      <div className="space-y-8">
+    <main>
+      <PageTitle title={t("PrivacyPolicy")} />
+      <div className="space-y-8 px-4">
         <div>
-          <PageTitle title={t("PrivacyPolicy")} />
           <p className="mt-2 text-gray-500 dark:text-gray-400">
             {t("EffectiveDate")}
           </p>
