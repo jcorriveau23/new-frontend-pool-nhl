@@ -7,7 +7,6 @@
 import { useTranslations } from "next-intl";
 import PoolSettingsComponent from "@/components/pool-settings";
 import { useSession } from "@/context/useSessionData";
-import { Link } from "@/navigation";
 import PageTitle from "@/components/page-title";
 import LoginForm from "@/components/login";
 
@@ -18,7 +17,7 @@ export default function TermOfService() {
 
   return (
     <main>
-      <PageTitle title={t("PoolCreation")} />
+      <PageTitle title={t("PoolCreationPageTitle")} />
       {isValid ? (
         <PoolSettingsComponent
           poolName=""
