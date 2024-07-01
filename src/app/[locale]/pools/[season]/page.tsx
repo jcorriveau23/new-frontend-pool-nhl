@@ -149,6 +149,9 @@ export default async function Pools({
           </h1>
         </div>
       )}
+      <Link href="/create-pool" className="text-link hover:underline">
+        {t("CreatePool")}
+      </Link>
     </div>
   );
 }

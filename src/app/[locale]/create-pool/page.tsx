@@ -28,7 +28,7 @@ export default function TermOfService() {
       ) : (
         <>
           <p>{t("MustBeConnectedToCreatePool")}</p>{" "}
-          <LoginForm redirect="create-pool" />
+          <LoginForm redirect="/create-pool" />
         </>
       )}
     </main>
