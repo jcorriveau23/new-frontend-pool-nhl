@@ -23,7 +23,9 @@ export default function PoolStatus() {
     case PoolState.Created:
       return (
         <>
-          <PageTitle title={t("PoolCreatedPageTitle")} />
+          <PageTitle
+            title={t("PoolCreatedPageTitle", { poolName: poolInfo.name })}
+          />
           <SocketProvider jwt={jwt}>
             <CreatedPool />
           </SocketProvider>
@@ -32,7 +34,9 @@ export default function PoolStatus() {
     case PoolState.Draft:
       return (
         <>
-          <PageTitle title={t("PoolDraftPageTitle")} />
+          <PageTitle
+            title={t("PoolDraftPageTitle", { poolName: poolInfo.name })}
+          />
           <SocketProvider jwt={jwt}>
             <DraftPool />
           </SocketProvider>
@@ -42,7 +46,9 @@ export default function PoolStatus() {
     case PoolState.Final:
       return (
         <>
-          <PageTitle title={t("PoolInProgressPageTitle")} />
+          <PageTitle
+            title={t("PoolInProgressPageTitle", { poolName: poolInfo.name })}
+          />
           <InProgressPool />
         </>
       );
