@@ -1,18 +1,11 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import LoginForm from "@/components/login";
 
-import dynamic from "next/dynamic";
-const HankoAuth = dynamic(() => import("@/components/hanko/hanko-auth"), {
-  ssr: false,
-});
-
-export default function LoginForm() {
-  const t = useTranslations();
-
+export default function LoginPage() {
   return (
     <div className="mx-auto max-w-sm">
-      <HankoAuth />
+      <LoginForm redirect="/profile" />
     </div>
   );
 }

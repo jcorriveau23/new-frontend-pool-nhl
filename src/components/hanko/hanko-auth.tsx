@@ -14,7 +14,11 @@ import { useUser } from "@/context/useUserData";
 //@ts-ignore
 const hankoApi: string = process.env.NEXT_PUBLIC_HANKO_API_URL;
 
-export default function HankoAuth() {
+interface Props {
+  redirect: string;
+}
+
+export default function HankoAuth(props: Props) {
   const router = useRouter();
 
   const [hanko, setHanko] = useState<Hanko>();
@@ -30,7 +34,8 @@ export default function HankoAuth() {
 
   const redirectAfterLogin = useCallback(() => {
     // successfully logged in, redirect to a page in your application
-    router.replace("/profile");
+    router.replace(props.redirect);
+
     refreshSession();
     refreshUser();
   }, [router]);

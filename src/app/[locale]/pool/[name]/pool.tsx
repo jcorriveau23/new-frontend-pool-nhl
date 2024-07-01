@@ -10,6 +10,7 @@ import DraftPool from "./draft/draft-pool";
 import { SocketProvider } from "@/context/socket-context";
 import { usePoolContext } from "@/context/pool-context";
 import { useTranslations } from "next-intl";
+import PageTitle from "@/components/page-title";
 import { useSession } from "@/context/useSessionData";
 
 export default function PoolStatus() {
@@ -22,9 +23,7 @@ export default function PoolStatus() {
     case PoolState.Created:
       return (
         <>
-          <h1 className="text-2xl font-bold">
-            {t("PoolCreatedPageTitle", { poolName: poolInfo.name })}
-          </h1>
+          <PageTitle title={t("PoolCreatedPageTitle")} />
           <SocketProvider jwt={jwt}>
             <CreatedPool />
           </SocketProvider>
@@ -33,9 +32,7 @@ export default function PoolStatus() {
     case PoolState.Draft:
       return (
         <>
-          <h1 className="text-2xl font-bold">
-            {t("PoolDraftPageTitle", { poolName: poolInfo.name })}
-          </h1>
+          <PageTitle title={t("PoolDraftPageTitle")} />
           <SocketProvider jwt={jwt}>
             <DraftPool />
           </SocketProvider>
@@ -45,18 +42,14 @@ export default function PoolStatus() {
     case PoolState.Final:
       return (
         <>
-          <h1 className="text-2xl font-bold">
-            {poolInfo.status === PoolState.InProgress
-              ? t("PoolInProgressPageTitle", { poolName: poolInfo.name })
-              : t("PoolFinalPageTitle", { poolName: poolInfo.name })}
-          </h1>
+          <PageTitle title={t("PoolInProgressPageTitle")} />
           <InProgressPool />
         </>
       );
     case PoolState.Dynasty:
       return (
         <>
-          <h1 className="text-2xl font-bold">{t("PoolDynastyPageTitle")}</h1>
+          <PageTitle title={t("PoolDynastyPageTitle")} />
           <DynastyPool />
         </>
       );

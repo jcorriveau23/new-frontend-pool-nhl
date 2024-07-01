@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { getTranslations } from "next-intl/server";
 import { seasonFormat } from "@/app/utils/formating";
+import PageTitle from "@/components/page-title";
 
 interface Season {
   id: number;
@@ -195,6 +196,7 @@ export default async function Standing({
 
   return (
     <div className="items-center text-center">
+      <PageTitle title={t("NhlStandingPageTitle")} />
       <div className="space-x-2">
         {t("Season")}
         <Combobox

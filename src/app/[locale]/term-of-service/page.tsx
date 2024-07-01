@@ -4,6 +4,7 @@
 
 import { unstable_setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
+import PageTitle from "@/components/page-title";
 
 // @ts-ignore
 export default function TermOfService({ params: { locale } }) {
@@ -14,7 +15,7 @@ export default function TermOfService({ params: { locale } }) {
     <main className="px-4">
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold">{t("TermOfService")}</h1>
+          <PageTitle title={t("TermOfService")} />
           <p className="mt-2 text-gray-500 dark:text-gray-400">
             {t("EffectiveDate")}
           </p>
