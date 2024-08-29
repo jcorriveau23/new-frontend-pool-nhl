@@ -1,15 +1,16 @@
 import React from "react";
 
 import { Game, GameState } from "@/data/nhl/game";
-import { useRouter } from "@/navigation";
 import Image from "next/image";
+import { Link } from "@/navigation";
+
 interface Props {
   game: Game;
+  selectedDate: string;
 }
 
 export default function GameItem(props: Props) {
   // Router hook to be able to navigate to other page.
-  const router = useRouter();
 
   const getGameTime = (startTimeUTC: string) =>
     new Date(Date.parse(startTimeUTC)).toLocaleString(navigator.language, {
@@ -45,9 +46,9 @@ export default function GameItem(props: Props) {
   };
 
   return (
-    <div
+    <Link
       className="shrink-0 min-w-[80px] h-[80px] p-2 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted text-sm"
-      onClick={() => router.push(`/game/${props.game.id}`)}
+      href={`/${props.selectedDate}/game/${props.game.id}`}
     >
       <table width="100%">
         <tbody>
@@ -80,6 +81,6 @@ export default function GameItem(props: Props) {
           </tr>
         </tbody>
       </table>
-    </div>
+    </Link>
   );
 }

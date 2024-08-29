@@ -28,7 +28,7 @@ export function DatePicker(props: DateContextProps) {
     event: React.MouseEvent<SVGSVGElement, MouseEvent>
   ) => {
     event.stopPropagation(); // Prevents the click event from reaching the outer button+
-    props.updateDate(props.currentDate);
+    props.updateDate(new Date());
   };
 
   return (
@@ -43,12 +43,11 @@ export function DatePicker(props: DateContextProps) {
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {props.selectedDate ? (
-            format(props.selectedDate, "yyyy-MM-dd")
+            props.selectedDate
           ) : (
             <span>{t("Pick a date")}</span>
           )}
-          {props.currentDate.toDateString() ===
-          props.selectedDate?.toDateString() ? null : (
+          {props.selectedDate === "now" ? null : (
             <div className="ml-auto">
               <TooltipProvider>
                 <Tooltip>
@@ -69,7 +68,7 @@ export function DatePicker(props: DateContextProps) {
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={props.selectedDate}
+          selected={new Date(props.selectedDate)}
           // @ts-ignore
           onSelect={props.updateDate}
           initialFocus

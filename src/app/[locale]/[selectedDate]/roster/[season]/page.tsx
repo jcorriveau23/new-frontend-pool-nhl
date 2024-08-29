@@ -16,7 +16,7 @@ import PageTitle from "@/components/page-title";
 export default async function Rosters({
   params,
 }: {
-  params: { season: string };
+  params: { season: string; selectedDate: string };
 }) {
   const t = await getTranslations();
 
@@ -44,7 +44,9 @@ export default async function Rosters({
           key={teamId}
           className="mx-10 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted"
         >
-          <Link href={`/roster/${params.season}/${teamId}`}>
+          <Link
+            href={`/${params.selectedDate}/roster/${params.season}/${teamId}`}
+          >
             <p>{team_info[Number(teamId)]?.fullName}</p>
             <div className="flex justify-center">
               <Image

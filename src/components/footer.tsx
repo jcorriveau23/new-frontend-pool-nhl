@@ -1,5 +1,3 @@
-"use server";
-
 /**
 The footer of the web app.
  */
@@ -9,7 +7,11 @@ import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { TwitterLogoIcon } from "@radix-ui/react-icons";
 import { getTranslations } from "next-intl/server";
 
-export default async function Footer() {
+export default async function Footer({
+  params,
+}: {
+  params: { selectedDate: string };
+}) {
   const t = await getTranslations();
   return (
     <footer className="mx-0 py-4 w-full">
@@ -40,7 +42,7 @@ export default async function Footer() {
             {t("PrivacyPolicy")}
           </Link>
           <Link
-            href="/term-of-service"
+            href={`/${params.selectedDate}/term-of-service`}
             className="hover:underline text-muted-foreground"
           >
             {t("TermOfService")}

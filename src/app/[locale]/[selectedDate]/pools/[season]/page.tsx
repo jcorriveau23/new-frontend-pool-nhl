@@ -54,7 +54,7 @@ const getTabIndex = (poolCountPerStatus: Record<PoolState, number>) => {
 export default async function Pools({
   params,
 }: {
-  params: { season: string };
+  params: { season: string; selectedDate: string };
 }) {
   const pools: ProjectedPoolShort[] = await getServersidePoolList(
     params.season
@@ -65,7 +65,7 @@ export default async function Pools({
   const t = await getTranslations();
 
   const PoolItem = (poolInfo: ProjectedPoolShort) => (
-    <Link href={`/pool/${poolInfo.name}`}>
+    <Link href={`/${params.selectedDate}/pool/${poolInfo.name}`}>
       <div className="m-2 p-2 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted ">
         <div>
           <p className="text-sm font-medium leading-none">{poolInfo.name}</p>
@@ -149,7 +149,10 @@ export default async function Pools({
           </h1>
         </div>
       )}
-      <Link href="/create-pool" className="text-link hover:underline">
+      <Link
+        href={`/${params.selectedDate}/create-pool`}
+        className="text-link hover:underline"
+      >
         {t("CreatePool")}
       </Link>
     </div>

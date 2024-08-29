@@ -33,13 +33,17 @@ interface Props {
   gameId: string;
 }
 
-export const getServerSideGameLanding = async (gameId: string) => {
+const getServerSideGameLanding = async (gameId: string) => {
   /* 
   Query game landing for a specific game id on the server side. 
   */
-  const res = await fetch(`http://localhost/api-rust/game/landing/${gameId}`, {
-    next: { revalidate: 60 },
-  });
+  const res = await fetch(
+    `https://api-web.nhle.com/v1/gamecenter/${gameId}/landing`,
+    {
+      next: { revalidate: 180 },
+      cache: "force-cache",
+    }
+  );
   if (!res.ok) {
     return null;
   }

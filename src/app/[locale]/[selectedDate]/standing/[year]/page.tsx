@@ -137,8 +137,8 @@ const getServerSideStandingSeason = async () => {
 
 const getServerSideStanding = async (date: string) => {
   /* 
-        Query the player info of a specific player id. 
-        */
+    Get the server side standing. 
+  */
   const res = await fetch(
     `https://api-web.nhle.com/v1/standings/${date}`,
     { next: { revalidate: 21600 } } // revalidate each 6 hours

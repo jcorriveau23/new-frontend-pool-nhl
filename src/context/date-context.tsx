@@ -1,15 +1,17 @@
+"use client";
+
 /*
 Module that share the context of the current date, the selected date 
 and allow to update the selected date across the whole application.
-
-TODO: there should be a way to handle the selected date in a url param so that the query related 
-to date are being made on the server side
 */
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode, useEffect } from "react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { usePathname, useRouter } from "@/navigation";
+import { format } from "date-fns";
 
 export interface DateContextProps {
-  currentDate: Date;
-  selectedDate: Date;
+  selectedDate: string;
+  updateDateWithString: (newDate: string) => void;
   updateDate: (newDate: Date) => void;
 }
 
@@ -28,25 +30,51 @@ interface DateProviderProps {
 }
 
 export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
-  const currentDate = new Date();
+  const router = useRouter();
+  const [selectedDate, setSelectedDate] = React.useState<string>("now");
+  const pathname = usePathname();
 
-  // The default selected date is the current minus 12 hours.
-  // We want to display the games pool info of yesterdays before 12PM.
-  const [selectedDate, setSelectedDate] = React.useState<Date>(
-    new Date(currentDate.getTime() - 12 * 60 * 60 * 1000)
-  );
+  useEffect(() => {
+    // Extract selectedDate from the URL if present
+    const url = new URL(window.location.href);
+    const selectedDateParam = url.pathname.split("/").find((segment) => {
+      return /^\d{4}-\d{2}-\d{2}$/.test(segment); // Matches YYYY-MM-DD
+    });
+
+    if (selectedDateParam) {
+      setSelectedDate(selectedDateParam);
+    }
+  }, [pathname]);
+
+  const updateDateWithString = (newDate: string) => {
+    setSelectedDate(newDate);
+    // router.push(newDate);
+  };
 
   const updateDate = (newDate: Date) => {
-    setSelectedDate(newDate);
+    setSelectedDate(format(newDate, "yyyy-MM-dd"));
+    // router.push(newDate);
   };
 
   const contextValue: DateContextProps = {
-    currentDate,
     selectedDate,
+    updateDateWithString,
     updateDate,
   };
 
   return (
     <DateContext.Provider value={contextValue}>{children}</DateContext.Provider>
+  );
+};
+
+export const DatePickerContext = () => {
+  const { selectedDate, updateDate, updateDateWithString } = useDateContext();
+
+  return (
+    <DatePicker
+      selectedDate={selectedDate}
+      updateDate={updateDate}
+      updateDateWithString={updateDateWithString}
+    />
   );
 };
