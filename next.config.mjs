@@ -6,9 +6,19 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig = {
     experimental: {
         serverActions: {
-          allowedOrigins: ["*"]
+          allowedOrigins: ["192.168.0.75"]
         }
-      }
+      },
+      async redirects() {
+        return [
+          {
+            source: '/:lang',
+            destination: '/:lang/now',
+            permanent: true,
+          },
+        ]
+      },
 };
  
+
 export default withNextIntl(nextConfig);

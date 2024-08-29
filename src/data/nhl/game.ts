@@ -33,3 +33,23 @@ export interface Game {
   periodDescriptor?: PeriodDescriptor | null; // Optional field
   clock?: TimeRemaining | null; // Optional field
 }
+
+export interface GameWeekDay {
+  date: string;
+  dayAbbrev: string;
+  numberOfGames: number;
+}
+
+export interface GameWeekDay {
+  date: string;
+  dayAbbrev: string;
+  numberOfGames: number;
+}
+
+export interface Score {
+  prevDate: string;
+  currentDate: string;
+  nextDate: string;
+  gameWeek: GameWeekDay[];
+  games: Game[];
+}

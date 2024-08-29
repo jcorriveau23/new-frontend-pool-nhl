@@ -20,27 +20,27 @@ export default function DailyTab() {
   const seasonEndDate = new Date(poolInfo.season_end);
   const seasonStartDate = new Date(poolInfo.season_start);
 
-  if (selectedDate > seasonEndDate) {
-    return (
-      <div>
-        {t("PoolDone", {
-          seasonEndDate: seasonEndDate.toISOString().slice(0, 10),
-          selectedDate: selectedDate.toISOString().slice(0, 10),
-        })}
-      </div>
-    );
-  }
+  // if (selectedDate > seasonEndDate) {
+  //   return (
+  //     <div>
+  //       {t("PoolDone", {
+  //         seasonEndDate: seasonEndDate.toISOString().slice(0, 10),
+  //         selectedDate: selectedDate.toISOString().slice(0, 10),
+  //       })}
+  //     </div>
+  //   );
+  // }
 
-  if (selectedDate < seasonStartDate) {
-    return (
-      <div>
-        {t("PoolNotStarted", {
-          seasonStartDate: seasonStartDate.toISOString().slice(0, 10),
-          selectedDate: selectedDate.toISOString().slice(0, 10),
-        })}
-      </div>
-    );
-  }
+  // if (selectedDate < seasonStartDate) {
+  //   return (
+  //     <div>
+  //       {t("PoolNotStarted", {
+  //         seasonStartDate: seasonStartDate.toISOString().slice(0, 10),
+  //         selectedDate: selectedDate.toISOString().slice(0, 10),
+  //       })}
+  //     </div>
+  //   );
+  // }
 
   switch (gamesNightStatus) {
     case GamesNightStatus.NO_GAMES: {

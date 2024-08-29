@@ -282,7 +282,7 @@ export class TotalRanking {
 
 export default function CumulativeTab() {
   const t = useTranslations();
-  const { selectedDate, currentDate } = useDateContext();
+  const { selectedDate } = useDateContext();
   const [playerStats, setPlayerStats] = React.useState<Record<
     string,
     ParticipantsRoster
@@ -909,7 +909,7 @@ export default function CumulativeTab() {
     <div>
       <Tabs defaultValue="totalRanking">
         {poolInfo.status === PoolState.InProgress &&
-        new Date(poolInfo.season_end) < currentDate &&
+        new Date(poolInfo.season_end) < new Date(selectedDate) &&
         hasPoolPrivilege(userID, poolInfo) ? (
           <Button onClick={markAsFinal}>{t("MarkAsFinal")}</Button>
         ) : null}
@@ -927,12 +927,12 @@ export default function CumulativeTab() {
             <TabsTrigger value="goaliesRanking">{t("Goalies")}</TabsTrigger>
             {poolInfo.status === PoolState.Final ? (
               <InformationIcon text={t("FinalPoolResult")} />
-            ) : poolInfo.context?.score_by_day?.[
-                selectedDate.toISOString().slice(0, 10)
-              ]?.[selectedParticipant]?.is_cumulated ? null : (
+            ) : poolInfo.context?.score_by_day?.[selectedDate]?.[
+                selectedParticipant
+              ]?.is_cumulated ? null : (
               <InformationIcon
                 text={t("notCumulatedYet", {
-                  selectedDate: selectedDate.toISOString().slice(0, 10),
+                  selectedDate: selectedDate,
                 })}
               />
             )}

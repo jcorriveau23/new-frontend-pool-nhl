@@ -16,6 +16,7 @@ import {
   TableBody,
   TableCaption,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -158,6 +159,9 @@ export function DataTable<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
+          <TableFooter>
+            <TableRow></TableRow>
+          </TableFooter>
         </Table>
       </div>
     </div>
