@@ -53,8 +53,10 @@ const getTabIndex = (poolCountPerStatus: Record<PoolState, number>) => {
 
 export default async function Pools({
   params,
+  searchParams,
 }: {
   params: { season: string };
+  searchParams: any;
 }) {
   const pools: ProjectedPoolShort[] = await getServersidePoolList(
     params.season
@@ -62,10 +64,11 @@ export default async function Pools({
   const poolCountPerStatus = getPoolCountPerStatus(pools);
   const tabIndex = getTabIndex(poolCountPerStatus);
 
+  const queryString = new URLSearchParams(searchParams).toString();
   const t = await getTranslations();
 
   const PoolItem = (poolInfo: ProjectedPoolShort) => (
-    <Link href={`/pool/${poolInfo.name}`}>
+    <Link href={`/pool/${poolInfo.name}?${queryString}`}>
       <div className="m-2 p-2 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted ">
         <div>
           <p className="text-sm font-medium leading-none">{poolInfo.name}</p>
@@ -149,7 +152,10 @@ export default async function Pools({
           </h1>
         </div>
       )}
-      <Link href="/create-pool" className="text-link hover:underline">
+      <Link
+        href={`/create-pool?${queryString}`}
+        className="text-link hover:underline"
+      >
         {t("CreatePool")}
       </Link>
     </div>

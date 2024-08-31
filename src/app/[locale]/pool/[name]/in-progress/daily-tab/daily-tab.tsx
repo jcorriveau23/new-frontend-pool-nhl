@@ -1,6 +1,5 @@
 "use client";
 import * as React from "react";
-import { Pool } from "@/data/pool/model";
 import {
   GamesNightStatus,
   useGamesNightContext,
@@ -13,30 +12,32 @@ import { usePoolContext } from "@/context/pool-context";
 
 export default function DailyTab() {
   const { gamesNightStatus } = useGamesNightContext();
-  const { selectedDate } = useDateContext();
+  const { currentDate, selectedDate } = useDateContext();
   const { poolInfo } = usePoolContext();
   const t = useTranslations();
 
   const seasonEndDate = new Date(poolInfo.season_end);
   const seasonStartDate = new Date(poolInfo.season_start);
 
-  if (selectedDate > seasonEndDate) {
+  const dateOfInterest = selectedDate ?? currentDate;
+
+  if (dateOfInterest > seasonEndDate) {
     return (
       <div>
         {t("PoolDone", {
           seasonEndDate: seasonEndDate.toISOString().slice(0, 10),
-          selectedDate: selectedDate.toISOString().slice(0, 10),
+          selectedDate: dateOfInterest.toISOString().slice(0, 10),
         })}
       </div>
     );
   }
 
-  if (selectedDate < seasonStartDate) {
+  if (dateOfInterest < seasonStartDate) {
     return (
       <div>
         {t("PoolNotStarted", {
           seasonStartDate: seasonStartDate.toISOString().slice(0, 10),
-          selectedDate: selectedDate.toISOString().slice(0, 10),
+          selectedDate: dateOfInterest.toISOString().slice(0, 10),
         })}
       </div>
     );

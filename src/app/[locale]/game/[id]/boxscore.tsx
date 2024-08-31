@@ -20,9 +20,12 @@ export const getServerSideBoxScore = async (gameId: string) => {
   /* 
   Query game boxscore for a specific game id on the server side. 
   */
-  const res = await fetch(`http://localhost/api-rust/game/boxscore/${gameId}`, {
-    next: { revalidate: 60 },
-  });
+  const res = await fetch(
+    `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`,
+    {
+      next: { revalidate: 180 },
+    }
+  );
   if (!res.ok) {
     return null;
   }
@@ -83,56 +86,60 @@ export default async function GameBoxscore(props: Props) {
 
   return (
     <div className="py-5 px-0 sm:px-5">
-      <Tabs defaultValue="awayTeam">
-        <TabsList>
-          <TabsTrigger value="awayTeam">
-            <Image
-              width={30}
-              height={30}
-              alt="home-team"
-              src={boxscore.awayTeam.logo}
-            />
-            {t("Away Team")}
-          </TabsTrigger>
-          <TabsTrigger value="homeTeam">
-            <Image
-              width={30}
-              height={30}
-              alt="home-team"
-              src={boxscore.homeTeam.logo}
-            />
-            {t("Home Team")}
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="awayTeam">
-          {SkaterTable(
-            boxscore.playerByGameStats.awayTeam.forwards,
-            t("Forwards stats")
-          )}
-          {SkaterTable(
-            boxscore.playerByGameStats.awayTeam.defense,
-            t("Defenses stats")
-          )}
-          {GoalieTable(
-            boxscore.playerByGameStats.awayTeam.goalies,
-            t("Goalies stats")
-          )}
-        </TabsContent>
-        <TabsContent value="homeTeam">
-          {SkaterTable(
-            boxscore.playerByGameStats.homeTeam.forwards,
-            t("Forwards stats")
-          )}
-          {SkaterTable(
-            boxscore.playerByGameStats.homeTeam.defense,
-            t("Defenses stats")
-          )}
-          {GoalieTable(
-            boxscore.playerByGameStats.homeTeam.goalies,
-            t("Goalies stats")
-          )}
-        </TabsContent>
-      </Tabs>
+      {boxscore.playerByGameStats ? (
+        <Tabs defaultValue="awayTeam">
+          <TabsList>
+            <TabsTrigger value="awayTeam">
+              <Image
+                width={30}
+                height={30}
+                alt="home-team"
+                src={boxscore.awayTeam.logo}
+              />
+              {t("Away Team")}
+            </TabsTrigger>
+            <TabsTrigger value="homeTeam">
+              <Image
+                width={30}
+                height={30}
+                alt="home-team"
+                src={boxscore.homeTeam.logo}
+              />
+              {t("Home Team")}
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="awayTeam">
+            {SkaterTable(
+              boxscore.playerByGameStats.awayTeam.forwards,
+              t("Forwards stats")
+            )}
+            {SkaterTable(
+              boxscore.playerByGameStats.awayTeam.defense,
+              t("Defenses stats")
+            )}
+            {GoalieTable(
+              boxscore.playerByGameStats.awayTeam.goalies,
+              t("Goalies stats")
+            )}
+          </TabsContent>
+          <TabsContent value="homeTeam">
+            {SkaterTable(
+              boxscore.playerByGameStats.homeTeam.forwards,
+              t("Forwards stats")
+            )}
+            {SkaterTable(
+              boxscore.playerByGameStats.homeTeam.defense,
+              t("Defenses stats")
+            )}
+            {GoalieTable(
+              boxscore.playerByGameStats.homeTeam.goalies,
+              t("Goalies stats")
+            )}
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <h1>TODO: Boxscore game preview information.</h1>
+      )}
     </div>
   );
 }

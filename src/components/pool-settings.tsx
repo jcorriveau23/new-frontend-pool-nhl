@@ -1,3 +1,4 @@
+"use client";
 import {
   CardTitle,
   CardDescription,
@@ -30,6 +31,7 @@ import { useRouter } from "@/navigation";
 import { useSession } from "@/context/useSessionData";
 import { toast } from "@/hooks/use-toast";
 import InformationIcon from "./information-box";
+import { useSearchParams } from "next/navigation";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -52,6 +54,7 @@ export default function PoolSettingsComponent(props: Props) {
   const { jwt } = useSession();
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const DISABLE_OPTIONS =
     props.poolStatus !== null && props.poolStatus !== PoolState.Created;
@@ -446,7 +449,7 @@ export default function PoolSettingsComponent(props: Props) {
       });
       return;
     }
-    router.push(`/pool/${values.name}`);
+    router.push(`/pool/${values.name}?${searchParams.toString()}`);
   };
 
   const GeneralSettings = () => (

@@ -8,6 +8,7 @@ import { GamesNightProvider } from "@/context/games-night-context";
 import { unstable_setRequestLocale } from "next-intl/server";
 import Footer from "@/components/footer";
 import { Separator } from "@/components/ui/separator";
+import { DateProvider } from "@/context/date-context";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -30,17 +31,19 @@ export default function LocaleLayout({
   return (
     <>
       <NextIntlClientProvider locale={locale} messages={messages}>
-        <NavigationBar />
-        <Separator />
-        <GamesNightProvider>
-          <DailyGameFeed />
+        <DateProvider>
+          <NavigationBar />
           <Separator />
-          <div className="py-4 px-0 sm:px:4 md:px-6 mx-auto max-w-5xl">
-            {children}
-          </div>
-        </GamesNightProvider>
-        <Separator />
-        <Footer />
+          <GamesNightProvider>
+            <DailyGameFeed />
+            <Separator />
+            <div className="py-4 px-0 sm:px:4 md:px-6 mx-auto max-w-5xl">
+              {children}
+            </div>
+          </GamesNightProvider>
+          <Separator />
+          <Footer />
+        </DateProvider>
       </NextIntlClientProvider>
     </>
   );

@@ -57,7 +57,7 @@ export class PreviewTotal {
 export default function DailyPreviewContent() {
   const t = useTranslations();
   const { playingAgainst } = useGamesNightContext();
-  const { selectedDate } = useDateContext();
+  const { currentDate, selectedDate } = useDateContext();
   const { poolInfo, selectedParticipant, updateSelectedParticipant } =
     usePoolContext();
   const [forwardsPreview, setForwardsPreview] = React.useState<Record<
@@ -186,10 +186,13 @@ export default function DailyPreviewContent() {
   );
 
   const getFormatedRankingTableTitle = (title: string) =>
-    `${t(title)} (${format(selectedDate, "yyyy-MM-dd")})`;
+    `${t(title)} (${format(selectedDate ?? currentDate, "yyyy-MM-dd")})`;
 
   const getFormatedDateTitle = (participant: string, title: string) =>
-    `${t(title)} ${participant} (${format(selectedDate, "yyyy-MM-dd")})`;
+    `${t(title)} ${participant} (${format(
+      selectedDate ?? currentDate,
+      "yyyy-MM-dd"
+    )})`;
 
   React.useEffect(() => {
     getPreviewInfo();

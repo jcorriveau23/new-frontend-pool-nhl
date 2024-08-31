@@ -212,7 +212,8 @@ export class GoalieDailyInfo {
 }
 export default function DailyStatsContent() {
   const t = useTranslations();
-  const { selectedDate } = useDateContext();
+  const { currentDate, selectedDate } = useDateContext();
+  const dateOfInterest = selectedDate ?? currentDate;
   const {
     poolInfo,
     selectedParticipant,
@@ -398,7 +399,7 @@ export default function DailyStatsContent() {
     });
 
   React.useEffect(() => {
-    const keyDay = format(selectedDate, "yyyy-MM-dd");
+    const keyDay = format(dateOfInterest, "yyyy-MM-dd");
     const dayInfo = poolInfo.context?.score_by_day?.[keyDay];
 
     if (dayInfo === undefined || dailyLeaders === null) {
@@ -466,7 +467,7 @@ export default function DailyStatsContent() {
   }, [dailyLeaders]);
 
   React.useEffect(() => {
-    const keyDay = format(selectedDate, "yyyy-MM-dd");
+    const keyDay = format(dateOfInterest, "yyyy-MM-dd");
     getDailyStats(keyDay);
   }, [selectedDate]);
 
@@ -600,10 +601,10 @@ export default function DailyStatsContent() {
   );
 
   const getFormatedRankingTableTitle = (title: string) =>
-    `${t(title)} (${format(selectedDate, "yyyy-MM-dd")})`;
+    `${t(title)} (${format(dateOfInterest, "yyyy-MM-dd")})`;
 
   const getFormatedDateTitle = (participant: string, title: string) =>
-    `${t(title)} ${participant} (${format(selectedDate, "yyyy-MM-dd")})`;
+    `${t(title)} ${participant} (${format(dateOfInterest, "yyyy-MM-dd")})`;
 
   return (
     <div>

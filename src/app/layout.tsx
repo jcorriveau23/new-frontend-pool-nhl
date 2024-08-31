@@ -2,10 +2,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { DateProvider } from "@/context/date-context";
 import { UserProvider } from "@/context/useUserData";
 import { UserSessionProvider } from "@/context/useSessionData";
 import { Toaster } from "@/components/ui/toaster";
+import { Suspense } from "react";
 
 const metadata: Metadata = {
   title: "NHL pool",
@@ -21,18 +21,18 @@ export default function RootLayout({
     <html>
       <body>
         <UserProvider>
-          <UserSessionProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <DateProvider>
+          <Suspense fallback={null}>
+            <UserSessionProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
                 <div>{children}</div>
-              </DateProvider>
-            </ThemeProvider>
-          </UserSessionProvider>
+              </ThemeProvider>
+            </UserSessionProvider>
+          </Suspense>
         </UserProvider>
         <Toaster />
       </body>

@@ -3,8 +3,9 @@ import { unstable_setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
 
 //@ts-ignore
-export default function Home({ params: { locale } }) {
+export default function Home({ params: { locale }, searchParams }) {
   unstable_setRequestLocale(locale);
+  const queryString = new URLSearchParams(searchParams).toString();
   const t = useTranslations();
   return (
     <>
@@ -20,7 +21,7 @@ export default function Home({ params: { locale } }) {
               <p className="text-gray-500 md:text-xl dark:text-gray-400">
                 {t("AppDescription")}{" "}
                 <Link
-                  href="/pool/william"
+                  href={`/pool/william?${queryString}`}
                   className="text-link hover:underline"
                 >
                   {t("SeeDemo")}
@@ -28,7 +29,10 @@ export default function Home({ params: { locale } }) {
               </p>
               <p className="text-gray-500 md:text-xl dark:text-gray-400">
                 {t("GetStartedNow")}
-                <Link href="/create-pool" className="text-link hover:underline">
+                <Link
+                  href={`/create-pool?${queryString}`}
+                  className="text-link hover:underline"
+                >
                   {t("CreateYourOwnPool")}
                 </Link>
               </p>

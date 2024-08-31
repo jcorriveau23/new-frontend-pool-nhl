@@ -1,23 +1,30 @@
 "use server";
 
-export async function getServerSideDailyGames(keyDate: string) {
+import { Score } from "@/data/nhl/game";
+
+export async function getServerSideDailyGames(
+  selectedDate: string
+): Promise<Score | null> {
   /* 
-  Get the daily stats information. This is being called to query the daily pool scorer.
+  Get the daily score for a specific date.
   */
   try {
     const res = await fetch(
-      `http://localhost/api-rust/daily_games/${keyDate}`,
+      `https://api-web.nhle.com/v1/score/${selectedDate}`,
       {
-        next: { revalidate: 60 },
+        next: { revalidate: 180 },
       }
     );
     if (!res.ok) {
-      return [];
+      return null;
     }
-    const data = await res.json();
+    const data: Score = await res.json();
 
-    return data.games;
+    return data;
   } catch (e: any) {
-    return [];
+    console.log(
+      `An error occured while fetching the score for ${selectedDate}`
+    );
+    return null;
   }
 }

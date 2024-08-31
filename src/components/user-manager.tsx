@@ -14,10 +14,12 @@ import { useRouter } from "@/navigation";
 import LogoutBtn from "./hanko/logout-button";
 import { useSession } from "@/context/useSessionData";
 import { LoadingSpinner } from "./ui/loading-spinner";
+import { useSearchParams } from "next/navigation";
 
 export function UserManager() {
   const t = useTranslations();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isValid, loading: sessionDataLoading } = useSession();
 
   if (sessionDataLoading) {
@@ -42,7 +44,11 @@ export function UserManager() {
       </DropdownMenuContent>
     </DropdownMenu>
   ) : (
-    <Button variant="ghost" size="sm" onClick={() => router.push("/login")}>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => router.push(`/login?${searchParams.toString()}`)}
+    >
       <LogInIcon />
     </Button>
   );

@@ -1,16 +1,20 @@
+"use client";
 /*
 Module that share the context of the current date, the selected date 
 and allow to update the selected date across the whole application.
-
-TODO: there should be a way to handle the selected date in a url param so that the query related 
-to date are being made on the server side
 */
-import React, { createContext, useContext, ReactNode } from "react";
+import { getServerSideDailyGames } from "@/actions/daily-games";
+import { useRouter, usePathname } from "@/navigation";
+import React, { createContext, useContext, ReactNode, useEffect } from "react";
+import { Score } from "../data/nhl/game";
+import { useSearchParams } from "next/navigation";
 
-export interface DateContextProps {
+interface DateContextProps {
   currentDate: Date;
-  selectedDate: Date;
+  selectedDate: Date | null;
+  score: Score | null;
   updateDate: (newDate: Date) => void;
+  updateDateWithString: (newDate: string) => void;
 }
 
 const DateContext = createContext<DateContextProps | undefined>(undefined);
@@ -28,22 +32,68 @@ interface DateProviderProps {
 }
 
 export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
+  const router = useRouter();
+  const pathName = usePathname();
+  const [score, setScore] = React.useState<Score | null>(null);
+  const searchParams = useSearchParams();
+  const querySelectedDate = searchParams.get("selectedDate") ?? "now";
+  const currentParams = new URLSearchParams(searchParams.toString());
   const currentDate = new Date();
 
-  // The default selected date is the current minus 12 hours.
-  // We want to display the games pool info of yesterdays before 12PM.
-  const [selectedDate, setSelectedDate] = React.useState<Date>(
-    new Date(currentDate.getTime() - 12 * 60 * 60 * 1000)
-  );
+  // The default selected date is the one returned by the /now endpoint of the nhl api.
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
+
+  // Update the selected date based on the query parameter.
+  useEffect(() => {
+    if (querySelectedDate) {
+      const parsedDate = new Date(querySelectedDate);
+      if (!isNaN(parsedDate.getTime())) {
+        setSelectedDate(parsedDate);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    setScore(null);
+    const getServerActionGames = async () => {
+      const score = await getServerSideDailyGames(querySelectedDate);
+      if (score !== null) {
+        setScore(score);
+      }
+    };
+
+    getServerActionGames();
+  }, [querySelectedDate]);
 
   const updateDate = (newDate: Date) => {
     setSelectedDate(newDate);
+    // Optionally update the URL to reflect the new selected date
+    currentParams.set("selectedDate", newDate.toISOString().split("T")[0]);
+
+    router.push(`${pathName}?${currentParams.toString()}`);
+  };
+
+  function parseDate(dateString: string): Date {
+    const [year, month, day] = dateString.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  const updateDateWithString = (newDate: string) => {
+    const selectedDate = newDate === "now" ? new Date() : parseDate(newDate);
+
+    setSelectedDate(selectedDate);
+    // Optionally update the URL to reflect the new selected date
+    currentParams.set("selectedDate", newDate);
+
+    router.push(`${pathName}?${currentParams.toString()}`);
   };
 
   const contextValue: DateContextProps = {
     currentDate,
     selectedDate,
+    score,
     updateDate,
+    updateDateWithString,
   };
 
   return (

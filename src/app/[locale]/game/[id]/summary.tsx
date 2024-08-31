@@ -33,13 +33,16 @@ interface Props {
   gameId: string;
 }
 
-export const getServerSideGameLanding = async (gameId: string) => {
+const getServerSideGameLanding = async (gameId: string) => {
   /* 
   Query game landing for a specific game id on the server side. 
   */
-  const res = await fetch(`http://localhost/api-rust/game/landing/${gameId}`, {
-    next: { revalidate: 60 },
-  });
+  const res = await fetch(
+    `https://api-web.nhle.com/v1/gamecenter/${gameId}/landing`,
+    {
+      next: { revalidate: 180 },
+    }
+  );
   if (!res.ok) {
     return null;
   }
@@ -239,57 +242,63 @@ export default async function GameSummary(props: Props) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 p-0 sm:p-2">
-      <div className="py-5 px-0 sm:px-5">
-        {LineScoreTable(
-          gameLanding.summary.linescore,
-          gameLanding.awayTeam.logo,
-          gameLanding.homeTeam.logo
-        )}
-        {ShotsPerPeriodTable(
-          gameLanding.summary.shotsByPeriod,
-          gameLanding.awayTeam.logo,
-          gameLanding.homeTeam.logo
-        )}
-      </div>
-      <div className="py-5 px-0 sm:px-5">
-        {gameLanding.summary.scoring
-          .filter(
-            (period) => period.periodDescriptor.periodType !== PeriodType.SO
-          )
-          .map((period) => (
-            <Accordion
-              key={period.periodDescriptor.number}
-              type="single"
-              collapsible
-              defaultValue="all"
-            >
-              <AccordionItem value="all">
-                <AccordionTrigger>
-                  {period.periodDescriptor.periodType === PeriodType.REG
-                    ? `${t("Period")} ${period.periodDescriptor.number}`
-                    : "OT"}
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                    {period.goals?.length > 0
-                      ? period.goals.map((goalInfo) => GoalItem(goalInfo))
-                      : t("No goal")}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          ))}
-        {gameLanding.summary.shootout?.length > 0 ? (
-          <Accordion type="single" collapsible defaultValue="shootout">
-            <AccordionItem value="shootout">
-              <AccordionTrigger>{t("Shootout")}</AccordionTrigger>
-              <AccordionContent>
-                {ShootoutTable(gameLanding.summary.shootout)}
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        ) : null}
-      </div>
+      {gameLanding.summary ? (
+        <>
+          <div className="py-5 px-0 sm:px-5">
+            {LineScoreTable(
+              gameLanding.summary.linescore,
+              gameLanding.awayTeam.logo,
+              gameLanding.homeTeam.logo
+            )}
+            {ShotsPerPeriodTable(
+              gameLanding.summary.shotsByPeriod,
+              gameLanding.awayTeam.logo,
+              gameLanding.homeTeam.logo
+            )}
+          </div>
+          <div className="py-5 px-0 sm:px-5">
+            {gameLanding.summary.scoring
+              .filter(
+                (period) => period.periodDescriptor.periodType !== PeriodType.SO
+              )
+              .map((period) => (
+                <Accordion
+                  key={period.periodDescriptor.number}
+                  type="single"
+                  collapsible
+                  defaultValue="all"
+                >
+                  <AccordionItem value="all">
+                    <AccordionTrigger>
+                      {period.periodDescriptor.periodType === PeriodType.REG
+                        ? `${t("Period")} ${period.periodDescriptor.number}`
+                        : "OT"}
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-4">
+                        {period.goals?.length > 0
+                          ? period.goals.map((goalInfo) => GoalItem(goalInfo))
+                          : t("No goal")}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              ))}
+            {gameLanding.summary.shootout?.length > 0 ? (
+              <Accordion type="single" collapsible defaultValue="shootout">
+                <AccordionItem value="shootout">
+                  <AccordionTrigger>{t("Shootout")}</AccordionTrigger>
+                  <AccordionContent>
+                    {ShootoutTable(gameLanding.summary.shootout)}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            ) : null}
+          </div>
+        </>
+      ) : (
+        <h1>TODO: Summary game preview information.</h1>
+      )}
     </div>
   );
 }

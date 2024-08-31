@@ -9,7 +9,8 @@ import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { TwitterLogoIcon } from "@radix-ui/react-icons";
 import { getTranslations } from "next-intl/server";
 
-export default async function Footer() {
+export default async function Footer(searchParams: any) {
+  const queryString = new URLSearchParams(searchParams).toString();
   const t = await getTranslations();
   return (
     <footer className="mx-0 py-4 w-full">
@@ -34,13 +35,13 @@ export default async function Footer() {
         <div className="grid gap-1">
           <h3 className="font-bold">{t("Legal")}</h3>
           <Link
-            href="/privacy-policy"
+            href={`/privacy-policy?${queryString}`}
             className="hover:underline text-muted-foreground"
           >
             {t("PrivacyPolicy")}
           </Link>
           <Link
-            href="/term-of-service"
+            href={`/term-of-service?${queryString}`}
             className="hover:underline text-muted-foreground"
           >
             {t("TermOfService")}
