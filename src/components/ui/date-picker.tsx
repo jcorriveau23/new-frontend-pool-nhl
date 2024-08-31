@@ -18,10 +18,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { DateContextProps } from "@/context/date-context";
 import { useTranslations } from "next-intl";
 
-export function DatePicker(props: DateContextProps) {
+interface Props {
+  currentDate: Date;
+  selectedDate: Date | null;
+  updateDate: (newDate: Date) => void;
+  updateDateWithString: (newDate: string) => void;
+}
+
+export function DatePicker(props: Props) {
   const t = useTranslations();
 
   const handleSelectCurrentDate = (
@@ -47,8 +53,7 @@ export function DatePicker(props: DateContextProps) {
           ) : (
             <span>{t("Pick a date")}</span>
           )}
-          {props.currentDate.toDateString() ===
-          props.selectedDate?.toDateString() ? null : (
+          {props.selectedDate ? null : (
             <div className="ml-auto">
               <TooltipProvider>
                 <Tooltip>
@@ -69,7 +74,7 @@ export function DatePicker(props: DateContextProps) {
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={props.selectedDate}
+          selected={props.selectedDate ?? props.currentDate}
           // @ts-ignore
           onSelect={props.updateDate}
           initialFocus

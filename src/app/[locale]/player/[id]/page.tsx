@@ -335,7 +335,14 @@ const getServerSidePlayerInfo = async (playerId: string) => {
   return data;
 };
 
-export default async function Player({ params }: { params: { id: string } }) {
+export default async function Player({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: any;
+}) {
+  const queryString = new URLSearchParams(searchParams).toString();
   const t = await getTranslations();
   const playerInfo: GoalieNhlInfo | SkaterNhlInfo =
     await getServerSidePlayerInfo(params.id);
@@ -380,7 +387,7 @@ export default async function Player({ params }: { params: { id: string } }) {
             {playerInfo.draftDetails ? (
               <Link
                 className="text-link hover:underline"
-                href={`/draft/${playerInfo.draftDetails.year}`}
+                href={`/draft/${playerInfo.draftDetails.year}?${queryString}`}
               >
                 {t("DraftDetail", {
                   pick: playerInfo.draftDetails.pickInRound,

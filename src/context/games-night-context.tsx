@@ -7,7 +7,8 @@ that is also server side.
 */
 "use client";
 import { Game, GameState } from "@/data/nhl/game";
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode, useEffect } from "react";
+import { useDateContext } from "./date-context";
 
 export enum GamesNightStatus {
   // Tells the status of the games from the selected date.
@@ -21,7 +22,6 @@ export enum GamesNightStatus {
 export interface GamesNightContextProps {
   gamesNightStatus: GamesNightStatus | null;
   playingAgainst: Record<number, number>;
-  updateGamesNightContext: (games: Game[]) => void;
 }
 
 const GamesNightContext = createContext<GamesNightContextProps | undefined>(
@@ -43,6 +43,7 @@ interface GamesNightProviderProps {
 export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
   children,
 }) => {
+  const { score } = useDateContext();
   const [gamesNightStatus, setGamesNightStatus] =
     React.useState<GamesNightStatus | null>(null);
   const [playingAgainst, setPlayingAgainst] = React.useState<
@@ -84,11 +85,14 @@ export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
 
     setPlayingAgainst(playingAgainst);
   };
+  // Update the selected date based on the query parameter.
+  useEffect(() => {
+    updateGamesNightContext(score?.games ?? []);
+  }, []);
 
   const contextValue: GamesNightContextProps = {
     gamesNightStatus,
     playingAgainst,
-    updateGamesNightContext,
   };
 
   return (

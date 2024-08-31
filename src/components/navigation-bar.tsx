@@ -19,8 +19,10 @@ import { LanguageSelector } from "./language-selector";
 import { Link } from "@/navigation";
 import { LAST_NHL_SEASON } from "@/lib/nhl";
 import { UserManager } from "./user-manager";
+import { useSearchParams } from "next/navigation";
 
 export function NavigationBar() {
+  const searchParams = useSearchParams();
   const t = useTranslations();
   return (
     <>
@@ -40,17 +42,21 @@ export function NavigationBar() {
                 <div className="p-2 space-y-3">
                   <div className="hover:underline">
                     <SheetClose asChild>
-                      <Link href="/">{t("Home")}</Link>
+                      <Link href={`/?${searchParams}`}>{t("Home")}</Link>
                     </SheetClose>
                   </div>
                   <div className="hover:underline">
                     <SheetClose asChild>
-                      <Link href="/pools/20242025">{t("PoolList")}</Link>
+                      <Link href={`/pools/20242025?${searchParams}`}>
+                        {t("PoolList")}
+                      </Link>
                     </SheetClose>
                   </div>
                   <div className="hover:underline">
                     <SheetClose asChild>
-                      <Link href="/create-pool">{t("CreatePool")}</Link>
+                      <Link href={`/create-pool?${searchParams}`}>
+                        {t("CreatePool")}
+                      </Link>
                     </SheetClose>
                   </div>
                 </div>
@@ -62,12 +68,16 @@ export function NavigationBar() {
                 <div className="p-2 space-y-3">
                   <div className="hover:underline">
                     <SheetClose asChild>
-                      <Link href="/standing/now">{t("Standing")}</Link>
+                      <Link href={`/standing/now?${searchParams}`}>
+                        {t("Standing")}
+                      </Link>
                     </SheetClose>
                   </div>
                   <div className="hover:underline">
                     <SheetClose asChild>
-                      <Link href="/draft/2024">{t("Draft")}</Link>
+                      <Link href={`/draft/2024?${searchParams}`}>
+                        {t("Draft")}
+                      </Link>
                     </SheetClose>
                   </div>
 
@@ -76,7 +86,7 @@ export function NavigationBar() {
                       <Link
                         href={`/roster/${LAST_NHL_SEASON}${
                           LAST_NHL_SEASON + 1
-                        }`}
+                        }?${searchParams}`}
                       >
                         {t("Rosters")}
                       </Link>

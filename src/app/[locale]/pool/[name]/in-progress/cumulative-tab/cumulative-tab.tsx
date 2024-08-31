@@ -447,7 +447,7 @@ export default function CumulativeTab() {
 
       // Now parse all the pool date from the start of the season to the current date.
       const startDate = new Date(poolInfo.season_start);
-      let endDate = new Date(selectedDate);
+      let endDate = selectedDate ? new Date(selectedDate) : new Date();
       if (endDate < startDate) {
         endDate = new Date(poolInfo.season_start);
       }
@@ -928,11 +928,13 @@ export default function CumulativeTab() {
             {poolInfo.status === PoolState.Final ? (
               <InformationIcon text={t("FinalPoolResult")} />
             ) : poolInfo.context?.score_by_day?.[
-                selectedDate.toISOString().slice(0, 10)
+                (selectedDate ?? currentDate).toISOString().slice(0, 10)
               ]?.[selectedParticipant]?.is_cumulated ? null : (
               <InformationIcon
                 text={t("notCumulatedYet", {
-                  selectedDate: selectedDate.toISOString().slice(0, 10),
+                  selectedDate: (selectedDate ?? currentDate)
+                    .toISOString()
+                    .slice(0, 10),
                 })}
               />
             )}
