@@ -22,11 +22,11 @@ export class PreviewPlayer {
     this.name = player.name;
     this.id = player.id;
     this.team = player.team;
-    this.playingAgainst = playingAgainst[player.team] ?? null;
+    this.playingAgainst = player.team ? playingAgainst[player.team] : null;
   }
   name: string;
   id: number;
-  team: number;
+  team: number | null;
   playingAgainst: number | null;
 }
 

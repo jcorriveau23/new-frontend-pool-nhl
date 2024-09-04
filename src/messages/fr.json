@@ -13,6 +13,7 @@
     "CouldNotGeneratePoolError": "La requête pour générer le pool {name} a échoué: {error}",
     "CouldNotMarkAsFinalPoolError": "La requête pour terminer le pool {name} a échoué: {error}",
     "CouldNotGetPoolInfoError": "La requête pour recevoir les information du pool {pool} a échoué: {error}",
+    "CouldNotProtectPlayers": "La requête pour protéger la liste de joueur dans le pool {name} a échoué: {error}",
     "Menu": "Menu",
     "NoGameOnThatDate": "Il n'y a pas de match à cette date.",
     "Not current date selected": "La date selectionnée n'est pas la date d'aujourd'hui, clickez ici pour choisir la date d'aujourd'hui.",
@@ -277,5 +278,23 @@
     "PoolListPageTitle": "Liste de tous les pools",
     "ProfilePageTitle": "Information du profile",
     "NhlTeamRosterPageTitle": "Information de l'alignement d'une équipe NHL",
-    "NhlStandingPageTitle": "Classement des équipe de la saison NHL"
-    }
+    "NhlStandingPageTitle": "Classement des équipe de la saison NHL",
+    "Age": "Âge",
+    "Salary": "Salaire",
+    "Expiration": "Expiration du Contrat",
+    "NhlPlayers": "Joueurs NHL",
+    "Roster": "Alignement",
+    "Yes": "Oui",
+    "No": "Non",
+    "ProtectedForwards": "Attaquants protégés",
+    "ProtectedDefenders": "Défenseurs protégés",
+    "ProtectedGoalies": "Guardiens protégés",
+    "Protected": "Protégé?",
+    "CannotUpdateProtectedPlayers": "Vous devez être connecté en tant que {userName} ou être le gestionnaire du pool pour pouvoir updater la liste de joueurs protégés.",
+    "TooMuchProtectedPlayers": "La limite de joueurs protégé est de {limit}.",
+    "TotalProtected": "Total protégé(s)",
+    "Save": "Sauvegarder",
+    "TotalPlayersProtected": "{playerCount} joueur(s), {contractCount} contrat(s) ({totalSalary} / {salaryCap})",
+    "DynastyDescription": "Tous les poolers doivent protéger {protectedCount} joueurs avant le début du draft.",
+    "DynastySalaryCapDescription": "Le cap salarial pour l'alignement (excluant les réservistes) de la season {season} sera de {salaryCap}."
+}

@@ -64,7 +64,7 @@ export default function InProgressPool() {
 
   React.useEffect(() => {
     // Use effect is used here to manage the popstate event listener.
-    // That way if the user go into antoher page and come back using the "Go Back" or "Go forward"
+    // That way if the user go into another page and come back using the "Go Back" or "Go forward"
     // options in the browser he will be in the selected tab.
     const handlePopState = (event: PopStateEvent) => {
       const queryParams = new URLSearchParams(window.location.search);

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Player, PoolUser } from "@/data/pool/model";
+import { Player } from "@/data/pool/model";
 import {
   Accordion,
   AccordionContent,
@@ -20,11 +20,17 @@ import team_info from "@/lib/teams";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
+interface Pick {
+  drafter: string;
+  from: string | null;
+  done?: boolean | null;
+}
+
 interface Round {
   round: number;
 
   // from first to last
-  drafters: string[];
+  picks: Pick[];
 }
 
 interface Draft {
@@ -97,28 +103,28 @@ export default function Draft() {
       return null;
     }
 
-    return rounds[currentRoundIndex].drafters[
+    return rounds[currentRoundIndex].picks[
       totalPlayerDrafted % numberOfPickPerRound
-    ];
+    ].drafter;
   };
 
   const getDynastyRoundDrafters = (
     draftedPlayerCountDictPerPooler: Map<string, number>,
     draftOrder: string[],
     roundIndex: number
-  ): string[] => {
-    const drafters: string[] = [];
+  ): Pick[] => {
+    const drafters: Pick[] = [];
     if (!poolInfo.context) {
       return drafters;
     }
     // This is a dynasty type of draft, the final rank is being used as draft order.
-    for (let j = 0; j < draftOrder.length; j += 1) {
+    for (let i = 0; i < draftOrder.length; i += 1) {
       if (
         poolInfo.context.past_tradable_picks &&
         roundIndex < poolInfo.context.past_tradable_picks.length
       ) {
         // we use tradable picks to find to process the next drafter, we are in the list of tradable picks right now.
-        const nextDrafter = draftOrder[draftOrder.length - 1 - j];
+        const nextDrafter = draftOrder[i];
 
         const realNextDrafter =
           poolInfo.context.past_tradable_picks[roundIndex][nextDrafter];
@@ -128,16 +134,25 @@ export default function Draft() {
           (draftedPlayerCountDictPerPooler.get(realNextDrafter) ?? 0) + 1
         );
 
-        drafters.push(realNextDrafter);
+        drafters.push({
+          drafter: realNextDrafter,
+          from: realNextDrafter === nextDrafter ? null : nextDrafter,
+        });
       } else {
-        // the next drafter comes from final_rank directly.
-        const nextDrafter = draftOrder[draftOrder.length - 1 - j];
+        // the next drafter comes from draft order directly.
+        const nextDrafter = draftOrder[i];
         draftedPlayerCountDictPerPooler.set(
           nextDrafter,
           (draftedPlayerCountDictPerPooler.get(nextDrafter) ?? 0) + 1
         );
 
-        drafters.push(nextDrafter);
+        drafters.push({
+          drafter: nextDrafter,
+          from: null,
+          done:
+            (draftedPlayerCountDictPerPooler.get(nextDrafter) ?? 0) >
+            numberPlayersToDraft,
+        });
       }
     }
 
@@ -149,8 +164,8 @@ export default function Draft() {
     participants: string[],
     roundIndex: number,
     isSnakeDraft: boolean
-  ): string[] => {
-    const drafters: string[] = [];
+  ): Pick[] => {
+    const drafters: Pick[] = [];
     for (let j = 0; j < participants.length; j += 1) {
       // Snake draft, reverse draft order each round else always uses participants order.
       const nextDrafter =
@@ -158,7 +173,7 @@ export default function Draft() {
           ? participants[participants.length - 1 - j]
           : participants[j];
 
-      drafters.push(nextDrafter);
+      drafters.push({ drafter: nextDrafter, from: null });
 
       draftedPlayerCountDictPerPooler.set(
         nextDrafter,
@@ -181,11 +196,12 @@ export default function Draft() {
     // 2) Parse the pool draft settings to looping until the draft is done.
     const rounds: Round[] = [];
     let roundIndex = 0; // roundIndex + 1 = round #
+
     while (
       !isDraftDone(draftedPlayerCountDictPerPooler, poolInfo.draft_order)
     ) {
       // The drafters for this round
-      let drafters: string[] = [];
+      let drafters: Pick[] = [];
 
       // The list of drafters for the specific round.
       if (
@@ -208,7 +224,7 @@ export default function Draft() {
         );
       }
 
-      rounds.push({ round: roundIndex + 1, drafters });
+      rounds.push({ round: roundIndex + 1, picks: drafters });
       roundIndex += 1;
     }
 
@@ -221,34 +237,46 @@ export default function Draft() {
         <TableRow>
           <TableHead>#</TableHead>
           <TableHead>Pooler</TableHead>
+          <TableHead>{t("From")}</TableHead>
           <TableHead>{t("Player")}</TableHead>
           <TableHead>{t("Position")}</TableHead>
           <TableHead>{t("T")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {round.drafters.map((drafter, i) => {
-          const draftIndex = (round.round - 1) * round.drafters.length + i;
+        {round.picks.map((pick, i) => {
+          const draftIndex = (round.round - 1) * round.picks.length + i;
           const teamLogo =
             team_info[getDraftedPlayer(draftIndex)?.team ?? -1]?.logo;
 
           return (
             <TableRow key={draftIndex + 1}>
               <TableCell>{draftIndex + 1}</TableCell>
-              <TableCell>{dictUsers[drafter].name}</TableCell>
+              <TableCell>{dictUsers[pick.drafter].name}</TableCell>
               <TableCell>
-                <PlayerLink
-                  name={getDraftedPlayer(draftIndex)?.name}
-                  id={getDraftedPlayer(draftIndex)?.id}
-                  textStyle={null}
-                />
+                {pick.from ? dictUsers[pick.from].name : null}
               </TableCell>
-              <TableCell>{getDraftedPlayer(draftIndex)?.position}</TableCell>
-              <TableCell>
-                {teamLogo ? (
-                  <Image width={30} height={30} alt="" src={teamLogo} />
-                ) : null}
-              </TableCell>
+              {pick.done ? (
+                <TableCell colSpan={3}>Done</TableCell>
+              ) : (
+                <>
+                  <TableCell>
+                    <PlayerLink
+                      name={getDraftedPlayer(draftIndex)?.name}
+                      id={getDraftedPlayer(draftIndex)?.id}
+                      textStyle={null}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {getDraftedPlayer(draftIndex)?.position}
+                  </TableCell>
+                  <TableCell>
+                    {teamLogo ? (
+                      <Image width={30} height={30} alt="" src={teamLogo} />
+                    ) : null}
+                  </TableCell>
+                </>
+              )}
             </TableRow>
           );
         })}

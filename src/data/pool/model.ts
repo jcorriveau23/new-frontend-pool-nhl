@@ -53,6 +53,7 @@ export interface PoolSettings {
     number_defenders: number;
     number_goalies: number;
     number_reservists: number;
+    salary_cap: number | null;
     roster_modification_date: string[];
 
     forwards_settings: SkaterSettings;
@@ -105,6 +106,7 @@ export interface PoolContext {
     score_by_day: Record<string, Record<string, DailyRosterPoints>> | null;
     tradable_picks: Record<string, string>[] | null;
     past_tradable_picks: Record<string, string>[] | null;
+    protected_players: Record<string, number[]> | null;
     players: Record<string, Player>;
 }
 
@@ -158,9 +160,11 @@ export interface GoalyPoolPoints {
 export interface Player {
     id: number;
     name: string;
-    team: number;
+    team: number | null;
     position: Position;
-    caps: number[] | null;
+    age: number | null;
+    salary_cap: number | null
+    contract_expiration_season: number | null;
 }
 
 export enum Position {
@@ -195,4 +199,21 @@ export enum TradeStatus {
     ACCEPTED = 'ACCEPTED',
     CANCELLED = 'CANCELLED',
     REFUSED = 'REFUSED',
+}
+
+export const getPoolerPlayers = (poolContext: PoolContext, userId: string) => {
+    const reservistForwards = poolContext.pooler_roster[userId].chosen_reservists.map(playerId => poolContext.players[playerId.toString()]).filter(player => player.position === Position.F)
+    const reservistsDefenders = poolContext.pooler_roster[userId].chosen_reservists.map(playerId => poolContext.players[playerId.toString()]).filter(player => player.position === Position.D)
+    const reservistGoalies = poolContext.pooler_roster[userId].chosen_reservists.map(playerId => poolContext.players[playerId.toString()]).filter(player => player.position === Position.G)
+
+    const forwards = [...poolContext.pooler_roster[userId].chosen_forwards.map(playerId => poolContext.players[playerId.toString()]), ...reservistForwards]
+    const defense = [...poolContext.pooler_roster[userId].chosen_defenders.map(playerId => poolContext.players[playerId.toString()]), ...reservistsDefenders]
+    const goalies = [...poolContext.pooler_roster[userId].chosen_goalies.map(playerId => poolContext.players[playerId.toString()]), ...reservistGoalies]
+
+    return {
+        userId,
+        forwards,
+        defense,
+        goalies,
+    };
 }

@@ -28,3 +28,12 @@ export function seasonWithYearFormat(year: number): string {
     // 2023 -> 2023-24
     return `${year.toString()}-${(year+1).toString().slice(2)}`
 }
+
+export function salaryFormat(salaryDollars: number): string {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(salaryDollars).replace('US', '').trim();
+}
