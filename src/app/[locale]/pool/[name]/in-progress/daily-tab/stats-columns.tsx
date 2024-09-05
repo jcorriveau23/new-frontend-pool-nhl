@@ -29,7 +29,7 @@ const getTeamCell = (
   poolInfo: Pool
 ) => (
   <TeamLogo
-    teamId={poolInfo.context?.players[player.id].team}
+    teamId={poolInfo.context?.players[player.id].team ?? null}
     width={30}
     height={30}
   />

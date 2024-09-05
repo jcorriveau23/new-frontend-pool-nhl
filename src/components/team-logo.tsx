@@ -5,18 +5,18 @@ import Image from "next/image";
 import team_info from "@/lib/teams";
 
 interface Props {
-  teamId: number | undefined;
+  teamId: number | null;
   width: number;
   height: number;
 }
 
 export function TeamLogo(props: Props) {
-  return (
+  return props.teamId ? (
     <Image
       width={props.width}
       height={props.height}
       alt="team"
-      src={team_info[props.teamId ?? 0].logo}
+      src={team_info[props.teamId].logo}
     />
-  );
+  ) : null;
 }

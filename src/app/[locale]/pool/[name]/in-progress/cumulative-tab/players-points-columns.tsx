@@ -61,7 +61,7 @@ const getPlayerCell = (player: SkaterInfo | GoalieInfo, poolInfo: Pool) => (
 
 const getTeamCell = (player: SkaterInfo | GoalieInfo, poolInfo: Pool) => (
   <TeamLogo
-    teamId={poolInfo.context?.players[player.id].team}
+    teamId={poolInfo.context?.players[player.id].team ?? null}
     width={30}
     height={30}
   />
@@ -311,7 +311,7 @@ export const ReservistColumn: ColumnDef<number>[] = [
       const poolInfo = table.options.meta?.props as Pool;
       return (
         <TeamLogo
-          teamId={poolInfo.context?.players[row.original].team}
+          teamId={poolInfo.context?.players[row.original].team ?? null}
           width={30}
           height={30}
         />

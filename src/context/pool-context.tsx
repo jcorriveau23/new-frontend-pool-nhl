@@ -70,25 +70,12 @@ const findLastDateInDb = (pool: Pool | null) => {
     return null;
   }
 
-  const currentDate = new Date();
-  const seasonEndDate = new Date(pool.season_end);
-  // Start at the current date or at the season end date if the current date is after the season end date.
-  const tempDate = currentDate > seasonEndDate ? seasonEndDate : currentDate;
+  // Sort the keys (dates) in descending order
+  const sortedDates = Object.keys(pool.context.score_by_day).sort((a, b) =>
+    a.localeCompare(b)
+  );
 
-  // TODO: a cleaner logic would be to always look from the current date to the from date
-  let i = 200; // Will look into the past 200 days to find the last date from now.
-
-  do {
-    const fTempDate = tempDate.toISOString().slice(0, 10);
-    if (fTempDate in pool.context.score_by_day) {
-      return fTempDate;
-    }
-
-    tempDate.setDate(tempDate.getDate() - 1);
-    i -= 1;
-  } while (i > 0);
-
-  return null;
+  return sortedDates[sortedDates.length - 1];
 };
 
 export const hasPoolPrivilege = (
@@ -185,7 +172,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     if (
       initialSelectedParticipant === null ||
       !poolInfo.participants.some(
-        (user) => user.id === initialSelectedParticipant
+        (user) => user.name === initialSelectedParticipant
       )
     )
       return poolInfo.participants[0].name;
