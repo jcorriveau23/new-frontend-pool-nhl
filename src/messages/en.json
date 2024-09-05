@@ -296,5 +296,6 @@
     "Save": "Save",
     "TotalPlayersProtected": "{playerCount} player(s), {contractCount} contract(s) ({totalSalary} / {salaryCap})",
     "DynastyDescription": "Every poolers needs to protect {protectedCount} players before the draft.",
-    "DynastySalaryCapDescription": "The salary cap for the active roster for season {season} is {salaryCap}."
+    "DynastySalaryCapDescription": "The salary cap for the active roster for season {season} is {salaryCap}.",
+    "SuccessSavingPool": "The selected players as been protected successfully."
 }
