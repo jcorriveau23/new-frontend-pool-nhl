@@ -37,7 +37,7 @@ export default function RosterTab() {
 
   const [protectedPlayerIds, setProtectedPlayerIds] = React.useState<
     number[] | null
-  >(null);
+  >(poolInfo.context?.protected_players?.[userID] ?? null);
 
   const t = useTranslations();
 
@@ -124,6 +124,10 @@ export default function RosterTab() {
 
     const data = await res.json();
     updatePoolInfo(data);
+    toast({
+      title: t("SuccessSavingPool"),
+      duration: 2000,
+    });
   };
 
   const RosterTable = (user: PoolUser, players: Player[], title: string) => (
@@ -174,7 +178,9 @@ export default function RosterTab() {
                         : null}
                     </TableCell>
                     <TableCell>
-                      {protectedPlayerIds?.includes(player.id) ? (
+                      {poolInfo.context?.protected_players?.[user.id].includes(
+                        player.id
+                      ) || protectedPlayerIds?.includes(player.id) ? (
                         <ShieldPlus color="green" />
                       ) : (
                         <BadgeMinus color="red" />
@@ -255,6 +261,9 @@ export default function RosterTab() {
           <Button
             disabled={
               !jwt ||
+              protectedPlayerIds?.every((item) =>
+                poolInfo.context?.protected_players?.[user.id].includes(item)
+              ) ||
               protectedPlayerIds?.length !==
                 poolInfo.settings.dynasty_settings
                   ?.next_season_number_players_protected
