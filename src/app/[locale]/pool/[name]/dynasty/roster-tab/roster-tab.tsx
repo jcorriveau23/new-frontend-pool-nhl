@@ -105,7 +105,7 @@ export default function RosterTab() {
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
-        protected_players: new Set(protectedPlayerIds ?? []),
+        protected_players: protectedPlayerIds ?? [],
       }),
     });
 
