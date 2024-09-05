@@ -189,9 +189,7 @@ export default function RosterTab() {
                         : null}
                     </TableCell>
                     <TableCell>
-                      {poolInfo.context?.protected_players?.[user.id]?.includes(
-                        player.id
-                      ) || protectedPlayerIds?.includes(player.id) ? (
+                      {protectedPlayerIds?.includes(player.id) ? (
                         <ShieldPlus color="green" />
                       ) : (
                         <BadgeMinus color="red" />
