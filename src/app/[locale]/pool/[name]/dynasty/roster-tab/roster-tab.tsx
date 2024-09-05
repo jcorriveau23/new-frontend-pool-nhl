@@ -37,9 +37,20 @@ export default function RosterTab() {
 
   const [protectedPlayerIds, setProtectedPlayerIds] = React.useState<
     number[] | null
-  >(poolInfo.context?.protected_players?.[userID] ?? null);
+  >(null);
 
   const t = useTranslations();
+
+  React.useEffect(() => {
+    const selectedUser = poolInfo.participants.find(
+      (user) => user.name == selectedParticipant
+    );
+    setProtectedPlayerIds(
+      selectedUser
+        ? poolInfo.context?.protected_players?.[selectedUser.id] ?? null
+        : null
+    );
+  }, [selectedParticipant]);
 
   const onPlayerSelection = (user: PoolUser, player: Player) => {
     // Need to have an account to protect the players.
@@ -178,7 +189,7 @@ export default function RosterTab() {
                         : null}
                     </TableCell>
                     <TableCell>
-                      {poolInfo.context?.protected_players?.[user.id].includes(
+                      {poolInfo.context?.protected_players?.[user.id]?.includes(
                         player.id
                       ) || protectedPlayerIds?.includes(player.id) ? (
                         <ShieldPlus color="green" />
