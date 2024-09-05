@@ -272,12 +272,12 @@ export default function RosterTab() {
           <Button
             disabled={
               !jwt ||
-              protectedPlayerIds?.every((item) =>
-                poolInfo.context?.protected_players?.[user.id].includes(item)
-              ) ||
               protectedPlayerIds?.length !==
                 poolInfo.settings.dynasty_settings
-                  ?.next_season_number_players_protected
+                  ?.next_season_number_players_protected ||
+              protectedPlayerIds?.every((item) =>
+                poolInfo.context?.protected_players?.[user.id]?.includes(item)
+              )
             }
             onClick={() => onSave(user)}
           >
