@@ -1,5 +1,5 @@
 /*
-TODO: Created Pool Status displaying pool settings and the list of pooler.
+Created Pool Status displaying pool settings and the list of pooler.
 Poolers can join the room and user info will be displayed here. The owner
 of the pool is allowed to update pool settings and kick people out of the
 room.

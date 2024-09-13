@@ -1,4 +1,4 @@
-import { salaryFormat, seasonFormat } from "@/app/utils/formating";
+import { salaryFormat } from "@/app/utils/formating";
 import PlayerLink from "@/components/player-link";
 import { TeamLogo } from "@/components/team-logo";
 import {
@@ -25,6 +25,7 @@ import * as React from "react";
 import { ShieldPlus, BadgeMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/context/useSessionData";
+import PlayerSalary from "@/components/player-salary";
 
 export default function RosterTab() {
   const {
@@ -45,6 +46,8 @@ export default function RosterTab() {
     const selectedUser = poolInfo.participants.find(
       (user) => user.name == selectedParticipant
     );
+
+    // If the user has already a list of protected players, set it as default.
     setProtectedPlayerIds(
       selectedUser
         ? poolInfo.context?.protected_players?.[selectedUser.id] ?? null
@@ -58,7 +61,7 @@ export default function RosterTab() {
       toast({
         variant: "destructive",
         title: t("CannotUpdateProtectedPlayers", { userName: user.name }),
-        duration: 2000,
+        duration: 5000,
       });
       return;
     }
@@ -87,7 +90,7 @@ export default function RosterTab() {
                 poolInfo.settings.dynasty_settings
                   ?.next_season_number_players_protected,
             }),
-            duration: 2000,
+            duration: 5000,
           });
           return prevPlayers;
         }
@@ -116,6 +119,7 @@ export default function RosterTab() {
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
+        protected_players_user_id: user.id,
         protected_players: protectedPlayerIds ?? [],
       }),
     });
@@ -128,7 +132,7 @@ export default function RosterTab() {
           name: poolInfo.name,
           error: error,
         }),
-        duration: 2000,
+        duration: 5000,
       });
       return;
     }
@@ -154,8 +158,6 @@ export default function RosterTab() {
                 <TableHead>{t("T")}</TableHead>
                 <TableHead>{t("Age")}</TableHead>
                 <TableHead>{t("Salary")}</TableHead>
-                <TableHead>{t("Expiration")}</TableHead>
-                <TableHead>{t("Protected")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -168,32 +170,38 @@ export default function RosterTab() {
                   >
                     <TableCell>{i + 1}</TableCell>
                     <TableCell>
-                      <PlayerLink
-                        name={player.name}
-                        id={player.id}
-                        textStyle={null}
-                      />
+                      <div className="flex justify-between items-center">
+                        <div className="text-right">
+                          <PlayerLink
+                            name={player.name}
+                            id={player.id}
+                            textStyle={null}
+                          />
+                        </div>
+                        <div className="text-right">
+                          {protectedPlayerIds?.includes(player.id) ? (
+                            <ShieldPlus color="green" />
+                          ) : (
+                            <BadgeMinus color="red" />
+                          )}
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <TeamLogo teamId={player.team} width={30} height={30} />
                     </TableCell>
                     <TableCell>{player.age}</TableCell>
                     <TableCell>
-                      {player.salary_cap
-                        ? salaryFormat(player.salary_cap)
-                        : null}
-                    </TableCell>
-                    <TableCell>
-                      {player.contract_expiration_season
-                        ? seasonFormat(player.contract_expiration_season, 0)
-                        : null}
-                    </TableCell>
-                    <TableCell>
-                      {protectedPlayerIds?.includes(player.id) ? (
-                        <ShieldPlus color="green" />
-                      ) : (
-                        <BadgeMinus color="red" />
-                      )}
+                      {player.salary_cap &&
+                      player.contract_expiration_season ? (
+                        <PlayerSalary
+                          playerName={player.name}
+                          salary={player.salary_cap}
+                          contractExpirationSeason={
+                            player.contract_expiration_season
+                          }
+                        />
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -295,9 +303,17 @@ export default function RosterTab() {
       >
         <div className="overflow-auto">
           <TabsList>
-            {poolInfo.participants?.map((user) => (
+            {poolInfo.participants?.map((user: PoolUser) => (
               <TabsTrigger key={user.id} value={user.name}>
-                {user.name}
+                <div className="flex justify-between items-center">
+                  <div className="text-left">{user.name}</div>
+                  <div className="text-right">
+                    {poolInfo.context?.protected_players?.[user.id]?.length ??
+                    0 > 0 ? (
+                      <ShieldPlus color="green" />
+                    ) : null}
+                  </div>
+                </div>
               </TabsTrigger>
             ))}
           </TabsList>

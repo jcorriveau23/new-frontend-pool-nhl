@@ -16,6 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useRouter } from "@/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTranslations } from "next-intl";
 
@@ -28,12 +29,13 @@ export interface Props {
   selections: Selection[];
   defaultSelectedValue: string;
   emptyText: string;
-  onSelect: (newValue: string) => void;
+  linkTo: string | null;
 }
 
 export function Combobox(props: Props) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(props.defaultSelectedValue);
+  const router = useRouter();
   const t = useTranslations();
 
   return (
@@ -46,9 +48,7 @@ export function Combobox(props: Props) {
           className="w-[200px] justify-between"
         >
           {value
-            ? props.selections.find(
-                (s) => s.value.toLowerCase() === value.toLowerCase()
-              )?.label
+            ? props.selections.find((s) => s.value === value)?.label
             : props.emptyText}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -63,9 +63,11 @@ export function Combobox(props: Props) {
                   key={s.value}
                   value={s.value}
                   onSelect={(newValue) => {
-                    const newSelection = newValue === value ? "" : newValue;
-                    setValue(newSelection);
-                    props.onSelect(newSelection);
+                    props.linkTo
+                      ? router.push(
+                          `${props.linkTo.replace("${value}", newValue)}`
+                        )
+                      : setValue(newValue === value ? "" : newValue);
                     setOpen(false);
                   }}
                 >
@@ -73,9 +75,7 @@ export function Combobox(props: Props) {
                   <CheckIcon
                     className={cn(
                       "ml-auto h-4 w-4",
-                      value === s.value.toLowerCase()
-                        ? "opacity-100"
-                        : "opacity-0"
+                      value === s.value ? "opacity-100" : "opacity-0"
                     )}
                   />
                 </CommandItem>

@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/accordion";
 import team_info from "@/lib/teams";
 import PlayerLink from "@/components/player-link";
-import { Combobox } from "@/components/ui/combobox";
+import { Combobox } from "@/components/ui/link-combobox";
 import PageTitle from "@/components/page-title";
 
 interface Player {

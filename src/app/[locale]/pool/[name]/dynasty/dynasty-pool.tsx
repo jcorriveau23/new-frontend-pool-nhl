@@ -73,7 +73,7 @@ export default function DynastyPool() {
 
   return (
     <div className="items-center text-center">
-      <div className="text-left">
+      <div className="px-5 text-left">
         <div>
           <p>
             {t("DynastyDescription", {
@@ -100,9 +100,9 @@ export default function DynastyPool() {
         <div className="overflow-auto">
           <TabsList>
             <TabsTrigger value={DynastyTabs.ROSTER}>{t("Roster")}</TabsTrigger>
-            {/* <TabsTrigger value={DynastyTabs.NHL_PLAYERS}>
+            <TabsTrigger value={DynastyTabs.NHL_PLAYERS}>
               {t("NhlPlayers")}
-            </TabsTrigger> */}
+            </TabsTrigger>
             <TabsTrigger value={DynastyTabs.DRAFT}>{t("Draft")}</TabsTrigger>
             <TabsTrigger value={DynastyTabs.SETTINGS}>
               {t("Settings")}
@@ -112,9 +112,9 @@ export default function DynastyPool() {
         <TabsContent value={DynastyTabs.ROSTER}>
           <RosterTab />
         </TabsContent>
-        {/* <TabsContent value={DynastyTabs.NHL_PLAYERS}>
+        <TabsContent value={DynastyTabs.NHL_PLAYERS}>
           <NhlPlayersTab />
-        </TabsContent> */}
+        </TabsContent>
         <TabsContent value={DynastyTabs.DRAFT}>
           <DraftTab />
         </TabsContent>

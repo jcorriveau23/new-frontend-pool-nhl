@@ -159,12 +159,20 @@ export interface GoalyPoolPoints {
 
 export interface Player {
     id: number;
+    active: boolean;
     name: string;
     team: number | null;
     position: Position;
     age: number | null;
-    salary_cap: number | null
-    contract_expiration_season: number | null;
+    salary_cap: number | null;
+    contract_expiration_season: number | null
+    game_played: number | null;
+    goals: number | null;
+    assists: number | null;
+    points: number | null;
+    points_per_game: number | null;
+    goal_against_average: number | null;
+    save_percentage: number | null;
 }
 
 export enum Position {

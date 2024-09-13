@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getTranslations } from "next-intl/server";
 import { getAllYears } from "@/lib/nhl";
 import { seasonFormat, seasonWithYearFormat } from "@/app/utils/formating";
-import { Combobox } from "@/components/ui/combobox";
+import { Combobox } from "@/components/ui//link-combobox";
 import { Label } from "@/components/ui/label";
 import PageTitle from "@/components/page-title";
 
