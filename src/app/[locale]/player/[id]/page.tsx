@@ -349,9 +349,6 @@ export default async function Player({
 
   const PlayerBaseInfo = () => (
     <Table>
-      <TableCaption>
-        {playerInfo.firstName.default} {playerInfo.lastName.default}
-      </TableCaption>
       <TableHeader>
         <TableRow>
           <TableHead>
@@ -421,7 +418,9 @@ export default async function Player({
 
   return (
     <div className="items-center text-center">
-      <PageTitle title={t("NHLPlayerinformationPageTitle")} />
+      <PageTitle
+        title={`${playerInfo.firstName.default} ${playerInfo.lastName.default}`}
+      />
       {PlayerBaseInfo()}
       <Accordion type="single" collapsible defaultValue="regularSeason">
         <AccordionItem value="regularSeason">

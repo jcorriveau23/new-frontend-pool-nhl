@@ -1,10 +1,10 @@
 import * as React from "react";
-import Draft from "@/components/draft";
+import PlayersTable from "@/components/player-table";
 
 export default function NhlPlayerTab() {
   return (
     <div>
-      <h1>NHL Player tab</h1>
+      <PlayersTable sortField={"points"} skip={null} limit={null} />
     </div>
   );
 }

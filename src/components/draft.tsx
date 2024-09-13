@@ -19,6 +19,7 @@ import PlayerLink from "@/components/player-link";
 import team_info from "@/lib/teams";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { Badge } from "./ui/badge";
 
 interface Pick {
   drafter: string;
@@ -237,7 +238,6 @@ export default function Draft() {
         <TableRow>
           <TableHead>#</TableHead>
           <TableHead>Pooler</TableHead>
-          <TableHead>{t("From")}</TableHead>
           <TableHead>{t("Player")}</TableHead>
           <TableHead>{t("Position")}</TableHead>
           <TableHead>{t("T")}</TableHead>
@@ -252,9 +252,19 @@ export default function Draft() {
           return (
             <TableRow key={draftIndex + 1}>
               <TableCell>{draftIndex + 1}</TableCell>
-              <TableCell>{dictUsers[pick.drafter].name}</TableCell>
               <TableCell>
-                {pick.from ? dictUsers[pick.from].name : null}
+                <div className="flex items-center space-x-2">
+                  <div>{dictUsers[pick.drafter].name}</div>
+                  <div>
+                    {pick.from ? (
+                      <Badge>
+                        {t("FromPickTraded", {
+                          poolerName: dictUsers[pick.from].name,
+                        })}
+                      </Badge>
+                    ) : null}
+                  </div>
+                </div>
               </TableCell>
               {pick.done ? (
                 <TableCell colSpan={3}>Done</TableCell>
