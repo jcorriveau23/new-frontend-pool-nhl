@@ -19,7 +19,7 @@ export function LanguageSelector() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleChangeLanguage = (language: string) => {
+  const handleChangeLanguage = (language: "en" | "fr") => {
     router.replace(pathname, { locale: language });
   };
 

@@ -1,27 +1,83 @@
 "use client";
 import React from "react";
 import { salaryFormat, seasonFormat } from "@/app/utils/formating";
-import InformationIcon from "./information-box";
-import { useTranslations } from "next-intl";
 import { Badge } from "./ui/badge";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { TeamLogo } from "./team-logo";
+import { useTranslations } from "next-intl";
 
-interface Props {
+interface PlayerSalary {
   playerName: string;
+  team: number | null;
   salary: number; // salary in $.
   contractExpirationSeason: number; // in the following format 20232024.
+  onBadgeClick?: (e: React.MouseEvent) => void;
 }
 
-export default function PlayerSalary(props: Props) {
+export default function PlayerSalary({
+  playerName,
+  team,
+  salary,
+  contractExpirationSeason,
+  onBadgeClick,
+}: PlayerSalary) {
+  const formatedSalary = salaryFormat(salary);
+
+  const [isOpen, setIsOpen] = React.useState(false);
   const t = useTranslations();
+
+  const handleBadgeClick = (e: React.MouseEvent) => {
+    setIsOpen(!isOpen);
+    onBadgeClick && onBadgeClick(e);
+  };
   return (
-    <div className="flex items-center space-x-2">
-      <Badge>{salaryFormat(props.salary)}</Badge>
-      <InformationIcon
-        text={t("ContractExpirationDateMessage", {
-          playerName: props.playerName,
-          season: seasonFormat(props.contractExpirationSeason, 0),
-        })}
-      />
-    </div>
+    <>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger>
+          <Badge
+            variant="outline"
+            onClick={handleBadgeClick}
+            className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+          >
+            {formatedSalary}
+          </Badge>
+        </PopoverTrigger>
+        <PopoverContent>
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <h4 className="font-medium leading-none">
+                {t("SalaryDetails", { playerName: playerName })}
+              </h4>
+            </div>
+            <div className="grid gap-2">
+              <div className="grid grid-cols-3 items-center gap-4">
+                <span className="text-sm font-medium">{t("Team")}:</span>
+                <span className="col-span-2 text-sm">
+                  <TeamLogo teamId={team} width={30} height={30} />
+                </span>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <span className="text-sm font-medium">
+                  {t("ContractExpiration")}
+                </span>
+                <span className="col-span-2 text-sm">
+                  {t("ContractExpirationValue", {
+                    season: seasonFormat(contractExpirationSeason, 0),
+                  })}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                <span className="text-sm font-medium">{t("Salary")}:</span>
+                <span className="col-span-2 text-sm">{formatedSalary}</span>
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </>
   );
 }

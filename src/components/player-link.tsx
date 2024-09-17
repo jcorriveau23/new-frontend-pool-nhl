@@ -7,12 +7,16 @@ interface Props {
   name: string | undefined;
   id: number | undefined;
   textStyle: string | null;
+  onLinkClick?: (e: React.MouseEvent) => void;
 }
 
 export default function PlayerLink(props: Props) {
   const searchParams = useSearchParams();
   return props.name && props.id ? (
-    <Link href={`/player/${props.id}?${searchParams}`}>
+    <Link
+      onClick={(e) => props.onLinkClick?.(e)}
+      href={`/player/${props.id}?${searchParams}`}
+    >
       <p className={`${props.textStyle ?? ""} text-link hover:underline`}>
         {props.name}
       </p>

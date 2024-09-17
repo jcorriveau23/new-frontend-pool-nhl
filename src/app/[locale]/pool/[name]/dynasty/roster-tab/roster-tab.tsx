@@ -1,31 +1,13 @@
-import { salaryFormat } from "@/app/utils/formating";
-import PlayerLink from "@/components/player-link";
-import { TeamLogo } from "@/components/team-logo";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePoolContext } from "@/context/pool-context";
 import { getPoolerPlayers, Player, PoolUser } from "@/data/pool/model";
 import { toast } from "@/hooks/use-toast";
 import { useTranslations } from "next-intl";
 import * as React from "react";
-import { ShieldPlus, BadgeMinus } from "lucide-react";
+import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/context/useSessionData";
-import PlayerSalary from "@/components/player-salary";
+import PoolerRoster from "@/components/pooler-roster";
 
 export default function RosterTab() {
   const {
@@ -100,7 +82,7 @@ export default function RosterTab() {
     });
   };
 
-  const onSave = async (user: PoolUser) => {
+  const onSaveProtectedPlayers = async (user: PoolUser) => {
     // Need to have an account to protect the players.
     if (userID !== user.id && userID !== poolInfo.owner) {
       toast({
@@ -140,158 +122,43 @@ export default function RosterTab() {
     const data = await res.json();
     updatePoolInfo(data);
     toast({
-      title: t("SuccessSavingPool"),
+      title: t("SuccessProtectingPlayers"),
       duration: 2000,
     });
   };
 
-  const RosterTable = (user: PoolUser, players: Player[], title: string) => (
-    <Accordion type="single" collapsible defaultValue="all">
-      <AccordionItem value="all">
-        <AccordionTrigger>{`${t(title)} (${players.length})`}</AccordionTrigger>
-        <AccordionContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead>{t("Player")}</TableHead>
-                <TableHead>{t("T")}</TableHead>
-                <TableHead>{t("Age")}</TableHead>
-                <TableHead>{t("Salary")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {players
-                .sort((p1, p2) => p2.salary_cap! - p1.salary_cap!)
-                .map((player, i) => (
-                  <TableRow
-                    key={player.id}
-                    onClick={() => onPlayerSelection(user, player)}
-                  >
-                    <TableCell>{i + 1}</TableCell>
-                    <TableCell>
-                      <div className="flex justify-between items-center">
-                        <div className="text-right">
-                          <PlayerLink
-                            name={player.name}
-                            id={player.id}
-                            textStyle={null}
-                          />
-                        </div>
-                        <div className="text-right">
-                          {protectedPlayerIds?.includes(player.id) ? (
-                            <ShieldPlus color="green" />
-                          ) : (
-                            <BadgeMinus color="red" />
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <TeamLogo teamId={player.team} width={30} height={30} />
-                    </TableCell>
-                    <TableCell>{player.age}</TableCell>
-                    <TableCell>
-                      {player.salary_cap &&
-                      player.contract_expiration_season ? (
-                        <PlayerSalary
-                          playerName={player.name}
-                          salary={player.salary_cap}
-                          contractExpirationSeason={
-                            player.contract_expiration_season
-                          }
-                        />
-                      ) : null}
-                    </TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={3}>{t("TotalProtected")}</TableCell>
-                <TableCell colSpan={4}>
-                  {getFormatedSummaryContractInfo(players)}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </Table>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  );
-
-  const getFormatedSummaryContractInfo = (players: Player[]): string => {
-    const protectedPlayers = players.filter((player) =>
-      protectedPlayerIds?.includes(player.id)
-    );
-    return t("TotalPlayersProtected", {
-      playerCount: protectedPlayers.length,
-      contractCount: protectedPlayers.filter((player) => player.salary_cap)
-        .length,
-      totalSalary: salaryFormat(
-        protectedPlayers.reduce(
-          (accumulator, currentValue) =>
-            accumulator + (currentValue.salary_cap ?? 0),
-          0
-        )
-      ),
-      salaryCap: poolInfo.settings.salary_cap
-        ? salaryFormat(poolInfo.settings.salary_cap)
-        : null,
+  const onCompleteProtection = async () => {
+    // Need to have an account to protect the players.
+    const res = await fetch("/api-rust/complete-protection", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${jwt}`,
+      },
+      body: JSON.stringify({
+        pool_name: poolInfo.name,
+      }),
     });
-  };
 
-  const SummaryTable = (userRoster: {
-    userId: string;
-    forwards: Player[];
-    defense: Player[];
-    goalies: Player[];
-  }) => {
-    return (
-      <Table>
-        <TableBody>
-          <TableRow>
-            <TableHead>{t("Total")}</TableHead>
-            <TableCell>
-              {getFormatedSummaryContractInfo([
-                ...userRoster.forwards,
-                ...userRoster.defense,
-                ...userRoster.goalies,
-              ])}
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    );
-  };
+    if (!res.ok) {
+      const error = await res.text();
+      toast({
+        variant: "destructive",
+        title: t("CouldNotCompleteProtection", {
+          name: poolInfo.name,
+          error: error,
+        }),
+        duration: 5000,
+      });
+      return;
+    }
 
-  const ParticipantRoster = (user: PoolUser) => {
-    const userRoster = getPoolerPlayers(poolInfo.context!, user.id);
-
-    return (
-      <>
-        {SummaryTable(userRoster)}
-        {RosterTable(user, userRoster.forwards, "Forwards")}
-        {RosterTable(user, userRoster.defense, "Defense")}
-        {RosterTable(user, userRoster.goalies, "Goalies")}
-        <div className="flex justify-end">
-          <Button
-            disabled={
-              !jwt ||
-              protectedPlayerIds?.length !==
-                poolInfo.settings.dynasty_settings
-                  ?.next_season_number_players_protected ||
-              protectedPlayerIds?.every((item) =>
-                poolInfo.context?.protected_players?.[user.id]?.includes(item)
-              )
-            }
-            onClick={() => onSave(user)}
-          >
-            {t("Save")}
-          </Button>
-        </div>
-      </>
-    );
+    const data = await res.json();
+    updatePoolInfo(data);
+    toast({
+      title: t("SuccessCompleteProtection"),
+      duration: 2000,
+    });
   };
 
   return (
@@ -310,7 +177,7 @@ export default function RosterTab() {
                   <div className="text-right">
                     {poolInfo.context?.protected_players?.[user.id]?.length ??
                     0 > 0 ? (
-                      <ShieldPlus color="green" />
+                      <Shield className="h-4 w-4 text-green-500 ml-2" />
                     ) : null}
                   </div>
                 </div>
@@ -320,10 +187,40 @@ export default function RosterTab() {
         </div>
         {poolInfo.participants?.map((user) => (
           <TabsContent key={user.id} value={user.name}>
-            {ParticipantRoster(user)}
+            <PoolerRoster
+              userRoster={getPoolerPlayers(poolInfo.context!, user)}
+              protectedPlayerIds={protectedPlayerIds}
+              teamSalaryCap={poolInfo.settings.salary_cap}
+              onPlayerSelection={(user, player) =>
+                onPlayerSelection(user, player)
+              }
+              considerOnlyProtected={true}
+            />
+            <div className="flex justify-end">
+              <Button
+                disabled={
+                  !jwt ||
+                  protectedPlayerIds?.length !==
+                    poolInfo.settings.dynasty_settings
+                      ?.next_season_number_players_protected ||
+                  protectedPlayerIds?.every((item) =>
+                    poolInfo.context?.protected_players?.[user.id]?.includes(
+                      item
+                    )
+                  )
+                }
+                onClick={() => onSaveProtectedPlayers(user)}
+              >
+                {t("Save")}
+              </Button>
+            </div>
           </TabsContent>
         ))}
-        {userID === poolInfo.owner ? <Button>Save</Button> : null}
+        {userID === poolInfo.owner ? (
+          <Button onClick={() => onCompleteProtection()}>
+            {t("StartDraft")}
+          </Button>
+        ) : null}
       </Tabs>
     </>
   );
