@@ -4,7 +4,13 @@ import PlayersTable from "@/components/player-table";
 export default function NhlPlayerTab() {
   return (
     <div>
-      <PlayersTable sortField={"points"} skip={null} limit={null} />
+      <PlayersTable
+        sortField={"points"}
+        skip={null}
+        limit={null}
+        considerOnlyProtected={true}
+        onPlayerSelect={null}
+      />
     </div>
   );
 }

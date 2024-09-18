@@ -27,7 +27,7 @@ export default function SortHeaderCell({
       <Button
         variant="ghost"
         onClick={handleSort}
-        className="flex items-center space-x-1 font-semibold text-left p-2"
+        className="flex items-center space-x-1 font-semibold text-left p-1"
       >
         <span>{label}</span>
         {currentSortKey === sortKey ? (
@@ -36,9 +36,7 @@ export default function SortHeaderCell({
           ) : (
             <ArrowDown className="h-4 w-4" />
           )
-        ) : (
-          <ArrowUpDown className="h-4 w-4 text-gray-400" />
-        )}
+        ) : null}
       </Button>
     </th>
   );

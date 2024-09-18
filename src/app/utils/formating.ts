@@ -17,7 +17,6 @@ export function ordinal(num: number, language: string = 'en'): string {
 }
 
 export function seasonFormat(season: number, yearDelta: number): string {
-
     // 20232024 + (1*10001) = 20242025
     const updatedSeason = season + yearDelta*10001;
 
@@ -30,10 +29,13 @@ export function seasonWithYearFormat(year: number): string {
 }
 
 export function salaryFormat(salaryDollars: number): string {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(salaryDollars).replace('US', '').trim();
+  // Convert to formated millions of dollars.
+  const millions = salaryDollars / 1000000;
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  }).format(millions) + 'M';
 }

@@ -20,6 +20,8 @@ import team_info from "@/lib/teams";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Badge } from "./ui/badge";
+import DraftStatus from "./draft-status";
+import { useSession } from "@/context/useSessionData";
 
 interface Pick {
   drafter: string;
@@ -39,11 +41,13 @@ interface Draft {
 
   // The user that should draft, null if draft done.
   currentDrafter: string | null;
+  currentRound: number | null;
 }
 
 export default function Draft() {
   const [draftInfo, setDraftInfo] = React.useState<Draft | null>(null);
   const { dictUsers, poolInfo } = usePoolContext();
+  const { userID } = useSession();
   const t = useTranslations();
 
   // The max number of players per pooler is always the number of players minus the number of players protected
@@ -55,6 +59,8 @@ export default function Draft() {
     poolInfo.settings.number_reservists -
     (poolInfo.settings.dynasty_settings?.next_season_number_players_protected ??
       0);
+
+  const numberOfPickPerRound = poolInfo.settings.number_poolers;
 
   const isDraftDone = (
     draftedPlayerCountDictPerPooler: Map<string, number>,
@@ -77,9 +83,7 @@ export default function Draft() {
       poolInfo.context?.players_name_drafted[draftIndex]
     ] ?? null;
 
-  const getCurrentRoundIndex = (
-    numberOfPickPerRound: number
-  ): number | null => {
+  const getCurrentRoundIndex = (): number | null => {
     // Return the current round. will be null if the draft is completed/
     const totalPlayerDrafted =
       poolInfo.context?.players_name_drafted.length ?? 0;
@@ -91,15 +95,12 @@ export default function Draft() {
     return Math.floor(totalPlayerDrafted / numberOfPickPerRound);
   };
 
-  const getCurrentDrafter = (
-    rounds: Round[],
-    numberOfPickPerRound: number
-  ): string | null => {
+  const getCurrentDrafter = (rounds: Round[]): string | null => {
     // Return the current drafter. Will be null if the draft is completed.
     const totalPlayerDrafted =
       poolInfo.context?.players_name_drafted.length ?? 0;
 
-    const currentRoundIndex = getCurrentRoundIndex(numberOfPickPerRound);
+    const currentRoundIndex = getCurrentRoundIndex();
     if (currentRoundIndex === null) {
       return null;
     }
@@ -118,7 +119,7 @@ export default function Draft() {
     if (!poolInfo.context) {
       return drafters;
     }
-    // This is a dynasty type of draft, the final rank is being used as draft order.
+
     for (let i = 0; i < draftOrder.length; i += 1) {
       if (
         poolInfo.context.past_tradable_picks &&
@@ -302,7 +303,9 @@ export default function Draft() {
       defaultValue={round.round.toString()}
     >
       <AccordionItem value={round.round.toString()}>
-        <AccordionTrigger> Round #{round.round}</AccordionTrigger>
+        <AccordionTrigger>
+          {t("Round")} #{round.round}
+        </AccordionTrigger>
         <AccordionContent>{RoundTable(round)}</AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -310,18 +313,31 @@ export default function Draft() {
 
   React.useEffect(() => {
     const rounds = getRounds();
+    const roundIndex = getCurrentRoundIndex();
 
     setDraftInfo({
       rounds,
-      currentDrafter: getCurrentDrafter(
-        rounds,
-        poolInfo.participants?.length ?? 0
-      ),
+      currentDrafter: getCurrentDrafter(rounds),
+      currentRound: roundIndex !== null ? roundIndex + 1 : null,
     });
   }, [poolInfo.context?.players_name_drafted]);
 
   if (draftInfo === null) {
     return <h1>Loading draft info...</h1>;
   }
-  return draftInfo.rounds.map((round) => RenderRound(round));
+  return (
+    <div>
+      <DraftStatus
+        round={draftInfo.currentRound}
+        pickNumber={(poolInfo.context?.players_name_drafted.length ?? 0) + 1}
+        currentDrafter={
+          draftInfo.currentDrafter
+            ? dictUsers[draftInfo.currentDrafter ?? ""].name
+            : null
+        }
+        isUserTurn={draftInfo.currentDrafter === userID}
+      />
+      {draftInfo.rounds.map((round) => RenderRound(round))}
+    </div>
+  );
 }

@@ -2,7 +2,6 @@
 Module that manage the socket connection as a context manager to centralize logics between page that needs to have sockets.
 (Draft/Pool creation)
 */
-import { Card, CardHeader } from "@/components/ui/card";
 import { Signal } from "lucide-react";
 import React, {
   createContext,
@@ -47,6 +46,8 @@ export enum Command {
   AddUser = "AddUser",
   RemoveUser = "RemoveUser",
   StartDraft = "StartDraft",
+  DraftPlayer = "DraftPlayer",
+  UndoDraftPlayer = "UndoDraftPlayer",
 }
 
 enum SocketStatus {
