@@ -15,6 +15,7 @@
     "CouldNotGetPoolInfoError": "La requête pour recevoir les information du pool {pool} a échoué: {error}",
     "CouldNotProtectPlayers": "La requête pour protéger la liste de joueur dans le pool {name} a échoué: {error}",
     "CouldNotCompleteProtection": "La requête pour compléter la scéance de protection des joueurs dans le pool {name} a échoué: {error}",
+    "CouldNotAddPlayerToRoster": "La requête pour ajouter {playerName} à l'alignement de {userName} a échoué: {error}",
     "Menu": "Menu",
     "NoGameOnThatDate": "Il n'y a pas de match à cette date.",
     "Not current date selected": "La date selectionnée n'est pas la date d'aujourd'hui, clickez ici pour choisir la date d'aujourd'hui.",
@@ -299,6 +300,7 @@
     "DynastySalaryCapDescription": "Le cap salarial pour l'alignement (excluant les réservistes) de la saison {season} sera de {salaryCap}.",
     "SuccessProtectingPlayers": "Les joueurs sélectionné ont été protégés.",
     "SuccessCompleteProtection": "Le draft suite a la scéance de protection peut débuter.",
+    "SuccessAddPlayerToRoster": "{playerName} a été ajouté à l'alignement de {userName} avec succès.",
     "ContractExpirationDateMessage": "Le contrat de {playerName} est valide jusqu'à la fin de la saison {season}.",
     "ForwardsOnly": "Attaquants seulement",
     "DefendersOnly": "Défenseurs seulement",
@@ -327,5 +329,6 @@
     "Continue": "Continuer",
     "Cancel": "Annuler",
     "DraftAlertDialog": "Drafter {playerName}?",
-    "DraftAlertDialogQuestion": "êtes-vous sûr de vouloir drafter {playerName}? Cette action est définitive."
+    "DraftAlertDialogQuestion": "êtes-vous sûr de vouloir drafter {playerName}? Cette action est définitive.",
+    "Undo": "Revenir en arrière"
 }

@@ -33,7 +33,7 @@ interface PlayersTableProps {
   skip: number | null;
   limit: number | null;
   considerOnlyProtected: boolean;
-  onPlayerSelect: ((player: Player) => boolean) | null;
+  onPlayerSelect: ((player: Player) => Promise<boolean>) | null;
 }
 
 const PlayersTable: React.FC<PlayersTableProps> = ({
@@ -437,7 +437,10 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   return (
     <div>
       <div className="p-2">
-        <PlayerSearchDialog onPlayerSelect={onPlayerSelect} />
+        <PlayerSearchDialog
+          label={t("PlayerSearch")}
+          onPlayerSelect={onPlayerSelect}
+        />
         {PlayerPositionFilter()}
         {selectedPositions?.includes("G") ? GoaliesTable() : SkatersTable()}
       </div>

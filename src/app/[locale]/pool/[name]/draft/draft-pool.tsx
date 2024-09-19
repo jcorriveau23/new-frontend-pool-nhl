@@ -36,6 +36,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import React from "react";
+import UndoButton from "@/components/undo-button";
+import { useSession } from "@/context/useSessionData";
 
 export default function DraftPage() {
   const { poolInfo, selectedParticipant, updateSelectedParticipant } =
@@ -46,10 +48,11 @@ export default function DraftPage() {
   const [selectedPlayer, setSelectedPlayer] = React.useState<Player | null>(
     null
   );
+  const { userID } = useSession();
 
   // TODO: use a new draft context that holds the value of which user is currently drafting.
 
-  const onPlayerSelect = (player: Player) => {
+  const onPlayerSelect = async (player: Player) => {
     // TODO: Add validation:
     // 1) is the user connected (socket connection valid is enough?)
     // 2) Is it really the user turn to draft?
@@ -169,6 +172,14 @@ export default function DraftPage() {
             </ScrollArea>
           </DialogContent>
         </Dialog>
+        <UndoButton
+          disabled={
+            poolInfo.context?.players_name_drafted.length == 0 ||
+            userID !== poolInfo.owner
+          }
+          onClick={() => onUndoDraftPlayer()}
+          label={t("Undo")}
+        />
       </div>
       <Draft />
       {DraftPlayerAlertDialog()}
