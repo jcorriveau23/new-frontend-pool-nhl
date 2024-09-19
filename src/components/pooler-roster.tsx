@@ -25,6 +25,9 @@ import { salaryFormat } from "@/app/utils/formating";
 import ProtectedPlayerIcon from "./protected-player";
 import { usePoolContext } from "@/context/pool-context";
 import DraftedPlayerIcon from "./drafted-player";
+import PlayerSearchDialog from "./search-players";
+import { toast } from "@/hooks/use-toast";
+import { useSession } from "@/context/useSessionData";
 
 interface Props {
   userRoster: {
@@ -40,7 +43,10 @@ interface Props {
 }
 
 export default function PoolerRoster(props: Props) {
-  const { playersOwner } = usePoolContext();
+  const { poolInfo, playersOwner, updatePoolInfo, dictUsers } =
+    usePoolContext();
+  const { jwt, userID } = useSession();
+  const t = useTranslations();
 
   const getFormatedSummaryContractInfo = (players: Player[]): string => {
     const protectedPlayers = players.filter((player) =>
@@ -212,13 +218,60 @@ export default function PoolerRoster(props: Props) {
     </Accordion>
   );
 
-  const t = useTranslations();
+  const onPlayerSelect = async (player: Player) => {
+    const res = await fetch("/api-rust/add-player", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${jwt}`,
+      },
+      body: JSON.stringify({
+        pool_name: poolInfo.name,
+        added_player_user_id: props.userRoster.user.id,
+        player: player,
+      }),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      toast({
+        variant: "destructive",
+        title: t("CouldNotAddPlayerToRoster", {
+          playerName: player.name,
+          userName: dictUsers[props.userRoster.user.id].name,
+          error: error,
+        }),
+        duration: 5000,
+      });
+      return false;
+    }
+
+    const data = await res.json();
+    updatePoolInfo(data);
+    toast({
+      title: t("SuccessAddPlayerToRoster", {
+        playerName: player.name,
+        userName: dictUsers[props.userRoster.user.id].name,
+      }),
+      duration: 2000,
+    });
+
+    return true;
+  };
 
   return (
     <>
       {props.teamSalaryCap
         ? SalarySummaryTable(props.userRoster, props.teamSalaryCap)
         : null}
+
+      {userID === poolInfo.owner && (
+        <PlayerSearchDialog
+          label={t("Add player")}
+          onPlayerSelect={(player) => onPlayerSelect(player)}
+        />
+      )}
+
       {RosterTable(
         props.userRoster.user,
         props.userRoster.forwards,
