@@ -307,7 +307,7 @@
     "PlayerName": "Nom du joueur...",
     "PlayerSearch": "Rechercher un joueur",
     "Searching": "Recherche en cours...",
-    "NoPlayersFoundWith": "Aucun joueur trouvé avec {searchValue}."
+    "NoPlayersFoundWith": "Aucun joueur trouvé avec {searchValue}.",
     "DraftAPlayer": "Sélectionner un joueur",
     "PoolersRoster": "Alignement des Poolers",
     "DraftStatusYourTurn": "Status du Draft - Ton tour",
