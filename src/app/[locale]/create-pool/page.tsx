@@ -13,12 +13,12 @@ import LoginForm from "@/components/login";
 // @ts-ignore
 export default function TermOfService() {
   const t = useTranslations();
-  const { isValid } = useSession();
+  const userSession = useSession();
 
   return (
     <main>
       <PageTitle title={t("PoolCreationPageTitle")} />
-      {isValid ? (
+      {userSession.info?.jwt ? (
         <PoolSettingsComponent
           poolName=""
           poolStatus={null}

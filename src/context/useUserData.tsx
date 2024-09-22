@@ -6,17 +6,19 @@ import React, {
   ReactNode,
 } from "react";
 
-const hankoApi = process.env.NEXT_PUBLIC_HANKO_API_URL || "";
+import { getHankoApi } from "@/lib/env-variables";
 
-interface HankoUser {
+const hankoApi = getHankoApi();
+
+export interface HankoUser {
   id: string;
   email: string;
-  loading: boolean;
-  error: string | null;
+  isValid: boolean;
 }
 
-interface UserContextType extends HankoUser {
+interface UserContextType {
   refreshUser: () => void;
+  info: HankoUser | null;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -26,12 +28,7 @@ interface UserProviderProps {
 }
 
 const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const [userState, setUserState] = useState<HankoUser>({
-    id: "",
-    email: "",
-    loading: true,
-    error: null,
-  });
+  const [userState, setUserState] = useState<HankoUser | null>(null);
 
   const refreshUser = () => {
     import("@teamhanko/hanko-elements").then(({ Hanko }) => {
@@ -40,14 +37,10 @@ const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       hankoInstance?.user
         .getCurrent()
         .then(({ id, email }) => {
-          setUserState({ id, email, loading: false, error: null });
+          setUserState({ id, email, isValid: true });
         })
         .catch((error) => {
-          setUserState((prevState) => ({
-            ...prevState,
-            loading: false,
-            error,
-          }));
+          setUserState({ id: "", email: "", isValid: false });
         });
     });
   };
@@ -57,7 +50,7 @@ const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   }, []);
 
   return (
-    <UserContext.Provider value={{ ...userState, refreshUser }}>
+    <UserContext.Provider value={{ info: userState, refreshUser }}>
       {children}
     </UserContext.Provider>
   );

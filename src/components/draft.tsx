@@ -22,6 +22,16 @@ import { useTranslations } from "next-intl";
 import { Badge } from "./ui/badge";
 import DraftStatus from "./draft-status";
 import { useSession } from "@/context/useSessionData";
+import DraftButton from "./draft-button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { ScrollArea, ScrollBar } from "./ui/scroll-area";
+import PlayersTable from "./player-table";
 
 interface Pick {
   drafter: string;
@@ -44,10 +54,14 @@ interface Draft {
   currentRound: number | null;
 }
 
-export default function Draft() {
+interface DraftProps {
+  onPlayerSelect: ((player: Player) => Promise<boolean>) | null;
+}
+
+export default function Draft(props: DraftProps) {
   const [draftInfo, setDraftInfo] = React.useState<Draft | null>(null);
   const { dictUsers, poolInfo } = usePoolContext();
-  const { userID } = useSession();
+  const userSession = useSession();
   const t = useTranslations();
 
   // The max number of players per pooler is always the number of players minus the number of players protected
@@ -233,6 +247,52 @@ export default function Draft() {
     return rounds;
   };
 
+  const DraftContent = (draftIndex: number) => {
+    const teamLogo = team_info[getDraftedPlayer(draftIndex)?.team ?? -1]?.logo;
+    const player = getDraftedPlayer(draftIndex);
+
+    return player ? (
+      <>
+        <TableCell>
+          <PlayerLink name={player.name} id={player.id} textStyle={null} />
+        </TableCell>
+        <TableCell>{player.position}</TableCell>
+        <TableCell>
+          {teamLogo ? (
+            <Image width={30} height={30} alt="" src={teamLogo} />
+          ) : null}
+        </TableCell>
+      </>
+    ) : player === null &&
+      props.onPlayerSelect &&
+      draftIndex === poolInfo.context?.players_name_drafted.length ? (
+      <>
+        <Dialog>
+          <DialogTrigger asChild>
+            <TableCell colSpan={3}>
+              <DraftButton label="Draft Player" />
+            </TableCell>
+          </DialogTrigger>
+          <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
+            <DialogHeader>
+              <DialogTitle>{t("DraftAPlayer")}</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="p-0">
+              <PlayersTable
+                sortField={"points"}
+                skip={null}
+                limit={null}
+                considerOnlyProtected={false}
+                onPlayerSelect={props.onPlayerSelect}
+              />
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      </>
+    ) : null;
+  };
+
   const RoundTable = (round: Round) => (
     <Table>
       <TableHeader>
@@ -247,20 +307,18 @@ export default function Draft() {
       <TableBody>
         {round.picks.map((pick, i) => {
           const draftIndex = (round.round - 1) * round.picks.length + i;
-          const teamLogo =
-            team_info[getDraftedPlayer(draftIndex)?.team ?? -1]?.logo;
 
           return (
             <TableRow key={draftIndex + 1}>
               <TableCell>{draftIndex + 1}</TableCell>
               <TableCell>
                 <div className="flex items-center space-x-2">
-                  <div>{dictUsers[pick.drafter].name}</div>
+                  <div>{dictUsers[pick.drafter]?.name}</div>
                   <div>
                     {pick.from ? (
                       <Badge>
                         {t("FromPickTraded", {
-                          poolerName: dictUsers[pick.from].name,
+                          poolerName: dictUsers[pick.from]?.name,
                         })}
                       </Badge>
                     ) : null}
@@ -270,23 +328,7 @@ export default function Draft() {
               {pick.done ? (
                 <TableCell colSpan={3}>Done</TableCell>
               ) : (
-                <>
-                  <TableCell>
-                    <PlayerLink
-                      name={getDraftedPlayer(draftIndex)?.name}
-                      id={getDraftedPlayer(draftIndex)?.id}
-                      textStyle={null}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {getDraftedPlayer(draftIndex)?.position}
-                  </TableCell>
-                  <TableCell>
-                    {teamLogo ? (
-                      <Image width={30} height={30} alt="" src={teamLogo} />
-                    ) : null}
-                  </TableCell>
-                </>
+                DraftContent(draftIndex)
               )}
             </TableRow>
           );
@@ -332,10 +374,10 @@ export default function Draft() {
         pickNumber={(poolInfo.context?.players_name_drafted.length ?? 0) + 1}
         currentDrafter={
           draftInfo.currentDrafter
-            ? dictUsers[draftInfo.currentDrafter ?? ""].name
+            ? dictUsers[draftInfo.currentDrafter ?? ""]?.name
             : null
         }
-        isUserTurn={draftInfo.currentDrafter === userID}
+        isUserTurn={draftInfo.currentDrafter === userSession.info?.userID}
       />
       {draftInfo.rounds.map((round) => RenderRound(round))}
     </div>

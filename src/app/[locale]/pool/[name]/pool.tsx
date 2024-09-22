@@ -17,31 +17,34 @@ export default function PoolStatus() {
   const { poolInfo } = usePoolContext();
   const t = useTranslations();
 
-  const { jwt } = useSession();
+  const userSession = useSession();
+
+  if (
+    poolInfo.status === PoolState.Created ||
+    poolInfo.status === PoolState.Draft
+  ) {
+    return (
+      <SocketProvider jwt={userSession.info?.jwt}>
+        {poolInfo.status === PoolState.Created ? (
+          <>
+            <PageTitle
+              title={t("PoolCreatedPageTitle", { poolName: poolInfo.name })}
+            />
+            <CreatedPool />
+          </>
+        ) : (
+          <>
+            <PageTitle
+              title={t("PoolDraftPageTitle", { poolName: poolInfo.name })}
+            />
+            <DraftPool />
+          </>
+        )}
+      </SocketProvider>
+    );
+  }
 
   switch (poolInfo.status) {
-    case PoolState.Created:
-      return (
-        <>
-          <PageTitle
-            title={t("PoolCreatedPageTitle", { poolName: poolInfo.name })}
-          />
-          <SocketProvider jwt={jwt}>
-            <CreatedPool />
-          </SocketProvider>
-        </>
-      );
-    case PoolState.Draft:
-      return (
-        <>
-          <PageTitle
-            title={t("PoolDraftPageTitle", { poolName: poolInfo.name })}
-          />
-          <SocketProvider jwt={jwt}>
-            <DraftPool />
-          </SocketProvider>
-        </>
-      );
     case PoolState.InProgress:
     case PoolState.Final:
       return (

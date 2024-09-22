@@ -45,7 +45,7 @@ interface Props {
 export default function PoolerRoster(props: Props) {
   const { poolInfo, playersOwner, updatePoolInfo, dictUsers } =
     usePoolContext();
-  const { jwt, userID } = useSession();
+  const userSession = useSession();
   const t = useTranslations();
 
   const getFormatedSummaryContractInfo = (players: Player[]): string => {
@@ -223,7 +223,7 @@ export default function PoolerRoster(props: Props) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${jwt}`,
+        Authorization: `Bearer ${userSession.info?.jwt}`,
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
@@ -265,7 +265,7 @@ export default function PoolerRoster(props: Props) {
         ? SalarySummaryTable(props.userRoster, props.teamSalaryCap)
         : null}
 
-      {userID === poolInfo.owner && (
+      {userSession.info?.userID === poolInfo.owner && (
         <PlayerSearchDialog
           label={t("Add player")}
           onPlayerSelect={(player) => onPlayerSelect(player)}

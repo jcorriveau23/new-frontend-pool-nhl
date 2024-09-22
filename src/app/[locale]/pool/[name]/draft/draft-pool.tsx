@@ -48,7 +48,7 @@ export default function DraftPage() {
   const [selectedPlayer, setSelectedPlayer] = React.useState<Player | null>(
     null
   );
-  const { userID } = useSession();
+  const userSession = useSession();
 
   // TODO: use a new draft context that holds the value of which user is currently drafting.
 
@@ -175,13 +175,13 @@ export default function DraftPage() {
         <UndoButton
           disabled={
             poolInfo.context?.players_name_drafted.length == 0 ||
-            userID !== poolInfo.owner
+            userSession.info?.userID !== poolInfo.owner
           }
           onClick={() => onUndoDraftPlayer()}
           label={t("Undo")}
         />
       </div>
-      <Draft />
+      <Draft onPlayerSelect={onPlayerSelect} />
       {DraftPlayerAlertDialog()}
     </div>
   );

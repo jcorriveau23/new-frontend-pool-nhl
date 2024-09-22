@@ -16,7 +16,7 @@ export default function RosterTab() {
     updateSelectedParticipant,
     updatePoolInfo,
   } = usePoolContext();
-  const { userID, jwt } = useSession();
+  const userSession = useSession();
 
   const [protectedPlayerIds, setProtectedPlayerIds] = React.useState<
     number[] | null
@@ -39,7 +39,10 @@ export default function RosterTab() {
 
   const onPlayerSelection = (user: PoolUser, player: Player) => {
     // Need to have an account to protect the players.
-    if (userID !== user.id && userID !== poolInfo.owner) {
+    if (
+      userSession.info?.userID !== user.id &&
+      userSession.info?.userID !== poolInfo.owner
+    ) {
       toast({
         variant: "destructive",
         title: t("CannotUpdateProtectedPlayers", { userName: user.name }),
@@ -84,7 +87,10 @@ export default function RosterTab() {
 
   const onSaveProtectedPlayers = async (user: PoolUser) => {
     // Need to have an account to protect the players.
-    if (userID !== user.id && userID !== poolInfo.owner) {
+    if (
+      userSession.info?.userID !== user.id &&
+      userSession.info?.userID !== poolInfo.owner
+    ) {
       toast({
         variant: "destructive",
         title: t("CannotUpdateProtectedPlayers", { userName: user.name }),
@@ -97,7 +103,7 @@ export default function RosterTab() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${jwt}`,
+        Authorization: `Bearer ${userSession.info?.jwt}`,
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
@@ -133,7 +139,7 @@ export default function RosterTab() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${jwt}`,
+        Authorization: `Bearer ${userSession.info?.jwt}`,
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
@@ -199,7 +205,7 @@ export default function RosterTab() {
             <div className="flex justify-end">
               <Button
                 disabled={
-                  !jwt ||
+                  !userSession.info?.jwt ||
                   protectedPlayerIds?.length !==
                     poolInfo.settings.dynasty_settings
                       ?.next_season_number_players_protected ||
@@ -216,7 +222,7 @@ export default function RosterTab() {
             </div>
           </TabsContent>
         ))}
-        {userID === poolInfo.owner ? (
+        {userSession.info?.userID === poolInfo.owner ? (
           <Button onClick={() => onCompleteProtection()}>
             {t("StartDraft")}
           </Button>

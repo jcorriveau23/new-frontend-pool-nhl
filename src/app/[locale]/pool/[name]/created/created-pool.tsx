@@ -19,7 +19,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Tooltip,
@@ -47,7 +46,6 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,7 +71,7 @@ export default function CreatedPool() {
   const [poolSettingsUpdate, setPoolSettingsUpdate] =
     React.useState<PoolSettings | null>(null);
 
-  const { userID } = useSession();
+  const userSession = useSession();
   const { toast } = useToast();
   const t = useTranslations();
   const { socket, roomUsers } = useSocketContext();
@@ -170,6 +168,7 @@ export default function CreatedPool() {
 
   const onCreateUser = async (values: z.infer<typeof formSchema>) => {
     AddUser(values.name);
+    setOpen(false);
   };
 
   const CreateUserDialog = () => (
@@ -230,7 +229,9 @@ export default function CreatedPool() {
         >
           <div className="flex items-center gap-2"></div>
           <label className="font-medium">{t("SpotAvailable")}</label>
-          {userID === poolInfo.owner ? CreateUserDialog() : null}
+          {userSession.info?.userID === poolInfo.owner
+            ? CreateUserDialog()
+            : null}
         </li>
       );
     }
@@ -284,14 +285,15 @@ export default function CreatedPool() {
                     id="is-ready"
                     checked={users[userId].is_ready}
                     onCheckedChange={(checkedState) => onReady()}
-                    disabled={userId !== userID}
+                    disabled={userId !== userSession.info?.userID}
                   />
                 ) : null}
                 <label className="font-medium">{users[userId].name}</label>
                 <div className="text-sm text-muted-foreground">
                   {users[userId].is_ready ? t("Ready") : t("NotReady")}
                 </div>
-                {userID === poolInfo.owner && userId !== userID ? (
+                {userSession.info?.userID === poolInfo.owner &&
+                userId !== userSession.info?.userID ? (
                   <Button
                     variant="ghost"
                     size="icon"

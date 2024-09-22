@@ -120,7 +120,7 @@
     "Height": "Height",
     "NoDraftInfoForYear": "No draft information found for year {year}.",
     "MainPages": "Main Pages",
-    "NhlStatsPages": "Nhl Stats Pages",
+    "NhlStatsPages": "NHL Stats",
     "NotDrafted": "Not drafted",
     "Rosters": "Rosters",
     "NoRosterInfoForSeason": "No rosters information for {team} found for season {season}.",
@@ -251,7 +251,6 @@
     "NotReady": "Not Ready",
     "ClickToCopy": "Click to copy",
     "CopiedRoomUrl": "Copied room url to clipboard.",
-    "FailedToParseWebSocketMessage": "Failed to parse Web Socket message: {error}",
     "StartDraft": "Start Draft",
     "UsersForPoolDescription": "The following users will be included in the pool ({current}/{expected}).",
     "Connected": "Connected",
@@ -330,5 +329,6 @@
     "Cancel": "Cancel",
     "DraftAlertDialog": "Draft {playerName}?",
     "DraftAlertDialogQuestion": "Are you sure you want to draft {playerName}? This action cannot be undone.",
-    "Undo": "Undo"
+    "Undo": "Undo",
+    "YourProfile": "Your Profile"
 }
