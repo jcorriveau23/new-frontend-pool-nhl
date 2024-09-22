@@ -54,7 +54,7 @@ export default function PrivacyPolicy({ params: { locale } }) {
           <p>
             {t("YourRightsAndChoices2")}
             <a className="text-link hover:underline" href="#">
-              support@hockeypool.live
+              jcorriveau23@gmail.com
             </a>
             .
           </p>
@@ -68,7 +68,7 @@ export default function PrivacyPolicy({ params: { locale } }) {
           <p>
             {t("PrivacyPolicyQuestions")}
             <a className="text-link hover:underline" href="#">
-              support@hockeypool.live
+              jcorriveau23@gmail.com
             </a>
             .
           </p>

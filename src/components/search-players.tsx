@@ -18,11 +18,12 @@ import { useTranslations } from "next-intl";
 
 const MINIMUM_SEARCH_CHARACTER = 3;
 
-interface Props {
-  onPlayerSelect: ((player: Player) => boolean) | null;
+interface PlayerSearchDialogProps {
+  label: string;
+  onPlayerSelect: ((player: Player) => Promise<boolean>) | null;
 }
 
-export default function PlayerSearchDialog(props: Props) {
+export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [searchResults, setSearchResults] = React.useState<Player[] | null>(
     null
@@ -57,12 +58,12 @@ export default function PlayerSearchDialog(props: Props) {
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2">
           <Search className="w-4 h-4" />
-          {t("PlayerSearch")}
+          {props.label}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t("PlayerSearch")}</DialogTitle>
+          <DialogTitle>{props.label}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="flex items-center gap-2">

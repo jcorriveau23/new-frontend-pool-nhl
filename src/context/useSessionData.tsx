@@ -6,17 +6,18 @@ import React, {
   ReactNode,
 } from "react";
 
-const hankoApi = process.env.NEXT_PUBLIC_HANKO_API_URL || "";
+import { getHankoApi } from "@/lib/env-variables";
+
+const hankoApi = getHankoApi();
 
 interface HankoSession {
   userID: string;
   jwt: string;
   isValid: boolean;
-  loading: boolean;
-  error: string | null;
 }
 
-interface UserSessionContextType extends HankoSession {
+interface UserSessionContextType {
+  info: HankoSession | null;
   refreshSession: () => void;
 }
 
@@ -31,13 +32,7 @@ interface UserSessionProviderProps {
 export const UserSessionProvider: React.FC<UserSessionProviderProps> = ({
   children,
 }) => {
-  const [sessionState, setSessionState] = useState<HankoSession>({
-    userID: "",
-    jwt: "",
-    isValid: false,
-    loading: true,
-    error: null,
-  });
+  const [sessionState, setSessionState] = useState<HankoSession | null>(null);
 
   const refreshSession = () => {
     import("@teamhanko/hanko-elements").then(({ Hanko }) => {
@@ -52,15 +47,12 @@ export const UserSessionProvider: React.FC<UserSessionProviderProps> = ({
             userID,
             jwt,
             isValid,
-            loading: false,
-            error: null,
           });
         } else {
           setSessionState((prevState) => ({
-            ...prevState,
+            userID: "",
+            jwt: "",
             isValid: false,
-            loading: false,
-            error: "Invalid session",
           }));
         }
       }
@@ -72,7 +64,7 @@ export const UserSessionProvider: React.FC<UserSessionProviderProps> = ({
   }, []);
 
   return (
-    <UserSessionContext.Provider value={{ ...sessionState, refreshSession }}>
+    <UserSessionContext.Provider value={{ info: sessionState, refreshSession }}>
       {children}
     </UserSessionContext.Provider>
   );
@@ -81,7 +73,7 @@ export const UserSessionProvider: React.FC<UserSessionProviderProps> = ({
 export const useSession = (): UserSessionContextType => {
   const context = useContext(UserSessionContext);
   if (!context) {
-    throw new Error("useSession must be used within a SessionProvider");
+    throw new Error("useSession must be used within a SessionProvider.");
   }
   return context;
 };

@@ -68,8 +68,7 @@ export default function TermOfService({ params: { locale } }) {
           <h2 className="text-xl font-semibold">{t("ContactUs")}</h2>
           <p>
             {t("ToSQuestions")}
-            <a className="text-link hover:underline">support@hockeypool.live</a>
-            .
+            <a className="text-link hover:underline">jcorriveau23@gmail.com</a>.
           </p>
         </div>
       </div>
