@@ -1,7 +1,9 @@
 # Free NHL pool 
-built with next-js shadcn and rust.
 
-hockeypool.live
+[https://hockeypool.live](hockeypool.live)
+
+built with next-js shadcn and rust, [See backend repository](https://github.com/jcorriveau23/backend-pool-nhl)
+
 
 ## Getting Started
 
@@ -15,4 +17,10 @@ Run the linter:
 
 ```bash
 npm run lint
+```
+
+Build the ui server:
+
+```bash
+npm run build
 ```
