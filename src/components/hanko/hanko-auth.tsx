@@ -23,8 +23,8 @@ export default function HankoAuth(props: Props) {
 
   const [hanko, setHanko] = useState<Hanko>();
   const locale = useLocale();
-  const { refreshSession } = useSession();
-  const { refreshUser } = useUser();
+  const userSession = useSession();
+  const userData = useUser();
 
   useEffect(() => {
     import("@teamhanko/hanko-elements").then(({ Hanko }) =>
@@ -36,8 +36,8 @@ export default function HankoAuth(props: Props) {
     // successfully logged in, redirect to a page in your application
     router.replace(props.redirect);
 
-    refreshSession();
-    refreshUser();
+    userSession.refreshSession();
+    userData.refreshUser();
   }, [router]);
 
   useEffect(

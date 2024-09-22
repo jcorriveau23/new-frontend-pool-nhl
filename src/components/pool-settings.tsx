@@ -51,7 +51,7 @@ export const POOL_NAME_MAX_LENGTH = 16;
 
 export default function PoolSettingsComponent(props: Props) {
   const t = useTranslations();
-  const { jwt } = useSession();
+  const userSession = useSession();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -387,7 +387,7 @@ export default function PoolSettingsComponent(props: Props) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${jwt}`,
+        Authorization: `Bearer ${userSession.info?.jwt}`,
       },
       body: JSON.stringify({
         pool_name: values.name,

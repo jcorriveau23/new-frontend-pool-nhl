@@ -92,7 +92,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   };
 
   const handleNextPage = async (pageOffset: number) => {
-    const newSkip = (skip ?? 0) + pageOffset * (limit ?? 25);
+    const newSkip = (skip ?? 0) + pageOffset * (limit ?? 50);
 
     if (newSkip < 0) return;
 
@@ -403,7 +403,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   );
 
   const PlayersTablePagination = () => {
-    const pageOffset = skip ? skip / (limit ?? 25) : 0;
+    const pageOffset = skip ? skip / (limit ?? 50) : 0;
     return (
       <Pagination>
         <PaginationContent>

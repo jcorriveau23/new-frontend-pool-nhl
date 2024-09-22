@@ -206,6 +206,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       // @ts-ignore
       db.pools.put(newPoolInfo, "name");
     });
+    updatePlayersOwner(newPoolInfo);
   };
 
   const contextValue: PoolContextProps = {

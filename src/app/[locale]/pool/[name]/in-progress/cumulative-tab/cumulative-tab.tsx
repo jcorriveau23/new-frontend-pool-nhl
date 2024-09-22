@@ -295,13 +295,7 @@ export default function CumulativeTab() {
     updateSelectedParticipant,
   } = usePoolContext();
 
-  const {
-    userID,
-    jwt,
-    isValid,
-    loading: sessionDataLoading,
-    error: sessionDataError,
-  } = useSession();
+  const userSession = useSession();
 
   const formSchema = z.object({
     name: z
@@ -331,7 +325,7 @@ export default function CumulativeTab() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${jwt}`,
+        Authorization: `Bearer ${userSession.info?.jwt}`,
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
@@ -359,7 +353,7 @@ export default function CumulativeTab() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${jwt}`,
+        Authorization: `Bearer ${userSession.info?.jwt}`,
       },
       body: JSON.stringify({
         pool_name: poolInfo.name,
@@ -910,13 +904,13 @@ export default function CumulativeTab() {
       <Tabs defaultValue="totalRanking">
         {poolInfo.status === PoolState.InProgress &&
         new Date(poolInfo.season_end) < currentDate &&
-        hasPoolPrivilege(userID, poolInfo) ? (
+        hasPoolPrivilege(userSession.info?.userID, poolInfo) ? (
           <Button onClick={markAsFinal}>{t("MarkAsFinal")}</Button>
         ) : null}
         {poolInfo.status === PoolState.Final &&
         poolInfo.settings.dynasty_settings &&
         !poolInfo.settings.dynasty_settings.next_season_pool_name &&
-        hasPoolPrivilege(userID, poolInfo)
+        hasPoolPrivilege(userSession.info?.userID, poolInfo)
           ? GenerateDynastyDialog()
           : null}
         <div className="overflow-auto">

@@ -76,7 +76,7 @@ export const useSocketContext = (): SocketContextProps => {
 
 interface SocketProviderProps {
   children: ReactNode;
-  jwt: string | null;
+  jwt: string | null | undefined;
 }
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({
@@ -111,7 +111,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
           console.error("Failed to parse WebSocket message:", e);
           toast({
             variant: "destructive",
-            title: t("FailedToParseWebSocketMessage", { error: event.data }),
+            title: event.data,
             duration: 2000,
           });
         }

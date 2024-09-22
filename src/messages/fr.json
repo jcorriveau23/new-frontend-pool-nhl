@@ -120,7 +120,7 @@
     "Height": "taille",
     "NoDraftInfoForYear": "Aucune information de draft a été trouvé pour l'année {year}.",
     "MainPages": "Pages Principales",
-    "NhlStatsPages": "Pages de statistique NHL",
+    "NhlStatsPages": "Statistiques NHL",
     "NotDrafted": "Pas drafté",
     "Rosters": "Alignements",
     "NoRosterInfoForSeason": "Pas d'alignement disponible pour les {team} avec saison {season}.",
@@ -251,7 +251,6 @@
     "NotReady": "Pas Prêt",
     "ClickToCopy": "Cliquez pour copier",
     "CopiedRoomUrl": "Le url pour rejoindre la salle a été copié dans le clipboard.",
-    "FailedToParseWebSocketMessage": "Le message web socket n'a pas été en mesure d'être décodé: {error}",
     "StartDraft": "Débuter le draft",
     "UsersForPoolDescription": "Les participants suivant seront inclus dans le pool ({current}/{expected}).",
     "Connected": "Connecté",
@@ -330,5 +329,6 @@
     "Cancel": "Annuler",
     "DraftAlertDialog": "Drafter {playerName}?",
     "DraftAlertDialogQuestion": "êtes-vous sûr de vouloir drafter {playerName}? Cette action est définitive.",
-    "Undo": "Revenir en arrière"
+    "Undo": "Revenir en arrière",
+    "YourProfile": "Votre Profile"
 }

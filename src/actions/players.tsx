@@ -16,7 +16,7 @@ export async function getServerSidePlayers(
   positions = positions || ["F", "D"];
   sortField = sortField || "points";
   skip = skip || 0;
-  limit = limit || 25;
+  limit = limit || 50;
   descending = descending == null ? true : descending;
 
   const url = `http://localhost/api-rust/get-players?active=true&positions=${positions
