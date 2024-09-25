@@ -15,7 +15,7 @@ import Draft from "@/components/draft";
 import PlayersTable from "@/components/player-table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import PoolerRoster from "@/components/pooler-roster";
-import { getPoolerPlayers, Player, PoolUser } from "@/data/pool/model";
+import { getPoolerAllPlayers, Player, PoolUser } from "@/data/pool/model";
 import { usePoolContext } from "@/context/pool-context";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
@@ -157,7 +157,7 @@ export default function DraftPage() {
                 {poolInfo.participants?.map((user) => (
                   <TabsContent key={user.id} value={user.name}>
                     <PoolerRoster
-                      userRoster={getPoolerPlayers(poolInfo.context!, user)}
+                      userRoster={getPoolerAllPlayers(poolInfo.context!, user)}
                       protectedPlayerIds={
                         poolInfo.context?.protected_players?.[user.id] ?? null
                       }

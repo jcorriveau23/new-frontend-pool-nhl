@@ -28,18 +28,20 @@ export default function GameItem(props: Props) {
     switch (status) {
       case GameState.LIVE:
       case GameState.CRIT: {
-        return props.game && props.game.period && props.game.clock
-          ? `P. ${props.game.period} | ${props.game.clock.timeRemaining}`
-          : getGameTime(props.game.startTimeUTC);
+        return props.game && props.game.period && props.game.clock ? (
+          <p className="text-red-500">
+            P{props.game.period} - {props.game.clock.timeRemaining}
+          </p>
+        ) : (
+          getGameTime(props.game.startTimeUTC)
+        );
       }
       case GameState.PPD: {
         return "PPD";
       }
       case GameState.OFF:
       case GameState.FINAL: {
-        return props.game.periodDescriptor
-          ? props.game.periodDescriptor.periodType
-          : "";
+        return props.game.periodDescriptor?.periodType ?? "";
       }
       default: {
         return getGameTime(props.game.startTimeUTC);

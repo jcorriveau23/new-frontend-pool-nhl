@@ -55,7 +55,7 @@ export function NavigationBar() {
 
   const userMenu = (userInfo: HankoUser) => (
     <Sheet open={userSheetOpen} onOpenChange={setUserSheetOpen}>
-      <SheetTrigger asChild>{userAvatar(userInfo)}</SheetTrigger>{" "}
+      <SheetTrigger asChild>{userAvatar(userInfo)}</SheetTrigger>
       <SheetContent side="right">
         <SheetTitle>
           <div className="flex items-center gap-2">
@@ -76,7 +76,9 @@ export function NavigationBar() {
           </div>
         </SheetDescription>
         <SheetFooter className="py-5">
-          <LogoutButton />
+          <div onClick={() => setUserSheetOpen(false)}>
+            <LogoutButton />
+          </div>
         </SheetFooter>
       </SheetContent>
     </Sheet>

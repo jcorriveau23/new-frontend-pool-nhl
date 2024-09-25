@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePoolContext } from "@/context/pool-context";
-import { getPoolerPlayers, Player, PoolUser } from "@/data/pool/model";
+import { getPoolerAllPlayers, Player, PoolUser } from "@/data/pool/model";
 import { toast } from "@/hooks/use-toast";
 import { useTranslations } from "next-intl";
 import * as React from "react";
@@ -194,7 +194,7 @@ export default function RosterTab() {
         {poolInfo.participants?.map((user) => (
           <TabsContent key={user.id} value={user.name}>
             <PoolerRoster
-              userRoster={getPoolerPlayers(poolInfo.context!, user)}
+              userRoster={getPoolerAllPlayers(poolInfo.context!, user)}
               protectedPlayerIds={protectedPlayerIds}
               teamSalaryCap={poolInfo.settings.salary_cap}
               onPlayerSelection={(user, player) =>

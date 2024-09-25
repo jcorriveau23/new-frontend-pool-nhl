@@ -15,6 +15,7 @@ import { Player } from "@/data/pool/model";
 import PlayerLink from "./player-link";
 import { TeamLogo } from "./team-logo";
 import { useTranslations } from "next-intl";
+import PlayerSalary from "./player-salary";
 
 const MINIMUM_SEARCH_CHARACTER = 3;
 
@@ -99,6 +100,19 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
                     />
                     <TeamLogo teamId={player.team} width={30} height={30} />
                     {` ( ${player.position} )`}
+                    {player.salary_cap && player.contract_expiration_season ? (
+                      <PlayerSalary
+                        playerName={player.name}
+                        team={player.team}
+                        salary={player.salary_cap}
+                        contractExpirationSeason={
+                          player.contract_expiration_season
+                        }
+                        onBadgeClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                        }}
+                      />
+                    ) : null}
                   </div>
                 </li>
               ))}
