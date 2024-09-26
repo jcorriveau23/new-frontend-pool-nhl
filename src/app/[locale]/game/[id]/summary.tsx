@@ -106,7 +106,7 @@ export default async function GameSummary(props: Props) {
           <TableHead className="w-5/12">{t("Team")}</TableHead>
           {linescore.byPeriod.map((period) => (
             <TableHead key={period.periodDescriptor.number}>
-              P.{period.periodDescriptor.number}
+              P{period.periodDescriptor.number}
             </TableHead>
           ))}
           <TableHead>{t("Total")}</TableHead>
@@ -157,7 +157,7 @@ export default async function GameSummary(props: Props) {
           <TableHead className="w-5/12">{t("Team")}</TableHead>
           {shotsPerPeriod.map((period) => (
             <TableHead key={period.periodDescriptor.number}>
-              P.{period.periodDescriptor.number}
+              P{period.periodDescriptor.number}
             </TableHead>
           ))}
           <TableHead>{t("Total")}</TableHead>

@@ -209,7 +209,7 @@ export enum TradeStatus {
     REFUSED = 'REFUSED',
 }
 
-export const getPoolerPlayers = (poolContext: PoolContext, user: PoolUser) => {
+export const getPoolerAllPlayers = (poolContext: PoolContext, user: PoolUser) => {
     const reservistForwards = poolContext.pooler_roster[user.id].chosen_reservists.map(playerId => poolContext.players[playerId.toString()]).filter(player => player.position === Position.F)
     const reservistsDefenders = poolContext.pooler_roster[user.id].chosen_reservists.map(playerId => poolContext.players[playerId.toString()]).filter(player => player.position === Position.D)
     const reservistGoalies = poolContext.pooler_roster[user.id].chosen_reservists.map(playerId => poolContext.players[playerId.toString()]).filter(player => player.position === Position.G)
@@ -223,5 +223,14 @@ export const getPoolerPlayers = (poolContext: PoolContext, user: PoolUser) => {
         forwards,
         defense,
         goalies,
+    };
+}
+
+export const getPoolerActivePlayers = (poolContext: PoolContext, user: PoolUser) => {
+    return {
+        user,
+        forwards: poolContext.pooler_roster[user.id].chosen_forwards.map(playerId => poolContext.players[playerId.toString()]),
+        defense: poolContext.pooler_roster[user.id].chosen_defenders.map(playerId => poolContext.players[playerId.toString()]),
+        goalies: poolContext.pooler_roster[user.id].chosen_goalies.map(playerId => poolContext.players[playerId.toString()]),
     };
 }

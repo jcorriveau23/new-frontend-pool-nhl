@@ -436,14 +436,14 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
 
   return (
     <div>
-      <div className="p-2">
+      <div className="p-2 space-y-2">
         <PlayerSearchDialog
           label={t("PlayerSearch")}
           onPlayerSelect={onPlayerSelect}
         />
         {PlayerPositionFilter()}
-        {selectedPositions?.includes("G") ? GoaliesTable() : SkatersTable()}
       </div>
+      {selectedPositions?.includes("G") ? GoaliesTable() : SkatersTable()}
       {PlayersTablePagination()}
     </div>
   );
