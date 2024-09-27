@@ -330,5 +330,6 @@
     "DraftAlertDialog": "Draft {playerName}?",
     "DraftAlertDialogQuestion": "Are you sure you want to draft {playerName}? This action cannot be undone.",
     "Undo": "Undo",
-    "YourProfile": "Your Profile"
+    "YourProfile": "Your Profile",
+    "shots": "shots"
 }
