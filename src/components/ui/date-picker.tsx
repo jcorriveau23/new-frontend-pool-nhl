@@ -18,7 +18,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { enUS, fr } from "date-fns/locale";
+
+const localeMap = {
+  en: enUS,
+  fr: fr,
+};
 
 interface Props {
   currentDate: Date;
@@ -29,6 +35,7 @@ interface Props {
 
 export function DatePicker(props: Props) {
   const t = useTranslations();
+  const locale = useLocale();
 
   const handleSelectCurrentDate = (
     event: React.MouseEvent<SVGSVGElement, MouseEvent>
@@ -49,11 +56,15 @@ export function DatePicker(props: Props) {
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {props.selectedDate ? (
-            format(props.selectedDate, "yyyy-MM-dd")
+            format(props.selectedDate, "PPPP", {
+              locale: localeMap[locale as "en" | "fr"],
+            })
           ) : (
             <span>{t("Pick a date")}</span>
           )}
-          {props.selectedDate ? null : (
+          {props.selectedDate === null ||
+          props.selectedDate.toDateString() ===
+            props.currentDate.toDateString() ? null : (
             <div className="ml-auto">
               <TooltipProvider>
                 <Tooltip>
