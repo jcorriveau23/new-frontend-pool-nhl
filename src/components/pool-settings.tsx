@@ -65,7 +65,7 @@ export default function PoolSettingsComponent(props: Props) {
 
   const DEFAULT_POOLER_NUMBER = props.oldPoolSettings?.number_poolers ?? 6;
   const MIN_POOLER_NUMBER = 2;
-  const MAX_POOLER_NUMBER = 18;
+  const MAX_POOLER_NUMBER = 24;
 
   const DEFAULT_POOL_TYPE = props.oldPoolSettings?.dynasty_settings
     ? PoolType.DYNASTY

@@ -330,5 +330,6 @@
     "DraftAlertDialog": "Drafter {playerName}?",
     "DraftAlertDialogQuestion": "Êtes-vous sûr de vouloir drafter {playerName}? Cette action est définitive.",
     "Undo": "Revenir en arrière",
-    "YourProfile": "Votre profil"
+    "YourProfile": "Votre profil",
+    "shots": "tirs"
 }

@@ -1,29 +1,3 @@
-import { TeamInfo } from "./shared";
-
-export interface Name {
-  default: string;
-}
-
-export interface Assist {
-  playerId: number;
-  firstName: Name;
-  lastName: Name;
-  assistsToDate: number;
-}
-
-export interface Goal {
-  strength: string;
-  playerId: number;
-  firstName: Name;
-  lastName: Name;
-  headshot: string;
-  teamAbbrev: Name;
-  goalsToDate: number;
-  awayScore: number;
-  homeScore: number;
-  timeInPeriod: string;
-  assists: Assist[];
-}
 
 export enum PeriodType {
   REG = "REG",
@@ -31,69 +5,158 @@ export enum PeriodType {
   SO = "SO",
 }
 
+export interface Venue {
+  default: string;
+  fr?: string;
+}
+
 export interface PeriodDescriptor {
   number: number;
   periodType: PeriodType;
+  maxRegulationPeriods: number;
 }
 
-export interface PeriodScoring {
+export interface Broadcast {
+  id: number;
+  market: string;
+  countryCode: string;
+  network: string;
+  sequenceNumber: number;
+}
+
+export interface Team {
+  id: number;
+  name: { default: string };
+  abbrev: string;
+  placeName: { default: string; fr?: string };
+  placeNameWithPreposition: { default: string; fr?: string };
+  score: number;
+  sog: number;
+  logo: string;
+}
+
+export interface PlayerName {
+  default: string;
+  cs?: string;
+  fi?: string;
+  sk?: string;
+}
+
+export interface Assist {
+  playerId: number;
+  firstName: { default: string };
+  lastName: { default: string };
+  name: { default: string };
+  assistsToDate: number;
+}
+
+export interface Goal {
+  situationCode: string;
+  strength: string;
+  playerId: number;
+  firstName: { default: string };
+  lastName: { default: string };
+  name: { default: string };
+  teamAbbrev: { default: string };
+  headshot: string;
+  highlightClipSharingUrl: string;
+  highlightClip: number;
+  discreteClip: number;
+  goalsToDate: number;
+  awayScore: number;
+  homeScore: number;
+  leadingTeamAbbrev: { default: string };
+  timeInPeriod: string;
+  shotType: string;
+  goalModifier: string;
+  assists: Assist[];
+  pptReplayUrl: string;
+}
+
+export interface Scoring {
   periodDescriptor: PeriodDescriptor;
   goals: Goal[];
 }
 
-export enum  ShootoutResult {
-    save = "save",
-    goal = "goal",
-}
-
-export interface ShootoutInfo {
+export interface ShootoutAttempt {
   sequence: number;
   playerId: number;
   teamAbbrev: string;
   firstName: string;
   lastName: string;
+  shotType: string;
   result: string;
+  headshot: string;
+  gameWinner: boolean;
 }
 
-export interface PeriodScore {
-  away: number;
-  home: number;
+export interface StarPlayer {
+  star: number;
+  playerId: number;
+  teamAbbrev: string;
+  headshot: string;
+  name: { default: string; cs?: string; fi?: string; sk?: string };
+  sweaterNo: number;
+  position: string;
+  goalsAgainstAverage?: number;
+  savePctg?: number;
+  goals?: number;
+  assists?: number;
+  points?: number;
+}
+
+export interface Penalty {
+  timeInPeriod: string;
+  type: string;
+  duration: number;
+  committedByPlayer: string;
+  teamAbbrev: { default: string };
+  drawnBy: string;
+  descKey: string;
+}
+
+export interface PenaltyPeriod {
   periodDescriptor: PeriodDescriptor;
+  penalties: Penalty[];
 }
 
-export interface TotalScore {
-  away: number;
-  home: number;
+export interface Summary {
+  scoring: Scoring[];
+  shootout: ShootoutAttempt[];
+  threeStars: StarPlayer[];
+  penalties: PenaltyPeriod[];
 }
 
-export interface Linescore {
-  byPeriod: PeriodScore[];
-  totals: TotalScore;
-}
-
-export interface TeamGameStats {
-  category: string;
-  awayValue: string | number;
-  homeValue: string | number;
-}
-
-export interface PeriodShots {
-  periodDescriptor: PeriodDescriptor,
-  away: number,
-  home: number,
-}
-
-export interface GameSummary {
-  linescore: Linescore;
-  scoring: PeriodScoring[];
-  shootout: ShootoutInfo[];
-  teamGameStats: TeamGameStats[];
-  shotsByPeriod: PeriodShots[];
+export interface Clock {
+  timeRemaining: string;
+  secondsRemaining: number;
+  running: boolean;
+  inIntermission: boolean;
 }
 
 export interface GameLanding {
   id: number;
-  awayTeam: TeamInfo;
-  homeTeam: TeamInfo;
-  summary: GameSummary;
+  season: number;
+  gameType: number;
+  limitedScoring: boolean;
+  gameDate: string;
+  venue: Venue;
+  venueLocation: Venue;
+  startTimeUTC: string;
+  easternUTCOffset: string;
+  venueUTCOffset: string;
+  venueTimezone: string;
+  periodDescriptor: PeriodDescriptor;
+  tvBroadcasts: Broadcast[];
+  gameState: string;
+  gameScheduleState: string;
+  awayTeam: Team;
+  homeTeam: Team;
+  shootoutInUse: boolean;
+  maxPeriods: number;
+  regPeriods: number;
+  otInUse: boolean;
+  tiesInUse: boolean;
+  summary: Summary;
+  clock: Clock;
 }

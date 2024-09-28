@@ -2,10 +2,9 @@ import * as React from "react";
 import {
   GameLanding,
   Goal,
+  Team,
   PeriodType,
-  Linescore,
-  ShootoutInfo,
-  PeriodShots,
+  ShootoutAttempt,
 } from "@/data/nhl/gameLanding";
 import { abbrevToTeamId } from "@/lib/teams";
 import {
@@ -28,6 +27,7 @@ import {
 import { getTranslations } from "next-intl/server";
 import { TeamLogo } from "@/components/team-logo";
 import PlayerLink from "@/components/player-link";
+import { Shield } from "lucide-react";
 
 interface Props {
   gameId: string;
@@ -94,113 +94,42 @@ export default async function GameSummary(props: Props) {
     </div>
   );
 
-  const LineScoreTable = (
-    linescore: Linescore,
-    awayLogo: string,
-    homeLogo: string
-  ) => (
-    <Table>
-      <TableCaption>{t("ScorePerPeriod")}</TableCaption>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-5/12">{t("Team")}</TableHead>
-          {linescore.byPeriod.map((period) => (
-            <TableHead key={period.periodDescriptor.number}>
-              P{period.periodDescriptor.number}
-            </TableHead>
-          ))}
-          <TableHead>{t("Total")}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow>
-          <TableCell className="text-left">
-            <Image width={30} height={30} alt="team" src={awayLogo} />
-          </TableCell>
-          {linescore.byPeriod.map((periodScore) => (
-            <TableCell
-              key={periodScore.periodDescriptor.number}
-              className="text-left"
-            >
-              {periodScore.away}
-            </TableCell>
-          ))}
-          <TableCell className="text-left">{linescore.totals.away}</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell className="text-left">
-            <Image width={30} height={30} alt="team" src={homeLogo} />
-          </TableCell>
-          {linescore.byPeriod.map((periodScore) => (
-            <TableCell
-              key={periodScore.periodDescriptor.number}
-              className="text-left"
-            >
-              {periodScore.home}
-            </TableCell>
-          ))}
-          <TableCell className="text-left">{linescore.totals.home}</TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
+  const TeamInfo = (name: string, logo: string, shots: number) => (
+    <div className="flex flex-col items-center space-y-2">
+      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+        <Image width={60} height={60} alt="team" src={logo} />
+      </div>
+      <h2 className="text-lg font-semibold">{name}</h2>
+      <div className="flex items-center space-x-1">
+        <Shield className="w-4 h-4" />
+        <span className="text-sm">
+          {shots} {t("shots")}
+        </span>
+      </div>
+    </div>
   );
 
-  const ShotsPerPeriodTable = (
-    shotsPerPeriod: PeriodShots[],
-    awayLogo: string,
-    homeLogo: string
-  ) => (
-    <Table>
-      <TableCaption>{t("ShotsPerPeriod")}</TableCaption>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-5/12">{t("Team")}</TableHead>
-          {shotsPerPeriod.map((period) => (
-            <TableHead key={period.periodDescriptor.number}>
-              P{period.periodDescriptor.number}
-            </TableHead>
-          ))}
-          <TableHead>{t("Total")}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow>
-          <TableCell className="text-left">
-            <Image width={30} height={30} alt="team" src={awayLogo} />
-          </TableCell>
-          {shotsPerPeriod.map((period) => (
-            <TableCell
-              key={period.periodDescriptor.number}
-              className="text-left"
-            >
-              {period.away}
-            </TableCell>
-          ))}
-          <TableCell className="text-left">
-            {shotsPerPeriod.reduce((acc, period) => acc + period.away, 0)}
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell className="text-left">
-            <Image width={30} height={30} alt="team" src={homeLogo} />
-          </TableCell>
-          {shotsPerPeriod.map((period) => (
-            <TableCell
-              key={period.periodDescriptor.number}
-              className="text-left"
-            >
-              {period.home}
-            </TableCell>
-          ))}
-          <TableCell className="text-left">
-            {shotsPerPeriod.reduce((acc, period) => acc + period.home, 0)}
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
+  const ScoreDisplay = (awayScore: number, homeScore: number) => (
+    <div className="flex items-center justify-center bg-primary text-primary-foreground rounded-lg px-6 py-3">
+      <span className="text-4xl font-bold">{awayScore}</span>
+      <span className="text-2xl font-semibold mx-2">-</span>
+      <span className="text-4xl font-bold">{homeScore}</span>
+    </div>
   );
 
-  const ShootoutTable = (shootoutInfo: ShootoutInfo[]) => (
+  const GameSummary = (awayTeam: Team, homeTeam: Team) => (
+    <div className="w-full max-w-3xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden">
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          {TeamInfo(awayTeam.name.default, awayTeam.logo, awayTeam.sog)}
+          {ScoreDisplay(awayTeam.score, homeTeam.score)}
+          {TeamInfo(homeTeam.name.default, homeTeam.logo, homeTeam.sog)}
+        </div>
+      </div>
+    </div>
+  );
+
+  const ShootoutTable = (shootoutInfo: ShootoutAttempt[]) => (
     <Table>
       <TableCaption>{t("The list of shootout attempt")}</TableCaption>
       <TableHeader>
@@ -241,20 +170,11 @@ export default async function GameSummary(props: Props) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 p-0 sm:p-2">
+    <div>
       {gameLanding.summary ? (
         <>
           <div className="py-5 px-0 sm:px-5">
-            {LineScoreTable(
-              gameLanding.summary.linescore,
-              gameLanding.awayTeam.logo,
-              gameLanding.homeTeam.logo
-            )}
-            {ShotsPerPeriodTable(
-              gameLanding.summary.shotsByPeriod,
-              gameLanding.awayTeam.logo,
-              gameLanding.homeTeam.logo
-            )}
+            {GameSummary(gameLanding.awayTeam, gameLanding.homeTeam)}
           </div>
           <div className="py-5 px-0 sm:px-5">
             {gameLanding.summary.scoring
