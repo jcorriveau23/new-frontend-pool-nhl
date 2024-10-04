@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import DraftOrderSelector from "@/components/draft-order-selector";
 
 const USER_NAME_MIN_LENGTH = 2;
 const USER_NAME_MAX_LENGTH = 12;
@@ -322,6 +323,7 @@ export default function CreatedPool() {
   return (
     <div className="flex items-center justify-center">
       {roomUsers ? <>{renderUsers(roomUsers)}</> : <LoadingSpinner />}
+      <DraftOrderSelector />
     </div>
   );
 }

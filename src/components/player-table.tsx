@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -27,6 +27,7 @@ import { Badge } from "./ui/badge";
 import PlayerSalary from "./player-salary";
 import PlayerSearchDialog from "./search-players";
 import SortHeaderCell from "./sort-header-cell";
+import { useQuery } from "@tanstack/react-query";
 
 interface PlayersTableProps {
   sortField: string | null;
@@ -51,26 +52,29 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     "F",
     "D",
   ]);
-  const [players, setPlayers] = React.useState<Player[] | null>(null);
   const { poolInfo, dictUsers, playersOwner } = usePoolContext();
   const t = useTranslations();
 
-  const getServerActionPlayers = async () => {
-    const players = await getServerSidePlayers(
+  const query = useQuery({
+    queryKey: [
+      "players",
       selectedPositions,
       sortField,
       descendingOrder,
       skip,
-      limit
-    );
-
-    setPlayers(players);
-  };
-
-  useEffect(() => {
-    setPlayers(null);
-    getServerActionPlayers();
-  }, []);
+      limit,
+    ],
+    queryFn: () => {
+      return getServerSidePlayers(
+        selectedPositions,
+        sortField,
+        descendingOrder,
+        skip,
+        limit
+      );
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   // Toggle sorting order on column header click
   const handleSort = async (newSortfield: string) => {
@@ -78,48 +82,19 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     const newDescendingOrder =
       newSortfield === sortField ? !descendingOrder : true;
 
-    const players = await getServerSidePlayers(
-      selectedPositions,
-      newSortfield,
-      newDescendingOrder,
-      0,
-      limit
-    );
-
-    setPlayers(players);
     setSortField(newSortfield);
     setDescendingOrder(newDescendingOrder);
   };
 
   const handleNextPage = async (pageOffset: number) => {
-    const newSkip = (skip ?? 0) + pageOffset * (limit ?? 50);
+    const newSkip = (skip ?? 0) + pageOffset * (limit ?? 100);
 
     if (newSkip < 0) return;
-
-    const players = await getServerSidePlayers(
-      selectedPositions,
-      sortField,
-      descendingOrder,
-      newSkip,
-      limit
-    );
-
-    setPlayers(players);
     setSkip(newSkip);
   };
 
   const handleFirstPage = async () => {
     const newSkip = 0;
-
-    const players = await getServerSidePlayers(
-      selectedPositions,
-      sortField,
-      descendingOrder,
-      newSkip,
-      limit
-    );
-
-    setPlayers(players);
     setSkip(newSkip);
   };
 
@@ -134,20 +109,11 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       ? "points"
       : sortField;
 
-    const players = await getServerSidePlayers(
-      newPositions,
-      newSortField,
-      descendingOrder,
-      skip,
-      limit
-    );
-
-    setPlayers(players);
     setSortField(newSortField);
     setSelectedPositions(newPositions);
   };
 
-  if (players === null) {
+  if (query === null) {
     return (
       <div>
         <h1>Could not fetch players.</h1>
@@ -253,7 +219,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {players.map((player, i) => (
+          {query.data?.map((player, i) => (
             <TableRow onClick={() => onPlayerSelect?.(player)} key={player.id}>
               <TableCell>{(skip ?? 0) + i + 1}</TableCell>
               <TableCell>{PlayerLinkWithInfo(player)}</TableCell>
@@ -335,7 +301,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {players.map((player, i) => (
+          {query.data?.map((player, i) => (
             <TableRow onClick={() => onPlayerSelect?.(player)} key={player.id}>
               <TableCell>{(skip ?? 0) + i + 1}</TableCell>
               <TableCell>{PlayerLinkWithInfo(player)}</TableCell>
@@ -403,7 +369,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   );
 
   const PlayersTablePagination = () => {
-    const pageOffset = skip ? skip / (limit ?? 50) : 0;
+    const pageOffset = skip ? skip / (limit ?? 100) : 0;
     return (
       <Pagination>
         <PaginationContent>

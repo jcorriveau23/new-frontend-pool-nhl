@@ -14,8 +14,7 @@ import {
 import Draft from "@/components/draft";
 import PlayersTable from "@/components/player-table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import PoolerRoster from "@/components/pooler-roster";
-import { getPoolerAllPlayers, Player, PoolUser } from "@/data/pool/model";
+import { getPoolerActivePlayers, Player, PoolUser } from "@/data/pool/model";
 import { usePoolContext } from "@/context/pool-context";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
@@ -38,6 +37,7 @@ import {
 import React from "react";
 import UndoButton from "@/components/undo-button";
 import { useSession } from "@/context/useSessionData";
+import StartingRoster from "@/components/starting-roster";
 
 export default function DraftPage() {
   const { poolInfo, selectedParticipant, updateSelectedParticipant } =
@@ -156,14 +156,12 @@ export default function DraftPage() {
                 </TabsList>
                 {poolInfo.participants?.map((user) => (
                   <TabsContent key={user.id} value={user.name}>
-                    <PoolerRoster
-                      userRoster={getPoolerAllPlayers(poolInfo.context!, user)}
-                      protectedPlayerIds={
-                        poolInfo.context?.protected_players?.[user.id] ?? null
-                      }
+                    <StartingRoster
+                      userRoster={getPoolerActivePlayers(
+                        poolInfo.context!,
+                        user
+                      )}
                       teamSalaryCap={poolInfo.settings.salary_cap}
-                      onPlayerSelection={null}
-                      considerOnlyProtected={false}
                     />
                   </TabsContent>
                 ))}

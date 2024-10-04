@@ -232,5 +232,6 @@ export const getPoolerActivePlayers = (poolContext: PoolContext, user: PoolUser)
         forwards: poolContext.pooler_roster[user.id].chosen_forwards.map(playerId => poolContext.players[playerId.toString()]),
         defense: poolContext.pooler_roster[user.id].chosen_defenders.map(playerId => poolContext.players[playerId.toString()]),
         goalies: poolContext.pooler_roster[user.id].chosen_goalies.map(playerId => poolContext.players[playerId.toString()]),
+        reservists: poolContext.pooler_roster[user.id].chosen_reservists.map(playerId => poolContext.players[playerId.toString()]),
     };
 }

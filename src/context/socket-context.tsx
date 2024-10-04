@@ -93,7 +93,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const { poolInfo, updatePoolInfo } = usePoolContext();
   const t = useTranslations();
 
-  const socketUrl = `wss://${window.location.host}/api-rust/ws/${jwt}`;
+  const socketUrl = `wss://${window.location.host}/api-rust/ws/${
+    typeof jwt === "string" && jwt !== "" ? jwt : "unauthenticated"
+  }`;
   const socketRef = useRef<WebSocket | null>(null);
 
   const setupWebSocket = useCallback(
@@ -183,7 +185,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   };
 
   const renderSocketConnection = (socketStatus: SocketStatus) => (
-    <div className="fixed bottom-4 left-4">
+    <div className="fixed bottom-4 left-4 z-50">
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline">
