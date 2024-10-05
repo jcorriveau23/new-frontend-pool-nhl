@@ -53,7 +53,6 @@ export default function PoolerRoster(props: Props) {
       props.protectedPlayerIds?.includes(player.id)
     );
     return t("TotalPlayersProtected", {
-      playerCount: protectedPlayers.length,
       contractCount: protectedPlayers.filter((player) => player.salary_cap)
         .length,
       totalSalary: salaryFormat(
@@ -204,14 +203,16 @@ export default function PoolerRoster(props: Props) {
                   </TableRow>
                 ))}
             </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={3}>{t("TotalProtected")}</TableCell>
-                <TableCell colSpan={4}>
-                  {getFormatedSummaryContractInfo(players)}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
+            {poolInfo.settings.salary_cap ?? 0 > 0 ? (
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={3}>{t("TotalProtected")}</TableCell>
+                  <TableCell colSpan={4}>
+                    {getFormatedSummaryContractInfo(players)}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            ) : null}
           </Table>
         </AccordionContent>
       </AccordionItem>

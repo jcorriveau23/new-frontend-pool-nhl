@@ -26,6 +26,7 @@ import { usePoolContext } from "@/context/pool-context";
 import { toast } from "@/hooks/use-toast";
 import { useSession } from "@/context/useSessionData";
 import { Button } from "./ui/button";
+import { PlusCircledIcon, MinusCircledIcon } from "@radix-ui/react-icons";
 
 interface Props {
   userRoster: {
@@ -78,17 +79,14 @@ export default function StartingRoster(props: Props) {
     console.log(player.position);
     switch (player.position as Position) {
       case Position.F: {
-        console.log("f");
         setSelectedForwards([...selectedForwards, player]);
         break;
       }
       case Position.D: {
-        console.log("d");
         setSelectedDefense([...selectedDefense, player]);
         break;
       }
       case Position.G: {
-        console.log("g");
         setSelectedGoalies([...selectedGoalies, player]);
         break;
       }
@@ -97,9 +95,8 @@ export default function StartingRoster(props: Props) {
   };
 
   const getFormatedSummaryContractInfo = (players: Player[]): string => {
-    return t("TotalPlayersProtected", {
+    return t("TotalPlayersStartingRoster", {
       playerCount: players.length,
-      contractCount: players.filter((player) => player.salary_cap).length,
       totalSalary: salaryFormat(
         players.reduce(
           (accumulator, currentValue) =>
@@ -172,12 +169,15 @@ export default function StartingRoster(props: Props) {
   const RosterTable = (
     user: PoolUser,
     players: Player[],
+    playerLimit: number,
     title: string,
     isStarter: boolean
   ) => (
     <Accordion type="single" collapsible defaultValue="all">
       <AccordionItem value="all">
-        <AccordionTrigger>{`${t(title)} (${players.length})`}</AccordionTrigger>
+        <AccordionTrigger>{`${t(title)} (${
+          players.length
+        }/${playerLimit})`}</AccordionTrigger>
         <AccordionContent>
           <Table>
             <TableHeader>
@@ -241,21 +241,27 @@ export default function StartingRoster(props: Props) {
                           variant="outline"
                           size="sm"
                         >
-                          {isStarter ? "Remove" : "Add"}
+                          {isStarter ? (
+                            <MinusCircledIcon />
+                          ) : (
+                            <PlusCircledIcon />
+                          )}
                         </Button>
                       </TableCell>
                     ) : null}
                   </TableRow>
                 ))}
             </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={3}>{t("TotalProtected")}</TableCell>
-                <TableCell colSpan={4}>
-                  {getFormatedSummaryContractInfo(players)}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
+            {poolInfo.settings.salary_cap ? (
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={3}>{t("Total")}</TableCell>
+                  <TableCell colSpan={4}>
+                    {getFormatedSummaryContractInfo(players)}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            ) : null}
           </Table>
         </AccordionContent>
       </AccordionItem>
@@ -318,15 +324,36 @@ export default function StartingRoster(props: Props) {
           )
         : null}
 
-      {RosterTable(props.userRoster.user, selectedForwards, "Forwards", true)}
-      {RosterTable(props.userRoster.user, selectedDefense, "Defense", true)}
-      {RosterTable(props.userRoster.user, selectedGoalies, "Goalies", true)}
       {RosterTable(
         props.userRoster.user,
-        selectedReservists,
-        "Reservists",
-        false
+        selectedForwards,
+        poolInfo.settings.number_forwards,
+        "Forwards",
+        true
       )}
+      {RosterTable(
+        props.userRoster.user,
+        selectedDefense,
+        poolInfo.settings.number_defenders,
+        "Defense",
+        true
+      )}
+      {RosterTable(
+        props.userRoster.user,
+        selectedGoalies,
+        poolInfo.settings.number_goalies,
+        "Goalies",
+        true
+      )}
+      {poolInfo.settings.number_reservists > 0
+        ? RosterTable(
+            props.userRoster.user,
+            selectedReservists,
+            poolInfo.settings.number_reservists,
+            "Reservists",
+            false
+          )
+        : null}
       <Button onClick={() => onModifyRoster()}>Save</Button>
     </>
   );

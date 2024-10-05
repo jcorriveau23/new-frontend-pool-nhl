@@ -296,6 +296,7 @@
     "TotalProtected": "Total protégé(s)",
     "Save": "Sauvegarder",
     "TotalPlayersProtected": "{playerCount} joueur(s), {contractCount} contrat(s) ({totalSalary} / {salaryCap})",
+    "TotalPlayersStartingRoster": "({totalSalary} / {salaryCap})",
     "DynastyDescription": "Tous les poolers doivent protéger {protectedCount} joueurs avant le début du draft.",
     "DynastySalaryCapDescription": "Le cap salarial pour l'alignement (excluant les réservistes) de la saison {season} sera de {salaryCap}.",
     "SuccessProtectingPlayers": "Les joueurs sélectionnés ont été protégés.",
