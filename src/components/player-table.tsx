@@ -28,6 +28,7 @@ import PlayerSalary from "./player-salary";
 import PlayerSearchDialog from "./search-players";
 import SortHeaderCell from "./sort-header-cell";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "@/navigation";
 
 interface PlayersTableProps {
   sortField: string | null;
@@ -44,15 +45,24 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   considerOnlyProtected,
   onPlayerSelect,
 }) => {
-  const [sortField, setSortField] = useState<string | null>(initialSortField);
-  const [descendingOrder, setDescendingOrder] = useState<boolean | null>(true);
-  const [skip, setSkip] = useState<number | null>(initialSkip);
+  const queryParams = new URLSearchParams(window.location.search);
+  const positionsParams = queryParams.getAll("positions");
+
+  const [sortField, setSortField] = useState<string | null>(
+    queryParams.get("sortField") ?? initialSortField
+  );
+  const [descendingOrder, setDescendingOrder] = useState<boolean | null>(
+    (queryParams.get("descendingOrder") ?? "true") === "true"
+  );
+  const [skip, setSkip] = useState<number | null>(
+    Number(queryParams.get("skip") ?? initialSkip)
+  );
   const [limit, setLimit] = useState<number | null>(initialLimit);
-  const [selectedPositions, setSelectedPositions] = useState<string[] | null>([
-    "F",
-    "D",
-  ]);
+  const [selectedPositions, setSelectedPositions] = useState<string[] | null>(
+    positionsParams.length ? positionsParams : ["F", "D"]
+  );
   const { poolInfo, dictUsers, playersOwner } = usePoolContext();
+  const router = useRouter();
   const t = useTranslations();
 
   const query = useQuery({
@@ -77,13 +87,19 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   });
 
   // Toggle sorting order on column header click
-  const handleSort = async (newSortfield: string) => {
+  const handleSort = async (newSortField: string) => {
     setSkip(0);
-    const newDescendingOrder =
-      newSortfield === sortField ? !descendingOrder : true;
+    queryParams.set("skip", "0");
 
-    setSortField(newSortfield);
+    const newDescendingOrder =
+      newSortField === sortField ? !descendingOrder : true;
+
+    setSortField(newSortField);
+    queryParams.set("sortField", newSortField);
     setDescendingOrder(newDescendingOrder);
+    queryParams.set("descendingOrder", newDescendingOrder.toString());
+
+    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
   };
 
   const handleNextPage = async (pageOffset: number) => {
@@ -91,11 +107,17 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
 
     if (newSkip < 0) return;
     setSkip(newSkip);
+    queryParams.set("skip", newSkip.toString());
+
+    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
   };
 
   const handleFirstPage = async () => {
     const newSkip = 0;
     setSkip(newSkip);
+    queryParams.set("skip", newSkip.toString());
+
+    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
   };
 
   const handlePositionFilter = async (newPositions: string[]) => {
@@ -107,10 +129,18 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       ? "salary_cap"
       : wasGoalies
       ? "points"
-      : sortField;
+      : sortField ?? "points";
 
     setSortField(newSortField);
+    queryParams.set("sortField", newSortField);
+
     setSelectedPositions(newPositions);
+    queryParams.delete("positions");
+    newPositions.forEach((p) => {
+      queryParams.append("positions", p);
+    });
+
+    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
   };
 
   if (query === null) {
@@ -356,7 +386,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
               label: t("DefendersOnly"),
             },
           ]}
-          defaultSelectedValue="F, D"
+          defaultSelectedValue={selectedPositions?.join(", ") ?? "F, D"}
           emptyText=""
           onSelect={(newValue) =>
             handlePositionFilter(
