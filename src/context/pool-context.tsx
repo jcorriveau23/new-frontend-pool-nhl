@@ -10,6 +10,7 @@ import { db } from "@/db";
 export interface PoolContextProps {
   // keeps the information of which participant is selected across the pool.
   selectedParticipant: string;
+  selectedPoolUser: PoolUser;
   updateSelectedParticipant: (participant: string) => void;
 
   // Map the player id to its pool owner.
@@ -153,12 +154,14 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
 }) => {
   const [poolInfo, setPoolInfo] = useState<Pool>(pool);
 
-  const dictUsers: Record<string, PoolUser> = pool.participants.reduce(
-    (acc: Record<string, PoolUser>, user) => {
+  const getPoolDictUsers = (pool: Pool) =>
+    pool.participants.reduce((acc: Record<string, PoolUser>, user) => {
       acc[user.id] = user;
       return acc;
-    },
-    {}
+    }, {});
+
+  const [dictUsers, setDictUsers] = useState<Record<string, PoolUser>>(
+    getPoolDictUsers(pool)
   );
 
   const getInitialSelectedParticipant = (): string => {
@@ -182,6 +185,10 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   const router = useRouter();
   const [selectedParticipant, setSelectedParticipant] = React.useState<string>(
     getInitialSelectedParticipant()
+  );
+  const [selectedPoolUser, setSelectedPoolUser] = React.useState<PoolUser>(
+    poolInfo.participants.find((user) => user.name === selectedParticipant) ??
+      poolInfo.participants[0]
   );
   const [playersOwner, setPlayersOwner] = React.useState<
     Record<number, string>
@@ -207,10 +214,12 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       db.pools.put(newPoolInfo, "name");
     });
     updatePlayersOwner(newPoolInfo);
+    setDictUsers(getPoolDictUsers(newPoolInfo));
   };
 
   const contextValue: PoolContextProps = {
     selectedParticipant,
+    selectedPoolUser,
     updateSelectedParticipant,
     playersOwner,
     updatePlayersOwner,

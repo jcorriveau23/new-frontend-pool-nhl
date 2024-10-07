@@ -3,6 +3,7 @@
 "use client";
 import * as React from "react";
 import {
+  getPoolerActivePlayers,
   GoaliesSettings,
   PoolSettings,
   PoolState,
@@ -67,6 +68,8 @@ import { seasonFormat } from "@/app/utils/formating";
 import { useSession } from "@/context/useSessionData";
 import { toast } from "@/hooks/use-toast";
 import InformationIcon from "@/components/information-box";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import StartingRoster from "@/components/starting-roster";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -292,6 +295,7 @@ export default function CumulativeTab() {
     poolInfo,
     updatePoolInfo,
     selectedParticipant,
+    selectedPoolUser,
     updateSelectedParticipant,
   } = usePoolContext();
 
@@ -757,6 +761,26 @@ export default function CumulativeTab() {
 
   const ParticipantRoster = (participant: PoolUser) => (
     <>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline">{t("PoolersRoster")}</Button>
+        </DialogTrigger>
+        <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
+          <DialogHeader>
+            <DialogTitle>{t("PoolersRoster")}</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="p-0">
+            <StartingRoster
+              userRoster={getPoolerActivePlayers(
+                poolInfo.context!,
+                selectedPoolUser
+              )}
+              teamSalaryCap={poolInfo.settings.salary_cap}
+            />
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
       <Accordion type="single" collapsible defaultValue="forwards">
         <AccordionItem value="forwards">
           <AccordionTrigger>{`${t("Forwards")} (${
@@ -968,6 +992,7 @@ export default function CumulativeTab() {
             </TabsContent>
           ))}
         </Tabs>
+        {selectedParticipant}
       </div>
     </div>
   );

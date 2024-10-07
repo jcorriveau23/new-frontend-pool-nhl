@@ -334,5 +334,8 @@
     "DraftAlertDialogQuestion": "Are you sure you want to draft {playerName}? This action cannot be undone.",
     "Undo": "Undo",
     "YourProfile": "Your Profile",
-    "shots": "shots"
+    "shots": "shots",
+    "DraftOrderSelector": "Draft Order",
+    "RandomOrder": "Random Order",
+    "ModifyRoster": "Modifier Roster"
 }

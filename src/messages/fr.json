@@ -334,5 +334,8 @@
     "DraftAlertDialogQuestion": "Êtes-vous sûr de vouloir drafter {playerName}? Cette action est définitive.",
     "Undo": "Revenir en arrière",
     "YourProfile": "Votre profil",
-    "shots": "tirs"
+    "shots": "tirs",
+    "DraftOrderSelector": "Ordre du repêchage",
+    "RandomOrder": "Order aléatoire",
+    "ModifyRoster": "Modifier l'alignement"
 }

@@ -88,7 +88,7 @@ export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
   // Update the selected date based on the query parameter.
   useEffect(() => {
     updateGamesNightContext(score?.games ?? []);
-  }, []);
+  }, [score]);
 
   const contextValue: GamesNightContextProps = {
     gamesNightStatus,

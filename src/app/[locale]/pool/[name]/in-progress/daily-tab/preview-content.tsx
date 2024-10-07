@@ -38,15 +38,9 @@ export class PreviewTotal {
     goalies: PreviewPlayer[]
   ) {
     this.participant = participant;
-    this.forwardsPlaying = forwards.filter(
-      (p) => p.playingAgainst !== null
-    ).length;
-    this.defensePlaying = defense.filter(
-      (p) => p.playingAgainst !== null
-    ).length;
-    this.goaliesPlaying = goalies.filter(
-      (p) => p.playingAgainst !== null
-    ).length;
+    this.forwardsPlaying = forwards.filter((p) => p.playingAgainst).length;
+    this.defensePlaying = defense.filter((p) => p.playingAgainst).length;
+    this.goaliesPlaying = goalies.filter((p) => p.playingAgainst).length;
   }
   participant: string;
   forwardsPlaying: number;

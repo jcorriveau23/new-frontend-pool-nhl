@@ -13,7 +13,7 @@ interface DateContextProps {
   currentDate: Date;
   selectedDate: Date | null;
   score: Score | null;
-  updateDate: (newDate: Date) => void;
+  updateDate: (newDate: Date | null) => void;
   updateDateWithString: (newDate: string) => void;
 }
 
@@ -65,10 +65,14 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
     getServerActionGames();
   }, [querySelectedDate]);
 
-  const updateDate = (newDate: Date) => {
+  const updateDate = (newDate: Date | null) => {
     setSelectedDate(newDate);
     // Optionally update the URL to reflect the new selected date
-    currentParams.set("selectedDate", newDate.toISOString().split("T")[0]);
+    if (newDate === null) {
+      currentParams.delete("selectedDate");
+    } else {
+      currentParams.set("selectedDate", newDate.toISOString().split("T")[0]);
+    }
 
     router.push(`${pathName}?${currentParams.toString()}`);
   };

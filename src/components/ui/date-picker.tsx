@@ -26,14 +26,14 @@ const localeMap = {
   fr: fr,
 };
 
-interface Props {
+interface DatePickerProps {
   currentDate: Date;
   selectedDate: Date | null;
-  updateDate: (newDate: Date) => void;
+  updateDate: (newDate: Date | null) => void;
   updateDateWithString: (newDate: string) => void;
 }
 
-export function DatePicker(props: Props) {
+export function DatePicker(props: DatePickerProps) {
   const t = useTranslations();
   const locale = useLocale();
 
@@ -41,7 +41,7 @@ export function DatePicker(props: Props) {
     event: React.MouseEvent<SVGSVGElement, MouseEvent>
   ) => {
     event.stopPropagation(); // Prevents the click event from reaching the outer button+
-    props.updateDate(props.currentDate);
+    props.updateDate(null);
   };
 
   return (

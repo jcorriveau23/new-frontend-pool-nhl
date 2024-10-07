@@ -76,7 +76,6 @@ export default function StartingRoster(props: Props) {
   };
 
   const moveToStarters = (player: Player) => {
-    console.log(player.position);
     switch (player.position as Position) {
       case Position.F: {
         setSelectedForwards([...selectedForwards, player]);

@@ -35,7 +35,6 @@ export const InjuredPlayersProvider = ({
       // Replace this URL with the actual API or data source for injured players
       const response = await fetch("/injured-players.json");
       const data: Record<string, Player> = await response.json();
-      console.log(data);
       return data;
     } catch (error) {
       console.error("Failed to fetch injured players", error);

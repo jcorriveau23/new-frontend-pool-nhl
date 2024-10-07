@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSocketContext } from "@/context/socket-context";
+import { Dice2Icon } from "lucide-react";
+import {
+  Command,
+  createSocketCommand,
+  RoomUser,
+  useSocketContext,
+} from "@/context/socket-context";
 import {
   Select,
   SelectContent,
@@ -11,10 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { usePoolContext } from "@/context/pool-context";
+import { useTranslations } from "next-intl";
 
 export default function DraftOrderSelector() {
-  const { roomUsers } = useSocketContext();
+  const { socket, roomUsers } = useSocketContext();
+  const { poolInfo } = usePoolContext();
   const userIds = Object.keys(roomUsers ?? {});
+
+  const t = useTranslations();
 
   const positions = userIds.length;
 
@@ -35,18 +46,32 @@ export default function DraftOrderSelector() {
     setDraftOrder(shuffled);
   };
 
+  const startDraft = () => {
+    socket.send(
+      createSocketCommand(
+        Command.StartDraft,
+        `{"draft_order": ${JSON.stringify(draftOrder)}}`
+      )
+    );
+  };
+
+  const areAllUsersReady = (users: Record<string, RoomUser>) =>
+    // The draft is ready to start if all poolers are ready and the
+    // number of poolers match the number of poolers in the settings.
+    Object.values(users).every((user) => user.is_ready);
+
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle className="text-2xl font-bold">
-          Fantasy Draft Order Selection
+          {t("DraftOrderSelector")}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Button onClick={generateRandomOrder} className="mb-6">
-          Generate Random Order
+          <Dice2Icon />
+          {t("RandomOrder")}
         </Button>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Array.from({ length: positions }, (_, positionIndex) => (
             <div key={positionIndex} className="flex flex-col space-y-1">
@@ -73,6 +98,12 @@ export default function DraftOrderSelector() {
             </div>
           ))}
         </div>
+        <Button
+          onClick={() => startDraft()}
+          disabled={!areAllUsersReady(roomUsers ?? {})}
+        >
+          {t("StartDraft")}
+        </Button>
       </CardContent>
     </Card>
   );

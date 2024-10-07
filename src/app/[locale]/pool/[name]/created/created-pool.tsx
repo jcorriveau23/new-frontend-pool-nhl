@@ -140,10 +140,6 @@ export default function CreatedPool() {
     );
   };
 
-  const startDraft = () => {
-    socket.send(`"${Command.StartDraft}"`);
-  };
-
   const copiedRoomUrl = () => (
     <TooltipProvider>
       <Tooltip>
@@ -209,12 +205,6 @@ export default function CreatedPool() {
       </DialogContent>
     </Dialog>
   );
-
-  const areAllUsersReady = (users: Record<string, RoomUser>) =>
-    // The draft is ready to start if all poolers are ready and the
-    // number of poolers match the number of poolers in the settings.
-    Object.values(users).every((user) => user.is_ready) &&
-    Object.keys(users).length === poolInfo.settings.number_poolers;
 
   const renderUserSpots = (users: Record<string, RoomUser>) => {
     const numberOfAvailableSpot =
@@ -309,14 +299,7 @@ export default function CreatedPool() {
           {renderUserSpots(users)}
         </ul>
       </CardContent>
-      <CardFooter className="flex justify-end">
-        <Button
-          onClick={() => startDraft()}
-          disabled={!areAllUsersReady(users)}
-        >
-          {t("StartDraft")}
-        </Button>
-      </CardFooter>
+      <CardFooter className="flex justify-end"></CardFooter>
     </Card>
   );
 
