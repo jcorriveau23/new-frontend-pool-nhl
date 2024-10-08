@@ -151,9 +151,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       };
 
       socket.onopen = () => {
-        sendSocketCommand(
-          Command.JoinRoom,
-          `{"pool_name": "${poolInfo.name}", "number_poolers": ${poolInfo.settings.number_poolers}}`
+        socket.send(
+          createSocketCommand(
+            Command.JoinRoom,
+            `{"pool_name": "${poolInfo.name}", "number_poolers": ${poolInfo.settings.number_poolers}}`
+          )
         );
         toast({
           title: t("RoomJoined", { poolName: poolInfo.name }),
