@@ -34,12 +34,7 @@ import {
 } from "@radix-ui/react-icons";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useTranslations } from "next-intl";
-import {
-  Command,
-  RoomUser,
-  createSocketCommand,
-  useSocketContext,
-} from "@/context/socket-context";
+import { Command, RoomUser, useSocketContext } from "@/context/socket-context";
 import { useSession } from "@/context/useSessionData";
 import {
   Dialog,
@@ -75,7 +70,7 @@ export default function CreatedPool() {
   const userSession = useSession();
   const { toast } = useToast();
   const t = useTranslations();
-  const { socket, roomUsers } = useSocketContext();
+  const { roomUsers, sendSocketCommand } = useSocketContext();
   const [open, setOpen] = React.useState(false);
 
   const formSchema = z.object({
@@ -101,43 +96,30 @@ export default function CreatedPool() {
     },
   });
 
-  React.useEffect(() => {
-    if (socket) {
-      socket.onerror = (error) => {
-        console.error("WebSocket errors:", error);
-      };
-    }
-  }, []);
-
   const updatePoolSettings = () => {
-    if (socket && poolSettingsUpdate) {
+    if (poolSettingsUpdate) {
       const newPoolSettings = { ...poolInfo.settings, ...poolSettingsUpdate };
-      socket.send(
-        createSocketCommand(
-          Command.OnPoolSettingChanges,
-          `{"pool_settings": ${JSON.stringify(newPoolSettings)}}`
-        )
+      sendSocketCommand(
+        Command.OnPoolSettingChanges,
+        `{"pool_settings": ${JSON.stringify(newPoolSettings)}}`
       );
     }
   };
 
   const onReady = () => {
     console.log("on ready!");
-    socket.send(`"${Command.OnReady}"`);
+
+    sendSocketCommand(Command.OnReady, null);
   };
 
   const AddUser = (userName: string) => {
     console.log("Add user!");
-    socket.send(
-      createSocketCommand(Command.AddUser, `{"user_name": "${userName}"}`)
-    );
+    sendSocketCommand(Command.AddUser, `{"user_name": "${userName}"}`);
   };
 
   const RemoveUser = (userId: string) => {
     console.log("remove user!");
-    socket.send(
-      createSocketCommand(Command.RemoveUser, `{"user_id": "${userId}"}`)
-    );
+    sendSocketCommand(Command.RemoveUser, `{"user_id": "${userId}"}`);
   };
 
   const copiedRoomUrl = () => (

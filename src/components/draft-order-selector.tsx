@@ -4,12 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dice2Icon } from "lucide-react";
-import {
-  Command,
-  createSocketCommand,
-  RoomUser,
-  useSocketContext,
-} from "@/context/socket-context";
+import { Command, RoomUser, useSocketContext } from "@/context/socket-context";
 import {
   Select,
   SelectContent,
@@ -17,12 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { usePoolContext } from "@/context/pool-context";
 import { useTranslations } from "next-intl";
 
 export default function DraftOrderSelector() {
-  const { socket, roomUsers } = useSocketContext();
-  const { poolInfo } = usePoolContext();
+  const { roomUsers, sendSocketCommand } = useSocketContext();
   const userIds = Object.keys(roomUsers ?? {});
 
   const t = useTranslations();
@@ -47,11 +40,9 @@ export default function DraftOrderSelector() {
   };
 
   const startDraft = () => {
-    socket.send(
-      createSocketCommand(
-        Command.StartDraft,
-        `{"draft_order": ${JSON.stringify(draftOrder)}}`
-      )
+    sendSocketCommand(
+      Command.StartDraft,
+      `{"draft_order": ${JSON.stringify(draftOrder)}}`
     );
   };
 

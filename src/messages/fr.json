@@ -337,5 +337,7 @@
     "shots": "tirs",
     "DraftOrderSelector": "Ordre du repêchage",
     "RandomOrder": "Order aléatoire",
-    "ModifyRoster": "Modifier l'alignement"
+    "ModifyRoster": "Modifier l'alignement",
+    "SocketNotConnected": "La connection web socket doit être active pour envoyer cette requête.",
+    "UserNotConnected": "Vous devez être connecté à un compte pour envoyer cette requête."
 }

@@ -18,11 +18,7 @@ import { getPoolerActivePlayers, Player, PoolUser } from "@/data/pool/model";
 import { usePoolContext } from "@/context/pool-context";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
-import {
-  Command,
-  createSocketCommand,
-  useSocketContext,
-} from "@/context/socket-context";
+import { Command, useSocketContext } from "@/context/socket-context";
 
 import {
   AlertDialog,
@@ -38,12 +34,19 @@ import React from "react";
 import UndoButton from "@/components/undo-button";
 import { useSession } from "@/context/useSessionData";
 import StartingRoster from "@/components/starting-roster";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function DraftPage() {
   const { poolInfo, selectedParticipant, updateSelectedParticipant } =
     usePoolContext();
   const t = useTranslations();
-  const { socket } = useSocketContext();
+  const { sendSocketCommand } = useSocketContext();
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [selectedPlayer, setSelectedPlayer] = React.useState<Player | null>(
     null
@@ -65,11 +68,9 @@ export default function DraftPage() {
 
   const confirmDraft = () => {
     if (selectedPlayer) {
-      socket.send(
-        createSocketCommand(
-          Command.DraftPlayer,
-          `{"player": ${JSON.stringify(selectedPlayer)}}`
-        )
+      sendSocketCommand(
+        Command.DraftPlayer,
+        `{"player": ${JSON.stringify(selectedPlayer)}}`
       );
       setDialogOpen(false); // Close the dialog
       setSelectedPlayer(null); // Clear the selected player
@@ -77,7 +78,7 @@ export default function DraftPage() {
   };
 
   const onUndoDraftPlayer = () => {
-    socket.send(`"${Command.UndoDraftPlayer}"`);
+    sendSocketCommand(Command.UndoDraftPlayer, null);
   };
 
   const DraftPlayerAlertDialog = () => {
@@ -140,32 +141,33 @@ export default function DraftPage() {
               <DialogTitle>{t("PoolersRoster")}</DialogTitle>
             </DialogHeader>
             <ScrollArea className="p-0">
-              <Tabs
-                defaultValue={selectedParticipant}
+              <Select
                 value={selectedParticipant}
                 onValueChange={(userName) =>
                   updateSelectedParticipant(userName)
                 }
               >
-                <TabsList>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a user" />
+                </SelectTrigger>
+                <SelectContent>
                   {poolInfo.participants?.map((user: PoolUser) => (
-                    <TabsTrigger key={user.id} value={user.name}>
+                    <SelectItem key={user.id} value={user.name}>
                       {user.name}
-                    </TabsTrigger>
+                    </SelectItem>
                   ))}
-                </TabsList>
-                {poolInfo.participants?.map((user) => (
-                  <TabsContent key={user.id} value={user.name}>
-                    <StartingRoster
-                      userRoster={getPoolerActivePlayers(
-                        poolInfo.context!,
-                        user
-                      )}
-                      teamSalaryCap={poolInfo.settings.salary_cap}
-                    />
-                  </TabsContent>
-                ))}
-              </Tabs>
+                </SelectContent>
+              </Select>
+              <StartingRoster
+                key={selectedParticipant}
+                userRoster={getPoolerActivePlayers(
+                  poolInfo.context!,
+                  poolInfo.participants.find(
+                    (user) => user.name === selectedParticipant
+                  )!
+                )}
+                teamSalaryCap={poolInfo.settings.salary_cap}
+              />
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </DialogContent>

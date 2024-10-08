@@ -763,11 +763,11 @@ export default function CumulativeTab() {
     <>
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant="outline">{t("PoolersRoster")}</Button>
+          <Button variant="outline">{t("ModifyRoster")}</Button>
         </DialogTrigger>
         <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
           <DialogHeader>
-            <DialogTitle>{t("PoolersRoster")}</DialogTitle>
+            <DialogTitle>{t("ModifyRoster")}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="p-0">
             <StartingRoster
