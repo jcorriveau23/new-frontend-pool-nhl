@@ -89,13 +89,15 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
       {
         accessorKey: "totalPoolPointsPerGame",
         header: ({ table }) => table.options.meta?.t("PTS*/G"),
-        accessorFn: (ranking) =>
-          (
-            ranking.getTotalPoolPoints() /
-            (ranking.forwards.numberOfGame +
-              ranking.defense.numberOfGame +
-              ranking.goalies.numberOfGame)
-          ).toFixed(3),
+        accessorFn: (ranking) => {
+          const totalNumberOfGame =
+            ranking.forwards.numberOfGame +
+            ranking.defense.numberOfGame +
+            ranking.goalies.numberOfGame;
+          return totalNumberOfGame > 0
+            ? (ranking.getTotalPoolPoints() / totalNumberOfGame).toFixed(3)
+            : null;
+        },
       },
     ],
   },
@@ -159,9 +161,11 @@ export const ForwardsTotalColumn: ColumnDef<TotalRanking>[] = [
     accessorKey: "totalPoolPointsPerGame",
     header: ({ table }) => table.options.meta?.t("PTS*/G"),
     accessorFn: (ranking) =>
-      (
-        ranking.forwards.totalPoolPoints / ranking.forwards.numberOfGame
-      ).toFixed(3),
+      ranking.forwards.numberOfGame > 0
+        ? (
+            ranking.forwards.totalPoolPoints / ranking.forwards.numberOfGame
+          ).toFixed(3)
+        : null,
   },
 ];
 
@@ -223,9 +227,11 @@ export const DefensesTotalColumn: ColumnDef<TotalRanking>[] = [
     accessorKey: "totalPoolPointsPerGame",
     header: ({ table }) => table.options.meta?.t("PTS*/G"),
     accessorFn: (ranking) =>
-      (ranking.defense.totalPoolPoints / ranking.defense.numberOfGame).toFixed(
-        3
-      ),
+      ranking.defense.numberOfGame > 0
+        ? (
+            ranking.defense.totalPoolPoints / ranking.defense.numberOfGame
+          ).toFixed(3)
+        : null,
   },
 ];
 
@@ -287,8 +293,10 @@ export const GoaliesTotalColumn: ColumnDef<TotalRanking>[] = [
     accessorKey: "totalPoolPointsPerGame",
     header: ({ table }) => table.options.meta?.t("PTS*/G"),
     accessorFn: (ranking) =>
-      (ranking.goalies.totalPoolPoints / ranking.goalies.numberOfGame).toFixed(
-        3
-      ),
+      ranking.goalies.numberOfGame > 0
+        ? (
+            ranking.goalies.totalPoolPoints / ranking.goalies.numberOfGame
+          ).toFixed(3)
+        : null,
   },
 ];

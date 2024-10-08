@@ -216,6 +216,7 @@ export default function DailyStatsContent() {
   const dateOfInterest = selectedDate ?? currentDate;
   const {
     poolInfo,
+    dictUsers,
     selectedParticipant,
     updateSelectedParticipant,
     playersOwner,
@@ -568,7 +569,7 @@ export default function DailyStatsContent() {
         columnPinning: { left: ["ranking", "name"] },
       }}
       meta={{
-        props: { playersOwner },
+        props: { playersOwner, dictUsers },
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -591,7 +592,7 @@ export default function DailyStatsContent() {
         columnPinning: { left: ["ranking", "name"] },
       }}
       meta={{
-        props: { playersOwner },
+        props: { playersOwner, dictUsers },
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
