@@ -21,6 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useSession } from "./useSessionData";
 
 export interface RoomUser {
   id: string;
@@ -32,6 +33,7 @@ export interface RoomUser {
 export interface SocketContextProps {
   socket: WebSocket;
   roomUsers: Record<string, RoomUser> | null;
+  sendSocketCommand: (command: string, arg: string | null) => void;
 }
 
 const SocketContext = createContext<SocketContextProps | undefined>(undefined);
@@ -89,6 +91,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const [socketStatus, setSocketStatus] = useState<SocketStatus>(
     SocketStatus.Connecting
   );
+  const session = useSession();
 
   const { poolInfo, updatePoolInfo } = usePoolContext();
   const t = useTranslations();
@@ -97,6 +100,33 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
     typeof jwt === "string" && jwt !== "" ? jwt : "unauthenticated"
   }`;
   const socketRef = useRef<WebSocket | null>(null);
+
+  const sendSocketCommand = (command: string, arg: string | null) => {
+    if (!socketRef.current || socketStatus !== SocketStatus.Opened) {
+      toast({
+        variant: "destructive",
+        title: t("SocketNotConnected"),
+        duration: 5000,
+      });
+      return;
+    }
+
+    if (session.info === null || session.info.isValid === false) {
+      toast({
+        variant: "destructive",
+        title: t("UserNotConnected"),
+        duration: 5000,
+      });
+      return;
+    }
+    console.log("send request");
+    if (arg === null) {
+      socketRef.current.send(`"${command}"`);
+      return;
+    }
+
+    socketRef.current.send(createSocketCommand(command, arg));
+  };
 
   const setupWebSocket = useCallback(
     (socket: WebSocket) => {
@@ -120,11 +150,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       };
 
       socket.onopen = () => {
-        socket.send(
-          createSocketCommand(
-            Command.JoinRoom,
-            `{"pool_name": "${poolInfo.name}", "number_poolers": ${poolInfo.settings.number_poolers}}`
-          )
+        sendSocketCommand(
+          Command.JoinRoom,
+          `{"pool_name": "${poolInfo.name}", "number_poolers": ${poolInfo.settings.number_poolers}}`
         );
         toast({
           title: t("RoomJoined", { poolName: poolInfo.name }),
@@ -210,6 +238,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
   const contextValue: SocketContextProps = {
     socket: socketRef.current!,
+    sendSocketCommand,
     roomUsers,
   };
 
