@@ -102,7 +102,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const socketRef = useRef<WebSocket | null>(null);
 
   const sendSocketCommand = (command: string, arg: string | null) => {
-    if (!socketRef.current || socketStatus !== SocketStatus.Opened) {
+    console.log(`send command ${command}`);
+    if (!socketRef.current) {
       toast({
         variant: "destructive",
         title: t("SocketNotConnected"),
@@ -119,7 +120,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       });
       return;
     }
-    console.log("send request");
+
     if (arg === null) {
       socketRef.current.send(`"${command}"`);
       return;
