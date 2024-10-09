@@ -514,7 +514,8 @@ export const DailyGoaliesLeadersColumn: ColumnDef<DailyGoalie>[] = [
     accessorKey: "owner",
     header: ({ table }) => table.options.meta?.t("Owner"),
     cell: ({ row, table }) => {
-      return table.options.meta?.props.playersOwner[row.original.id];
+      const owner = table.options.meta?.props.playersOwner[row.original.id];
+      return owner ? table.options.meta?.props.dictUsers[owner].name : null;
     },
   },
   {

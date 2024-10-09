@@ -13,9 +13,9 @@ import { TotalPreviewColumn } from "./preview-columns";
 import { useTranslations } from "next-intl";
 import { useDateContext } from "@/context/date-context";
 import { format } from "date-fns";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePoolContext } from "@/context/pool-context";
 import { Row } from "@tanstack/react-table";
+import { PoolerUserSelector } from "@/components/pool-user-selector";
 
 export class PreviewPlayer {
   constructor(player: Player, playingAgainst: Record<number, number>) {
@@ -52,8 +52,12 @@ export default function DailyPreviewContent() {
   const t = useTranslations();
   const { playingAgainst } = useGamesNightContext();
   const { currentDate, selectedDate } = useDateContext();
-  const { poolInfo, selectedParticipant, updateSelectedParticipant } =
-    usePoolContext();
+  const {
+    poolInfo,
+    selectedParticipant,
+    selectedPoolUser,
+    updateSelectedParticipant,
+  } = usePoolContext();
   const [forwardsPreview, setForwardsPreview] = React.useState<Record<
     string,
     PreviewPlayer[]
@@ -203,102 +207,80 @@ export default function DailyPreviewContent() {
           : null}
       </div>
       <div className="py-5 px-0 sm:px-5">
-        <Tabs
-          defaultValue={selectedParticipant}
-          value={selectedParticipant}
-          onValueChange={(userName) => updateSelectedParticipant(userName)}
-        >
-          <TabsList>
-            {poolInfo.participants?.map((user) => (
-              <TabsTrigger key={user.id} value={user.name}>
-                {user.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {poolInfo.participants?.map((user) => (
-            <TabsContent key={user.id} value={user.name}>
-              {forwardsPreview && defensePreview && goaliesPreview ? (
-                <>
-                  <Accordion
-                    key={`${user.id}-forwards`}
-                    type="single"
-                    collapsible
-                    defaultValue="forwards"
-                  >
-                    <AccordionItem value="forwards">
-                      <AccordionTrigger>{`${t("Forwards")} (${
-                        forwardsPreview[user.id].filter(
-                          (p) => p.playingAgainst !== null
-                        ).length
-                      }/${
-                        poolInfo.settings.number_forwards
-                      })`}</AccordionTrigger>
-                      <AccordionContent>
-                        {PreviewPlayersTable(
-                          forwardsPreview[user.id],
-                          getFormatedDateTitle(
-                            user.name,
-                            "List of forwards playing for"
-                          )
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                  <Accordion
-                    key={`${user.id}-defense`}
-                    type="single"
-                    collapsible
-                    defaultValue="defense"
-                  >
-                    <AccordionItem value="defense">
-                      <AccordionTrigger>{`${t("Defense")} (${
-                        defensePreview[user.id].filter(
-                          (p) => p.playingAgainst !== null
-                        ).length
-                      }/${
-                        poolInfo.settings.number_defenders
-                      })`}</AccordionTrigger>
-                      <AccordionContent>
-                        {PreviewPlayersTable(
-                          defensePreview[user.id],
-                          getFormatedDateTitle(
-                            user.name,
-                            "List of defenseman playing for"
-                          )
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                  <Accordion
-                    key={`${user.id}-goalies`}
-                    type="single"
-                    collapsible
-                    defaultValue="goalies"
-                  >
-                    <AccordionItem value="goalies">
-                      <AccordionTrigger>{`${t("Goalies")} (${
-                        goaliesPreview[user.id].filter(
-                          (p) => p.playingAgainst !== null
-                        ).length
-                      }/${
-                        poolInfo.settings.number_goalies
-                      })`}</AccordionTrigger>
-                      <AccordionContent>
-                        {PreviewPlayersTable(
-                          goaliesPreview[user.id],
-                          getFormatedDateTitle(
-                            user.name,
-                            "List of goalies playing for"
-                          )
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </>
-              ) : null}
-            </TabsContent>
-          ))}
-        </Tabs>
+        <PoolerUserSelector />
+        {forwardsPreview && defensePreview && goaliesPreview ? (
+          <>
+            <Accordion
+              key={`${selectedPoolUser.id}-forwards`}
+              type="single"
+              collapsible
+              defaultValue="forwards"
+            >
+              <AccordionItem value="forwards">
+                <AccordionTrigger>{`${t("Forwards")} (${
+                  forwardsPreview[selectedPoolUser.id].filter(
+                    (p) => p.playingAgainst !== null
+                  ).length
+                }/${poolInfo.settings.number_forwards})`}</AccordionTrigger>
+                <AccordionContent>
+                  {PreviewPlayersTable(
+                    forwardsPreview[selectedPoolUser.id],
+                    getFormatedDateTitle(
+                      selectedPoolUser.name,
+                      "List of forwards playing for"
+                    )
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+            <Accordion
+              key={`${selectedPoolUser.id}-defense`}
+              type="single"
+              collapsible
+              defaultValue="defense"
+            >
+              <AccordionItem value="defense">
+                <AccordionTrigger>{`${t("Defense")} (${
+                  defensePreview[selectedPoolUser.id].filter(
+                    (p) => p.playingAgainst !== null
+                  ).length
+                }/${poolInfo.settings.number_defenders})`}</AccordionTrigger>
+                <AccordionContent>
+                  {PreviewPlayersTable(
+                    defensePreview[selectedPoolUser.id],
+                    getFormatedDateTitle(
+                      selectedPoolUser.name,
+                      "List of defenseman playing for"
+                    )
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+            <Accordion
+              key={`${selectedPoolUser.id}-goalies`}
+              type="single"
+              collapsible
+              defaultValue="goalies"
+            >
+              <AccordionItem value="goalies">
+                <AccordionTrigger>{`${t("Goalies")} (${
+                  goaliesPreview[selectedPoolUser.id].filter(
+                    (p) => p.playingAgainst !== null
+                  ).length
+                }/${poolInfo.settings.number_goalies})`}</AccordionTrigger>
+                <AccordionContent>
+                  {PreviewPlayersTable(
+                    goaliesPreview[selectedPoolUser.id],
+                    getFormatedDateTitle(
+                      selectedPoolUser.name,
+                      "List of goalies playing for"
+                    )
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </>
+        ) : null}
       </div>
     </div>
   );

@@ -34,17 +34,10 @@ import React from "react";
 import UndoButton from "@/components/undo-button";
 import { useSession } from "@/context/useSessionData";
 import StartingRoster from "@/components/starting-roster";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { PoolerUserSelector } from "@/components/pool-user-selector";
 
 export default function DraftPage() {
-  const { poolInfo, selectedParticipant, updateSelectedParticipant } =
-    usePoolContext();
+  const { poolInfo, selectedParticipant } = usePoolContext();
   const t = useTranslations();
   const { sendSocketCommand } = useSocketContext();
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -52,8 +45,6 @@ export default function DraftPage() {
     null
   );
   const userSession = useSession();
-
-  // TODO: use a new draft context that holds the value of which user is currently drafting.
 
   const onPlayerSelect = async (player: Player) => {
     // TODO: Add validation:
@@ -141,23 +132,7 @@ export default function DraftPage() {
               <DialogTitle>{t("PoolersRoster")}</DialogTitle>
             </DialogHeader>
             <ScrollArea className="p-0">
-              <Select
-                value={selectedParticipant}
-                onValueChange={(userName) =>
-                  updateSelectedParticipant(userName)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {poolInfo.participants?.map((user: PoolUser) => (
-                    <SelectItem key={user.id} value={user.name}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <PoolerUserSelector />
               <StartingRoster
                 key={selectedParticipant}
                 userRoster={getPoolerActivePlayers(

@@ -70,6 +70,7 @@ import { toast } from "@/hooks/use-toast";
 import InformationIcon from "@/components/information-box";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import StartingRoster from "@/components/starting-roster";
+import { PoolerUserSelector } from "@/components/pool-user-selector";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -761,7 +762,7 @@ export default function CumulativeTab() {
 
   const ParticipantRoster = (participant: PoolUser) => (
     <>
-      <Dialog>
+      <Dialog key={participant.id}>
         <DialogTrigger asChild>
           <Button variant="outline">{t("ModifyRoster")}</Button>
         </DialogTrigger>
@@ -972,27 +973,8 @@ export default function CumulativeTab() {
         </TabsContent>
       </Tabs>
       <div className="pt-3">
-        <Tabs
-          defaultValue={selectedParticipant}
-          value={selectedParticipant}
-          onValueChange={(userName) => updateSelectedParticipant(userName)}
-        >
-          <div className="overflow-auto">
-            <TabsList>
-              {poolInfo.participants?.map((user) => (
-                <TabsTrigger key={user.id} value={user.name}>
-                  {user.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-          {poolInfo.participants?.map((user) => (
-            <TabsContent key={user.id} value={user.name}>
-              {ParticipantRoster(user)}
-            </TabsContent>
-          ))}
-        </Tabs>
-        {selectedParticipant}
+        <PoolerUserSelector />
+        {ParticipantRoster(selectedPoolUser)}
       </div>
     </div>
   );

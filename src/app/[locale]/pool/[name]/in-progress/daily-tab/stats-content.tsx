@@ -36,6 +36,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { usePoolContext } from "@/context/pool-context";
 import { Row } from "@tanstack/react-table";
 import { getServerSideDailyLeaders } from "@/actions/daily-leaders";
+import { PoolerUserSelector } from "@/components/pool-user-selector";
 
 export class SkatersDailyTotalPoints {
   constructor(skaters: SkaterDailyInfo[], skaters_settings: SkaterSettings) {
@@ -218,6 +219,7 @@ export default function DailyStatsContent() {
     poolInfo,
     dictUsers,
     selectedParticipant,
+    selectedPoolUser,
     updateSelectedParticipant,
     playersOwner,
   } = usePoolContext();
@@ -654,88 +656,70 @@ export default function DailyStatsContent() {
         ) : null}
       </div>
       <div className="py-5 px-0 sm:px-5">
-        <Tabs
-          defaultValue={selectedParticipant}
-          value={selectedParticipant}
-          onValueChange={(userName) => updateSelectedParticipant(userName)}
-        >
-          <TabsList>
-            {poolInfo.participants?.map((user) => (
-              <TabsTrigger key={user.id} value={user.name}>
-                {user.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {poolInfo.participants?.map((user) => (
-            <TabsContent key={user.id} value={user.name}>
-              {forwardsDailyStats &&
-              defendersDailyStats &&
-              goaliesDailyStats ? (
-                <>
-                  <Accordion
-                    key={`${user.id}-forwards`}
-                    type="single"
-                    collapsible
-                    defaultValue="forwards"
-                  >
-                    <AccordionItem value="forwards">
-                      <AccordionTrigger>{t("Forwards")}</AccordionTrigger>
-                      <AccordionContent>
-                        {SkatersTable(
-                          forwardsDailyStats[user.id],
-                          SkaterDailyColumn,
-                          getFormatedDateTitle(
-                            user.name,
-                            "Daily points made by forwards for"
-                          )
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                  <Accordion
-                    key={`${user.id}-defense`}
-                    type="single"
-                    collapsible
-                    defaultValue="defense"
-                  >
-                    <AccordionItem value="defense">
-                      <AccordionTrigger>{t("Defense")}</AccordionTrigger>
-                      <AccordionContent>
-                        {SkatersTable(
-                          defendersDailyStats[user.id],
-                          SkaterDailyColumn,
-                          getFormatedDateTitle(
-                            user.name,
-                            "Daily points made by defense for"
-                          )
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                  <Accordion
-                    key={`${user.id}-goalies`}
-                    type="single"
-                    collapsible
-                    defaultValue="goalies"
-                  >
-                    <AccordionItem value="goalies">
-                      <AccordionTrigger>{t("Goalies")}</AccordionTrigger>
-                      <AccordionContent>
-                        {GoaliesTable(
-                          goaliesDailyStats[user.id],
-                          getFormatedDateTitle(
-                            user.name,
-                            "Daily points made by goalies for"
-                          )
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </>
-              ) : null}
-            </TabsContent>
-          ))}
-        </Tabs>
+        <PoolerUserSelector />
+        {forwardsDailyStats && defendersDailyStats && goaliesDailyStats ? (
+          <>
+            <Accordion
+              key={`${selectedPoolUser.id}-forwards`}
+              type="single"
+              collapsible
+              defaultValue="forwards"
+            >
+              <AccordionItem value="forwards">
+                <AccordionTrigger>{t("Forwards")}</AccordionTrigger>
+                <AccordionContent>
+                  {SkatersTable(
+                    forwardsDailyStats[selectedPoolUser.id],
+                    SkaterDailyColumn,
+                    getFormatedDateTitle(
+                      selectedPoolUser.name,
+                      "Daily points made by forwards for"
+                    )
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+            <Accordion
+              key={`${selectedPoolUser.id}-defense`}
+              type="single"
+              collapsible
+              defaultValue="defense"
+            >
+              <AccordionItem value="defense">
+                <AccordionTrigger>{t("Defense")}</AccordionTrigger>
+                <AccordionContent>
+                  {SkatersTable(
+                    defendersDailyStats[selectedPoolUser.id],
+                    SkaterDailyColumn,
+                    getFormatedDateTitle(
+                      selectedPoolUser.name,
+                      "Daily points made by defense for"
+                    )
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+            <Accordion
+              key={`${selectedPoolUser.id}-goalies`}
+              type="single"
+              collapsible
+              defaultValue="goalies"
+            >
+              <AccordionItem value="goalies">
+                <AccordionTrigger>{t("Goalies")}</AccordionTrigger>
+                <AccordionContent>
+                  {GoaliesTable(
+                    goaliesDailyStats[selectedPoolUser.id],
+                    getFormatedDateTitle(
+                      selectedPoolUser.name,
+                      "Daily points made by goalies for"
+                    )
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </>
+        ) : null}
       </div>
       {dailyLeaders ? (
         <Tabs defaultValue="scoringLeaders">
