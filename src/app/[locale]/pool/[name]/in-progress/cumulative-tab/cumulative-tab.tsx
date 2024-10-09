@@ -447,12 +447,16 @@ export default function CumulativeTab() {
       // Now parse all the pool date from the start of the season to the current date.
       const startDate = new Date(poolInfo.season_start);
       let endDate = selectedDate ? new Date(selectedDate) : new Date();
+
       if (endDate < startDate) {
         endDate = new Date(poolInfo.season_start);
       }
 
+      console.log(`itterating from ${startDate} to ${endDate}`);
+
       for (let j = startDate; j <= endDate; j.setDate(j.getDate() + 1)) {
         const jDate = j.toISOString().slice(0, 10);
+        console.log(jDate);
 
         for (let i = 0; i < poolInfo.participants.length; i += 1) {
           const participant = poolInfo.participants[i].id;
