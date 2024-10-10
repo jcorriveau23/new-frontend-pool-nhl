@@ -13,6 +13,8 @@ export interface PoolContextProps {
   selectedPoolUser: PoolUser;
   updateSelectedParticipant: (participant: string) => void;
 
+  lastFormatDate: string | null;
+
   // Map the player id to its pool owner.
   playersOwner: Record<number, string>;
   updatePlayersOwner: (poolInfo: Pool) => void;
@@ -230,6 +232,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     selectedParticipant,
     selectedPoolUser,
     updateSelectedParticipant,
+    lastFormatDate: findLastDateInDb(poolInfo),
     playersOwner,
     updatePlayersOwner,
     poolInfo,
