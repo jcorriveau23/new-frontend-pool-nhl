@@ -448,9 +448,9 @@ export default function CumulativeTab() {
       // Now parse all the pool date from the start of the season to the current date.
       const startDate = new Date(poolInfo.season_start);
       let endDate = selectedDate
-        ? new Date(selectedDate)
+        ? new Date(selectedDate + "T00:00:00")
         : lastFormatDate
-        ? new Date(lastFormatDate)
+        ? new Date(lastFormatDate + "T00:00:00")
         : new Date();
 
       if (endDate < startDate) {
