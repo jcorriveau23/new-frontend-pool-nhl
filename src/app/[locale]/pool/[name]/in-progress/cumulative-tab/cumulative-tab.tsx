@@ -446,7 +446,7 @@ export default function CumulativeTab() {
       }
 
       // Now parse all the pool date from the start of the season to the current date.
-      const startDate = new Date(poolInfo.season_start);
+      const startDate = new Date(poolInfo.season_start + "T00:00:00");
       let endDate = selectedDate
         ? selectedDate
         : lastFormatDate
@@ -454,14 +454,13 @@ export default function CumulativeTab() {
         : new Date();
 
       if (endDate < startDate) {
-        endDate = new Date(poolInfo.season_start);
+        endDate = new Date(poolInfo.season_start + "T00:00:00");
       }
 
       console.log(`itterating from ${startDate} to ${endDate}`);
 
       for (let j = startDate; j <= endDate; j.setDate(j.getDate() + 1)) {
         const jDate = j.toISOString().slice(0, 10);
-        console.log(jDate);
 
         for (let i = 0; i < poolInfo.participants.length; i += 1) {
           const participant = poolInfo.participants[i].id;
@@ -771,107 +770,117 @@ export default function CumulativeTab() {
 
   const ParticipantRoster = (participant: PoolUser) => (
     <>
-      <Dialog key={participant.id}>
-        <DialogTrigger asChild>
-          <Button variant="outline">{t("ModifyRoster")}</Button>
-        </DialogTrigger>
-        <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
-          <DialogHeader>
-            <DialogTitle>{t("ModifyRoster")}</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="p-0">
-            <StartingRoster
-              userRoster={getPoolerActivePlayers(
-                poolInfo.context!,
-                selectedPoolUser
+      {poolInfo.settings.number_reservists > 0 ? (
+        <Dialog key={participant.id}>
+          <DialogTrigger asChild>
+            <Button variant="outline">{t("ModifyRoster")}</Button>
+          </DialogTrigger>
+          <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
+            <DialogHeader>
+              <DialogTitle>{t("ModifyRoster")}</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="p-0">
+              <StartingRoster
+                userRoster={getPoolerActivePlayers(
+                  poolInfo.context!,
+                  selectedPoolUser
+                )}
+                teamSalaryCap={poolInfo.settings.salary_cap}
+              />
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      ) : null}
+      {poolInfo.settings.number_forwards > 0 ? (
+        <Accordion type="single" collapsible defaultValue="forwards">
+          <AccordionItem value="forwards">
+            <AccordionTrigger>{`${t("Forwards")} (${
+              playerStats[participant.id].forwards.filter(
+                (player) =>
+                  player.status === PlayerStatus.InAlignment ||
+                  player.status === PlayerStatus.PointsIgnored
+              ).length
+            }/${poolInfo.settings.number_forwards})`}</AccordionTrigger>
+            <AccordionContent>
+              {PlayerTable(
+                playerStats[participant.id].forwards,
+                ForwardColumn,
+                getFormatedPlayersTableTitle(
+                  participant.name,
+                  "Total points made by forwards for"
+                )
               )}
-              teamSalaryCap={poolInfo.settings.salary_cap}
-            />
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-      <Accordion type="single" collapsible defaultValue="forwards">
-        <AccordionItem value="forwards">
-          <AccordionTrigger>{`${t("Forwards")} (${
-            playerStats[participant.id].forwards.filter(
-              (player) =>
-                player.status === PlayerStatus.InAlignment ||
-                player.status === PlayerStatus.PointsIgnored
-            ).length
-          }/${poolInfo.settings.number_forwards})`}</AccordionTrigger>
-          <AccordionContent>
-            {PlayerTable(
-              playerStats[participant.id].forwards,
-              ForwardColumn,
-              getFormatedPlayersTableTitle(
-                participant.name,
-                "Total points made by forwards for"
-              )
-            )}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-      <Accordion type="single" collapsible defaultValue="defense">
-        <AccordionItem value="defense">
-          <AccordionTrigger>{`${t("Defense")} (${
-            playerStats[participant.id].defense.filter(
-              (player) =>
-                player.status === PlayerStatus.InAlignment ||
-                player.status === PlayerStatus.PointsIgnored
-            ).length
-          }/${poolInfo.settings.number_defenders})`}</AccordionTrigger>
-          <AccordionContent>
-            {PlayerTable(
-              playerStats[participant.id].defense,
-              DefenseColumn,
-              getFormatedPlayersTableTitle(
-                participant.name,
-                "Total points made by defense for"
-              )
-            )}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-      <Accordion type="single" collapsible defaultValue="goalies">
-        <AccordionItem value="goalies">
-          <AccordionTrigger>{`${t("Goalies")} (${
-            playerStats[participant.id].goalies.filter(
-              (player) =>
-                player.status === PlayerStatus.InAlignment ||
-                player.status === PlayerStatus.PointsIgnored
-            ).length
-          }/${poolInfo.settings.number_goalies})`}</AccordionTrigger>
-          <AccordionContent>
-            {PlayerTable(
-              playerStats[participant.id].goalies,
-              GoalieColumn,
-              getFormatedPlayersTableTitle(
-                participant.name,
-                "Total points made by goalies for"
-              )
-            )}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-      <Accordion type="single" collapsible defaultValue="reservists">
-        <AccordionItem value="reservists">
-          <AccordionTrigger>{t("Reservists")}</AccordionTrigger>
-          <AccordionContent>
-            {ReservistTable(
-              poolInfo.context?.pooler_roster[participant.id]
-                .chosen_reservists as number[],
-              ReservistColumn
-            )}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-      {poolInfo.settings.dynasty_settings?.tradable_picks ? (
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      ) : null}
+      {poolInfo.settings.number_defenders > 0 ? (
+        <Accordion type="single" collapsible defaultValue="defense">
+          <AccordionItem value="defense">
+            <AccordionTrigger>{`${t("Defense")} (${
+              playerStats[participant.id].defense.filter(
+                (player) =>
+                  player.status === PlayerStatus.InAlignment ||
+                  player.status === PlayerStatus.PointsIgnored
+              ).length
+            }/${poolInfo.settings.number_defenders})`}</AccordionTrigger>
+            <AccordionContent>
+              {PlayerTable(
+                playerStats[participant.id].defense,
+                DefenseColumn,
+                getFormatedPlayersTableTitle(
+                  participant.name,
+                  "Total points made by defense for"
+                )
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      ) : null}
+      {poolInfo.settings.number_goalies > 0 ? (
+        <Accordion type="single" collapsible defaultValue="goalies">
+          <AccordionItem value="goalies">
+            <AccordionTrigger>{`${t("Goalies")} (${
+              playerStats[participant.id].goalies.filter(
+                (player) =>
+                  player.status === PlayerStatus.InAlignment ||
+                  player.status === PlayerStatus.PointsIgnored
+              ).length
+            }/${poolInfo.settings.number_goalies})`}</AccordionTrigger>
+            <AccordionContent>
+              {PlayerTable(
+                playerStats[participant.id].goalies,
+                GoalieColumn,
+                getFormatedPlayersTableTitle(
+                  participant.name,
+                  "Total points made by goalies for"
+                )
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      ) : null}
+      {poolInfo.settings.number_reservists > 0 ? (
+        <Accordion type="single" collapsible defaultValue="reservists">
+          <AccordionItem value="reservists">
+            <AccordionTrigger>{t("Reservists")}</AccordionTrigger>
+            <AccordionContent>
+              {ReservistTable(
+                poolInfo.context?.pooler_roster[participant.id]
+                  .chosen_reservists as number[],
+                ReservistColumn
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      ) : null}
+      {poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0 ? (
         <Accordion type="single" collapsible defaultValue="picks">
           <AccordionItem value="picks">
             <AccordionTrigger>{t("Next season picks")}</AccordionTrigger>
             <AccordionContent>
-              <PickList participant={selectedParticipant} poolInfo={poolInfo} />
+              <PickList poolUser={selectedPoolUser} poolInfo={poolInfo} />
             </AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -933,11 +942,23 @@ export default function CumulativeTab() {
     </Dialog>
   );
 
+  const CumulatedInformationBox = () => {
+    return poolInfo.context?.score_by_day?.[lastFormatDate!]?.[
+      selectedPoolUser.id
+    ]?.is_cumulated ? null : (
+      <InformationIcon
+        text={t("notCumulatedYet", {
+          selectedDate: lastFormatDate,
+        })}
+      />
+    );
+  };
+
   return (
     <div>
       <Tabs defaultValue="totalRanking">
         {poolInfo.status === PoolState.InProgress &&
-        new Date(poolInfo.season_end) < currentDate &&
+        new Date(poolInfo.season_end + "T00:00:00") < currentDate &&
         hasPoolPrivilege(userSession.info?.userID, poolInfo) ? (
           <Button onClick={markAsFinal}>{t("MarkAsFinal")}</Button>
         ) : null}
@@ -955,16 +976,8 @@ export default function CumulativeTab() {
             <TabsTrigger value="goaliesRanking">{t("Goalies")}</TabsTrigger>
             {poolInfo.status === PoolState.Final ? (
               <InformationIcon text={t("FinalPoolResult")} />
-            ) : poolInfo.context?.score_by_day?.[
-                (selectedDate ?? currentDate).toISOString().slice(0, 10)
-              ]?.[selectedParticipant]?.is_cumulated ? null : (
-              <InformationIcon
-                text={t("notCumulatedYet", {
-                  selectedDate: (selectedDate ?? currentDate)
-                    .toISOString()
-                    .slice(0, 10),
-                })}
-              />
+            ) : (
+              CumulatedInformationBox()
             )}
           </TabsList>
         </div>
@@ -981,7 +994,7 @@ export default function CumulativeTab() {
           {TotalTable(ranking, GoaliesTotalColumn, t("Goalies Ranking"))}
         </TabsContent>
       </Tabs>
-      <div className="pt-3">
+      <div className="pt-3 space-y-2">
         <PoolerUserSelector />
         {ParticipantRoster(selectedPoolUser)}
       </div>

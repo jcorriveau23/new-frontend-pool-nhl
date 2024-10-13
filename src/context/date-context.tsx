@@ -11,6 +11,7 @@ import { useSearchParams } from "next/navigation";
 
 interface DateContextProps {
   currentDate: Date;
+  nhlCurrentDate: string | null;
   selectedDate: Date | null;
   score: Score | null;
   updateDate: (newDate: Date | null) => void;
@@ -35,6 +36,9 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
   const router = useRouter();
   const pathName = usePathname();
   const [score, setScore] = React.useState<Score | null>(null);
+  const [nhlCurrentDate, setNhlCurrentDate] = React.useState<string | null>(
+    null
+  );
   const searchParams = useSearchParams();
   const querySelectedDate = searchParams.get("selectedDate") ?? "now";
   const currentParams = new URLSearchParams(searchParams.toString());
@@ -46,7 +50,7 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
   // Update the selected date based on the query parameter.
   useEffect(() => {
     if (querySelectedDate) {
-      const parsedDate = new Date(querySelectedDate);
+      const parsedDate = new Date(querySelectedDate + "T00:00:00");
       if (!isNaN(parsedDate.getTime())) {
         setSelectedDate(parsedDate);
       }
@@ -59,6 +63,7 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
       const score = await getServerSideDailyGames(querySelectedDate);
       if (score !== null) {
         setScore(score);
+        setNhlCurrentDate(score.currentDate);
       }
     };
 
@@ -94,6 +99,7 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
 
   const contextValue: DateContextProps = {
     currentDate,
+    nhlCurrentDate,
     selectedDate,
     score,
     updateDate,

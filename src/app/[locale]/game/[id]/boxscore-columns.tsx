@@ -47,7 +47,7 @@ export const skaterColumns: ColumnDef<SkaterStats>[] = [
     ),
   },
   {
-    accessorKey: "shots",
+    accessorKey: "sog",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="SOG" />
     ),

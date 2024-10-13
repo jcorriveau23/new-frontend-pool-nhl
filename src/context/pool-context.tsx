@@ -104,11 +104,10 @@ const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
 export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
   // @ts-ignore
   const poolDb: Pool = await db.pools.get({ name: name });
-  console.log(poolDb);
 
   const lastFormatDate = findLastDateInDb(poolDb);
 
-  console.log(lastFormatDate);
+  console.log(`Last format date ${lastFormatDate} found in indexed db.`);
   let res;
 
   // TODO: risk here since we used the start date of the pool stored locally in database.
@@ -125,13 +124,11 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
 
   let data: Pool = await res.json();
 
-  console.log(data);
   if (poolDb) {
     // If we detect that the pool stored in the database date_updated field does not match the one
     // from the server, we will force a complete update.
     if (data.date_updated !== poolDb.date_updated) {
       res = await fetch(`/api-rust/pool/${name}`);
-      console.log("date was updated in the pool");
 
       if (!res.ok) {
         return await res.text();
@@ -142,7 +139,7 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
       // This is in the case we called the pool information for only a range of date since the rest of the date
       // were already stored and valid in the client database, we then only merge the needed data of the client database pool.
       mergeScoreByDay(data, poolDb);
-      console.log("merge score");
+      console.log("merging score in database.");
       // TODO hash the results and compare with server hash to determine if an update is needed.
       // If we do that, we could remove the logic of comparing the field date_updated above that would be cleaner and more robust.
     }

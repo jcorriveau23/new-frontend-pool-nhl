@@ -16,8 +16,8 @@ export default function DailyTab() {
   const { poolInfo } = usePoolContext();
   const t = useTranslations();
 
-  const seasonEndDate = new Date(poolInfo.season_end);
-  const seasonStartDate = new Date(poolInfo.season_start);
+  const seasonEndDate = new Date(poolInfo.season_end + "T00:00:00");
+  const seasonStartDate = new Date(poolInfo.season_start + "T00:00:00");
 
   const dateOfInterest = selectedDate ?? currentDate;
 

@@ -337,7 +337,7 @@
     "shots": "shots",
     "DraftOrderSelector": "Draft Order",
     "RandomOrder": "Random Order",
-    "ModifyRoster": "Modifier Roster",
+    "ModifyRoster": "Modify Roster",
     "SocketNotConnected": "The websocket connection needs to be active to send this request.",
     "UserNotConnected": "You need to be connected to an account to send this request."
 }

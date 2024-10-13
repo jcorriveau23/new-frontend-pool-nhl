@@ -27,7 +27,7 @@ interface DailyHistory {
 }
 
 export default function HistoryTab() {
-  const { poolInfo } = usePoolContext();
+  const { poolInfo, lastFormatDate } = usePoolContext();
   const t = useTranslations();
   const [history, setHistory] = React.useState<DailyHistory[] | null>(null);
 
@@ -89,8 +89,10 @@ export default function HistoryTab() {
       return null;
     }
 
-    const startDate = new Date(poolInfo.season_start);
-    const endDate = new Date();
+    const startDate = new Date(poolInfo.season_start + "T00:00:00");
+    const endDate = lastFormatDate
+      ? new Date(lastFormatDate + "T00:00:00")
+      : new Date();
 
     const currentRoster: Map<string, string[]> = new Map();
     const historyTmp: DailyHistory[] = [];

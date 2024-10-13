@@ -9,7 +9,6 @@ export interface GoalieStats {
     goals: number;
     decision?: string | null;
     savePercentage?: number | null;
-    OT?: boolean | null;
 }
 
 export interface DailySkater {

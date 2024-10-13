@@ -342,16 +342,27 @@ export default function DailyStatsContent() {
 
       goalieDailyStats.goals = leaders.goalies[i].stats.goals;
       goalieDailyStats.assists = leaders.goalies[i].stats.assists;
-      if (leaders.goalies[i].stats.decision == "W") {
-        goalieDailyStats.status =
-          leaders.goalies[i].stats.savePercentage === 1.0
-            ? GoalieGameStatus.Shutout
-            : GoalieGameStatus.Win;
-      } else if (leaders.goalies[i].stats.OT) {
-        goalieDailyStats.status = GoalieGameStatus.OverTime;
-      } else {
-        goalieDailyStats.status = GoalieGameStatus.Losses;
+
+      if (leaders.goalies[i].stats.decision !== null) {
+        switch (leaders.goalies[i].stats.decision) {
+          case "W": {
+            goalieDailyStats.status =
+              leaders.goalies[i].stats.savePercentage === 1.0
+                ? GoalieGameStatus.Shutout
+                : GoalieGameStatus.Win;
+            break;
+          }
+          case "L": {
+            goalieDailyStats.status = GoalieGameStatus.Losses;
+            break;
+          }
+          case "O": {
+            goalieDailyStats.status = GoalieGameStatus.OverTime;
+            break;
+          }
+        }
       }
+
       goalieDailyStats.poolPoints = goalieDailyStats.getTotalPoolPts(settings);
 
       return goalieDailyStats;
