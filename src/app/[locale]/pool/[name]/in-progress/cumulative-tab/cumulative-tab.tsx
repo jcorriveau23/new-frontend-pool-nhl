@@ -770,26 +770,29 @@ export default function CumulativeTab() {
 
   const ParticipantRoster = (participant: PoolUser) => (
     <>
-      <Dialog key={participant.id}>
-        <DialogTrigger asChild>
-          <Button variant="outline">{t("ModifyRoster")}</Button>
-        </DialogTrigger>
-        <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
-          <DialogHeader>
-            <DialogTitle>{t("ModifyRoster")}</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="p-0">
-            <StartingRoster
-              userRoster={getPoolerActivePlayers(
-                poolInfo.context!,
-                selectedPoolUser
-              )}
-              teamSalaryCap={poolInfo.settings.salary_cap}
-            />
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+      {userSession.info?.userID === poolInfo.owner ||
+      poolInfo.settings.number_reservists > 0 ? (
+        <Dialog key={participant.id}>
+          <DialogTrigger asChild>
+            <Button variant="outline">{t("ModifyRoster")}</Button>
+          </DialogTrigger>
+          <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
+            <DialogHeader>
+              <DialogTitle>{t("ModifyRoster")}</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="p-0">
+              <StartingRoster
+                userRoster={getPoolerActivePlayers(
+                  poolInfo.context!,
+                  selectedPoolUser
+                )}
+                teamSalaryCap={poolInfo.settings.salary_cap}
+              />
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      ) : null}
       {poolInfo.settings.number_forwards > 0 ? (
         <Accordion type="single" collapsible defaultValue="forwards">
           <AccordionItem value="forwards">

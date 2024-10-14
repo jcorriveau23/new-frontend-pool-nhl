@@ -27,6 +27,7 @@ import { toast } from "@/hooks/use-toast";
 import { useSession } from "@/context/useSessionData";
 import { Button } from "./ui/button";
 import { PlusCircledIcon, MinusCircledIcon } from "@radix-ui/react-icons";
+import PlayerSearchDialog from "./search-players";
 
 interface Props {
   userRoster: {
@@ -309,8 +310,55 @@ export default function StartingRoster(props: Props) {
     return true;
   };
 
+  const onPlayerSelect = async (player: Player) => {
+    const res = await fetch("/api-rust/add-player", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userSession.info?.jwt}`,
+      },
+      body: JSON.stringify({
+        pool_name: poolInfo.name,
+        added_player_user_id: props.userRoster.user.id,
+        player: player,
+      }),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      toast({
+        variant: "destructive",
+        title: t("CouldNotAddPlayerToRoster", {
+          playerName: player.name,
+          userName: dictUsers[props.userRoster.user.id].name,
+          error: error,
+        }),
+        duration: 5000,
+      });
+      return false;
+    }
+
+    const data = await res.json();
+    updatePoolInfo(data);
+    toast({
+      title: t("SuccessAddPlayerToRoster", {
+        playerName: player.name,
+        userName: dictUsers[props.userRoster.user.id].name,
+      }),
+      duration: 2000,
+    });
+
+    return true;
+  };
+
   return (
     <>
+      {userSession.info?.userID === poolInfo.owner && (
+        <PlayerSearchDialog
+          label={t("Add player")}
+          onPlayerSelect={(player) => onPlayerSelect(player)}
+        />
+      )}
       {props.teamSalaryCap
         ? SalarySummaryTable(
             {
@@ -322,7 +370,6 @@ export default function StartingRoster(props: Props) {
             props.teamSalaryCap
           )
         : null}
-
       {RosterTable(
         props.userRoster.user,
         selectedForwards,
