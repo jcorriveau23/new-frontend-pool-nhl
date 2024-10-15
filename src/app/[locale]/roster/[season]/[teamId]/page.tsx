@@ -151,6 +151,7 @@ export default async function Standing({
               }}
               meta={null}
               title={null}
+              tableFooter={null}
             />
           </AccordionContent>
         </AccordionItem>
@@ -173,6 +174,7 @@ export default async function Standing({
               }}
               meta={null}
               title={null}
+              tableFooter={null}
             />
           </AccordionContent>
         </AccordionItem>

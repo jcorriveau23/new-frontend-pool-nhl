@@ -71,6 +71,7 @@ import InformationIcon from "@/components/information-box";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import StartingRoster from "@/components/starting-roster";
 import { PoolerUserSelector } from "@/components/pool-user-selector";
+import { TableCell, TableRow } from "@/components/ui/table";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -173,10 +174,9 @@ export class ParticipantsRoster {
 
 export class SkaterTotal {
   constructor(skaters: SkaterInfo[], skaters_settings: SkaterSettings) {
-    this.numberOfGame = skaters.reduce(
-      (acc, skater) => acc + skater.numberOfGame,
-      0
-    );
+    this.numberOfGame = skaters
+      .filter((skater) => skater.status !== PlayerStatus.PointsIgnored)
+      .reduce((acc, skater) => acc + skater.numberOfGame, 0);
     this.goals = skaters
       .filter((skater) => skater.status !== PlayerStatus.PointsIgnored)
       .reduce((acc, skater) => acc + skater.goals, 0);
@@ -216,10 +216,9 @@ export class SkaterTotal {
 
 export class GoalieTotal {
   constructor(goalies: GoalieInfo[], settings: GoaliesSettings) {
-    this.numberOfGame = goalies.reduce(
-      (acc, goalie) => acc + goalie.numberOfGame,
-      0
-    );
+    this.numberOfGame = goalies
+      .filter((skater) => skater.status !== PlayerStatus.PointsIgnored)
+      .reduce((acc, goalie) => acc + goalie.numberOfGame, 0);
     this.goals = goalies
       .filter((skater) => skater.status !== PlayerStatus.PointsIgnored)
       .reduce((acc, goalie) => acc + goalie.goals, 0);
@@ -721,13 +720,15 @@ export default function CumulativeTab() {
         t: t,
       }}
       title={title}
+      tableFooter={null}
     />
   );
 
-  const PlayerTable = (
+  const SkaterTable = (
     rows: any[],
-    columns: ColumnDef<any>[],
-    title: string
+    columns: ColumnDef<SkaterInfo>[],
+    title: string,
+    total: SkaterTotal
   ) => (
     <DataTable
       data={rows}
@@ -748,6 +749,60 @@ export default function CumulativeTab() {
         t: t,
       }}
       title={title}
+      tableFooter={
+        <TableRow>
+          <TableCell colSpan={4}>{t("Total")}</TableCell>
+          <TableCell>{total.numberOfGame}</TableCell>
+          <TableCell>{total.goals}</TableCell>
+          <TableCell>{total.assists}</TableCell>
+          <TableCell>{total.totalPoints}</TableCell>
+          <TableCell>{total.hattricks}</TableCell>
+          <TableCell>{total.shootoutGoals}</TableCell>
+          <TableCell>{total.totalPoolPoints}</TableCell>
+          <TableCell>{total.totalPoolPoints / total.numberOfGame}</TableCell>
+        </TableRow>
+      }
+    />
+  );
+
+  const GoalieTable = (
+    rows: any[],
+    columns: ColumnDef<GoalieInfo>[],
+    title: string,
+    total: GoalieTotal
+  ) => (
+    <DataTable
+      data={rows}
+      columns={columns}
+      initialState={{
+        sorting: [
+          {
+            id: "poolPoints",
+            desc: true,
+          },
+        ],
+        columnPinning: { left: ["number", "status", "player"] },
+      }}
+      meta={{
+        props: poolInfo,
+        getRowStyles: () => null,
+        onRowClick: () => null,
+        t: t,
+      }}
+      title={title}
+      tableFooter={
+        <TableRow>
+          <TableCell colSpan={4}>{t("Total")}</TableCell>
+          <TableCell>{total.numberOfGame}</TableCell>
+          <TableCell>{total.wins}</TableCell>
+          <TableCell>{total.shutouts}</TableCell>
+          <TableCell>{total.overtimeLosses}</TableCell>
+          <TableCell>{total.goals}</TableCell>
+          <TableCell>{total.assists}</TableCell>
+          <TableCell>{total.totalPoolPoints}</TableCell>
+          <TableCell>{total.totalPoolPoints / total.numberOfGame}</TableCell>
+        </TableRow>
+      }
     />
   );
 
@@ -765,6 +820,7 @@ export default function CumulativeTab() {
         t: t,
       }}
       title={t("Available reservists")}
+      tableFooter={null}
     />
   );
 
@@ -804,13 +860,16 @@ export default function CumulativeTab() {
               ).length
             }/${poolInfo.settings.number_forwards})`}</AccordionTrigger>
             <AccordionContent>
-              {PlayerTable(
+              {SkaterTable(
                 playerStats[participant.id].forwards,
                 ForwardColumn,
                 getFormatedPlayersTableTitle(
                   participant.name,
                   "Total points made by forwards for"
-                )
+                ),
+                ranking.find(
+                  (rank) => rank.participant === selectedPoolUser.name
+                )!.forwards
               )}
             </AccordionContent>
           </AccordionItem>
@@ -827,13 +886,16 @@ export default function CumulativeTab() {
               ).length
             }/${poolInfo.settings.number_defenders})`}</AccordionTrigger>
             <AccordionContent>
-              {PlayerTable(
+              {SkaterTable(
                 playerStats[participant.id].defense,
                 DefenseColumn,
                 getFormatedPlayersTableTitle(
                   participant.name,
                   "Total points made by defense for"
-                )
+                ),
+                ranking.find(
+                  (rank) => rank.participant === selectedPoolUser.name
+                )!.defense
               )}
             </AccordionContent>
           </AccordionItem>
@@ -850,13 +912,16 @@ export default function CumulativeTab() {
               ).length
             }/${poolInfo.settings.number_goalies})`}</AccordionTrigger>
             <AccordionContent>
-              {PlayerTable(
+              {GoalieTable(
                 playerStats[participant.id].goalies,
                 GoalieColumn,
                 getFormatedPlayersTableTitle(
                   participant.name,
                   "Total points made by goalies for"
-                )
+                ),
+                ranking.find(
+                  (rank) => rank.participant === selectedPoolUser.name
+                )!.goalies
               )}
             </AccordionContent>
           </AccordionItem>

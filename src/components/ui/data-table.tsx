@@ -16,6 +16,7 @@ import {
   TableBody,
   TableCaption,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -38,6 +39,7 @@ interface DataTableProps<TData, TValue> {
   initialState: any | null;
   meta: any | null;
   title: string | null;
+  tableFooter: React.ReactElement | null;
 }
 
 const getPinnedClassName = (isPinned: "left" | "right" | false) => {
@@ -63,6 +65,7 @@ export function DataTable<TData, TValue>({
   meta,
   initialState,
   title,
+  tableFooter = null,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>(
     initialState?.sorting ?? []
@@ -158,6 +161,7 @@ export function DataTable<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
+          {tableFooter ? <TableFooter>{tableFooter}</TableFooter> : null}
         </Table>
       </div>
     </div>
