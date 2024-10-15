@@ -759,7 +759,11 @@ export default function CumulativeTab() {
           <TableCell>{total.hattricks}</TableCell>
           <TableCell>{total.shootoutGoals}</TableCell>
           <TableCell>{total.totalPoolPoints}</TableCell>
-          <TableCell>{total.totalPoolPoints / total.numberOfGame}</TableCell>
+          <TableCell>
+            {total.numberOfGame > 0
+              ? (total.totalPoolPoints / total.numberOfGame).toFixed(3)
+              : null}
+          </TableCell>
         </TableRow>
       }
     />
@@ -800,7 +804,11 @@ export default function CumulativeTab() {
           <TableCell>{total.goals}</TableCell>
           <TableCell>{total.assists}</TableCell>
           <TableCell>{total.totalPoolPoints}</TableCell>
-          <TableCell>{total.totalPoolPoints / total.numberOfGame}</TableCell>
+          <TableCell>
+            {total.numberOfGame > 0
+              ? (total.totalPoolPoints / total.numberOfGame).toFixed(3)
+              : null}
+          </TableCell>
         </TableRow>
       }
     />
