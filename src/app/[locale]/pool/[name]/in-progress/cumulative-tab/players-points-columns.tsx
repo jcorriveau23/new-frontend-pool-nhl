@@ -25,11 +25,11 @@ const getWarningMessage = (playerStatus: PlayerStatus) => {
     case PlayerStatus.InAlignment:
       return null;
     case PlayerStatus.IsReservists:
-      return "is currently a reservist";
+      return "IsReservist";
     case PlayerStatus.PointsIgnored:
-      return "points are ignored";
+      return "PointsIgnored";
     case PlayerStatus.Traded:
-      return "was traded to another pooler";
+      return "TradedToOtherPooler";
   }
 };
 
@@ -42,9 +42,9 @@ const getWarningCell = (
   }
   return (
     <InformationIcon
-      text={`${meta?.props.context?.players[player.id].name} ${meta?.t(
-        getWarningMessage(player.status)
-      )}`}
+      text={`${meta?.t(getWarningMessage(player.status), {
+        playerName: meta.props.context?.players[player.id].name,
+      })}`}
     />
   );
 };

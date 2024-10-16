@@ -63,6 +63,7 @@ export default async function GameBoxscore(props: Props) {
       }}
       meta={null}
       title={title}
+      tableFooter={null}
     />
   );
 
@@ -81,6 +82,7 @@ export default async function GameBoxscore(props: Props) {
       }}
       meta={null}
       title={title}
+      tableFooter={null}
     />
   );
 

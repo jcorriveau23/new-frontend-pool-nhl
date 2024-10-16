@@ -513,6 +513,7 @@ export default function DailyStatsContent() {
         t: t,
       }}
       title={title}
+      tableFooter={null}
     />
   );
 
@@ -536,6 +537,7 @@ export default function DailyStatsContent() {
         t: t,
       }}
       title={title}
+      tableFooter={null}
     />
   );
 
@@ -569,6 +571,7 @@ export default function DailyStatsContent() {
         t: t,
       }}
       title={title}
+      tableFooter={null}
     />
   );
 
@@ -592,6 +595,7 @@ export default function DailyStatsContent() {
         t: t,
       }}
       title={title}
+      tableFooter={null}
     />
   );
 
@@ -615,6 +619,7 @@ export default function DailyStatsContent() {
         t: t,
       }}
       title={title}
+      tableFooter={null}
     />
   );
 

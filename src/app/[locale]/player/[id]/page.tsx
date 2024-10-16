@@ -413,6 +413,7 @@ export default async function Player({
       }}
       meta={null}
       title={null}
+      tableFooter={null}
     />
   );
 

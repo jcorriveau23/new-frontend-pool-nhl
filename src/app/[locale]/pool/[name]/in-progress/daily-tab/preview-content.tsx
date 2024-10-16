@@ -157,6 +157,7 @@ export default function DailyPreviewContent() {
         t: t,
       }}
       title={title}
+      tableFooter={null}
     />
   );
 
@@ -180,6 +181,7 @@ export default function DailyPreviewContent() {
         t: t,
       }}
       title={title}
+      tableFooter={null}
     />
   );
 
