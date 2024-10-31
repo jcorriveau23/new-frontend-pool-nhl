@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "@/navigation";
 import React, { createContext, useContext, ReactNode, useEffect } from "react";
 import { Score } from "../data/nhl/game";
 import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 
 interface DateContextProps {
   currentDate: Date;
@@ -56,6 +57,14 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
       }
     }
   }, []);
+
+  const query = useQuery({
+    queryKey: ["daily_games"],
+    queryFn: () => {
+      return getServerSideDailyGames(querySelectedDate);
+    },
+    staleTime: 1000 * 60 * 3, // 3 minutes in ms
+  });
 
   useEffect(() => {
     setScore(null);

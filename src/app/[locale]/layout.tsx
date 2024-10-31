@@ -1,14 +1,12 @@
 // Can be imported from a shared config
 const locales = ["en", "fr"];
 
-import { NavigationBar } from "@/components/navigation-bar";
-import DailyGameFeed from "@/components/daily-game-feed";
 import { NextIntlClientProvider, useMessages } from "next-intl";
-import { GamesNightProvider } from "@/context/games-night-context";
 import { unstable_setRequestLocale } from "next-intl/server";
-import Footer from "@/components/footer";
-import { Separator } from "@/components/ui/separator";
+import React from "react";
+import MainLayout from "./main-layout";
 import { DateProvider } from "@/context/date-context";
+import { GamesNightProvider } from "@/context/games-night-context";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -32,17 +30,9 @@ export default function LocaleLayout({
     <>
       <NextIntlClientProvider locale={locale} messages={messages}>
         <DateProvider>
-          <NavigationBar />
-          <Separator />
           <GamesNightProvider>
-            <DailyGameFeed />
-            <Separator />
-            <div className="py-4 px-0 sm:px:4 md:px-6 mx-auto max-w-5xl">
-              {children}
-            </div>
+            <MainLayout>{children}</MainLayout>
           </GamesNightProvider>
-          <Separator />
-          <Footer />
         </DateProvider>
       </NextIntlClientProvider>
     </>

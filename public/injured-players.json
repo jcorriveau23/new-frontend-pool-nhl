@@ -1,0 +1,604 @@
+{
+    "8478873": {
+        "name": "Troy Terry",
+        "position": "RW",
+        "date": "Thu, Oct 3",
+        "type": "Lower Body",
+        "recovery": "Day-to-Day"
+    },
+    "8476434": {
+        "name": "John Gibson",
+        "position": "G",
+        "date": "Thu, Sep 26",
+        "type": "Abdomen",
+        "recovery": "Expected to be out until at least Oct 18"
+    },
+    "8473419": {
+        "name": "Brad Marchand",
+        "position": "LW",
+        "date": "Fri, Oct 4",
+        "type": "Illness",
+        "recovery": "Day-to-Day"
+    },
+    "8483505": {
+        "name": "Matthew Poitras",
+        "position": "C",
+        "date": "Fri, Oct 4",
+        "type": "Undisclosed",
+        "recovery": "Day-to-Day"
+    },
+    "8480831": {
+        "name": "Alec Regula",
+        "position": "D",
+        "date": "Fri, Oct 4",
+        "type": "Knee",
+        "recovery": "Day-to-Day"
+    },
+    "8480280": {
+        "name": "Jeremy Swayman",
+        "position": "G",
+        "date": "Tue, Sep 24",
+        "type": "Contract Dispute",
+        "recovery": "Expected to be out until at least Oct 8"
+    },
+    "8477046": {
+        "name": "Joakim Ryan",
+        "position": "D",
+        "date": "Thu, Oct 3",
+        "type": "Undisclosed",
+        "recovery": "Expected to be out until at least Oct 5"
+    },
+    "8479388": {
+        "name": "Riley Stillman",
+        "position": "D",
+        "date": "Thu, Oct 3",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 5"
+    },
+    "8475855": {
+        "name": "Jesper Fast",
+        "position": "RW",
+        "date": "Tue, Sep 24",
+        "type": "Neck",
+        "recovery": "Expected to be out until at least Sep 15"
+    },
+    "8476316": {
+        "name": "Laurent Brossoit",
+        "position": "G",
+        "date": "Thu, Oct 3",
+        "type": "Knee",
+        "recovery": "Expected to be out until at least Oct 11"
+    },
+    "8484783": {
+        "name": "Artyom Levshunov",
+        "position": "D",
+        "date": "Tue, Sep 24",
+        "type": "Foot",
+        "recovery": "Expected to be out until at least Oct 8"
+    },
+    "8476455": {
+        "name": "Gabriel Landeskog",
+        "position": "LW",
+        "date": "Mon, Sep 30",
+        "type": "Knee",
+        "recovery": "IR. Expected to be out until at least Oct 18"
+    },
+    "8477476": {
+        "name": "Artturi Lehkonen",
+        "position": "LW",
+        "date": "Tue, Sep 24",
+        "type": "Shoulder",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8477501": {
+        "name": "Valeri Nichushkin",
+        "position": "RW",
+        "date": "Tue, May 14",
+        "type": "Suspension",
+        "recovery": "Expected to be out until at least Nov 15"
+    },
+    "8479941": {
+        "name": "Justin Danforth",
+        "position": "RW",
+        "date": "Fri, Oct 4",
+        "type": "Wrist",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8475790": {
+        "name": "Erik Gudbranson",
+        "position": "D",
+        "date": "Fri, Oct 4",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8481716": {
+        "name": "Dmitri Voronkov",
+        "position": "LW",
+        "date": "Fri, Oct 4",
+        "type": "Upper Body",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8484149": {
+        "name": "Gavin Brindley",
+        "position": "C",
+        "date": "Thu, Oct 3",
+        "type": "Finger",
+        "recovery": "IR. Expected to be out until at least Nov 12"
+    },
+    "8480027": {
+        "name": "Jason Robertson",
+        "position": "LW",
+        "date": "Tue, Sep 24",
+        "type": "Foot",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8482162": {
+        "name": "Roby Jarventie",
+        "position": "LW",
+        "date": "Tue, Sep 24",
+        "type": "Knee",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8475169": {
+        "name": "Evander Kane",
+        "position": "LW",
+        "date": "Tue, Sep 24",
+        "type": "Hip",
+        "recovery": "Expected to be out until at least Feb 22"
+    },
+    "8477931": {
+        "name": "Tomas Nosek",
+        "position": "LW",
+        "date": "Fri, Oct 4",
+        "type": "Upper Body",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8482088": {
+        "name": "Justin Sourdif",
+        "position": "RW",
+        "date": "Fri, Oct 4",
+        "type": "Undisclosed",
+        "recovery": "Expected to be out until at least Oct 14"
+    },
+    "8482713": {
+        "name": "Mackie Samoskevich",
+        "position": "RW",
+        "date": "Thu, Oct 3",
+        "type": "Upper Body",
+        "recovery": "Day-to-Day"
+    },
+    "8479981": {
+        "name": "Jonah Gadjovich",
+        "position": "LW",
+        "date": "Wed, Oct 2",
+        "type": "Undisclosed",
+        "recovery": "Day-to-Day"
+    },
+    "8479367": {
+        "name": "Will Lockwood",
+        "position": "RW",
+        "date": "Wed, Oct 2",
+        "type": "Undisclosed",
+        "recovery": "Day-to-Day"
+    },
+    "8474563": {
+        "name": "Drew Doughty",
+        "position": "D",
+        "date": "Fri, Sep 27",
+        "type": "Ankle",
+        "recovery": "Expected to be out until at least Dec 4"
+    },
+    "8481560": {
+        "name": "Arthur Kaliyev",
+        "position": "RW",
+        "date": "Tue, Sep 24",
+        "type": "Collarbone",
+        "recovery": "Expected to be out until at least Nov 29"
+    },
+    "8481557": {
+        "name": "Matt Boldy",
+        "position": "LW",
+        "date": "Thu, Oct 3",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8479339": {
+        "name": "Patrik Laine",
+        "position": "RW",
+        "date": "Tue, Oct 1",
+        "type": "Knee",
+        "recovery": "Expected to be out until at least Dec 1"
+    },
+    "8471679": {
+        "name": "Carey Price",
+        "position": "G",
+        "date": "Tue, Sep 24",
+        "type": "Knee",
+        "recovery": "IR. Expected to be out until at least Sep 23"
+    },
+    "8482087": {
+        "name": "Kaiden Guhle",
+        "position": "D",
+        "date": "Tue, Sep 24",
+        "type": "Abdomen",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8481093": {
+        "name": "Rafael Harvey-Pinard",
+        "position": "LW",
+        "date": "Tue, Sep 24",
+        "type": "Leg",
+        "recovery": "Expected to be out until at least Nov 14"
+    },
+    "8482684": {
+        "name": "Luke Hughes",
+        "position": "D",
+        "date": "Wed, Oct 2",
+        "type": "Shoulder",
+        "recovery": "Expected to be out until at least Nov 7"
+    },
+    "8477488": {
+        "name": "Brett Pesce",
+        "position": "D",
+        "date": "Mon, Sep 30",
+        "type": "Lower Leg",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8477392": {
+        "name": "Hudson Fasching",
+        "position": "RW",
+        "date": "Tue, Oct 1",
+        "type": "Lower Body",
+        "recovery": "Day-to-Day"
+    },
+    "8477506": {
+        "name": "Ryan Pulock",
+        "position": "D",
+        "date": "Tue, Oct 1",
+        "type": "Illness",
+        "recovery": "Day-to-Day"
+    },
+    "8478009": {
+        "name": "Ilya Sorokin",
+        "position": "G",
+        "date": "Tue, Sep 24",
+        "type": "Back",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8477244": {
+        "name": "Chad Ruhwedel",
+        "position": "D",
+        "date": "Thu, Oct 3",
+        "type": "Undisclosed",
+        "recovery": "Day-to-Day"
+    },
+    "8478550": {
+        "name": "Artemi Panarin",
+        "position": "LW",
+        "date": "Tue, Oct 1",
+        "type": "Lower Body",
+        "recovery": "Day-to-Day"
+    },
+    "8476918": {
+        "name": "Jimmy Vesey",
+        "position": "LW",
+        "date": "Mon, Sep 30",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 22"
+    },
+    "8479324": {
+        "name": "Ryan Lindgren",
+        "position": "D",
+        "date": "Wed, Sep 25",
+        "type": "Upper Body",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8474062": {
+        "name": "Riley Nash",
+        "position": "C",
+        "date": "Tue, Sep 24",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8480801": {
+        "name": "Brady Tkachuk",
+        "position": "LW",
+        "date": "Fri, Oct 4",
+        "type": "Upper Body",
+        "recovery": "Expected to be out until at least Oct 5"
+    },
+    "8478469": {
+        "name": "Thomas Chabot",
+        "position": "D",
+        "date": "Fri, Oct 4",
+        "type": "Undisclosed",
+        "recovery": "Expected to be out until at least Oct 5"
+    },
+    "8476372": {
+        "name": "Nick Seeler",
+        "position": "D",
+        "date": "Thu, Oct 3",
+        "type": "Undisclosed",
+        "recovery": "Expected to be out until at least Oct 11"
+    },
+    "8475176": {
+        "name": "Ryan Ellis",
+        "position": "D",
+        "date": "Wed, Oct 2",
+        "type": "Back",
+        "recovery": "IR. Expected to be out until at least Sep 15"
+    },
+    "8475810": {
+        "name": "Bryan Rust",
+        "position": "RW",
+        "date": "Fri, Oct 4",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8482102": {
+        "name": "Vasiliy Ponomarev",
+        "position": "C",
+        "date": "Thu, Oct 3",
+        "type": "Upper Body",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8477968": {
+        "name": "Alex Nedeljkovic",
+        "position": "G",
+        "date": "Wed, Oct 2",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 14"
+    },
+    "8476442": {
+        "name": "Matt Nieto",
+        "position": "LW",
+        "date": "Wed, Oct 2",
+        "type": "Knee",
+        "recovery": "IR. Expected to be out until at least Nov 2"
+    },
+    "8481481": {
+        "name": "Blake Lizotte",
+        "position": "C",
+        "date": "Wed, Oct 2",
+        "type": "Concussion",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8474578": {
+        "name": "Erik Karlsson",
+        "position": "D",
+        "date": "Thu, Sep 26",
+        "type": "Upper Body",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8484801": {
+        "name": "Macklin Celebrini",
+        "position": "C",
+        "date": "Thu, Oct 3",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 5"
+    },
+    "8474053": {
+        "name": "Logan Couture",
+        "position": "C",
+        "date": "Wed, Oct 2",
+        "type": "Groin",
+        "recovery": "IR. Expected to be out until at least Oct 10"
+    },
+    "8482137": {
+        "name": "Yaroslav Askarov",
+        "position": "G",
+        "date": "Sun, Sep 29",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8471709": {
+        "name": "Marc-Edouard Vlasic",
+        "position": "D",
+        "date": "Sun, Sep 29",
+        "type": "Upper Body",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8482133": {
+        "name": "Thomas Bordeleau",
+        "position": "C",
+        "date": "Tue, Sep 24",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8477955": {
+        "name": "Jared McCann",
+        "position": "C",
+        "date": "Thu, Oct 3",
+        "type": "Lower Body",
+        "recovery": "Day-to-Day"
+    },
+    "8476897": {
+        "name": "Oskar Sundqvist",
+        "position": "C",
+        "date": "Fri, Oct 4",
+        "type": "Knee",
+        "recovery": "Day-to-Day"
+    },
+    "8476792": {
+        "name": "Torey Krug",
+        "position": "D",
+        "date": "Tue, Sep 24",
+        "type": "Ankle",
+        "recovery": "Expected to be out until at least Sep 15"
+    },
+    "8476822": {
+        "name": "Luke Glendening",
+        "position": "C",
+        "date": "Fri, Oct 4",
+        "type": "Undisclosed",
+        "recovery": "Expected to be out until at least Oct 7"
+    },
+    "8479591": {
+        "name": "Mikey Eyssimont",
+        "position": "C",
+        "date": "Fri, Oct 4",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 11"
+    },
+    "8482201": {
+        "name": "Gage Goncalves",
+        "position": "C",
+        "date": "Fri, Oct 4",
+        "type": "Upper Body",
+        "recovery": "Expected to be out until at least Oct 7"
+    },
+    "8476931": {
+        "name": "Jake McCabe",
+        "position": "D",
+        "date": "Fri, Oct 4",
+        "type": "Upper Body",
+        "recovery": "Day-to-Day"
+    },
+    "8481582": {
+        "name": "Nicholas Robertson",
+        "position": "LW",
+        "date": "Fri, Oct 4",
+        "type": "Upper Body",
+        "recovery": "Day-to-Day"
+    },
+    "8475714": {
+        "name": "Calle Jarnkrok",
+        "position": "C",
+        "date": "Fri, Oct 4",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8475166": {
+        "name": "John Tavares",
+        "position": "C",
+        "date": "Sun, Sep 29",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8477541": {
+        "name": "Dakota Mermis",
+        "position": "D",
+        "date": "Fri, Sep 27",
+        "type": "Jaw",
+        "recovery": "Expected to be out until at least Oct 16"
+    },
+    "8480980": {
+        "name": "Connor Dewar",
+        "position": "C",
+        "date": "Tue, Sep 24",
+        "type": "Shoulder",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8475760": {
+        "name": "Nick Bjugstad",
+        "position": "C",
+        "date": "Tue, Oct 1",
+        "type": "Upper Body",
+        "recovery": "Expected to be out until at least Nov 2"
+    },
+    "8478507": {
+        "name": "John Marino",
+        "position": "D",
+        "date": "Tue, Oct 1",
+        "type": "Upper Body",
+        "recovery": "Expected to be out until at least Oct 10"
+    },
+    "8480459": {
+        "name": "Pius Suter",
+        "position": "C",
+        "date": "Wed, Oct 2",
+        "type": "Upper Body",
+        "recovery": "Day-to-Day"
+    },
+    "8476927": {
+        "name": "Teddy Blueger",
+        "position": "C",
+        "date": "Tue, Oct 1",
+        "type": "Lower Body",
+        "recovery": "Day-to-Day"
+    },
+    "8484254": {
+        "name": "Akito Hirose",
+        "position": "D",
+        "date": "Tue, Oct 1",
+        "type": "Concussion",
+        "recovery": "Day-to-Day"
+    },
+    "8478057": {
+        "name": "Dakota Joshua",
+        "position": "C",
+        "date": "Mon, Sep 30",
+        "type": "Groin",
+        "recovery": "Expected to be out until at least Oct 30"
+    },
+    "8477967": {
+        "name": "Thatcher Demko",
+        "position": "G",
+        "date": "Tue, Sep 24",
+        "type": "Knee",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8476448": {
+        "name": "William Karlsson",
+        "position": "C",
+        "date": "Fri, Oct 4",
+        "type": "Undisclosed",
+        "recovery": "Day-to-Day"
+    },
+    "8475215": {
+        "name": "Robin Lehner",
+        "position": "G",
+        "date": "Thu, Oct 3",
+        "type": "Hip",
+        "recovery": "IR. Expected to be out until at least Sep 15"
+    },
+    "8482411": {
+        "name": "Hunter Shepard",
+        "position": "G",
+        "date": "Wed, Oct 2",
+        "type": "Lower Body",
+        "recovery": "Day-to-Day"
+    },
+    "8471698": {
+        "name": "T.J. Oshie",
+        "position": "RW",
+        "date": "Tue, Sep 24",
+        "type": "Back",
+        "recovery": "IR. Expected to be out until at least Sep 15"
+    },
+    "8473563": {
+        "name": "Nicklas Backstrom",
+        "position": "C",
+        "date": "Tue, Apr 30",
+        "type": "Hip",
+        "recovery": "IR. Expected to be out until at least Jul 1"
+    },
+    "8479994": {
+        "name": "Jaret Anderson-Dolan",
+        "position": "C",
+        "date": "Fri, Oct 4",
+        "type": "Undisclosed",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8481019": {
+        "name": "David Gustafsson",
+        "position": "C",
+        "date": "Fri, Oct 4",
+        "type": "Lower Body",
+        "recovery": "Expected to be out until at least Oct 9"
+    },
+    "8479378": {
+        "name": "Logan Stanley",
+        "position": "D",
+        "date": "Fri, Sep 27",
+        "type": "Knee",
+        "recovery": "Expected to be out until at least Oct 26"
+    },
+    "8481572": {
+        "name": "Ville Heinola",
+        "position": "D",
+        "date": "Thu, Sep 26",
+        "type": "Ankle",
+        "recovery": "Expected to be out until at least Oct 24"
+    }
+}

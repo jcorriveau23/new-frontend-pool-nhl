@@ -265,14 +265,12 @@ export default function PoolerRoster(props: Props) {
       {props.teamSalaryCap
         ? SalarySummaryTable(props.userRoster, props.teamSalaryCap)
         : null}
-
       {userSession.info?.userID === poolInfo.owner && (
         <PlayerSearchDialog
           label={t("Add player")}
           onPlayerSelect={(player) => onPlayerSelect(player)}
         />
       )}
-
       {RosterTable(
         props.userRoster.user,
         props.userRoster.forwards,

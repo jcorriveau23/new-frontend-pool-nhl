@@ -9,6 +9,7 @@ import { DatePicker } from "./ui/date-picker";
 import { Button } from "./ui/button";
 import { LoadingSpinner } from "./ui/loading-spinner";
 import { useTranslations } from "next-intl";
+import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 
 export default function DailyGameFeed() {
   const t = useTranslations();
@@ -46,15 +47,18 @@ export default function DailyGameFeed() {
           <ChevronRightIcon className="h-4 w-4" />
         </Button>
       </div>
-      <div className="flex overflow-auto gap-1 mt-2 py-2">
-        {score === null ? (
-          <LoadingSpinner />
-        ) : score.games.length > 0 ? (
-          score.games.map((game) => <GameItem key={game.id} game={game} />)
-        ) : (
-          t("NoGameOnThatDate")
-        )}
-      </div>
+      <ScrollArea>
+        <div className="flex gap-1 mt-2 py-2">
+          {score === null ? (
+            <LoadingSpinner />
+          ) : score.games.length > 0 ? (
+            score.games.map((game) => <GameItem key={game.id} game={game} />)
+          ) : (
+            t("NoGameOnThatDate")
+          )}
+          <ScrollBar orientation="horizontal" />
+        </div>
+      </ScrollArea>
     </div>
   );
 }
