@@ -308,7 +308,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
               onSort={() => handleSort("save_percentage")}
             ></SortHeaderCell>
             <SortHeaderCell
-              label={t("GAA")}
+              label="GAA"
               sortKey="goal_against_average"
               currentSortKey={sortField}
               sortDirection={descendingOrder ? "desc" : "asc"}

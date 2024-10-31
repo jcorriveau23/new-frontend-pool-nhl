@@ -1,3 +1,5 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
 import React, { createContext, useEffect, useContext, ReactNode } from "react";
 
@@ -33,6 +35,7 @@ export const InjuredPlayersProvider = ({
   > | null> => {
     try {
       // Replace this URL with the actual API or data source for injured players
+      console.log("fetching injured players!");
       const response = await fetch("/injured-players.json");
       const data: Record<string, Player> = await response.json();
       return data;
@@ -47,13 +50,8 @@ export const InjuredPlayersProvider = ({
     queryFn: () => {
       return fetchInjuredPlayers();
     },
-    staleTime: 1000 * 60 * 60, // 60 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes in ms
   });
-
-  // Fetch injured players on component mount
-  useEffect(() => {
-    fetchInjuredPlayers();
-  }, []);
 
   return (
     <InjuredPlayersContext.Provider

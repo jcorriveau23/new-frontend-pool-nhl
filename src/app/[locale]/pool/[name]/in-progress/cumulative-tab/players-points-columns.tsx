@@ -116,12 +116,6 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
     aggregationFn: "sum",
   },
   {
-    accessorKey: "points",
-    header: "PTS",
-    aggregationFn: "sum",
-    accessorFn: (player) => player.getTotalPoints(),
-  },
-  {
     accessorKey: "hattricks",
     header: "HT",
     aggregationFn: "sum",
@@ -191,11 +185,6 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
   {
     accessorKey: "assists",
     header: "A",
-  },
-  {
-    accessorKey: "points",
-    header: "PTS",
-    accessorFn: (player) => player.getTotalPoints(),
   },
   {
     accessorKey: "hattricks",

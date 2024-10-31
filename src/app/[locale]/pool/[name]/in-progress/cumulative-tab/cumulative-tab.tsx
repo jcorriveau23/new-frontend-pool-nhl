@@ -755,7 +755,6 @@ export default function CumulativeTab() {
           <TableCell>{total.numberOfGame}</TableCell>
           <TableCell>{total.goals}</TableCell>
           <TableCell>{total.assists}</TableCell>
-          <TableCell>{total.totalPoints}</TableCell>
           <TableCell>{total.hattricks}</TableCell>
           <TableCell>{total.shootoutGoals}</TableCell>
           <TableCell>{total.totalPoolPoints}</TableCell>

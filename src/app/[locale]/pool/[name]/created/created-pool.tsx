@@ -58,6 +58,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DraftOrderSelector from "@/components/draft-order-selector";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 const USER_NAME_MIN_LENGTH = 2;
 const USER_NAME_MAX_LENGTH = 12;
@@ -159,6 +160,7 @@ export default function CreatedPool() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
+          <DialogTitle>Create a user</DialogTitle>
           <DialogDescription>{t("ChoseUsername")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -220,6 +222,9 @@ export default function CreatedPool() {
         </Button>
       </DialogTrigger>
       <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Pool Settings</DialogTitle>
+        </DialogHeader>
         <ScrollArea className="h-96">
           <PoolSettingsComponent
             poolName={poolInfo.name}

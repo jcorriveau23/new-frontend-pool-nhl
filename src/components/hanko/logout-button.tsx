@@ -5,13 +5,15 @@ import { useRouter } from "@/navigation";
 import { Hanko } from "@teamhanko/hanko-elements";
 import { toast } from "@/hooks/use-toast";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const hankoApi = process.env.NEXT_PUBLIC_HANKO_API_URL;
 
-export default function LogoutBtn() {
+export default function LogoutMenuItem() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [hanko, setHanko] = useState<Hanko>();
+  const t = useTranslations();
 
   useEffect(() => {
     import("@teamhanko/hanko-elements").then(({ Hanko }) =>
@@ -34,5 +36,5 @@ export default function LogoutBtn() {
     }
   };
 
-  return <button onClick={logout}>Logout</button>;
+  return <span onClick={logout}>{t("SignOut")}</span>;
 }

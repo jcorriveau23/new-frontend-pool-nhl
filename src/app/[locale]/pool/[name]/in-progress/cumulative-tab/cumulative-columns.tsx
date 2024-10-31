@@ -22,84 +22,30 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
     },
   },
   {
-    id: "1",
-    header: ({ table }) => table.options.meta?.t("Forwards"),
-    columns: [
-      {
-        accessorKey: "forwardGamePlayed",
-        header: ({ table }) => table.options.meta?.t("GP"),
-        accessorFn: (ranking) => ranking.forwards.numberOfGame,
-      },
-      {
-        accessorKey: "forwardPoints",
-        header: "PTS*",
-        accessorFn: (ranking) => ranking.forwards.totalPoolPoints,
-      },
-    ],
+    accessorKey: "gamePlayed",
+    header: ({ table }) => table.options.meta?.t("GP"),
+    accessorFn: (ranking) =>
+      ranking.forwards.numberOfGame +
+      ranking.defense.numberOfGame +
+      ranking.goalies.numberOfGame,
   },
   {
-    id: "2",
-    header: ({ table }) => table.options.meta?.t("Defense"),
-    columns: [
-      {
-        accessorKey: "defenseGamePlayed",
-        header: ({ table }) => table.options.meta?.t("GP"),
-        accessorFn: (ranking) => ranking.defense.numberOfGame,
-      },
-      {
-        accessorKey: "defensePoints",
-        header: "PTS*",
-        accessorFn: (ranking) => ranking.defense.totalPoolPoints,
-      },
-    ],
+    accessorKey: "totalPoolPoints",
+    header: "PTS*",
+    accessorFn: (ranking) => ranking.getTotalPoolPoints(),
   },
   {
-    id: "3",
-    header: ({ table }) => table.options.meta?.t("Goalies"),
-    columns: [
-      {
-        accessorKey: "goaliesGamePlayed",
-        header: ({ table }) => table.options.meta?.t("GP"),
-        accessorFn: (ranking) => ranking.goalies.numberOfGame,
-      },
-      {
-        accessorKey: "goaliesPoints",
-        header: "PTS*",
-        accessorFn: (ranking) => ranking.goalies.totalPoolPoints,
-      },
-    ],
-  },
-  {
-    id: "4",
-    header: ({ table }) => table.options.meta?.t("Total"),
-    columns: [
-      {
-        accessorKey: "gamePlayed",
-        header: ({ table }) => table.options.meta?.t("GP"),
-        accessorFn: (ranking) =>
-          ranking.forwards.numberOfGame +
-          ranking.defense.numberOfGame +
-          ranking.goalies.numberOfGame,
-      },
-      {
-        accessorKey: "totalPoolPoints",
-        header: "PTS*",
-        accessorFn: (ranking) => ranking.getTotalPoolPoints(),
-      },
-      {
-        accessorKey: "totalPoolPointsPerGame",
-        header: ({ table }) => table.options.meta?.t("PTS*/G"),
-        accessorFn: (ranking) => {
-          const totalNumberOfGame =
-            ranking.forwards.numberOfGame +
-            ranking.defense.numberOfGame +
-            ranking.goalies.numberOfGame;
-          return totalNumberOfGame > 0
-            ? (ranking.getTotalPoolPoints() / totalNumberOfGame).toFixed(3)
-            : null;
-        },
-      },
-    ],
+    accessorKey: "totalPoolPointsPerGame",
+    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    accessorFn: (ranking) => {
+      const totalNumberOfGame =
+        ranking.forwards.numberOfGame +
+        ranking.defense.numberOfGame +
+        ranking.goalies.numberOfGame;
+      return totalNumberOfGame > 0
+        ? (ranking.getTotalPoolPoints() / totalNumberOfGame).toFixed(3)
+        : null;
+    },
   },
 ];
 
