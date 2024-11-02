@@ -37,6 +37,7 @@ import {
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import LogoutMenuItem from "./hanko/logout-button";
 import LanguageSelector from "./language-selector";
+import { ThemeToggle } from "./theme-toggle";
 
 // Menu items.
 const hockeyPoolItems = [
@@ -133,8 +134,8 @@ export function AppSidebar() {
             <SidebarMenu>
               {hockeyPoolItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href="#" onClick={() => navigate(item.url)}>
+                  <SidebarMenuButton className="hover:cursor-pointer" asChild>
+                    <a onClick={() => navigate(item.url)}>
                       <item.icon />
                       <span>{t(item.title)}</span>
                     </a>
@@ -150,8 +151,8 @@ export function AppSidebar() {
             <SidebarMenu>
               {nhlItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href="#" onClick={() => navigate(item.url)}>
+                  <SidebarMenuButton className="hover:cursor-pointer" asChild>
+                    <a onClick={() => navigate(item.url)}>
                       <item.icon />
                       <span>{t(item.title)}</span>
                     </a>
@@ -165,7 +166,10 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter />
       <SidebarMenu>
-        {user.info ? userMenu(user.info) : connectButton()}
+        {user.info && user.info.isValid ? userMenu(user.info) : connectButton()}
+      </SidebarMenu>
+      <SidebarMenu>
+        <ThemeToggle />
       </SidebarMenu>
       <SidebarMenu>
         <LanguageSelector />

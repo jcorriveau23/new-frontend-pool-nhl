@@ -43,14 +43,14 @@ export default function PickList(props: Props) {
               <TableRow key={`${from}-${index}`}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
-                  <div>{dictUsers[from].name}</div>
-                  <div>
+                  <div className="flex items-center space-x-2">
+                    <span>{dictUsers[from].name}</span>
                     {from === roundPicksOwner[from] ? null : (
                       <InformationIcon
                         text={t("pickTraded", {
-                          newOwner: roundPicksOwner[from],
+                          newOwner: dictUsers[roundPicksOwner[from]]?.name,
                           round: index + 1,
-                          oldOwner: from,
+                          oldOwner: dictUsers[from]?.name,
                         })}
                       />
                     )}
