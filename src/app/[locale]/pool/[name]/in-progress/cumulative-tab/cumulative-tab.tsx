@@ -813,7 +813,7 @@ export default function CumulativeTab() {
     />
   );
 
-  const ReservistTable = (rows: number[], columns: ColumnDef<any>[]) => (
+  const ReservistTable = (rows: number[], columns: ColumnDef<number>[]) => (
     <DataTable
       data={rows}
       columns={columns}

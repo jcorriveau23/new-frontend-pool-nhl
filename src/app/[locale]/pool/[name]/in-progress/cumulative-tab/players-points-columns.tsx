@@ -49,11 +49,11 @@ const getWarningCell = (
   );
 };
 
-const getPlayerCell = (player: SkaterInfo | GoalieInfo, poolInfo: Pool) => (
+const getPlayerCell = (playerId: number, poolInfo: Pool) => (
   <div className="w-[95px] sm:w-full">
     <PlayerLink
-      name={poolInfo.context?.players[player.id].name}
-      id={poolInfo.context?.players[player.id].id}
+      name={poolInfo.context?.players[playerId].name}
+      id={poolInfo.context?.players[playerId].id}
       textStyle={null}
     />
   </div>
@@ -90,7 +90,7 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
     accessorKey: "player",
     header: ({ table }) => table.options.meta?.t("Player"),
     cell: ({ row, table }) => {
-      return getPlayerCell(row.original, table.options.meta?.props as Pool);
+      return getPlayerCell(row.original.id, table.options.meta?.props as Pool);
     },
   },
   {
@@ -164,7 +164,7 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
     accessorKey: "player",
     header: ({ table }) => table.options.meta?.t("Player"),
     cell: ({ row, table }) => {
-      return getPlayerCell(row.original, table.options.meta?.props as Pool);
+      return getPlayerCell(row.original.id, table.options.meta?.props as Pool);
     },
   },
   {
@@ -231,7 +231,7 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
     accessorKey: "player",
     header: ({ table }) => table.options.meta?.t("Player"),
     cell: ({ row, table }) => {
-      return getPlayerCell(row.original, table.options.meta?.props as Pool);
+      return getPlayerCell(row.original.id, table.options.meta?.props as Pool);
     },
   },
   {
@@ -295,8 +295,7 @@ export const ReservistColumn: ColumnDef<number>[] = [
     accessorKey: "player",
     header: ({ table }) => table.options.meta?.t("Player"),
     cell: ({ row, table }) => {
-      const poolInfo = table.options.meta?.props as Pool;
-      return poolInfo.context?.players[row.original].name;
+      return getPlayerCell(row.original, table.options.meta?.props as Pool);
     },
   },
   {
