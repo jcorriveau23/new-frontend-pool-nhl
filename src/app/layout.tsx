@@ -6,23 +6,13 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { UserProvider } from "@/context/useUserData";
 import { UserSessionProvider } from "@/context/useSessionData";
 import { Toaster } from "@/components/ui/toaster";
-import { Suspense } from "react";
-import { QueryClient } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-
 import { InjuredPlayersProvider } from "@/context/injury-context";
+import { PersistedProvider } from "@/context/persisted-query-provider";
 
 const metadata: Metadata = {
   title: "NHL pool",
   description: "fully free nhl hockey pool",
 };
-
-const queryClient = new QueryClient();
-
-const persister = createSyncStoragePersister({
-  storage: typeof window !== "undefined" ? window.localStorage : undefined,
-});
 
 export default function RootLayout({
   children,
@@ -32,27 +22,22 @@ export default function RootLayout({
   return (
     <html>
       <body>
-        <PersistQueryClientProvider
-          client={queryClient}
-          persistOptions={{ persister }}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
-          <InjuredPlayersProvider>
-            <UserProvider>
-              <Suspense fallback={null}>
-                <UserSessionProvider>
-                  <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                    disableTransitionOnChange
-                  >
-                    <div>{children}</div>
-                  </ThemeProvider>
-                </UserSessionProvider>
-              </Suspense>
-            </UserProvider>
-          </InjuredPlayersProvider>
-        </PersistQueryClientProvider>
+          <UserProvider>
+            <UserSessionProvider>
+              <PersistedProvider>
+                <InjuredPlayersProvider>
+                  <div>{children}</div>
+                </InjuredPlayersProvider>
+              </PersistedProvider>
+            </UserSessionProvider>
+          </UserProvider>
+        </ThemeProvider>
         <Toaster />
       </body>
     </html>

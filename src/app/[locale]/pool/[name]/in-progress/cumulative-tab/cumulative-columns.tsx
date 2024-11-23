@@ -1,51 +1,108 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
 import { TotalRanking } from "./cumulative-tab";
+import { GameStatePopover } from "@/components/game-state-popover";
+import { GamesNightStatus } from "@/context/games-night-context";
 
 export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
   {
-    accessorKey: "ranking",
-    header: "#",
-    cell: ({ row, table }) => {
+    id: "1",
+    header: ({ table }) => {
       return (
-        (table
-          ?.getSortedRowModel()
-          ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
+        <>
+          {table.options.meta?.t("TotalCumulatedPoints")}
+          <h1>{
+            // @ts-ignore: dateOfInterest is known to exist in this context
+            `(${table.options.meta?.dateOfInterest})`
+          }</h1>
+        </>
       );
     },
+    columns: [
+      {
+        accessorKey: "ranking",
+        header: "#",
+        cell: ({ row, table }) => {
+          return (
+            (table
+              ?.getSortedRowModel()
+              ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
+          );
+        },
+      },
+      {
+        accessorKey: "pooler",
+        header: "Pooler",
+        cell: ({ row }) => {
+          return row.original.participant;
+        },
+      },
+      {
+        accessorKey: "gamePlayed",
+        header: ({ table }) => table.options.meta?.t("GP"),
+        accessorFn: (ranking) =>
+          ranking.forwards.numberOfGame +
+          ranking.defense.numberOfGame +
+          ranking.goalies.numberOfGame,
+      },
+      {
+        accessorKey: "totalPoolPoints",
+        header: "PTS",
+        accessorFn: (ranking) => ranking.getTotalPoolPoints(),
+      },
+      {
+        accessorKey: "pointDifference",
+        header: "Diff",
+        cell: ({ row, table }) => {
+          const maxPoints = table
+            ?.getSortedRowModel()
+            ?.flatRows?.[0].original.getTotalPoolPoints();
+          const diff = maxPoints - row.original.getTotalPoolPoints();
+          return diff ? `+ ${diff}` : "-";
+        },
+      },
+      {
+        accessorKey: "totalPoolPointsPerGame",
+        header: ({ table }) => table.options.meta?.t("PTS/G"),
+        accessorFn: (ranking) => {
+          const totalNumberOfGame =
+            ranking.forwards.numberOfGame +
+            ranking.defense.numberOfGame +
+            ranking.goalies.numberOfGame;
+          return totalNumberOfGame > 0
+            ? (ranking.getTotalPoolPoints() / totalNumberOfGame).toFixed(3)
+            : null;
+        },
+      },
+    ],
   },
   {
-    accessorKey: "pooler",
-    header: "Pooler",
-    cell: ({ row, table }) => {
-      return row.original.participant;
-    },
-  },
-  {
-    accessorKey: "gamePlayed",
-    header: ({ table }) => table.options.meta?.t("GP"),
-    accessorFn: (ranking) =>
-      ranking.forwards.numberOfGame +
-      ranking.defense.numberOfGame +
-      ranking.goalies.numberOfGame,
-  },
-  {
-    accessorKey: "totalPoolPoints",
-    header: "PTS*",
-    accessorFn: (ranking) => ranking.getTotalPoolPoints(),
-  },
-  {
-    accessorKey: "totalPoolPointsPerGame",
-    header: ({ table }) => table.options.meta?.t("PTS*/G"),
-    accessorFn: (ranking) => {
-      const totalNumberOfGame =
-        ranking.forwards.numberOfGame +
-        ranking.defense.numberOfGame +
-        ranking.goalies.numberOfGame;
-      return totalNumberOfGame > 0
-        ? (ranking.getTotalPoolPoints() / totalNumberOfGame).toFixed(3)
-        : null;
-    },
+    id: "2",
+    header: ({ table }) => (
+      <>
+        <h1 className="flex items-center space-x-2">
+          <GameStatePopover
+            state={
+              // @ts-ignore: gamesState is known to exist in this context
+              table.options.meta?.gamesState
+            }
+          />
+          <span>{table.options.meta?.t("DailyPoints")}</span>
+        </h1>
+      </>
+    ),
+    columns: [
+      {
+        accessorKey: "DailyGP",
+        header: ({ table }) => table.options.meta?.t("GP"),
+        accessorFn: (ranking) => ranking.numberOfGames,
+      },
+      {
+        accessorKey: "DailyPTS",
+        header: "PTS",
+        accessorFn: (ranking) => ranking.totalPoolPoints,
+      },
+    ],
   },
 ];
 
@@ -64,7 +121,7 @@ export const ForwardsTotalColumn: ColumnDef<TotalRanking>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       return row.original.participant;
     },
   },
@@ -100,12 +157,12 @@ export const ForwardsTotalColumn: ColumnDef<TotalRanking>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: "PTS*",
+    header: "PTS",
     accessorFn: (ranking) => ranking.forwards.totalPoolPoints,
   },
   {
     accessorKey: "totalPoolPointsPerGame",
-    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    header: ({ table }) => table.options.meta?.t("PTS/G"),
     accessorFn: (ranking) =>
       ranking.forwards.numberOfGame > 0
         ? (
@@ -166,12 +223,12 @@ export const DefensesTotalColumn: ColumnDef<TotalRanking>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: "PTS*",
+    header: "PTS",
     accessorFn: (ranking) => ranking.defense.totalPoolPoints,
   },
   {
     accessorKey: "totalPoolPointsPerGame",
-    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    header: ({ table }) => table.options.meta?.t("PTS/G"),
     accessorFn: (ranking) =>
       ranking.defense.numberOfGame > 0
         ? (
@@ -232,12 +289,12 @@ export const GoaliesTotalColumn: ColumnDef<TotalRanking>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: "PTS*",
+    header: "PTS",
     accessorFn: (ranking) => ranking.goalies.totalPoolPoints,
   },
   {
     accessorKey: "totalPoolPointsPerGame",
-    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    header: ({ table }) => table.options.meta?.t("PTS/G"),
     accessorFn: (ranking) =>
       ranking.goalies.numberOfGame > 0
         ? (

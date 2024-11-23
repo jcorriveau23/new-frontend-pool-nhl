@@ -14,6 +14,9 @@ import { Button } from "@/components/ui/button";
 import { LucideHome } from "lucide-react";
 import { useRouter } from "@/navigation";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { DateProvider } from "@/context/date-context";
+import { GamesNightProvider } from "@/context/games-night-context";
+import { DailyLeadersProvider } from "@/context/daily-leaders-context";
 
 export default function MainLayout({
   children,
@@ -21,10 +24,16 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <Main>{children}</Main>
-    </SidebarProvider>
+    <DateProvider>
+      <DailyLeadersProvider>
+        <GamesNightProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <Main>{children}</Main>
+          </SidebarProvider>
+        </GamesNightProvider>
+      </DailyLeadersProvider>
+    </DateProvider>
   );
 }
 

@@ -1,6 +1,10 @@
 "use server";
 
-export async function getServerSideDailyLeaders(keyDay: string) {
+import { DailyLeaders } from "@/data/dailyLeaders/model";
+
+export async function getServerSideDailyLeaders(
+  keyDay: string
+): Promise<DailyLeaders | null> {
   /* 
   Get the daily stats information. This is being called to query the daily pool scorer.
   */
@@ -14,7 +18,8 @@ export async function getServerSideDailyLeaders(keyDay: string) {
     if (!res.ok) {
       return null;
     }
-    return await res.json();
+    const data = await res.json();
+    return data;
   } catch (e: any) {
     return null;
   }

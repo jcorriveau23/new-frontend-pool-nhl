@@ -1,9 +1,6 @@
 /*
 Module that share the context of the selected date games context. 
 Tells if there is a live game, also keeps the information of which teams plays against which team.
-
-TODO: there should be a way to handle the selected date in a url param so that the state related to 
-that is also server side.
 */
 "use client";
 import { Game, GameState } from "@/data/nhl/game";
@@ -56,12 +53,12 @@ export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
       setGamesNightStatus(GamesNightStatus.NO_GAMES);
     }
     if (
-      games.some(
-        (g) => g.gameState === GameState.LIVE || g.gameState === GameState.CRIT
+      games.every(
+        (g) => g.gameState === GameState.OFF || g.gameState === GameState.PPD
       )
     ) {
       // If there is any live games the global night status would be LIVE.
-      setGamesNightStatus(GamesNightStatus.LIVE);
+      setGamesNightStatus(GamesNightStatus.COMPLETED);
     } else if (
       games.every(
         (g) =>
@@ -74,7 +71,7 @@ export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
       setGamesNightStatus(GamesNightStatus.NOT_STARTED);
     } else {
       // Else all games are completed.
-      setGamesNightStatus(GamesNightStatus.COMPLETED);
+      setGamesNightStatus(GamesNightStatus.LIVE);
     }
 
     const playingAgainst: Record<number, number> = {};

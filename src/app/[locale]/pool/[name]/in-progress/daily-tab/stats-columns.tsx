@@ -3,7 +3,7 @@ import {
   SkaterDailyInfo,
   GoalieDailyInfo,
   TotalDailyPoints,
-} from "./stats-content";
+} from "@/context/pool-context";
 import { Pool } from "@/data/pool/model";
 import { DailyGoalie, DailySkater } from "@/data/dailyLeaders/model";
 import { TeamLogo } from "@/components/team-logo";
@@ -67,7 +67,7 @@ export const SkaterDailyColumn: ColumnDef<SkaterDailyInfo>[] = [
   },
   {
     accessorKey: "poolPoints",
-    header: "PTS*",
+    header: "PTS",
     accessorFn: (row) => (row.played ? row.poolPoints : null),
     sortingFn: (row1, row2) => {
       const player1 = row1.original;
@@ -113,7 +113,7 @@ export const GoaliesColumn: ColumnDef<GoalieDailyInfo>[] = [
   },
   {
     accessorKey: "poolPoints",
-    header: "PTS*",
+    header: "PTS",
     accessorFn: (row) => (row.played ? row.poolPoints : null),
     sortingFn: (row1, row2) => {
       const player1 = row1.original;
@@ -158,7 +158,7 @@ export const TotalDailyColumn: ColumnDef<TotalDailyPoints>[] = [
       },
       {
         accessorKey: "forwardPoints",
-        header: "PTS*",
+        header: "PTS",
         accessorFn: (ranking) => ranking.forwards.totalPoolPoints,
       },
     ],
@@ -174,7 +174,7 @@ export const TotalDailyColumn: ColumnDef<TotalDailyPoints>[] = [
       },
       {
         accessorKey: "defensePoints",
-        header: "PTS*",
+        header: "PTS",
         accessorFn: (ranking) => ranking.defense.totalPoolPoints,
       },
     ],
@@ -190,7 +190,7 @@ export const TotalDailyColumn: ColumnDef<TotalDailyPoints>[] = [
       },
       {
         accessorKey: "goaliesPoints",
-        header: "PTS*",
+        header: "PTS",
         accessorFn: (ranking) => ranking.goalies.totalPoolPoints,
       },
     ],
@@ -209,12 +209,12 @@ export const TotalDailyColumn: ColumnDef<TotalDailyPoints>[] = [
       },
       {
         accessorKey: "totalPoolPoints",
-        header: "PTS*",
+        header: "PTS",
         accessorFn: (ranking) => ranking.totalPoolPoints,
       },
       {
         accessorKey: "totalPoolPointsPerGame",
-        header: ({ table }) => table.options.meta?.t("PTS*/G"),
+        header: ({ table }) => table.options.meta?.t("PTS/G"),
         accessorFn: (ranking) => {
           const numberOfGame =
             ranking.forwards.numberOfGame +
@@ -280,12 +280,12 @@ export const ForwardsDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: "PTS*",
+    header: "PTS",
     accessorFn: (ranking) => ranking.forwards.totalPoolPoints,
   },
   {
     accessorKey: "totalPoolPointsPerGame",
-    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    header: ({ table }) => table.options.meta?.t("PTS/G"),
     accessorFn: (ranking) =>
       (
         ranking.forwards.totalPoolPoints / ranking.forwards.numberOfGame
@@ -344,12 +344,12 @@ export const DefensesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: "PTS*",
+    header: "PTS",
     accessorFn: (ranking) => ranking.defense.totalPoolPoints,
   },
   {
     accessorKey: "totalPoolPointsPerGame",
-    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    header: ({ table }) => table.options.meta?.t("PTS/G"),
     accessorFn: (ranking) =>
       (ranking.defense.totalPoolPoints / ranking.defense.numberOfGame).toFixed(
         3
@@ -408,12 +408,12 @@ export const GoaliesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   },
   {
     accessorKey: "totalPoolPoints",
-    header: "PTS*",
+    header: "PTS",
     accessorFn: (ranking) => ranking.goalies.totalPoolPoints,
   },
   {
     accessorKey: "totalPoolPointsPerGame",
-    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    header: ({ table }) => table.options.meta?.t("PTS/G"),
     accessorFn: (ranking) =>
       (ranking.goalies.totalPoolPoints / ranking.goalies.numberOfGame).toFixed(
         3
