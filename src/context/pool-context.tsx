@@ -531,11 +531,13 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     useState<DailyPoolPointsMade | null>(null);
 
   const lastFormatDate = findLastDateInDb(poolInfo);
-  const dateOfInterest = querySelectedDate
-    ? querySelectedDate
-    : lastFormatDate
-    ? lastFormatDate
-    : format(currentDate, "yyyy-MM-dd");
+
+  const dateOfInterest =
+    querySelectedDate !== "now"
+      ? querySelectedDate
+      : lastFormatDate
+      ? lastFormatDate
+      : format(currentDate, "yyyy-MM-dd");
 
   const getPoolDictUsers = (pool: Pool) =>
     pool.participants.reduce((acc: Record<string, PoolUser>, user) => {
@@ -597,6 +599,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
 
     if (!dayInfo && !dailyLeaders) {
       // If both are not defined, it means that it should be previewing the roster.
+      setDailyPointsMade(null);
       return;
     }
 
