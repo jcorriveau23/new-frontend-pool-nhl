@@ -62,7 +62,6 @@
     "GP": "PJ",
     "G": "B",
     "G*": "B*",
-    "PTS*/G": "PTS*/PJ",
     "PTS/G": "PTS/PJ",
     "W": "V",
     "F": "A",
@@ -86,6 +85,8 @@
     "Daily points made by forwards for": "Points quotidiens amassés par les attaquants pour",
     "Daily points made by defense for": "Points quotidiens amassés par les défenseurs pour",
     "Daily points made by goalies for": "Points quotidiens amassés par les guardiens pour",
+    "DailyPoints": "Points quotidiens",
+    "TotalCumulatedPoints": "Classement cumulatif",
     "Preview number of players playing": "Aperçu du nombre de joueurs qui jouent",
     "List of forwards playing for": "Liste des attaquants qui jouent pour",
     "List of defenseman playing for": "Liste des défenseurs qui jouent pour",
@@ -339,5 +340,10 @@
     "RandomOrder": "Order aléatoire",
     "ModifyRoster": "Modifier l'alignement",
     "SocketNotConnected": "La connection web socket doit être active pour envoyer cette requête.",
-    "UserNotConnected": "Vous devez être connecté à un compte pour envoyer cette requête."
+    "UserNotConnected": "Vous devez être connecté à un compte pour envoyer cette requête.",
+    "LiveGame": "Des parties sont actuellement en cours!",
+    "CumulatedPoints": "Les points quotidien ammassé le {selectedDate} font parties du cumulatif.",
+    "LivePoints": "Les matchs du {selectedDate} sont en cours, les points ne font pas encore partie du cumulatif.",
+    "FuturePoints": "Les matchs du {selectedDate} n'ont pas encore été joué.",
+    "NoGames": "Il n'y a pas de match prévu pour le {date}"
 }

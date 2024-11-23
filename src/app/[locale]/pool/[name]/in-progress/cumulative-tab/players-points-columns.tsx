@@ -127,12 +127,12 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
   },
   {
     accessorKey: "poolPoints",
-    header: "PTS*",
+    header: "PTS",
     aggregationFn: "sum",
   },
   {
     accessorKey: "totalPoolPtsPerGame",
-    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    header: ({ table }) => table.options.meta?.t("PTS/G"),
     aggregationFn: "mean",
     accessorFn: (player) =>
       player.numberOfGame > 0
@@ -196,11 +196,11 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
   },
   {
     accessorKey: "poolPoints",
-    header: "PTS*",
+    header: "PTS",
   },
   {
     accessorKey: "totalPoolPtsPerGame",
-    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    header: ({ table }) => table.options.meta?.t("PTS/G"),
     accessorFn: (player) =>
       player.numberOfGame > 0
         ? (player.poolPoints / player.numberOfGame).toFixed(3)
@@ -267,11 +267,11 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
   },
   {
     accessorKey: "poolPoints",
-    header: "PTS*",
+    header: "PTS",
   },
   {
     accessorKey: "totalPoolPtsPerGame",
-    header: ({ table }) => table.options.meta?.t("PTS*/G"),
+    header: ({ table }) => table.options.meta?.t("PTS/G"),
     accessorFn: (player) =>
       player.numberOfGame > 0
         ? (player.poolPoints / player.numberOfGame).toFixed(3)

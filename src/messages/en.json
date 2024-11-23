@@ -62,7 +62,6 @@
     "GP": "GP",
     "G": "G",
     "G*": "G*",
-    "PTS*/G": "PTS*/G",
     "PTS/G": "PTS/G",
     "W": "W",
     "F": "F",
@@ -86,6 +85,8 @@
     "Daily points made by forwards for": "Daily points made by forwards for",
     "Daily points made by defense for": "Daily points made by defense for",
     "Daily points made by goalies for": "Daily points made by goalies for",
+    "DailyPoints": "Daily Points",
+    "TotalCumulatedPoints": "Cumulative Ranking",
     "Preview number of players playing": "Preview number of players playing",
     "List of forwards playing for": "List of forwards playing for",
     "List of defenseman playing for": "List of defenseman playing for",
@@ -339,5 +340,10 @@
     "RandomOrder": "Random Order",
     "ModifyRoster": "Modify Roster",
     "SocketNotConnected": "The websocket connection needs to be active to send this request.",
-    "UserNotConnected": "You need to be connected to an account to send this request."
+    "UserNotConnected": "You need to be connected to an account to send this request.",
+    "LiveGame": "There is live game right now!",
+    "CumulatedPoints": "Points made on the {selectedDate} have been cumulated.",
+    "LivePoints": "Games on the {selectedDate} are live right now, points made have not been cumulated yet.",
+    "FuturePoints": "Games on the {selectedDate} have not been played yet.",
+    "NoGames": "No games scheduled on the {selectedDate}."
 }

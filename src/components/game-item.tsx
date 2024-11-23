@@ -29,9 +29,9 @@ export default function GameItem(props: Props) {
       case GameState.LIVE:
       case GameState.CRIT: {
         return props.game && props.game.period && props.game.clock ? (
-          <p className="text-red-500">
+          <span className="text-red-500">
             P{props.game.period} - {props.game.clock.timeRemaining}
-          </p>
+          </span>
         ) : (
           getGameTime(props.game.startTimeUTC)
         );

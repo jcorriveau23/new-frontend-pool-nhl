@@ -35,7 +35,11 @@ import {
 import { Row } from "@tanstack/react-table";
 
 import { useTranslations } from "next-intl";
-import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
+import {
+  hasPoolPrivilege,
+  TotalDailyPoints,
+  usePoolContext,
+} from "@/context/pool-context";
 import PickList from "@/components/pick-list";
 import { useDateContext } from "@/context/date-context";
 import { Button } from "@/components/ui/button";
@@ -72,6 +76,10 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import StartingRoster from "@/components/starting-roster";
 import { PoolerUserSelector } from "@/components/pool-user-selector";
 import { TableCell, TableRow } from "@/components/ui/table";
+import {
+  GamesNightStatus,
+  useGamesNightContext,
+} from "@/context/games-night-context";
 
 export enum PlayerStatus {
   // Tells if the player is in the alignment at that date.
@@ -261,18 +269,23 @@ export class TotalRanking {
     forwards: SkaterInfo[],
     defense: SkaterInfo[],
     goalies: GoalieInfo[],
+    DailyPoolPointsMade: TotalDailyPoints | null,
     settings: PoolSettings
   ) {
     this.participant = userName;
     this.forwards = new SkaterTotal(forwards, settings.forwards_settings);
     this.defense = new SkaterTotal(defense, settings.defense_settings);
     this.goalies = new GoalieTotal(goalies, settings.goalies_settings);
+    this.numberOfGames = DailyPoolPointsMade?.numberOfGames ?? null;
+    this.totalPoolPoints = DailyPoolPointsMade?.totalPoolPoints ?? null;
   }
   participant: string;
 
   forwards: SkaterTotal;
   defense: SkaterTotal;
   goalies: GoalieTotal;
+  numberOfGames: number | null;
+  totalPoolPoints: number | null;
 
   public getTotalPoolPoints(): number {
     return (
@@ -285,7 +298,8 @@ export class TotalRanking {
 
 export default function CumulativeTab() {
   const t = useTranslations();
-  const { selectedDate, currentDate } = useDateContext();
+  const { selectedDate, currentDate, querySelectedDate } = useDateContext();
+  const { gamesNightStatus } = useGamesNightContext();
   const [playerStats, setPlayerStats] = React.useState<Record<
     string,
     ParticipantsRoster
@@ -297,6 +311,7 @@ export default function CumulativeTab() {
     lastFormatDate,
     selectedParticipant,
     selectedPoolUser,
+    dailyPointsMade,
     updateSelectedParticipant,
   } = usePoolContext();
 
@@ -666,29 +681,42 @@ export default function CumulativeTab() {
           stats[user.id].goalies[i].status = PlayerStatus.PointsIgnored;
         }
 
-        rank.push(
+        // Find daily points made using the hook.
+        const totalDailyPoints = dailyPointsMade?.totalDailyPoints.find(
+          (t) => t.participant === user.name
+        );
+        const totalPoolPointsMade = rank.push(
           new TotalRanking(
             user.name,
             stats[user.id].forwards,
             stats[user.id].defense,
             stats[user.id].goalies,
+            totalDailyPoints ?? null,
             poolInfo.settings
           )
         );
-
-        rank.sort((a, b) => b.getTotalPoolPoints() - a.getTotalPoolPoints());
       }
+
+      rank.sort((a, b) => b.getTotalPoolPoints() - a.getTotalPoolPoints());
 
       setPlayerStats(stats);
       setRanking(rank);
     };
 
     calculatePoolStats();
-  }, [selectedDate]);
+  }, [dailyPointsMade]);
 
   if (ranking === null || playerStats === null) {
     return <h1>Loading ranking and player stats...</h1>;
   }
+
+  const getDailyGameState = (cumulated: boolean | undefined) => {
+    if (cumulated) {
+      return GamesNightStatus.COMPLETED;
+    }
+
+    return gamesNightStatus;
+  };
 
   const TotalTable = (
     ranking: TotalRanking[],
@@ -717,7 +745,9 @@ export default function CumulativeTab() {
         onRowClick: (row: Row<TotalRanking>) => {
           updateSelectedParticipant(row.original.participant);
         },
-        t: t,
+        t,
+        gamesState: getDailyGameState(dailyPointsMade?.cumulated),
+        dateOfInterest: querySelectedDate,
       }}
       title={title}
       tableFooter={null}

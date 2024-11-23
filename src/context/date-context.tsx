@@ -12,9 +12,9 @@ import { useQuery } from "@tanstack/react-query";
 
 interface DateContextProps {
   currentDate: Date;
-  nhlCurrentDate: string | null;
   selectedDate: Date | null;
-  score: Score | null;
+  querySelectedDate: string;
+  score: Score | null | undefined;
   updateDate: (newDate: Date | null) => void;
   updateDateWithString: (newDate: string) => void;
 }
@@ -36,10 +36,6 @@ interface DateProviderProps {
 export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
   const router = useRouter();
   const pathName = usePathname();
-  const [score, setScore] = React.useState<Score | null>(null);
-  const [nhlCurrentDate, setNhlCurrentDate] = React.useState<string | null>(
-    null
-  );
   const searchParams = useSearchParams();
   const querySelectedDate = searchParams.get("selectedDate") ?? "now";
   const currentParams = new URLSearchParams(searchParams.toString());
@@ -59,25 +55,12 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
   }, []);
 
   const query = useQuery({
-    queryKey: ["daily_games"],
+    queryKey: ["daily_games", querySelectedDate],
     queryFn: () => {
       return getServerSideDailyGames(querySelectedDate);
     },
     staleTime: 1000 * 60 * 3, // 3 minutes in ms
   });
-
-  useEffect(() => {
-    setScore(null);
-    const getServerActionGames = async () => {
-      const score = await getServerSideDailyGames(querySelectedDate);
-      if (score !== null) {
-        setScore(score);
-        setNhlCurrentDate(score.currentDate);
-      }
-    };
-
-    getServerActionGames();
-  }, [querySelectedDate]);
 
   const updateDate = (newDate: Date | null) => {
     setSelectedDate(newDate);
@@ -108,9 +91,9 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
 
   const contextValue: DateContextProps = {
     currentDate,
-    nhlCurrentDate,
     selectedDate,
-    score,
+    querySelectedDate,
+    score: query.data,
     updateDate,
     updateDateWithString,
   };

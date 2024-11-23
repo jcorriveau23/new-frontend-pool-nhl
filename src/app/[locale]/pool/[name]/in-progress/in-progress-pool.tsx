@@ -14,7 +14,7 @@ import {
 } from "@/context/games-night-context";
 import { useRouter } from "@/navigation";
 import { usePoolContext } from "@/context/pool-context";
-import InformationIcon from "@/components/information-box";
+import LiveGamePopOver from "@/components/live-games-pop-over";
 
 enum InProgressTabs {
   CUMULATIVE = "cumulative",
@@ -40,14 +40,7 @@ export default function InProgressPool() {
       initialTab === null ||
       !Object.values(InProgressTabs).includes(initialTab as InProgressTabs)
     ) {
-      // If the pool is complete, always show the cummulative tab.
-      if (poolInfo.status === PoolState.Final) {
-        return InProgressTabs.CUMULATIVE;
-      }
-
-      return gamesNightStatus === GamesNightStatus.LIVE
-        ? InProgressTabs.DAILY
-        : InProgressTabs.CUMULATIVE;
+      return InProgressTabs.CUMULATIVE;
     }
 
     return initialTab;
@@ -98,14 +91,19 @@ export default function InProgressPool() {
           <TabsList>
             <TabsTrigger value={InProgressTabs.CUMULATIVE}>
               {t("Cumulative")}
+              {gamesNightStatus === GamesNightStatus.LIVE ? (
+                <div className="ml-2">
+                  <LiveGamePopOver />
+                </div>
+              ) : null}
             </TabsTrigger>
             <TabsTrigger value={InProgressTabs.DAILY}>
               {t("Daily")}
-              <div className="pl-1">
-                {gamesNightStatus === GamesNightStatus.LIVE ? (
-                  <InformationIcon text={t("liveGame")} />
-                ) : null}
-              </div>
+              {gamesNightStatus === GamesNightStatus.LIVE ? (
+                <div className="ml-2">
+                  <LiveGamePopOver />
+                </div>
+              ) : null}
             </TabsTrigger>
             {poolInfo.settings.dynasty_settings ? (
               <TabsTrigger value={InProgressTabs.TRADE}>

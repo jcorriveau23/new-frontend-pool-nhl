@@ -5,8 +5,6 @@ import { NextIntlClientProvider, useMessages } from "next-intl";
 import { unstable_setRequestLocale } from "next-intl/server";
 import React from "react";
 import MainLayout from "./main-layout";
-import { DateProvider } from "@/context/date-context";
-import { GamesNightProvider } from "@/context/games-night-context";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -29,11 +27,7 @@ export default function LocaleLayout({
   return (
     <>
       <NextIntlClientProvider locale={locale} messages={messages}>
-        <DateProvider>
-          <GamesNightProvider>
-            <MainLayout>{children}</MainLayout>
-          </GamesNightProvider>
-        </DateProvider>
+        <MainLayout>{children}</MainLayout>
       </NextIntlClientProvider>
     </>
   );

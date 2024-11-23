@@ -10,6 +10,7 @@ import { Button } from "./ui/button";
 import { LoadingSpinner } from "./ui/loading-spinner";
 import { useTranslations } from "next-intl";
 import { ScrollArea, ScrollBar } from "./ui/scroll-area";
+import { GameState } from "@/data/nhl/game";
 
 export default function DailyGameFeed() {
   const t = useTranslations();
@@ -25,10 +26,10 @@ export default function DailyGameFeed() {
     <div className="m-2">
       <div className="flex items-center justify-center gap-1 text-center">
         <Button
-          disabled={score === null}
+          disabled={!score}
           variant="outline"
           size="icon"
-          onClick={() => changeDate(score!.prevDate)}
+          onClick={() => (score ? changeDate(score.prevDate) : null)}
         >
           <ChevronLeftIcon className="h-4 w-4" />
         </Button>
@@ -39,20 +40,31 @@ export default function DailyGameFeed() {
           updateDateWithString={updateDateWithString}
         />
         <Button
-          disabled={score === null}
+          disabled={!score}
           variant="outline"
           size="icon"
-          onClick={() => changeDate(score!.nextDate)}
+          onClick={() => (score ? changeDate(score.nextDate) : null)}
         >
           <ChevronRightIcon className="h-4 w-4" />
         </Button>
       </div>
       <ScrollArea>
         <div className="flex gap-1 mt-2 py-2">
-          {score === null ? (
+          {!score ? (
             <LoadingSpinner />
           ) : score.games.length > 0 ? (
-            score.games.map((game) => <GameItem key={game.id} game={game} />)
+            score.games
+              .sort((a, b) => {
+                const moveToEnd = [GameState.OFF, GameState.FINAL];
+
+                const isAEnd = moveToEnd.includes(a.gameState);
+                const isBEnd = moveToEnd.includes(b.gameState);
+
+                if (isAEnd && !isBEnd) return 1; // `a` should go after `b`
+                if (!isAEnd && isBEnd) return -1; // `b` should go after `a`
+                return 0; // Keep original order if both or neither are in the `moveToEnd` array
+              })
+              .map((game) => <GameItem key={game.id} game={game} />)
           ) : (
             t("NoGameOnThatDate")
           )}
