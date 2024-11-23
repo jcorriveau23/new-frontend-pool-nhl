@@ -597,8 +597,8 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   React.useEffect(() => {
     const dayInfo = poolInfo.context?.score_by_day?.[dateOfInterest];
 
-    if (!dayInfo && !dailyLeaders) {
-      // If both are not defined, it means that it should be previewing the roster.
+    if (!dayInfo || !dailyLeaders) {
+      // It means that it should be previewing the roster.
       setDailyPointsMade(null);
       return;
     }
