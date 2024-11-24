@@ -60,7 +60,7 @@ export function DatePicker(props: DatePickerProps) {
               locale: localeMap[locale as "en" | "fr"],
             })
           ) : (
-            <span>{t("Pick a date")}</span>
+            <span>{t("PickDate")}</span>
           )}
           {props.selectedDate === null ||
           props.selectedDate.toDateString() ===
@@ -74,7 +74,7 @@ export function DatePicker(props: DatePickerProps) {
                     ></AlertTriangle>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{t("Not current date selected")}</p>
+                    <p>{t("NotCurrentDateSelected")}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

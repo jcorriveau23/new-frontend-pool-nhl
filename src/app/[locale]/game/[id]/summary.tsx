@@ -131,7 +131,7 @@ export default async function GameSummary(props: Props) {
 
   const ShootoutTable = (shootoutInfo: ShootoutAttempt[]) => (
     <Table>
-      <TableCaption>{t("The list of shootout attempt")}</TableCaption>
+      <TableCaption>{t("ListShootoutAttempt")}</TableCaption>
       <TableHeader>
         <TableRow>
           <TableHead>Seq.</TableHead>
@@ -164,7 +164,7 @@ export default async function GameSummary(props: Props) {
   if (gameLanding === null) {
     return (
       <h1>
-        {t("No game landing found with game")} {props.gameId}.
+        {t("NoGameLandingFound")} {props.gameId}.
       </h1>
     );
   }
@@ -198,7 +198,7 @@ export default async function GameSummary(props: Props) {
                       <div className="space-y-4">
                         {period.goals?.length > 0
                           ? period.goals.map((goalInfo) => GoalItem(goalInfo))
-                          : t("No goal")}
+                          : t("NoGoal")}
                       </div>
                     </AccordionContent>
                   </AccordionItem>

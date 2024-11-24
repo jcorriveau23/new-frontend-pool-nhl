@@ -674,7 +674,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       goaliesDailyStats: goaliesDailyStatsTemp,
       totalDailyPoints: totalDailyPointsTemp,
     });
-  }, [dateOfInterest]);
+  }, [dateOfInterest, dailyLeaders]);
 
   const updatePoolInfo = (newPoolInfo: Pool) => {
     // @ts-ignore

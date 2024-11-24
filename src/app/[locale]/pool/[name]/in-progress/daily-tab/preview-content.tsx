@@ -204,7 +204,7 @@ export default function DailyPreviewContent() {
         {totalPreview
           ? PreviewTotalTable(
               totalPreview,
-              getFormatedRankingTableTitle("Preview number of players playing")
+              getFormatedRankingTableTitle("PreviewPlayersPlaying")
             )
           : null}
       </div>
@@ -229,7 +229,7 @@ export default function DailyPreviewContent() {
                     forwardsPreview[selectedPoolUser.id],
                     getFormatedDateTitle(
                       selectedPoolUser.name,
-                      "List of forwards playing for"
+                      "ListOfForwardsPlayingFor"
                     )
                   )}
                 </AccordionContent>
@@ -252,7 +252,7 @@ export default function DailyPreviewContent() {
                     defensePreview[selectedPoolUser.id],
                     getFormatedDateTitle(
                       selectedPoolUser.name,
-                      "List of defenseman playing for"
+                      "ListOfDefensemanPlayingFor"
                     )
                   )}
                 </AccordionContent>
@@ -275,7 +275,7 @@ export default function DailyPreviewContent() {
                     goaliesPreview[selectedPoolUser.id],
                     getFormatedDateTitle(
                       selectedPoolUser.name,
-                      "List of goalies playing for"
+                      "ListOfGoaliesPlayingFor"
                     )
                   )}
                 </AccordionContent>

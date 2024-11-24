@@ -26,7 +26,7 @@ export default function PickList(props: Props) {
 
   return (
     <Table>
-      <TableCaption>{`${t("Liste of picks owned by")} ${
+      <TableCaption>{`${t("ListePickOwnedBy")} ${
         props.poolUser.name
       }`}</TableCaption>
       <TableHeader>

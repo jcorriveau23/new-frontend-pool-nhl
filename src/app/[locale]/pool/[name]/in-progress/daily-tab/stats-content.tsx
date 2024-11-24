@@ -214,28 +214,28 @@ export default function DailyStatsContent() {
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 TotalDailyColumn,
-                getFormatedRankingTableTitle("Daily Ranking")
+                getFormatedRankingTableTitle("DailyRanking")
               )}
             </TabsContent>
             <TabsContent value="forwardRanking">
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 ForwardsDailyTotalColumn,
-                getFormatedRankingTableTitle("Forward Daily Ranking")
+                getFormatedRankingTableTitle("ForwardDailyRanking")
               )}
             </TabsContent>
             <TabsContent value="defenseRanking">
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 DefensesDailyTotalColumn,
-                getFormatedRankingTableTitle("Defense Daily Ranking")
+                getFormatedRankingTableTitle("DefenseDailyRanking")
               )}
             </TabsContent>
             <TabsContent value="goaliesRanking">
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 GoaliesDailyTotalColumn,
-                getFormatedRankingTableTitle("Goalies Daily Ranking")
+                getFormatedRankingTableTitle("GoaliesDailyRanking")
               )}
             </TabsContent>
           </Tabs>
@@ -261,7 +261,7 @@ export default function DailyStatsContent() {
                     SkaterDailyColumn,
                     getFormatedDateTitle(
                       selectedPoolUser.name,
-                      "Daily points made by forwards for"
+                      "DailyPointsMadeByForwardsFor"
                     )
                   )}
                 </AccordionContent>
@@ -281,7 +281,7 @@ export default function DailyStatsContent() {
                     SkaterDailyColumn,
                     getFormatedDateTitle(
                       selectedPoolUser.name,
-                      "Daily points made by defense for"
+                      "DailyPointsMadeByDefenseFor"
                     )
                   )}
                 </AccordionContent>
@@ -300,7 +300,7 @@ export default function DailyStatsContent() {
                     dailyPointsMade.goaliesDailyStats[selectedPoolUser.id],
                     getFormatedDateTitle(
                       selectedPoolUser.name,
-                      "Daily points made by goalies for"
+                      "DailyPointsMadeByGoaliesFor"
                     )
                   )}
                 </AccordionContent>
@@ -315,22 +315,22 @@ export default function DailyStatsContent() {
         <Tabs defaultValue="scoringLeaders">
           <TabsList>
             <TabsTrigger value={"scoringLeaders"}>
-              {t("Scoring Leaders")}
+              {t("ScoringLeaders")}
             </TabsTrigger>
             <TabsTrigger value={"goaliesLeaders"}>
-              {t("Goalies Leaders")}
+              {t("GoaliesLeaders")}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="scoringLeaders">
             {DailyScoringLeadersTable(
               dailyLeaders.skaters,
-              t("Daily scoring leaders")
+              t("DailyScoringLeaders")
             )}
           </TabsContent>
           <TabsContent value="goaliesLeaders">
             {DailyGoaliesLeadersTable(
               dailyLeaders.goalies,
-              t("Daily goalies leaders")
+              t("DailyGoaliesLeaders")
             )}
           </TabsContent>
         </Tabs>

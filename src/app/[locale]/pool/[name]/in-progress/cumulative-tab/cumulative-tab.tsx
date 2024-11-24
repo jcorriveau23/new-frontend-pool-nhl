@@ -856,7 +856,7 @@ export default function CumulativeTab() {
         onRowClick: () => null,
         t: t,
       }}
-      title={t("Available reservists")}
+      title={t("AvailableReservists")}
       tableFooter={null}
     />
   );
@@ -902,7 +902,7 @@ export default function CumulativeTab() {
                 ForwardColumn,
                 getFormatedPlayersTableTitle(
                   participant.name,
-                  "Total points made by forwards for"
+                  "TotalPointsMadeByForwardsFor"
                 ),
                 ranking.find(
                   (rank) => rank.participant === selectedPoolUser.name
@@ -928,7 +928,7 @@ export default function CumulativeTab() {
                 DefenseColumn,
                 getFormatedPlayersTableTitle(
                   participant.name,
-                  "Total points made by defense for"
+                  "TotalPointsMadeByDefenseFor"
                 ),
                 ranking.find(
                   (rank) => rank.participant === selectedPoolUser.name
@@ -954,7 +954,7 @@ export default function CumulativeTab() {
                 GoalieColumn,
                 getFormatedPlayersTableTitle(
                   participant.name,
-                  "Total points made by goalies for"
+                  "TotalPointsMadeByGoaliesFor"
                 ),
                 ranking.find(
                   (rank) => rank.participant === selectedPoolUser.name
@@ -981,7 +981,7 @@ export default function CumulativeTab() {
       {poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0 ? (
         <Accordion type="single" collapsible defaultValue="picks">
           <AccordionItem value="picks">
-            <AccordionTrigger>{t("Next season picks")}</AccordionTrigger>
+            <AccordionTrigger>{t("NextSeasonPicks")}</AccordionTrigger>
             <AccordionContent>
               <PickList poolUser={selectedPoolUser} poolInfo={poolInfo} />
             </AccordionContent>
@@ -1085,16 +1085,16 @@ export default function CumulativeTab() {
           </TabsList>
         </div>
         <TabsContent value="totalRanking">
-          {TotalTable(ranking, TotalPointsColumn, t("Total Ranking"))}
+          {TotalTable(ranking, TotalPointsColumn, t("TotalRanking"))}
         </TabsContent>
         <TabsContent value="forwardRanking">
-          {TotalTable(ranking, ForwardsTotalColumn, t("Forward Ranking"))}
+          {TotalTable(ranking, ForwardsTotalColumn, t("ForwardRanking"))}
         </TabsContent>
         <TabsContent value="defenseRanking">
-          {TotalTable(ranking, DefensesTotalColumn, t("Defense Ranking"))}
+          {TotalTable(ranking, DefensesTotalColumn, t("DefenseRanking"))}
         </TabsContent>
         <TabsContent value="goaliesRanking">
-          {TotalTable(ranking, GoaliesTotalColumn, t("Goalies Ranking"))}
+          {TotalTable(ranking, GoaliesTotalColumn, t("GoaliesRanking"))}
         </TabsContent>
       </Tabs>
       <div className="pt-3 space-y-2">

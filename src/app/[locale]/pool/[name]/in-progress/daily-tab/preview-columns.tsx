@@ -26,15 +26,15 @@ export const TotalPreviewColumn: ColumnDef<PreviewTotal>[] = [
   },
   {
     accessorKey: "forwardsPlaying",
-    header: ({ table }) => table.options.meta?.t("Forwards nb"),
+    header: ({ table }) => table.options.meta?.t("ForwardsNb"),
   },
   {
     accessorKey: "defensePlaying",
-    header: ({ table }) => table.options.meta?.t("Defense nb"),
+    header: ({ table }) => table.options.meta?.t("DefenseNb"),
   },
   {
     accessorKey: "goaliesPlaying",
-    header: ({ table }) => table.options.meta?.t("Goalies nb"),
+    header: ({ table }) => table.options.meta?.t("GoaliesNb"),
   },
   {
     accessorKey: "totalPlaying",

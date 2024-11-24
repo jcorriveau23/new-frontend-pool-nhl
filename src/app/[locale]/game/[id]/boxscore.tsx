@@ -43,7 +43,7 @@ export default async function GameBoxscore(props: Props) {
   if (boxscore == null) {
     return (
       <h1>
-        {t("No boxscore found with game")} {props.gameId}.
+        {t("NoBoxscoreFound")} {props.gameId}.
       </h1>
     );
   }
@@ -98,7 +98,7 @@ export default async function GameBoxscore(props: Props) {
                 alt="home-team"
                 src={boxscore.awayTeam.logo}
               />
-              {t("Away Team")}
+              {t("AwayTeam")}
             </TabsTrigger>
             <TabsTrigger value="homeTeam">
               <Image
@@ -107,35 +107,35 @@ export default async function GameBoxscore(props: Props) {
                 alt="home-team"
                 src={boxscore.homeTeam.logo}
               />
-              {t("Home Team")}
+              {t("HomeTeam")}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="awayTeam">
             {SkaterTable(
               boxscore.playerByGameStats.awayTeam.forwards,
-              t("Forwards stats")
+              t("ForwardsStats")
             )}
             {SkaterTable(
               boxscore.playerByGameStats.awayTeam.defense,
-              t("Defenses stats")
+              t("DefensesStats")
             )}
             {GoalieTable(
               boxscore.playerByGameStats.awayTeam.goalies,
-              t("Goalies stats")
+              t("GoaliesStats")
             )}
           </TabsContent>
           <TabsContent value="homeTeam">
             {SkaterTable(
               boxscore.playerByGameStats.homeTeam.forwards,
-              t("Forwards stats")
+              t("ForwardsStats")
             )}
             {SkaterTable(
               boxscore.playerByGameStats.homeTeam.defense,
-              t("Defenses stats")
+              t("DefensesStats")
             )}
             {GoalieTable(
               boxscore.playerByGameStats.homeTeam.goalies,
-              t("Goalies stats")
+              t("GoaliesStats")
             )}
           </TabsContent>
         </Tabs>

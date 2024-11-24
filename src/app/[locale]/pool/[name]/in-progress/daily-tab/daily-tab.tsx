@@ -13,13 +13,15 @@ import { usePoolContext } from "@/context/pool-context";
 export default function DailyTab() {
   const { gamesNightStatus } = useGamesNightContext();
   const { currentDate, selectedDate } = useDateContext();
-  const { poolInfo } = usePoolContext();
+  const { poolInfo, dailyPointsMade } = usePoolContext();
   const t = useTranslations();
 
   const seasonEndDate = new Date(poolInfo.season_end + "T00:00:00");
   const seasonStartDate = new Date(poolInfo.season_start + "T00:00:00");
 
-  const dateOfInterest = selectedDate ?? currentDate;
+  const dateOfInterest = dailyPointsMade
+    ? new Date(dailyPointsMade.dateOfInterest + "T00:00:00")
+    : selectedDate ?? currentDate;
 
   if (dateOfInterest > seasonEndDate) {
     return (
@@ -47,12 +49,16 @@ export default function DailyTab() {
     case GamesNightStatus.NO_GAMES: {
       return <div>{t("NoGameOnThatDate")}</div>;
     }
-    case GamesNightStatus.NOT_STARTED: {
-      return <DailyPreviewContent />;
-    }
+    case GamesNightStatus.NOT_STARTED:
+
     case GamesNightStatus.COMPLETED:
     case GamesNightStatus.LIVE: {
-      return <DailyStatsContent />;
+      if (
+        poolInfo.context?.score_by_day?.[dailyPointsMade?.dateOfInterest ?? ""]
+      ) {
+        return <DailyStatsContent />;
+      }
+      return <DailyPreviewContent />;
     }
   }
 }
