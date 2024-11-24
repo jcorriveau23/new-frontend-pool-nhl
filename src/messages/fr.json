@@ -343,5 +343,9 @@
     "CumulatedPoints": "Les points quotidien ammassé le {selectedDate} font parties du cumulatif.",
     "LivePoints": "Les matchs du {selectedDate} sont en cours, les points ne font pas encore partie du cumulatif.",
     "FuturePoints": "Les matchs du {selectedDate} n'ont pas encore été joué.",
-    "NoGames": "Il n'y a pas de match prévu pour le {date}"
+    "NoGames": "Il n'y a pas de match prévu pour le {date}",
+    "CumulatedPointsNow": "Les matchs sont terminé et les points font parties du cumulatif.",
+    "LivePointsNow": "Les matchs sont en cours, les points ne font pas encore partie du cumulatif.",
+    "FuturePointsNow": "Les matchs d'aujourd'hui n'ont pas encore débutés",
+    "NoGamesNow": "Il n'y a pas de matchs prévu aujourd'hui"
 }

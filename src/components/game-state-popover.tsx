@@ -25,36 +25,48 @@ export function GameStatePopover({ state }: StatePopoverProps) {
         return {
           icon: <Radio className="h-4 w-4 text-red-500 animate-pulse" />,
           label: "Live",
-          description: t("LivePoints", {
-            selectedDate: querySelectedDate,
-          }),
+          description:
+            querySelectedDate === "now"
+              ? t("LivePointsNow")
+              : t("LivePoints", {
+                  selectedDate: querySelectedDate,
+                }),
           color: "bg-red-500",
         };
       case GamesNightStatus.COMPLETED:
         return {
           icon: <Lock className="h-4 w-4 text-blue-500" />,
           label: "Completed",
-          description: t("CumulatedPoints", {
-            selectedDate: querySelectedDate,
-          }),
+          description:
+            querySelectedDate === "now"
+              ? t("CumulatedPointsNow")
+              : t("CumulatedPoints", {
+                  selectedDate: querySelectedDate,
+                }),
           color: "bg-blue-500",
         };
       case GamesNightStatus.NOT_STARTED:
         return {
           icon: <AlertCircle className="h-4 w-4 text-yellow-500" />,
           label: "Not Started",
-          description: t("FuturePoints", {
-            selectedDate: querySelectedDate,
-          }),
+          description:
+            querySelectedDate === "now"
+              ? t("FuturePointsNow")
+              : t("FuturePoints", {
+                  selectedDate: querySelectedDate,
+                }),
           color: "bg-yellow-500",
         };
       case GamesNightStatus.NO_GAMES:
         return {
           icon: <CalendarX className="h-4 w-4 text-gray-500" />,
           label: "No Games",
-          description: t("NoGames", {
-            selectedDate: querySelectedDate,
-          }),
+          description:
+            querySelectedDate === "now"
+              ? t("NoGamesNow")
+              : t("NoGames", {
+                  selectedDate: querySelectedDate,
+                }),
           color: "bg-gray-500",
         };
     }
