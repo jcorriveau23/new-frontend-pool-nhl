@@ -343,5 +343,9 @@
     "CumulatedPoints": "Points made on the {selectedDate} have been cumulated.",
     "LivePoints": "Games on the {selectedDate} are live right now, points made have not been cumulated yet.",
     "FuturePoints": "Games on the {selectedDate} have not been played yet.",
-    "NoGames": "No games scheduled on the {selectedDate}."
+    "NoGames": "No games scheduled on the {selectedDate}.",
+    "CumulatedPointsNow": "Games are done, points made have been cumulated.",
+    "LivePointsNow": "Games are currently playing right now, points have not been cumulated yet.",
+    "FuturePointsNow": "Today's games have not started yet.",
+    "NoGamesNow": "There is no game planned for today."
 }
