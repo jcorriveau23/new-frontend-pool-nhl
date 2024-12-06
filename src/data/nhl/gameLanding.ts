@@ -26,7 +26,7 @@ export interface Broadcast {
 
 export interface Team {
   id: number;
-  name: { default: string };
+  commonName: { default: string };
   abbrev: string;
   placeName: { default: string; fr?: string };
   placeNameWithPreposition: { default: string; fr?: string };
