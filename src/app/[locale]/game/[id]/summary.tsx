@@ -121,9 +121,9 @@ export default async function GameSummary(props: Props) {
     <div className="w-full max-w-3xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden">
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
-          {TeamInfo(awayTeam.name.default, awayTeam.logo, awayTeam.sog)}
+          {TeamInfo(awayTeam.commonName.default, awayTeam.logo, awayTeam.sog)}
           {ScoreDisplay(awayTeam.score, homeTeam.score)}
-          {TeamInfo(homeTeam.name.default, homeTeam.logo, homeTeam.sog)}
+          {TeamInfo(homeTeam.commonName.default, homeTeam.logo, homeTeam.sog)}
         </div>
       </div>
     </div>
