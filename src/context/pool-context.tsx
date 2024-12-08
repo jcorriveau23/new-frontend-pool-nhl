@@ -35,7 +35,12 @@ export interface PoolContextProps {
   selectedPoolUser: PoolUser;
   updateSelectedParticipant: (participant: string) => void;
 
+  // The last pool date stored into the pool.
   lastFormatDate: string | null;
+
+  // The start Date and selected of the pool (This must be in the pool season time range!)
+  poolStartDate: Date;
+  poolSelectedEndDate: Date;
 
   // Map the player id to its pool owner.
   playersOwner: Record<number, string>;
@@ -539,6 +544,18 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       ? lastFormatDate
       : format(currentDate, "yyyy-MM-dd");
 
+  // Now parse all the pool date from the start of the season to the current date.
+  const poolStartDate = new Date(poolInfo.season_start + "T00:00:00");
+  const poolEndDate = new Date(poolInfo.season_end + "T00:00:00");
+  const endDate = new Date(dateOfInterest + "T00:00:00");
+
+  const poolSelectedEndDate =
+    endDate < poolStartDate
+      ? new Date(poolInfo.season_start + "T00:00:00")
+      : endDate > poolEndDate
+      ? new Date(poolInfo.season_start + "T00:00:00")
+      : endDate;
+
   const getPoolDictUsers = (pool: Pool) =>
     pool.participants.reduce((acc: Record<string, PoolUser>, user) => {
       acc[user.id] = user;
@@ -597,12 +614,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   React.useEffect(() => {
     const dayInfo = poolInfo.context?.score_by_day?.[dateOfInterest];
 
-    if (!dayInfo || !dailyLeaders) {
-      // It means that it should be previewing the roster.
-      setDailyPointsMade(null);
-      return;
-    }
-
     const forwardsDailyStatsTemp: Record<string, SkaterDailyInfo[]> = {};
     const defendersDailyStatsTemp: Record<string, SkaterDailyInfo[]> = {};
     const goaliesDailyStatsTemp: Record<string, GoalieDailyInfo[]> = {};
@@ -654,6 +665,10 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
           dailyLeaders,
           poolInfo.settings.goalies_settings
         );
+      } else {
+        // It means that it should be previewing the roster.
+        setDailyPointsMade(null);
+        return;
       }
       totalDailyPointsTemp.push(
         new TotalDailyPoints(
@@ -693,7 +708,9 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     selectedParticipant,
     selectedPoolUser,
     updateSelectedParticipant,
-    lastFormatDate: lastFormatDate,
+    lastFormatDate,
+    poolStartDate,
+    poolSelectedEndDate,
     playersOwner,
     updatePlayersOwner,
     poolInfo,
