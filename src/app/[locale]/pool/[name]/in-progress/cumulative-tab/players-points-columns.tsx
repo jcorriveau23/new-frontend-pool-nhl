@@ -2,11 +2,11 @@
 
 import { ColumnDef, TableMeta } from "@tanstack/react-table";
 
-import { GoalieInfo, PlayerStatus, SkaterInfo } from "./cumulative-tab";
 import { Pool } from "@/data/pool/model";
 import PlayerLink from "@/components/player-link";
 import { TeamLogo } from "@/components/team-logo";
 import InformationIcon from "@/components/information-box";
+import { GoalieInfo, PlayerStatus, SkaterInfo } from "./cumulative-calculation";
 
 const getWarningColor = (playerStatus: PlayerStatus) => {
   switch (playerStatus) {

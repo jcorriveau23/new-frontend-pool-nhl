@@ -1,8 +1,7 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
-import { TotalRanking } from "./cumulative-tab";
 import { GameStatePopover } from "@/components/game-state-popover";
-import { GamesNightStatus } from "@/context/games-night-context";
+import { TotalRanking } from "./cumulative-calculation";
 
 export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
   {
