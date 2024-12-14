@@ -468,7 +468,7 @@ export default function CumulativeTab() {
           </AccordionItem>
         </Accordion>
       ) : null}
-      {poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0 ? (
+      {(poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0) ? (
         <Accordion type="single" collapsible defaultValue="picks">
           <AccordionItem value="picks">
             <AccordionTrigger>{t("NextSeasonPicks")}</AccordionTrigger>
@@ -540,8 +540,8 @@ export default function CumulativeTab() {
       <AccordionItem value={positionFilter ?? "All"}>
         <AccordionTrigger>
           <span className="inline-flex items-center space-x-2">
-            <LineChart />
             <div>Chart</div>
+            <LineChart />
           </span>
         </AccordionTrigger>
         <AccordionContent>

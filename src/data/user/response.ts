@@ -1,16 +1,14 @@
-
 import { UserData } from "./model";
 
 export interface LoginResponse {
-    user: UserData;
-    token: string;
+  user: UserData;
+  token: string;
 }
 
-
 export interface Response {
-    data: string
+  data: string;
 }
 
 export interface ErrorResponse {
-    response: Response;
+  response: Response;
 }

@@ -21,7 +21,7 @@ export default function DailyTab() {
 
   const dateOfInterest = dailyPointsMade
     ? new Date(dailyPointsMade.dateOfInterest + "T00:00:00")
-    : selectedDate ?? currentDate;
+    : (selectedDate ?? currentDate);
 
   if (dateOfInterest > seasonEndDate) {
     return (
