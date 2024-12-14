@@ -12,7 +12,7 @@ import {
   GamesNightStatus,
   useGamesNightContext,
 } from "@/context/games-night-context";
-import { useRouter } from "@/navigation";
+import { useRouter } from "@/i18n/routing";
 import { usePoolContext } from "@/context/pool-context";
 import LiveGamePopOver from "@/components/live-games-pop-over";
 

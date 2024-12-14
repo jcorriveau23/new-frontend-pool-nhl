@@ -2,7 +2,7 @@
 import React from "react";
 
 import { Game, GameState } from "@/data/nhl/game";
-import { useRouter } from "@/navigation";
+import { useRouter } from "@/i18n/routing";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 interface Props {

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Link } from "@/navigation";
+import { Link } from "@/i18n/routing";
 import { useSearchParams } from "next/navigation";
 import { useInjuredPlayers } from "@/context/injury-context";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";

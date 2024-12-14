@@ -12,7 +12,7 @@ import Footer from "@/components/footer";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { LucideHome } from "lucide-react";
-import { useRouter } from "@/navigation";
+import { useRouter } from "@/i18n/routing";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DateProvider } from "@/context/date-context";
 import { GamesNightProvider } from "@/context/games-night-context";

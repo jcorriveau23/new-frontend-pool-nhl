@@ -28,7 +28,7 @@ import { useTranslations } from "next-intl";
 import { CURRENT_DRAFT_YEAR, CURRENT_NHL_SEASON } from "@/lib/nhl";
 import { HankoUser, useUser } from "@/context/useUserData";
 import { Button } from "./ui/button";
-import { useRouter } from "@/navigation";
+import { useRouter } from "@/i18n/routing";
 import {
   DropdownMenu,
   DropdownMenuContent,

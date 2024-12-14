@@ -95,7 +95,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
   const { poolInfo, updatePoolInfo } = usePoolContext();
   const t = useTranslations();
-
   const socketUrl = `wss://${window.location.host}/api-rust/ws/${
     typeof jwt === "string" && jwt !== "" ? jwt : "unauthenticated"
   }`;

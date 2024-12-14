@@ -8,7 +8,7 @@ import Image from "next/image";
 import team_info from "@/lib/teams";
 import { getAllYears } from "@/lib/nhl";
 import { Combobox } from "@/components/ui//link-combobox";
-import { Link } from "@/navigation";
+import { Link } from "@/i18n/routing";
 import { getTranslations } from "next-intl/server";
 import { seasonWithYearFormat } from "@/app/utils/formating";
 import PageTitle from "@/components/page-title";

@@ -4,7 +4,7 @@ Module that share the context of the current date, the selected date
 and allow to update the selected date across the whole application.
 */
 import { getServerSideDailyGames } from "@/actions/daily-games";
-import { useRouter, usePathname } from "@/navigation";
+import { useRouter, usePathname } from "@/i18n/routing";
 import React, { createContext, useContext, ReactNode, useEffect } from "react";
 import { Score } from "../data/nhl/game";
 import { useSearchParams } from "next/navigation";

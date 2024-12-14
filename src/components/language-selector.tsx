@@ -11,8 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useTranslations, useLocale } from "next-intl";
-import { usePathname, useRouter } from "@/navigation";
-
+import { usePathname, useRouter } from "@/i18n/routing";
 // Define the cn function inline
 const cn = (...classes: (string | undefined)[]) =>
   classes.filter(Boolean).join(" ");

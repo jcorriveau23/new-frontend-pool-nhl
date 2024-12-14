@@ -12,7 +12,7 @@ import {
   SkaterSettings,
 } from "@/data/pool/model";
 import React, { createContext, useContext, ReactNode, useState } from "react";
-import { useRouter } from "@/navigation";
+import { useRouter } from "@/i18n/routing";
 import { db } from "@/db";
 import { useDailyLeadersContext } from "./daily-leaders-context";
 import { DailyLeaders } from "@/data/dailyLeaders/model";

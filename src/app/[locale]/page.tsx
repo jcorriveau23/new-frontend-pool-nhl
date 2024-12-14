@@ -1,10 +1,10 @@
-import { Link } from "@/navigation";
-import { unstable_setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/routing";
+import { setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
 
 //@ts-ignore
 export default function Home({ params: { locale }, searchParams }) {
-  unstable_setRequestLocale(locale);
+  setRequestLocale(locale);
   const queryString = new URLSearchParams(searchParams).toString();
   const t = useTranslations();
   return (

@@ -2,7 +2,7 @@
 const locales = ["en", "fr"];
 
 import { NextIntlClientProvider, useMessages } from "next-intl";
-import { unstable_setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 import React from "react";
 import MainLayout from "./main-layout";
 
@@ -21,7 +21,7 @@ export default function LocaleLayout({
   // This is a limitation that we aim to remove in the future, but as a stopgap solution,
   // next-intl provides a temporary API that can be used to enable static rendering:
   // https://next-intl-docs.vercel.app/docs/getting-started/app-router
-  unstable_setRequestLocale(locale);
+  setRequestLocale(locale);
   const messages = useMessages();
 
   return (
