@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@/navigation";
+import { Link } from "@/i18n/routing";
 /**
 The footer of the web app.
  */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "@/navigation";
+import { useRouter } from "@/i18n/routing";
 import { Hanko } from "@teamhanko/hanko-elements";
 import { toast } from "@/hooks/use-toast";
 import { useSearchParams } from "next/navigation";

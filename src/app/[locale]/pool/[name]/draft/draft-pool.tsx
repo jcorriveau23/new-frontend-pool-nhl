@@ -14,9 +14,8 @@ import {
 import Draft from "@/components/draft";
 import PlayersTable from "@/components/player-table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { getPoolerActivePlayers, Player, PoolUser } from "@/data/pool/model";
+import { getPoolerActivePlayers, Player } from "@/data/pool/model";
 import { usePoolContext } from "@/context/pool-context";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
 import { Command, useSocketContext } from "@/context/socket-context";
 

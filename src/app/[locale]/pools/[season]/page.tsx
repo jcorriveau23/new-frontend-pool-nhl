@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { PoolState, ProjectedPoolShort } from "@/data/pool/model";
-import { Link } from "@/navigation";
+import { Link } from "@/i18n/routing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getTranslations } from "next-intl/server";
 import { getAllYears } from "@/lib/nhl";

@@ -28,7 +28,7 @@ import PlayerSalary from "./player-salary";
 import PlayerSearchDialog from "./search-players";
 import SortHeaderCell from "./sort-header-cell";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "@/navigation";
+import { useRouter } from "@/i18n/routing";
 
 interface PlayersTableProps {
   sortField: string | null;

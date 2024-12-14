@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Checkbox } from "./ui/checkbox";
-import { useRouter } from "@/navigation";
+import { useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
 import { toast } from "@/hooks/use-toast";
 import InformationIcon from "./information-box";
