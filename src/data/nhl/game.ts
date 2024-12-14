@@ -1,4 +1,3 @@
-
 import { TeamInfo } from "./shared";
 
 export enum GameState {
@@ -10,7 +9,7 @@ export enum GameState {
   CRIT = "CRIT",
   FINAL = "FINAL",
 }
-  
+
 export interface TimeRemaining {
   timeRemaining: string;
   running: boolean;
@@ -21,7 +20,6 @@ export interface PeriodDescriptor {
   number: number;
   periodType: string;
 }
-
 
 export interface Game {
   id: number;

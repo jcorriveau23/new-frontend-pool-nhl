@@ -51,8 +51,9 @@ export default function HankoAuth(props: Props) {
   useEffect(() => {
     register(hankoApi, {
       translations: { en, fr },
-    }).catch((error) => {
+    }).catch((error: Error) => {
       // handle error
+      console.log(error);
     });
   }, []);
 

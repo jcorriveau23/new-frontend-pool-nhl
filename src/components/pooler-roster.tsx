@@ -203,7 +203,7 @@ export default function PoolerRoster(props: Props) {
                   </TableRow>
                 ))}
             </TableBody>
-            {poolInfo.settings.salary_cap ?? 0 > 0 ? (
+            {(poolInfo.settings.salary_cap ?? 0 > 0) ? (
               <TableFooter>
                 <TableRow>
                   <TableCell colSpan={3}>{t("TotalProtected")}</TableCell>

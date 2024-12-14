@@ -1,4 +1,3 @@
-
 export enum PeriodType {
   REG = "REG",
   OT = "OT",

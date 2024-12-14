@@ -32,7 +32,7 @@ export default function RosterTab() {
     // If the user has already a list of protected players, set it as default.
     setProtectedPlayerIds(
       selectedUser
-        ? poolInfo.context?.protected_players?.[selectedUser.id] ?? null
+        ? (poolInfo.context?.protected_players?.[selectedUser.id] ?? null)
         : null
     );
   }, [selectedParticipant]);
@@ -181,8 +181,8 @@ export default function RosterTab() {
                 <div className="flex justify-between items-center">
                   <div className="text-left">{user.name}</div>
                   <div className="text-right">
-                    {poolInfo.context?.protected_players?.[user.id]?.length ??
-                    0 > 0 ? (
+                    {(poolInfo.context?.protected_players?.[user.id]?.length ??
+                    0 > 0) ? (
                       <Shield className="h-4 w-4 text-green-500 ml-2" />
                     ) : null}
                   </div>

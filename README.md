@@ -1,9 +1,8 @@
-# Free NHL pool 
+# Free NHL pool
 
 [hockeypool.live](https://hockeypool.live)
 
 built with next-js shadcn and rust, [See backend repository](https://github.com/jcorriveau23/backend-pool-nhl)
-
 
 ## Getting Started
 

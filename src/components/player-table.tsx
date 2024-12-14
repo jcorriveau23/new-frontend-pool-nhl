@@ -128,8 +128,8 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     const newSortField = isGoalies
       ? "salary_cap"
       : wasGoalies
-      ? "points"
-      : sortField ?? "points";
+        ? "points"
+        : (sortField ?? "points");
 
     setSortField(newSortField);
     queryParams.set("sortField", newSortField);
