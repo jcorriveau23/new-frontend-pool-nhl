@@ -19,7 +19,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Link } from "@/navigation";
+import { Link } from "@/i18n/routing";
 import PageTitle from "@/components/page-title";
 
 enum SeasonType {
