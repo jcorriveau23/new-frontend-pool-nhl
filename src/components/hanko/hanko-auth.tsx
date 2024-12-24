@@ -11,7 +11,7 @@ import "./hanko.css";
 import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
 
-//@ts-ignore
+//@ts-expect-error, known environment variable type.
 const hankoApi: string = process.env.NEXT_PUBLIC_HANKO_API_URL;
 
 interface Props {
@@ -59,6 +59,7 @@ export default function HankoAuth(props: Props) {
 
   return (
     <div className="hanko-profile">
+      {/* @ts-expect-error, no control on component name style here.*/}
       <hanko-auth lang={locale} />
     </div>
   );

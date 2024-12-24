@@ -18,6 +18,7 @@ import { useDailyLeadersContext } from "./daily-leaders-context";
 import { DailyLeaders } from "@/data/dailyLeaders/model";
 import { format } from "date-fns";
 import { useDateContext } from "./date-context";
+import { useSearchParams } from "next/navigation";
 
 export interface DailyPoolPointsMade {
   // Daily pool information.
@@ -209,7 +210,7 @@ export class GoalieDailyInfo {
   poolPoints: number;
 
   public getTotalPoolPts(settings: GoaliesSettings): number {
-    let totalPoints =
+    const totalPoints =
       this.goals * settings.points_per_goals +
       this.assists * settings.points_per_assists;
 
@@ -475,7 +476,7 @@ const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
 };
 
 export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
-  // @ts-ignore
+  // @ts-expect-error, Dexie is not typed.
   const poolDb: Pool = await db.pools.get({ name: name });
 
   const lastFormatDate = findLastDateInDb(poolDb);
@@ -520,7 +521,7 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
     data.id = poolDb.id;
   }
 
-  // @ts-ignore
+  // @ts-expect-error, Dexie is not typed.
   db.pools.put(data, "name");
   return data;
 };
@@ -529,6 +530,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   children,
   pool,
 }) => {
+  const searchParams = useSearchParams();
   const [poolInfo, setPoolInfo] = useState<Pool>(pool);
   const { dailyLeaders } = useDailyLeadersContext();
   const { currentDate, querySelectedDate } = useDateContext();
@@ -571,7 +573,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     if (poolInfo.participants === null || poolInfo.participants.length === 0)
       return "";
 
-    const queryParams = new URLSearchParams(window.location.search);
+    const queryParams = new URLSearchParams(searchParams.toString());
     const initialSelectedParticipant = queryParams.get("selectedParticipant");
 
     if (
@@ -595,7 +597,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   const [playersOwner, setPlayersOwner] = React.useState<
     Record<number, string>
   >(getPlayersOwner(poolInfo));
-  const [cumulated, setCumulated] = React.useState(false);
 
   const updatePlayersOwner = (poolInfo: Pool) => {
     setPlayersOwner(getPlayersOwner(poolInfo));
@@ -606,7 +607,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       poolInfo.participants.find((user) => user.name === participant) ??
         poolInfo.participants[0]
     );
-    const queryParams = new URLSearchParams(window.location.search);
+    const queryParams = new URLSearchParams(searchParams.toString());
     queryParams.set("selectedParticipant", participant);
     router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
   };
@@ -620,7 +621,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     const totalDailyPointsTemp: TotalDailyPoints[] = [];
     let cumulated = false;
 
-    for (var i = 0; i < poolInfo.participants.length; i += 1) {
+    for (let i = 0; i < poolInfo.participants.length; i += 1) {
       // Parse all participants daily locked roster to query its daily stats.
       const user = poolInfo.participants[i];
 
@@ -692,12 +693,12 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   }, [dateOfInterest, dailyLeaders]);
 
   const updatePoolInfo = (newPoolInfo: Pool) => {
-    // @ts-ignore
+    // @ts-expect-error, dexie is not typed.
     db.pools.get({ name: newPoolInfo.name }).then((poolDb) => {
       mergeScoreByDay(newPoolInfo, poolDb);
       setPoolInfo(newPoolInfo);
       newPoolInfo.id = poolDb.id;
-      // @ts-ignore
+      // @ts-expect-error, dexie is not typed.
       db.pools.put(newPoolInfo, "name");
     });
     updatePlayersOwner(newPoolInfo);

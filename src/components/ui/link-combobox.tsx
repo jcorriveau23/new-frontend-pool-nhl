@@ -63,11 +63,11 @@ export function Combobox(props: Props) {
                   key={s.value}
                   value={s.value}
                   onSelect={(newValue) => {
-                    props.linkTo
-                      ? router.push(
-                          `${props.linkTo.replace("${value}", newValue)}`
-                        )
-                      : setValue(newValue === value ? "" : newValue);
+                    if (props.linkTo)
+                      router.push(
+                        `${props.linkTo.replace("${value}", newValue)}`
+                      );
+                    else setValue(newValue === value ? "" : newValue);
                     setOpen(false);
                   }}
                 >

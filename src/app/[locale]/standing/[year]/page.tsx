@@ -137,8 +137,8 @@ const getServerSideStandingSeason = async () => {
 
 const getServerSideStanding = async (date: string) => {
   /* 
-        Query the player info of a specific player id. 
-        */
+  Query the player info of a specific player id. 
+  */
   const res = await fetch(
     `https://api-web.nhle.com/v1/standings/${date}`,
     { next: { revalidate: 21600 } } // revalidate each 6 hours
@@ -151,11 +151,10 @@ const getServerSideStanding = async (date: string) => {
   return data;
 };
 
-export default async function Standing({
-  params,
-}: {
-  params: { year: string };
+export default async function Standing(props: {
+  params: Promise<{ year: string }>;
 }) {
+  const params = await props.params;
   const standingSeasons: SeasonData = await getServerSideStandingSeason();
   const standing: StandingsData = await getServerSideStanding(params.year);
   const t = await getTranslations();
@@ -172,24 +171,30 @@ export default async function Standing({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {standing.standings
-          .sort((team) => team.leagueSequence)
-          .map((team) => (
-            <TableRow key={team.teamAbbrev.default}>
-              <TableCell>{team.leagueSequence}</TableCell>
-              <TableCell>
-                <Image width={30} height={30} alt="team" src={team.teamLogo} />
-              </TableCell>
-              <TableCell>{team.teamAbbrev.default}</TableCell>
-              <TableCell> {team.clinchIndicator}</TableCell>
-              <TableCell>{team.gamesPlayed}</TableCell>
-              <TableCell>
-                {team.wins}-{team.losses}-{team.otLosses + team.ties}
-              </TableCell>
-              <TableCell>{team.points}</TableCell>
-              <TableCell>{team.goalDifferential}</TableCell>
-            </TableRow>
-          ))}
+        {standing &&
+          standing.standings
+            .sort((team) => team.leagueSequence)
+            .map((team) => (
+              <TableRow key={team.teamAbbrev.default}>
+                <TableCell>{team.leagueSequence}</TableCell>
+                <TableCell>
+                  <Image
+                    width={30}
+                    height={30}
+                    alt="team"
+                    src={team.teamLogo}
+                  />
+                </TableCell>
+                <TableCell>{team.teamAbbrev.default}</TableCell>
+                <TableCell> {team.clinchIndicator}</TableCell>
+                <TableCell>{team.gamesPlayed}</TableCell>
+                <TableCell>
+                  {team.wins}-{team.losses}-{team.otLosses + team.ties}
+                </TableCell>
+                <TableCell>{team.points}</TableCell>
+                <TableCell>{team.goalDifferential}</TableCell>
+              </TableRow>
+            ))}
       </TableBody>
     </Table>
   );

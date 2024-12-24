@@ -6,9 +6,10 @@ import { NextResponse } from "next/server";
 import { getServerSideDailyGames } from "@/actions/daily-games";
 
 export async function GET(
-  request: Request,
-  { params }: { params: { date: string } }
+  request: Request, 
+  props: { params: Promise<{ date: string }> }
 ) {
+  const params = await props.params;
   const { date } = params;
 
   const score = await getServerSideDailyGames(date as string);

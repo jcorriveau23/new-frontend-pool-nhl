@@ -245,7 +245,7 @@ export default function CumulativeTab() {
   );
 
   const SkaterTable = (
-    rows: any[],
+    rows: SkaterInfo[],
     columns: ColumnDef<SkaterInfo>[],
     title: string,
     total: SkaterTotal
@@ -289,7 +289,7 @@ export default function CumulativeTab() {
   );
 
   const GoalieTable = (
-    rows: any[],
+    rows: GoalieInfo[],
     columns: ColumnDef<GoalieInfo>[],
     title: string,
     total: GoalieTotal

@@ -20,7 +20,8 @@ export async function getServerSideDailyLeaders(
     }
     const data = await res.json();
     return data;
-  } catch (e: any) {
+  } catch (e: unknown) {
+    console.log(e);
     return null;
   }
 }

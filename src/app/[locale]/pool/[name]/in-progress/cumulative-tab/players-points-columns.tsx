@@ -8,17 +8,17 @@ import { TeamLogo } from "@/components/team-logo";
 import InformationIcon from "@/components/information-box";
 import { GoalieInfo, PlayerStatus, SkaterInfo } from "./cumulative-calculation";
 
-const getWarningColor = (playerStatus: PlayerStatus) => {
-  switch (playerStatus) {
-    case PlayerStatus.InAlignment:
-      return "green";
-    case PlayerStatus.IsReservists:
-      return "yellow";
-    case PlayerStatus.PointsIgnored:
-    case PlayerStatus.Traded:
-      return "red";
-  }
-};
+// const getWarningColor = (playerStatus: PlayerStatus) => {
+//   switch (playerStatus) {
+//     case PlayerStatus.InAlignment:
+//       return "green";
+//     case PlayerStatus.IsReservists:
+//       return "yellow";
+//     case PlayerStatus.PointsIgnored:
+//     case PlayerStatus.Traded:
+//       return "red";
+//   }
+// };
 
 const getWarningMessage = (playerStatus: PlayerStatus) => {
   switch (playerStatus) {

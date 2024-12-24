@@ -24,7 +24,9 @@ export default function DraftedPlayerIcon({
 
   const handleIconClick = (e: React.MouseEvent) => {
     setIsOpen(!isOpen);
-    onIconClick && onIconClick(e);
+    if (onIconClick) {
+      onIconClick(e);
+    }
   };
 
   return (

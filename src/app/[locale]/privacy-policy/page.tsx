@@ -1,14 +1,11 @@
 /**
  The privacy/policy page.
- */
+*/
 
-import { setRequestLocale } from "next-intl/server";
 import { useTranslations } from "next-intl";
 import PageTitle from "@/components/page-title";
 
-// @ts-ignore
-export default function PrivacyPolicy({ params: { locale } }) {
-  setRequestLocale(locale);
+export default function PrivacyPolicy() {
   const t = useTranslations();
 
   return (

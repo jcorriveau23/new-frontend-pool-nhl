@@ -62,23 +62,6 @@ interface DraftProspect {
   id: number;
 }
 
-interface DraftedByTeam {
-  id: number;
-  commonName: string;
-  fullName: string;
-  logos: {
-    id: number;
-    background: string;
-    endSeason: number;
-    secureUrl: string;
-    startSeason: number;
-    teamId: number;
-    url: string;
-  }[];
-  placeName: string;
-  triCode: string;
-}
-
 interface Data {
   id: number;
   ageInDays: number;
@@ -141,11 +124,10 @@ const getServerSideSeasonDraft = async (year: string) => {
   return data;
 };
 
-export default async function Standing({
-  params,
-}: {
-  params: { year: string };
+export default async function Standing(props: {
+  params: Promise<{ year: string }>;
 }) {
+  const params = await props.params;
   const draft: DraftData = await getServerSideSeasonDraft(params.year);
 
   const t = await getTranslations();

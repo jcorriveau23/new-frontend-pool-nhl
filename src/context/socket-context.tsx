@@ -173,6 +173,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       };
 
       socket.onerror = (error) => {
+        console.log(error);
         toast({
           variant: "destructive",
           title: `WebSocket error`,

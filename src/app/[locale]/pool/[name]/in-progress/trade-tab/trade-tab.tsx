@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Pool } from "@/data/pool/model";
 import { useTranslations } from "next-intl";
 import { Accordion } from "@radix-ui/react-accordion";
 import {

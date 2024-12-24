@@ -244,7 +244,7 @@ export const ForwardsDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       return row.original.participant;
     },
   },
@@ -308,7 +308,7 @@ export const DefensesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       return row.original.participant;
     },
   },
@@ -372,7 +372,7 @@ export const GoaliesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       return row.original.participant;
     },
   },

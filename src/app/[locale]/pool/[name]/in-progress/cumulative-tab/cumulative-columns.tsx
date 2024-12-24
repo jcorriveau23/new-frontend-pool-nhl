@@ -11,7 +11,7 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
         <>
           {table.options.meta?.t("TotalCumulatedPoints")}
           <h1>{
-            // @ts-ignore: dateOfInterest is known to exist in this context
+            // @ts-expect-error: dateOfInterest is known to exist in this context
             `(${table.options.meta?.dateOfInterest})`
           }</h1>
         </>
@@ -82,7 +82,7 @@ export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
         <h1 className="flex items-center space-x-2">
           <GameStatePopover
             state={
-              // @ts-ignore: gamesState is known to exist in this context
+              // @ts-expect-error: gamesState is known to exist in this context
               table.options.meta?.gamesState
             }
           />
@@ -186,7 +186,7 @@ export const DefensesTotalColumn: ColumnDef<TotalRanking>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       return row.original.participant;
     },
   },
@@ -252,7 +252,7 @@ export const GoaliesTotalColumn: ColumnDef<TotalRanking>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       return row.original.participant;
     },
   },

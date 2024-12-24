@@ -8,6 +8,7 @@ import SettingsTab from "./settings-tab/settings-tab";
 import RosterTab from "./roster-tab/roster-tab";
 import NhlPlayersTab from "./nhl-players-tab/nhl-players-tab";
 import { salaryFormat, seasonFormat } from "@/app/utils/formating";
+import { useSearchParams } from "next/navigation";
 
 enum DynastyTabs {
   ROSTER = "roster",
@@ -19,10 +20,11 @@ enum DynastyTabs {
 export default function DynastyPool() {
   const { poolInfo, updateSelectedParticipant } = usePoolContext();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const getInitialSelectedTab = (): string => {
     // Return the initial tab selection using the url parameters if it exist.
-    const queryParams = new URLSearchParams(window.location.search);
+    const queryParams = new URLSearchParams(searchParams.toString());
     const initialTab = queryParams.get("activeTab");
 
     if (
@@ -39,7 +41,7 @@ export default function DynastyPool() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    const queryParams = new URLSearchParams(window.location.search);
+    const queryParams = new URLSearchParams(searchParams.toString());
     queryParams.set("activeTab", value);
     router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
   };
@@ -48,8 +50,11 @@ export default function DynastyPool() {
     // Use effect is used here to manage the popstate event listener.
     // That way if the user go into another page and come back using the "Go Back" or "Go forward"
     // options in the browser he will be in the selected tab.
-    const handlePopState = (event: PopStateEvent) => {
-      const queryParams = new URLSearchParams(window.location.search);
+    const handlePopState = (_event: PopStateEvent) => {
+      console.log(
+        `A '${_event.type}' event has been triggered, active tabs and selected participants needs to be updated.`
+      );
+      const queryParams = new URLSearchParams(searchParams.toString());
       const newActiveTab = queryParams.get("activeTab");
       const newSelectedParticipant = queryParams.get("selectedParticipant");
 

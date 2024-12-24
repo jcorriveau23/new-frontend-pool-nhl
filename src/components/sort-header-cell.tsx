@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown } from "lucide-react";
 
 type SortDirection = "asc" | "desc" | null;
 

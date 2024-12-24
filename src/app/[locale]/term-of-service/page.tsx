@@ -2,13 +2,10 @@
  The term of service page.
  */
 
-import { setRequestLocale } from "next-intl/server";
-import { useTranslations } from "next-intl";
 import PageTitle from "@/components/page-title";
+import { useTranslations } from "next-intl";
 
-// @ts-ignore
-export default function TermOfService({ params: { locale } }) {
-  setRequestLocale(locale);
+export default function TermOfService() {
   const t = useTranslations();
 
   return (

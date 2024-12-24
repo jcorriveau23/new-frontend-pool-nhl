@@ -10,7 +10,6 @@ import { useSession } from "@/context/useSessionData";
 import PageTitle from "@/components/page-title";
 import LoginForm from "@/components/login";
 
-// @ts-ignore
 export default function TermOfService() {
   const t = useTranslations();
   const userSession = useSession();

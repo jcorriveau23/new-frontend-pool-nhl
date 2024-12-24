@@ -25,21 +25,21 @@ import React from "react";
 import { useTranslations } from "next-intl";
 
 declare module "@tanstack/table-core" {
-  interface TableMeta<TData extends unknown> {
-    props: any | null;
+  interface TableMeta<TData> {
+    props: unknown | null;
     getRowStyles: (row: Row<TData>) => string;
     onRowClick: (row: Row<TData>) => void;
-    t: any | null;
+    t: unknown | null;
   }
 }
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  initialState: any | null;
-  meta: any | null;
+  initialState: unknown | null;
+  meta: unknown | null;
   title: string | null;
-  tableFooter: React.ReactElement | null;
+  tableFooter: React.ReactElement<unknown> | null;
 }
 
 const getPinnedClassName = (isPinned: "left" | "right" | false) => {

@@ -21,9 +21,9 @@ export async function getServerSideDailyGames(
     const data: Score = await res.json();
 
     return data;
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.log(
-      `An error occured while fetching the score for ${selectedDate}`
+      `An error occured while fetching the score for ${selectedDate}: ${e}`
     );
     return null;
   }

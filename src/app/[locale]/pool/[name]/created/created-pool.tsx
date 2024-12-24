@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 
 import { usePoolContext } from "@/context/pool-context";
 import * as React from "react";
-import { PoolSettings } from "@/data/pool/model";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import PoolSettingsComponent from "@/components/pool-settings";
@@ -59,14 +58,13 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DraftOrderSelector from "@/components/draft-order-selector";
 import { DialogTitle } from "@radix-ui/react-dialog";
+import { CheckedState } from "@radix-ui/react-checkbox";
 
 const USER_NAME_MIN_LENGTH = 2;
 const USER_NAME_MAX_LENGTH = 12;
 
 export default function CreatedPool() {
   const { poolInfo } = usePoolContext();
-  const [poolSettingsUpdate, setPoolSettingsUpdate] =
-    React.useState<PoolSettings | null>(null);
 
   const userSession = useSession();
   const { toast } = useToast();
@@ -97,18 +95,8 @@ export default function CreatedPool() {
     },
   });
 
-  const updatePoolSettings = () => {
-    if (poolSettingsUpdate) {
-      const newPoolSettings = { ...poolInfo.settings, ...poolSettingsUpdate };
-      sendSocketCommand(
-        Command.OnPoolSettingChanges,
-        `{"pool_settings": ${JSON.stringify(newPoolSettings)}}`
-      );
-    }
-  };
-
-  const onReady = () => {
-    console.log("on ready!");
+  const onReady = (checked: CheckedState) => {
+    console.log(`on ready '${checked}'!`);
 
     sendSocketCommand(Command.OnReady, null);
   };
@@ -262,7 +250,7 @@ export default function CreatedPool() {
                   <Checkbox
                     id="is-ready"
                     checked={users[userId].is_ready}
-                    onCheckedChange={(checkedState) => onReady()}
+                    onCheckedChange={(checked) => onReady(checked)}
                     disabled={userId !== userSession.info?.userID}
                   />
                 ) : null}

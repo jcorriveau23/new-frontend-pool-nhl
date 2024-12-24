@@ -29,6 +29,7 @@ import PlayerSearchDialog from "./search-players";
 import SortHeaderCell from "./sort-header-cell";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "@/i18n/routing";
+import { useSearchParams } from "next/navigation";
 
 interface PlayersTableProps {
   sortField: string | null;
@@ -45,7 +46,8 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   considerOnlyProtected,
   onPlayerSelect,
 }) => {
-  const queryParams = new URLSearchParams(window.location.search);
+  const searchParams = useSearchParams();
+  const queryParams = new URLSearchParams(searchParams.toString());
   const positionsParams = queryParams.getAll("positions");
 
   const [sortField, setSortField] = useState<string | null>(
@@ -57,7 +59,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   const [skip, setSkip] = useState<number | null>(
     Number(queryParams.get("skip") ?? initialSkip)
   );
-  const [limit, setLimit] = useState<number | null>(initialLimit);
+  const [limit] = useState<number | null>(initialLimit);
   const [selectedPositions, setSelectedPositions] = useState<string[] | null>(
     positionsParams.length ? positionsParams : ["F", "D"]
   );
