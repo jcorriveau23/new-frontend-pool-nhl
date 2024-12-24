@@ -9,6 +9,8 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
+  TableMeta,
+  InitialTableState,
 } from "@tanstack/react-table";
 
 import {
@@ -36,8 +38,8 @@ declare module "@tanstack/table-core" {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  initialState: unknown | null;
-  meta: unknown | null;
+  initialState: InitialTableState | undefined;
+  meta: TableMeta<TData> | undefined;
   title: string | null;
   tableFooter: React.ReactElement<unknown> | null;
 }
