@@ -690,10 +690,9 @@ export default function PoolSettingsComponent(props: Props) {
           <Checkbox
             id="ignore-players"
             defaultChecked={DEFAULT_IGNORE_WORST_PLAYERS}
-            onCheckedChange={(checkedState) =>
-              // @ts-ignore
-              setShowIgnorePlayers(checkedState)
-            }
+            onCheckedChange={(checkedState) => {
+              setShowIgnorePlayers(checkedState as boolean);
+            }}
           />
           <Label>{t("IgnoreWorstPlayers")}</Label>
           <InformationIcon text={t("IgnoreWorstPlayersDescription")} />
@@ -773,7 +772,7 @@ export default function PoolSettingsComponent(props: Props) {
   ) => (
     <FormField
       control={form.control}
-      // @ts-ignore
+      // @ts-expect-error, would require refactor in this whole file.
       name={fieldName}
       render={({ field }) => (
         <FormItem className="flex items-center justify-between">

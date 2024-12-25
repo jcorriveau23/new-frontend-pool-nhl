@@ -3,12 +3,12 @@ import * as React from "react";
 import GameSummary from "./summary";
 import GameBoxscore from "./boxscore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTranslations } from "next-intl";
 import PageTitle from "@/components/page-title";
+import { getTranslations } from "next-intl/server";
 
-export default function Game({ params }: { params: { id: string } }) {
-  // translations states
-  const t = useTranslations();
+export default async function Game(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const t = await getTranslations();
   return (
     <div className="items-center text-center">
       <PageTitle title={t("NhlGameInformationPageTitle")} />

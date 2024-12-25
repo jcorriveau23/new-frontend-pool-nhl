@@ -1,6 +1,7 @@
 // The pools page, list all the pools stored in the db.
 
 "use client";
+import { use } from "react";
 import * as React from "react";
 import { Pool } from "@/data/pool/model";
 import { PoolContextProvider, fetchPoolInfo } from "@/context/pool-context";
@@ -9,9 +10,10 @@ import { toast } from "@/hooks/use-toast";
 import PoolStatus from "./pool";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
-export default function PoolPage({ params }: { params: { name: string } }) {
+export default function PoolPage(props: { params: Promise<{ name: string }> }) {
   const [poolInfo, setPoolInfo] = React.useState<Pool | null>(null);
   const t = useTranslations();
+  const params = use(props.params);
 
   React.useEffect(() => {
     const getPoolInfo = async () => {

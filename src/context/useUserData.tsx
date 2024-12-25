@@ -39,7 +39,8 @@ const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         .then(({ id, email }) => {
           setUserState({ id, email, isValid: true });
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
+          console.error(`An error occured during refresh user: ${error}`);
           setUserState({ id: "", email: "", isValid: false });
         });
     });

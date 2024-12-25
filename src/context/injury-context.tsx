@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import React, { createContext, useEffect, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode } from "react";
 
 // Define the player interface
 interface Player {

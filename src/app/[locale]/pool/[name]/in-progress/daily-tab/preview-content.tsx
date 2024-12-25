@@ -84,35 +84,31 @@ export default function DailyPreviewContent() {
     const goaliesPreviewTemp: Record<string, PreviewPlayer[]> = {};
     const totalPreviewTemp = [];
     // First create a table for all players for each poolers
-    for (var i = 0; i < poolInfo.participants.length; i += 1) {
+    for (let i = 0; i < poolInfo.participants.length; i += 1) {
       const user = poolInfo.participants[i];
 
-      // @ts-ignore
-      forwardsPreviewTemp[user.id] = poolInfo.context?.pooler_roster[
+      // @ts-expect-error, player should always be in the list.
+      forwardsPreviewTemp[user.id] = poolInfo.context!.pooler_roster[
         user.id
       ]?.chosen_forwards.map((playerId) => {
         const player = poolInfo.context?.players[playerId];
-        if (player) {
-          return new PreviewPlayer(player, playingAgainst);
-        }
+        if (player) return new PreviewPlayer(player, playingAgainst);
       });
-      // @ts-ignore
-      defensePreviewTemp[user.id] = poolInfo.context?.pooler_roster[
+
+      // @ts-expect-error, player should always be in the list.
+      defensePreviewTemp[user.id] = poolInfo.context!.pooler_roster[
         user.id
       ].chosen_defenders.map((playerId) => {
         const player = poolInfo.context?.players[playerId];
-        if (player) {
-          return new PreviewPlayer(player, playingAgainst);
-        }
+        if (player) return new PreviewPlayer(player, playingAgainst);
       });
-      // @ts-ignore
-      goaliesPreviewTemp[user.id] = poolInfo.context?.pooler_roster[
+
+      // @ts-expect-error, player should always be in the list.
+      goaliesPreviewTemp[user.id] = poolInfo.context!.pooler_roster[
         user.id
       ].chosen_goalies.map((playerId) => {
         const player = poolInfo.context?.players[playerId];
-        if (player) {
-          return new PreviewPlayer(player, playingAgainst);
-        }
+        if (player) return new PreviewPlayer(player, playingAgainst);
       });
 
       totalPreviewTemp.push(

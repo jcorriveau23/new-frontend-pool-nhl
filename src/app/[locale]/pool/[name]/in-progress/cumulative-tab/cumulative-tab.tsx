@@ -226,7 +226,11 @@ export default function CumulativeTab() {
         columnPinning: { left: ["ranking", "pooler"] },
       }}
       meta={{
-        props: { poolInfo: poolInfo },
+        props: {
+          poolInfo: poolInfo,
+          gamesState: getDailyGameState(dailyPointsMade?.cumulated),
+          dateOfInterest: querySelectedDate,
+        },
         getRowStyles: (row: Row<TotalRanking>) => {
           if (row.original.participant === selectedParticipant) {
             return "bg-selection hover:bg-selection";
@@ -236,8 +240,6 @@ export default function CumulativeTab() {
           updateSelectedParticipant(row.original.participant);
         },
         t,
-        gamesState: getDailyGameState(dailyPointsMade?.cumulated),
-        dateOfInterest: querySelectedDate,
       }}
       title={title}
       tableFooter={null}
@@ -245,7 +247,7 @@ export default function CumulativeTab() {
   );
 
   const SkaterTable = (
-    rows: any[],
+    rows: SkaterInfo[],
     columns: ColumnDef<SkaterInfo>[],
     title: string,
     total: SkaterTotal
@@ -289,7 +291,7 @@ export default function CumulativeTab() {
   );
 
   const GoalieTable = (
-    rows: any[],
+    rows: GoalieInfo[],
     columns: ColumnDef<GoalieInfo>[],
     title: string,
     total: GoalieTotal

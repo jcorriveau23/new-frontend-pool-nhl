@@ -32,7 +32,9 @@ export default function PlayerSalary({
 
   const handleBadgeClick = (e: React.MouseEvent) => {
     setIsOpen(!isOpen);
-    onBadgeClick && onBadgeClick(e);
+    if (onBadgeClick) {
+      onBadgeClick(e);
+    }
   };
   return (
     <>

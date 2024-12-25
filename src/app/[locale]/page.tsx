@@ -1,11 +1,11 @@
 import { Link } from "@/i18n/routing";
 import { setRequestLocale } from "next-intl/server";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
-//@ts-ignore
-export default function Home({ params: { locale }, searchParams }) {
+export default function Home() {
+  const locale = useLocale();
+
   setRequestLocale(locale);
-  const queryString = new URLSearchParams(searchParams).toString();
   const t = useTranslations();
   return (
     <>
@@ -21,7 +21,7 @@ export default function Home({ params: { locale }, searchParams }) {
               <p className="text-gray-500 md:text-xl dark:text-gray-400">
                 {t("AppDescription")}{" "}
                 <Link
-                  href={`/pool/william?${queryString}`}
+                  href={`/pool/william`}
                   className="text-link hover:underline"
                 >
                   {t("SeeDemo")}
@@ -30,7 +30,7 @@ export default function Home({ params: { locale }, searchParams }) {
               <p className="text-gray-500 md:text-xl dark:text-gray-400">
                 {t("GetStartedNow")}
                 <Link
-                  href={`/create-pool?${queryString}`}
+                  href={`/create-pool`}
                   className="text-link hover:underline"
                 >
                   {t("CreateYourOwnPool")}

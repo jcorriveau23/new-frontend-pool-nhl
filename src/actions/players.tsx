@@ -37,7 +37,7 @@ export async function getServerSidePlayers(
       return null;
     }
     return await res.json();
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.log(
       `An error occured while querying the get-players request: ${e}.`
     );

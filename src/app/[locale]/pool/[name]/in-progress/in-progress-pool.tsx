@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Pool, PoolState } from "@/data/pool/model";
 import CumulativeTab from "./cumulative-tab/cumulative-tab";
 import DailyTab from "./daily-tab/daily-tab";
 import TradeTab from "./trade-tab/trade-tab";
@@ -15,6 +14,7 @@ import {
 import { useRouter } from "@/i18n/routing";
 import { usePoolContext } from "@/context/pool-context";
 import LiveGamePopOver from "@/components/live-games-pop-over";
+import { useSearchParams } from "next/navigation";
 
 enum InProgressTabs {
   CUMULATIVE = "cumulative",
@@ -30,10 +30,11 @@ export default function InProgressPool() {
   const router = useRouter();
   const { gamesNightStatus } = useGamesNightContext();
   const { poolInfo, updateSelectedParticipant } = usePoolContext();
+  const searchParams = useSearchParams();
 
   const getInitialSelectedTab = (): string => {
     // Return the initial tab selection using the url parameters if it exist.
-    const queryParams = new URLSearchParams(window.location.search);
+    const queryParams = new URLSearchParams(searchParams.toString());
     const initialTab = queryParams.get("activeTab");
 
     if (
@@ -50,7 +51,7 @@ export default function InProgressPool() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    const queryParams = new URLSearchParams(window.location.search);
+    const queryParams = new URLSearchParams(searchParams.toString());
     queryParams.set("activeTab", value);
     router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
   };
@@ -59,8 +60,11 @@ export default function InProgressPool() {
     // Use effect is used here to manage the popstate event listener.
     // That way if the user go into another page and come back using the "Go Back" or "Go forward"
     // options in the browser he will be in the selected tab.
-    const handlePopState = (event: PopStateEvent) => {
-      const queryParams = new URLSearchParams(window.location.search);
+    const handlePopState = (_event: PopStateEvent) => {
+      console.log(
+        `A '${_event.type}' event has been triggered, active tabs and selected participants needs to be updated.`
+      );
+      const queryParams = new URLSearchParams(searchParams.toString());
       const newActiveTab = queryParams.get("activeTab");
       const newSelectedParticipant = queryParams.get("selectedParticipant");
 

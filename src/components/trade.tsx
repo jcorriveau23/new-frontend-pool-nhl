@@ -3,7 +3,6 @@ import { DraftPick, Pool, Trade, TradeItems } from "@/data/pool/model";
 import { Badge } from "./ui/badge";
 import { ordinal } from "@/app/utils/formating";
 import { usePoolContext } from "@/context/pool-context";
-import { useTranslations } from "next-intl";
 
 interface Props {
   trade: Trade;
@@ -11,7 +10,6 @@ interface Props {
 }
 
 export function TradeItem(props: Props) {
-  const t = useTranslations();
   const { dictUsers } = usePoolContext();
 
   const TradedPicks = (picks: DraftPick[]) =>

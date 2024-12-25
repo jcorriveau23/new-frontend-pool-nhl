@@ -32,13 +32,12 @@ const getServersidePoolList = async (season: string) => {
 const getPoolCountPerStatus = (
   pools: ProjectedPoolShort[]
 ): Record<PoolState, number> => {
-  // @ts-ignore
-  const poolCountPerStatus: Record<PoolState, number> = {};
-
-  for (const poolStatus of Object.values(PoolState)) {
-    poolCountPerStatus[poolStatus] =
-      pools?.filter((pool) => pool.status === poolStatus).length ?? 0;
-  }
+  const poolCountPerStatus = Object.fromEntries(
+    Object.values(PoolState).map((poolStatus) => [
+      poolStatus,
+      pools?.filter((pool) => pool.status === poolStatus).length ?? 0,
+    ])
+  ) as Record<PoolState, number>;
 
   return poolCountPerStatus;
 };
@@ -51,13 +50,12 @@ const getTabIndex = (poolCountPerStatus: Record<PoolState, number>) => {
   }
 };
 
-export default async function Pools({
-  params,
-  searchParams,
-}: {
-  params: { season: string };
-  searchParams: any;
+export default async function Pools(props: {
+  params: Promise<{ season: string }>;
+  searchParams: Promise<string[][] | Record<string, string> | string>;
 }) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const pools: ProjectedPoolShort[] = await getServersidePoolList(
     params.season
   );
@@ -87,7 +85,7 @@ export default async function Pools({
 
   const PoolTabContent = (poolStatus: PoolState) =>
     poolCountPerStatus[poolStatus] > 0 ? (
-      <TabsContent value={poolStatus}>
+      <TabsContent key={poolStatus} value={poolStatus}>
         {pools
           .filter((pool) => pool.status === poolStatus)
           .map((pool) => PoolItem(pool))}

@@ -49,7 +49,7 @@ export const UserSessionProvider: React.FC<UserSessionProviderProps> = ({
             isValid,
           });
         } else {
-          setSessionState((prevState) => ({
+          setSessionState(() => ({
             userID: "",
             jwt: "",
             isValid: false,

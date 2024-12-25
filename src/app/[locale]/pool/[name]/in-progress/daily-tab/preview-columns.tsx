@@ -59,7 +59,7 @@ export const PlayerPreviewColumn: ColumnDef<PreviewPlayer>[] = [
   {
     accessorKey: "name",
     header: ({ table }) => table.options.meta?.t("Player"),
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       return (
         <PlayerLink
           name={row.original.name}

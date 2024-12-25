@@ -3,7 +3,6 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -335,13 +334,12 @@ const getServerSidePlayerInfo = async (playerId: string) => {
   return data;
 };
 
-export default async function Player({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: any;
+export default async function Player(props: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<string[][] | Record<string, string> | string>;
 }) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const queryString = new URLSearchParams(searchParams).toString();
   const t = await getTranslations();
   const playerInfo: GoalieNhlInfo | SkaterNhlInfo =
@@ -411,7 +409,7 @@ export default async function Player({
       initialState={{
         columnPinning: { left: ["season"] },
       }}
-      meta={null}
+      meta={undefined}
       title={null}
       tableFooter={null}
     />

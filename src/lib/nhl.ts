@@ -35,15 +35,14 @@ export const getAllTeamForSeason = (season: number) =>
     (teamId) =>
       team_info[Number(teamId)].firstSeason <= season &&
       (team_info[Number(teamId)].lastSeason == null ||
-        // @ts-ignore
-        team_info[Number(teamId)].lastSeason >= season),
+        team_info[Number(teamId)].lastSeason! >= season),
   );
 
 export const getAllSeasonsForTeam = (teamId: number) =>
   getAllSeasons(
     Math.floor(team_info[teamId]?.firstSeason / 10000),
     team_info[teamId]?.lastSeason
-      ? // @ts-ignore
+      ?
         Math.floor(team_info[teamId]?.lastSeason / 10000)
       : LAST_NHL_SEASON,
   );
@@ -52,7 +51,7 @@ export const getAllYearsForTeam = (teamId: number) =>
   getAllYears(
     Math.floor(team_info[teamId]?.firstSeason / 10000),
     team_info[teamId]?.lastSeason
-      ? // @ts-ignore
+      ?
         Math.floor(team_info[teamId]?.lastSeason / 10000)
       : LAST_NHL_SEASON,
   );

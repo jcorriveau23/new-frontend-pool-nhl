@@ -13,8 +13,8 @@ export interface PlayerTypeSettings {
 export interface DynastySettings {
   next_season_number_players_protected: number;
   tradable_picks: number;
-  past_season_pool_name: String[];
-  next_season_pool_name: String | null;
+  past_season_pool_name: string[];
+  next_season_pool_name: string | null;
 }
 
 export interface SkaterSettings {
@@ -208,7 +208,7 @@ export enum TradeStatus {
 
 export const getPoolerAllPlayers = (
   poolContext: PoolContext,
-  user: PoolUser,
+  user: PoolUser
 ) => {
   const reservistForwards = poolContext.pooler_roster[user.id].chosen_reservists
     .map((playerId) => poolContext.players[playerId.toString()])
@@ -224,19 +224,19 @@ export const getPoolerAllPlayers = (
 
   const forwards = [
     ...poolContext.pooler_roster[user.id].chosen_forwards.map(
-      (playerId) => poolContext.players[playerId.toString()],
+      (playerId) => poolContext.players[playerId.toString()]
     ),
     ...reservistForwards,
   ];
   const defense = [
     ...poolContext.pooler_roster[user.id].chosen_defenders.map(
-      (playerId) => poolContext.players[playerId.toString()],
+      (playerId) => poolContext.players[playerId.toString()]
     ),
     ...reservistsDefenders,
   ];
   const goalies = [
     ...poolContext.pooler_roster[user.id].chosen_goalies.map(
-      (playerId) => poolContext.players[playerId.toString()],
+      (playerId) => poolContext.players[playerId.toString()]
     ),
     ...reservistGoalies,
   ];
@@ -251,28 +251,28 @@ export const getPoolerAllPlayers = (
 
 export const getPoolerActivePlayers = (
   poolContext: PoolContext,
-  user: PoolUser,
+  user: PoolUser
 ) => {
   return {
     user,
     forwards: poolContext.pooler_roster[user.id].chosen_forwards.map(
-      (playerId) => poolContext.players[playerId.toString()],
+      (playerId) => poolContext.players[playerId.toString()]
     ),
     defense: poolContext.pooler_roster[user.id].chosen_defenders.map(
-      (playerId) => poolContext.players[playerId.toString()],
+      (playerId) => poolContext.players[playerId.toString()]
     ),
     goalies: poolContext.pooler_roster[user.id].chosen_goalies.map(
-      (playerId) => poolContext.players[playerId.toString()],
+      (playerId) => poolContext.players[playerId.toString()]
     ),
     reservists: poolContext.pooler_roster[user.id].chosen_reservists.map(
-      (playerId) => poolContext.players[playerId.toString()],
+      (playerId) => poolContext.players[playerId.toString()]
     ),
   };
 };
 
 export const getSkaterPoolPoints = (
   skatersSettings: SkaterSettings,
-  skaterPoints: SkaterPoints,
+  skaterPoints: SkaterPoints
 ) => {
   let totalPoints =
     skaterPoints.G * skatersSettings.points_per_goals +
@@ -290,7 +290,7 @@ export const getSkaterPoolPoints = (
 
 export const getGoaliePoolPoints = (
   goaliesSettings: GoaliesSettings,
-  goaliePoints: GoaliePoints,
+  goaliePoints: GoaliePoints
 ) => {
   let totalPoints =
     goaliePoints.G * goaliesSettings.points_per_goals +
@@ -321,11 +321,12 @@ export interface GoaliePoints {
 
 const findXLeastTotalPoints = (
   playersPoints: Record<string, number>,
-  xWorst: number,
+  xWorst: number
 ) => {
   const values = Object.values(playersPoints);
 
   if (values.length < xWorst) {
+    return 0;
     throw new Error(`The record must have at least ${xWorst} entries.`);
   }
 
@@ -339,25 +340,45 @@ export const getPoolTimeRangeCharts = (
   poolInfo: Pool,
   poolStartDate: Date,
   poolSelectedEndDate: Date,
-  positionFilter: "F" | "D" | "G" | null,
+  positionFilter: "F" | "D" | "G" | null
 ) => {
   // Return a charts of the amout of points accumulated between 2 dates.
   console.log(
-    `Calculating cumulative chart from ${poolStartDate} to ${poolSelectedEndDate}`,
+    `Calculating cumulative chart from ${poolStartDate} to ${poolSelectedEndDate}`
   );
   const chartData = [];
-  let prevChartElement = null;
-
+  // Keeps the total pooler points per position this is needed for when the option of
+  // ignoring worst players points is enable in the pool.
+  const totalPoolerCurrentPoints = poolInfo.participants.reduce(
+    (acc, participant) => {
+      acc[participant.id] = { F: 0, D: 0, G: 0 };
+      return acc;
+    },
+    {} as Record<string, { F: number; D: number; G: number }>
+  );
   // This is necessary to filter points made by worst players of each positions.
   // Participant id -> list of players cumulated points.
-  let poolerPlayers: Record<
-    string,
-    {
-      F: Record<string, number>;
-      D: Record<string, number>;
-      G: Record<string, number>;
-    }
-  > = {};
+  const poolerPlayers = poolInfo.participants.reduce(
+    (acc, participant) => {
+      acc[participant.id] = {
+        F: {},
+        D: {},
+        G: {},
+      };
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        F: Record<string, number>;
+        D: Record<string, number>;
+        G: Record<string, number>;
+      }
+    >
+  );
+  let worstForwardsPointsIgnored = 0;
+  let worstDefendersPointsIgnored = 0;
+  let worstGoaliesPointsIgnored = 0;
 
   for (
     let j = new Date(poolStartDate);
@@ -365,7 +386,7 @@ export const getPoolTimeRangeCharts = (
     j.setDate(j.getDate() + 1)
   ) {
     const jDate = j.toISOString().slice(0, 10);
-    let chartElement: Record<string, string | number> = {
+    const chartElement: Record<string, string | number> = {
       date: jDate,
     };
 
@@ -376,6 +397,10 @@ export const getPoolTimeRangeCharts = (
 
     for (let i = 0; i < poolInfo.participants.length; i += 1) {
       const participant = poolInfo.participants[i];
+      // make sure there is a record for each pooler.
+      if (!totalPoolerCurrentPoints[participant.id]) {
+        totalPoolerCurrentPoints[participant.id] = { F: 0, D: 0, G: 0 };
+      }
 
       // Parse every points made for this pooler on that specific date and cumulate it to store it in the chartData.
       const forwards =
@@ -385,55 +410,53 @@ export const getPoolTimeRangeCharts = (
       const goalies =
         poolInfo.context?.score_by_day?.[jDate]?.[participant.id]?.roster.G;
       if (forwards && defense && goalies) {
-        let totalPoints = 0;
-
         // Forwards
         if (positionFilter === null || positionFilter === "F") {
           for (const [skaterId, skater] of Object.entries(forwards)) {
+            // Ensure `skaterKey` exists in `poolerPlayers[participant.id]`
+            if (!poolerPlayers[participant.id].F[skaterId]) {
+              poolerPlayers[participant.id].F[skaterId] = 0;
+            }
             if (skater) {
-              // Ensure `skaterKey` exists in `poolerPlayers[participant.id]`
-              if (!poolerPlayers[participant.id].F[skaterId]) {
-                poolerPlayers[participant.id].F[skaterId] = 0;
-              }
-
               const skaterPoints = getSkaterPoolPoints(
                 poolInfo.settings.forwards_settings,
-                skater,
+                skater
               );
+
+              totalPoolerCurrentPoints[participant.id].F += skaterPoints;
               poolerPlayers[participant.id].F[skaterId] += skaterPoints;
-              totalPoints += skaterPoints;
             }
           }
 
           if (poolInfo.settings.ignore_x_worst_players?.forwards ?? 0 > 0) {
-            let forwardPointsIgnored = findXLeastTotalPoints(
+            worstForwardsPointsIgnored = findXLeastTotalPoints(
               poolerPlayers[participant.id].F,
-              poolInfo.settings.ignore_x_worst_players?.forwards ?? 0,
+              poolInfo.settings.ignore_x_worst_players?.forwards ?? 0
             );
+            console.log(`${participant.name} ${worstForwardsPointsIgnored}`);
           }
         }
 
         // Defense
         if (positionFilter === null || positionFilter === "D") {
           for (const [skaterId, skater] of Object.entries(defense)) {
+            // Ensure `skaterKey` exists in `poolerPlayers[participant.id]`
+            if (!poolerPlayers[participant.id].D[skaterId]) {
+              poolerPlayers[participant.id].D[skaterId] = 0;
+            }
             if (skater) {
-              // Ensure `skaterKey` exists in `poolerPlayers[participant.id]`
-              if (!poolerPlayers[participant.id].D[skaterId]) {
-                poolerPlayers[participant.id].D[skaterId] = 0;
-              }
-
               const skaterPoints = getSkaterPoolPoints(
                 poolInfo.settings.defense_settings,
-                skater,
+                skater
               );
+              totalPoolerCurrentPoints[participant.id].D += skaterPoints;
               poolerPlayers[participant.id].D[skaterId] += skaterPoints;
-              totalPoints += skaterPoints;
             }
           }
           if (poolInfo.settings.ignore_x_worst_players?.defense ?? 0 > 0) {
-            let defensePointsIgnored = findXLeastTotalPoints(
+            worstDefendersPointsIgnored = findXLeastTotalPoints(
               poolerPlayers[participant.id].D,
-              poolInfo.settings.ignore_x_worst_players?.defense ?? 0,
+              poolInfo.settings.ignore_x_worst_players?.defense ?? 0
             );
           }
         }
@@ -441,39 +464,37 @@ export const getPoolTimeRangeCharts = (
         // Goalies
         if (positionFilter === null || positionFilter === "G") {
           for (const [goalieId, goalie] of Object.entries(goalies)) {
+            // Ensure `skaterKey` exists in `poolerPlayers[participant.id]`
+            if (!poolerPlayers[participant.id].G[goalieId]) {
+              poolerPlayers[participant.id].G[goalieId] = 0;
+            }
             if (goalie) {
-              // Ensure `skaterKey` exists in `poolerPlayers[participant.id]`
-              if (!poolerPlayers[participant.id].G[goalieId]) {
-                poolerPlayers[participant.id].G[goalieId] = 0;
-              }
-
-              const goaliesPoints = getGoaliePoolPoints(
+              const goaliePoints = getGoaliePoolPoints(
                 poolInfo.settings.goalies_settings,
-                goalie,
+                goalie
               );
-              poolerPlayers[participant.id].G[goalieId] += goaliesPoints;
-              totalPoints += goaliesPoints;
+              totalPoolerCurrentPoints[participant.id].G += goaliePoints;
+              poolerPlayers[participant.id].G[goalieId] += goaliePoints;
             }
           }
           if (poolInfo.settings.ignore_x_worst_players?.goalies ?? 0 > 0) {
-            let goaliesPointsIgnored = findXLeastTotalPoints(
-              poolerPlayers[participant.id].D,
-              poolInfo.settings.ignore_x_worst_players?.goalies ?? 0,
+            worstGoaliesPointsIgnored = findXLeastTotalPoints(
+              poolerPlayers[participant.id].G,
+              poolInfo.settings.ignore_x_worst_players?.goalies ?? 0
             );
           }
         }
 
-        if (prevChartElement === null) {
-          chartElement[participant.name] = totalPoints;
-        } else {
-          // Will always be number here.
-          chartElement[participant.name] =
-            (prevChartElement[participant.name] as number) + totalPoints;
-        }
+        chartElement[participant.name] =
+          totalPoolerCurrentPoints[participant.id].F +
+          totalPoolerCurrentPoints[participant.id].D +
+          totalPoolerCurrentPoints[participant.id].G -
+          (worstForwardsPointsIgnored +
+            worstDefendersPointsIgnored +
+            worstGoaliesPointsIgnored);
       }
     }
     chartData.push(chartElement);
-    prevChartElement = chartElement;
   }
   return chartData;
 };

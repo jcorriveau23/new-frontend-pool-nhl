@@ -9,6 +9,8 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
+  TableMeta,
+  InitialTableState,
 } from "@tanstack/react-table";
 
 import {
@@ -25,21 +27,21 @@ import React from "react";
 import { useTranslations } from "next-intl";
 
 declare module "@tanstack/table-core" {
-  interface TableMeta<TData extends unknown> {
-    props: any | null;
-    getRowStyles: (row: Row<TData>) => string;
+  interface TableMeta<TData> {
+    props: any | null; // eslint-disable-line
+    getRowStyles: (row: Row<TData>) => string | null | undefined;
     onRowClick: (row: Row<TData>) => void;
-    t: any | null;
+    t: any | null; // eslint-disable-line
   }
 }
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  initialState: any | null;
-  meta: any | null;
+  initialState: InitialTableState | undefined;
+  meta: TableMeta<TData> | undefined;
   title: string | null;
-  tableFooter: React.ReactElement | null;
+  tableFooter: React.ReactElement<unknown> | null;
 }
 
 const getPinnedClassName = (isPinned: "left" | "right" | false) => {
@@ -130,7 +132,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   onClick={() => table.options.meta?.onRowClick(row)}
-                  className={table.options.meta?.getRowStyles(row)}
+                  className={table.options.meta?.getRowStyles(row) ?? ""}
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (

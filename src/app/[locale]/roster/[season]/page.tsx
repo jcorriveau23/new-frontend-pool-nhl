@@ -13,13 +13,12 @@ import { getTranslations } from "next-intl/server";
 import { seasonWithYearFormat } from "@/app/utils/formating";
 import PageTitle from "@/components/page-title";
 
-export default async function Rosters({
-  params,
-  searchParams,
-}: {
-  params: { season: string };
-  searchParams: any;
+export default async function Rosters(props: {
+  params: Promise<{ season: string }>;
+  searchParams: Promise<string[][] | Record<string, string> | string>;
 }) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const queryString = new URLSearchParams(searchParams).toString();
   const t = await getTranslations();
 
