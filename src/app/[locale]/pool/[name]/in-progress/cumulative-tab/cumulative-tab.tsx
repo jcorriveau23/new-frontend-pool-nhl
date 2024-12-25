@@ -226,7 +226,11 @@ export default function CumulativeTab() {
         columnPinning: { left: ["ranking", "pooler"] },
       }}
       meta={{
-        props: { poolInfo: poolInfo },
+        props: {
+          poolInfo: poolInfo,
+          gamesState: getDailyGameState(dailyPointsMade?.cumulated),
+          dateOfInterest: querySelectedDate,
+        },
         getRowStyles: (row: Row<TotalRanking>) => {
           if (row.original.participant === selectedParticipant) {
             return "bg-selection hover:bg-selection";
@@ -236,8 +240,6 @@ export default function CumulativeTab() {
           updateSelectedParticipant(row.original.participant);
         },
         t,
-        gamesState: getDailyGameState(dailyPointsMade?.cumulated),
-        dateOfInterest: querySelectedDate,
       }}
       title={title}
       tableFooter={null}

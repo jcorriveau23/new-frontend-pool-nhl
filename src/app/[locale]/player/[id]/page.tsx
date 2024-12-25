@@ -409,7 +409,7 @@ export default async function Player(props: {
       initialState={{
         columnPinning: { left: ["season"] },
       }}
-      meta={null}
+      meta={undefined}
       title={null}
       tableFooter={null}
     />

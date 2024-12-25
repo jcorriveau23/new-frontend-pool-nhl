@@ -87,6 +87,7 @@ export default function DailyPreviewContent() {
     for (let i = 0; i < poolInfo.participants.length; i += 1) {
       const user = poolInfo.participants[i];
 
+      // @ts-expect-error, player should always be in the list.
       forwardsPreviewTemp[user.id] = poolInfo.context!.pooler_roster[
         user.id
       ]?.chosen_forwards.map((playerId) => {
@@ -94,6 +95,7 @@ export default function DailyPreviewContent() {
         if (player) return new PreviewPlayer(player, playingAgainst);
       });
 
+      // @ts-expect-error, player should always be in the list.
       defensePreviewTemp[user.id] = poolInfo.context!.pooler_roster[
         user.id
       ].chosen_defenders.map((playerId) => {
@@ -101,6 +103,7 @@ export default function DailyPreviewContent() {
         if (player) return new PreviewPlayer(player, playingAgainst);
       });
 
+      // @ts-expect-error, player should always be in the list.
       goaliesPreviewTemp[user.id] = poolInfo.context!.pooler_roster[
         user.id
       ].chosen_goalies.map((playerId) => {

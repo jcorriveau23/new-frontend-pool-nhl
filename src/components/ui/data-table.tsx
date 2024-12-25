@@ -28,10 +28,10 @@ import { useTranslations } from "next-intl";
 
 declare module "@tanstack/table-core" {
   interface TableMeta<TData> {
-    props: unknown | null;
-    getRowStyles: (row: Row<TData>) => string;
+    props: any | null; // eslint-disable-line
+    getRowStyles: (row: Row<TData>) => string | null | undefined;
     onRowClick: (row: Row<TData>) => void;
-    t: unknown | null;
+    t: any | null; // eslint-disable-line
   }
 }
 
@@ -132,7 +132,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   onClick={() => table.options.meta?.onRowClick(row)}
-                  className={table.options.meta?.getRowStyles(row)}
+                  className={table.options.meta?.getRowStyles(row) ?? ""}
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (

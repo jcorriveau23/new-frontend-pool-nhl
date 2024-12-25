@@ -84,6 +84,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
             ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
+  // @ts-expect-error, generated code.
   .map(([key, itemConfig]) => {
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||

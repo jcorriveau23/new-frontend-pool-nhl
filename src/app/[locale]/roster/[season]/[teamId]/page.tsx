@@ -72,11 +72,9 @@ const getServerSideGoaliesTeamPerSeason = async (
   return data;
 };
 
-export default async function Standing(
-  props: {
-    params: Promise<{ season: string; teamId: string }>;
-  }
-) {
+export default async function Standing(props: {
+  params: Promise<{ season: string; teamId: string }>;
+}) {
   const params = await props.params;
   const t = await getTranslations();
   const skaters = await getServerSideSkatersTeamPerSeason(
@@ -150,7 +148,7 @@ export default async function Standing(
                   },
                 ],
               }}
-              meta={null}
+              meta={undefined}
               title={null}
               tableFooter={null}
             />
@@ -173,7 +171,7 @@ export default async function Standing(
                   },
                 ],
               }}
-              meta={null}
+              meta={undefined}
               title={null}
               tableFooter={null}
             />
