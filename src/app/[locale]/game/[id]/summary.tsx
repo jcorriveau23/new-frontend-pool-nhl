@@ -28,28 +28,11 @@ import { getTranslations } from "next-intl/server";
 import { TeamLogo } from "@/components/team-logo";
 import PlayerLink from "@/components/player-link";
 import { Shield } from "lucide-react";
+import { getServerSideGameLanding } from "@/actions/game-landing";
 
 interface Props {
   gameId: string;
 }
-
-const getServerSideGameLanding = async (gameId: string) => {
-  /* 
-  Query game landing for a specific game id on the server side. 
-  */
-  const res = await fetch(
-    `https://api-web.nhle.com/v1/gamecenter/${gameId}/landing`,
-    {
-      next: { revalidate: 180 },
-    }
-  );
-  if (!res.ok) {
-    return null;
-  }
-
-  const data = await res.json();
-  return data;
-};
 
 export default async function GameSummary(props: Props) {
   const gameLanding: GameLanding | null = await getServerSideGameLanding(
