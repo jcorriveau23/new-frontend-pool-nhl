@@ -11,28 +11,11 @@ import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { skaterColumns, goalieColumns } from "./boxscore-columns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getServerSideBoxScore } from "@/actions/game-boxscore";
 
 interface Props {
   gameId: string;
 }
-
-export const getServerSideBoxScore = async (gameId: string) => {
-  /* 
-  Query game boxscore for a specific game id on the server side. 
-  */
-  const res = await fetch(
-    `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`,
-    {
-      next: { revalidate: 180 },
-    }
-  );
-  if (!res.ok) {
-    return null;
-  }
-
-  const data = await res.json();
-  return data;
-};
 
 export default async function GameBoxscore(props: Props) {
   const boxscore: GameBoxScore | null = await getServerSideBoxScore(
