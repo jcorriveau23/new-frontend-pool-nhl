@@ -7,6 +7,15 @@ import PlayerLink from "@/components/player-link";
 import { TeamLogo } from "@/components/team-logo";
 import InformationIcon from "@/components/information-box";
 import { GoalieInfo, PlayerStatus, SkaterInfo } from "./cumulative-calculation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal } from "lucide-react";
 
 // const getWarningColor = (playerStatus: PlayerStatus) => {
 //   switch (playerStatus) {
@@ -90,14 +99,20 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
     accessorKey: "player",
     header: ({ table }) => table.options.meta?.t("Player"),
     cell: ({ row, table }) => {
-      return getPlayerCell(row.original.id, table.options.meta?.props as Pool);
+      return getPlayerCell(
+        row.original.id,
+        table.options.meta?.props?.poolInfo as Pool
+      );
     },
   },
   {
     accessorKey: "team",
     header: ({ table }) => table.options.meta?.t("T"),
     cell: ({ row, table }) => {
-      return getTeamCell(row.original, table.options.meta?.props as Pool);
+      return getTeamCell(
+        row.original,
+        table.options.meta?.props?.poolInfo as Pool
+      );
     },
   },
   {
@@ -139,6 +154,37 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
         ? (player.poolPoints / player.numberOfGame).toFixed(3)
         : null,
   },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ table, row }) => {
+      const player = row.original;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => {
+                table.options.meta?.props?.setSelectedPlayerId(
+                  player.id.toString()
+                );
+                table.options.meta?.props?.setIsForwardChartOpen(true);
+              }}
+            >
+              Chart
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+  },
 ];
 
 export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
@@ -164,14 +210,20 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
     accessorKey: "player",
     header: ({ table }) => table.options.meta?.t("Player"),
     cell: ({ row, table }) => {
-      return getPlayerCell(row.original.id, table.options.meta?.props as Pool);
+      return getPlayerCell(
+        row.original.id,
+        table.options.meta?.props?.poolInfo as Pool
+      );
     },
   },
   {
     accessorKey: "team",
     header: ({ table }) => table.options.meta?.t("T"),
     cell: ({ row, table }) => {
-      return getTeamCell(row.original, table.options.meta?.props as Pool);
+      return getTeamCell(
+        row.original,
+        table.options.meta?.props?.poolInfo as Pool
+      );
     },
   },
   {
@@ -206,6 +258,37 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
         ? (player.poolPoints / player.numberOfGame).toFixed(3)
         : null,
   },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ table, row }) => {
+      const player = row.original;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => {
+                table.options.meta?.props?.setSelectedPlayerId(
+                  player.id.toString()
+                );
+                table.options.meta?.props?.setIsDefenderChartOpen(true);
+              }}
+            >
+              Chart
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+  },
 ];
 
 export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
@@ -231,14 +314,20 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
     accessorKey: "player",
     header: ({ table }) => table.options.meta?.t("Player"),
     cell: ({ row, table }) => {
-      return getPlayerCell(row.original.id, table.options.meta?.props as Pool);
+      return getPlayerCell(
+        row.original.id,
+        table.options.meta?.props?.poolInfo as Pool
+      );
     },
   },
   {
     accessorKey: "team",
     header: ({ table }) => table.options.meta?.t("T"),
     cell: ({ row, table }) => {
-      return getTeamCell(row.original, table.options.meta?.props as Pool);
+      return getTeamCell(
+        row.original,
+        table.options.meta?.props?.poolInfo as Pool
+      );
     },
   },
   {
@@ -276,6 +365,37 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
       player.numberOfGame > 0
         ? (player.poolPoints / player.numberOfGame).toFixed(3)
         : null,
+  },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ table, row }) => {
+      const player = row.original;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => {
+                table.options.meta?.props?.setSelectedPlayerId(
+                  player.id.toString()
+                );
+                table.options.meta?.props?.setIsGoalieChartOpen(true);
+              }}
+            >
+              Chart
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
   },
 ];
 

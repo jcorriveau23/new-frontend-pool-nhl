@@ -33,6 +33,14 @@
   "Shootout": "Tirs de barrage",
   "save": "arrêt",
   "goal": "but",
+  "goals": "buts",
+  "assists": "passes",
+  "hattricks": "tour du chapeau",
+  "shootoutGoals": "buts en fusillade",
+  "poolPoints": "points (pool)",
+  "wins": "victoires",
+  "shutout": "blanchissages",
+  "otlosses": "défaites en temps supplémentaire",
   "NoGameLandingFound": "Aucun sommaire trouvé avec ce game ID: ",
   "NoBoxscoreFound": "Aucun détail trouvé avec ce game ID: ",
   "ForwardsStats": "Statistiques avancées des attaquants",
@@ -347,5 +355,6 @@
   "CumulatedPointsNow": "Les matchs sont terminé et les points font parties du cumulatif.",
   "LivePointsNow": "Les matchs sont en cours, les points ne font pas encore partie du cumulatif.",
   "FuturePointsNow": "Les matchs d'aujourd'hui n'ont pas encore débutés",
-  "NoGamesNow": "Il n'y a pas de matchs prévu aujourd'hui"
+  "NoGamesNow": "Il n'y a pas de matchs prévu aujourd'hui",
+  "RecordedPoolPointsDescription": "Points de pool ammassés par {playerName} pour {poolerName}."
 }

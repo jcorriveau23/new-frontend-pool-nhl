@@ -433,7 +433,6 @@ export const getPoolTimeRangeCharts = (
               poolerPlayers[participant.id].F,
               poolInfo.settings.ignore_x_worst_players?.forwards ?? 0
             );
-            console.log(`${participant.name} ${worstForwardsPointsIgnored}`);
           }
         }
 
@@ -496,5 +495,116 @@ export const getPoolTimeRangeCharts = (
     }
     chartData.push(chartElement);
   }
+  return chartData;
+};
+
+const findSkaterPoints = (poolInfo: Pool , jDate: string, participantId: string, playerId: string): SkaterPoints | null => {
+  const roster =
+    poolInfo.context?.score_by_day?.[jDate]?.[participantId]?.roster;
+
+  // Check both "F" and "D" for the player
+  return roster?.F?.[playerId] || roster?.D?.[playerId] || null;
+}
+
+const findGoaliePoints = (poolInfo: Pool , jDate: string, participantId: string, playerId: string): GoaliePoints | null => {
+  const roster =
+    poolInfo.context?.score_by_day?.[jDate]?.[participantId]?.roster;
+
+  return roster?.G?.[playerId] || null;
+}
+
+export const getSkaterTimeRangeCharts = (
+  poolInfo: Pool ,
+  poolStartDate: Date,
+  poolSelectedEndDate: Date,
+  playerId: string,
+  userId: string,
+  skaterSettings: SkaterSettings,
+) => {
+  // Return a charts of the amout of points accumulated between 2 dates.
+  console.log(
+    `Calculating skater cumulative chart from ${poolStartDate} to ${poolSelectedEndDate}`
+  );
+  let prevChartElement = null;
+  const chartData = [];
+ 
+  for (
+    let j = new Date(poolStartDate);
+    j <= poolSelectedEndDate;
+    j.setDate(j.getDate() + 1)
+  ) {
+    const jDate = j.toISOString().slice(0, 10);
+    const chartElement: Record<string, string | number | boolean> = {
+      date: jDate,
+    };
+
+    // Ignore date with no games.
+    if (!poolInfo.context?.score_by_day?.[jDate]) {
+      continue;
+    }
+
+    const skaterPoints = findSkaterPoints(poolInfo, jDate, userId, playerId)
+
+    chartElement["poolPoints"] = Number(prevChartElement?.["poolPoints"] ?? 0) + (skaterPoints ? getSkaterPoolPoints(skaterSettings, skaterPoints) : 0);
+    chartElement["goals"] = Number(prevChartElement?.["goals"] ?? 0) + (skaterPoints?.G ?? 0);
+    chartElement["assists"] = Number(prevChartElement?.["assists"] ?? 0) + (skaterPoints?.A ?? 0);
+    chartElement["hattricks"] = Number(prevChartElement?.["hattricks"] ?? 0) + (skaterPoints && skaterPoints.G >= 3 ? 1 : 0);
+    chartElement["shootoutGoals"] = Number(prevChartElement?.["shootoutGoals"] ?? 0) + (skaterPoints && skaterPoints.SOG ? skaterPoints.SOG : 0);  
+    chartElement["isInRoster"] = (playerId in poolInfo.context.score_by_day[jDate][userId].roster.F) || (playerId in poolInfo.context.score_by_day[jDate][userId].roster.D)
+    
+    prevChartElement = chartElement;
+    chartData.push(chartElement);
+    
+  }
+  
+  return chartData;
+};
+
+export const getGoalieTimeRangeCharts = (
+  poolInfo: Pool ,
+  poolStartDate: Date,
+  poolSelectedEndDate: Date,
+  playerId: string,
+  userId: string,
+  goaliesSettings: GoaliesSettings,
+) => {
+  // Return a charts of the amout of points accumulated between 2 dates.
+  console.log(
+    `Calculating goalie cumulative chart from ${poolStartDate} to ${poolSelectedEndDate}`
+  );
+  let prevChartElement = null;
+  const chartData = [];
+ 
+  for (
+    let j = new Date(poolStartDate);
+    j <= poolSelectedEndDate;
+    j.setDate(j.getDate() + 1)
+  ) {
+    const jDate = j.toISOString().slice(0, 10);
+    const chartElement: Record<string, string | number | boolean> = {
+      date: jDate,
+    };
+
+    // Ignore date with no games.
+    if (!poolInfo.context?.score_by_day?.[jDate]) {
+      continue;
+    }
+
+    const goaliePoints = findGoaliePoints(poolInfo, jDate, userId, playerId)
+
+    chartElement["poolPoints"] = Number(prevChartElement?.["poolPoints"] ?? 0) + (goaliePoints ? getGoaliePoolPoints(goaliesSettings, goaliePoints) : 0);
+    chartElement["wins"] = Number(prevChartElement?.["wins"] ?? 0) + (goaliePoints?.W ? 1 : 0);
+    chartElement["shutout"] = Number(prevChartElement?.["shutout"] ?? 0) + (goaliePoints?.SO ? 1 : 0);
+    chartElement["otlosses"] = Number(prevChartElement?.["otlosses"] ?? 0) + (goaliePoints?.OT ? 1 : 0);
+    chartElement["goals"] = Number(prevChartElement?.["goals"] ?? 0) + (goaliePoints?.G ?? 0 );
+    chartElement["assists"] = Number(prevChartElement?.["assists"] ?? 0) + (goaliePoints?.A ?? 0 );
+    chartElement["isInRoster"] = playerId in poolInfo.context.score_by_day[jDate][userId].roster.G
+    
+    prevChartElement = chartElement;
+    chartData.push(chartElement);
+    
+  }
+  console.log(chartData)
+  
   return chartData;
 };
