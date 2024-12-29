@@ -33,6 +33,14 @@
   "Shootout": "Shootout",
   "save": "save",
   "goal": "goal",
+  "goals": "goals",
+  "assists": "assists",
+  "hattricks": "hat-tricks",
+  "shootoutGoals": "shoutout goals",
+  "poolPoints": "total points (pool)",
+  "wins": "wins",
+  "shutout": "shutout",
+  "otlosses": "overtime losses",
   "NoGameLandingFound": "No game landing found with game: ",
   "NoBoxscoreFound": "No boxscore found with game: ",
   "ForwardsStats": "Forwards stats",
@@ -347,5 +355,6 @@
   "CumulatedPointsNow": "Games are done, points made have been cumulated.",
   "LivePointsNow": "Games are currently playing right now, points have not been cumulated yet.",
   "FuturePointsNow": "Today's games have not started yet.",
-  "NoGamesNow": "There is no game planned for today."
+  "NoGamesNow": "There is no game planned for today.",
+  "RecordedPoolPointsDescription": "Recorded pool stats made by {playerName} for {poolerName}."
 }

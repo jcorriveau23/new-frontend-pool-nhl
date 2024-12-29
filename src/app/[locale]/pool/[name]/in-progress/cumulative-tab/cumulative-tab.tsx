@@ -69,7 +69,6 @@ import {
   GamesNightStatus,
   useGamesNightContext,
 } from "@/context/games-night-context";
-import { TimeRangePoolChart } from "@/components/time-range-pool-chart";
 import {
   calculatePoolStats,
   GoalieInfo,
@@ -81,11 +80,20 @@ import {
   TotalRanking,
 } from "./cumulative-calculation";
 import { LineChart } from "lucide-react";
+import { TimeRangeSkaterChart } from "@/components/chart/time-range-skater-chart";
+import { TimeRangePoolChart } from "@/components/chart/time-range-pool-chart";
+import { TimeRangeGoalieChart } from "@/components/chart/time-range-goalie-chart";
 
 export default function CumulativeTab() {
   const t = useTranslations();
   const { currentDate, querySelectedDate } = useDateContext();
   const { gamesNightStatus } = useGamesNightContext();
+  const [selectedPlayerId, setSelectedPlayerId] = React.useState<string | null>(
+    null
+  );
+  const [isForwardChartOpen, setIsForwardChartOpen] = React.useState(false);
+  const [isDefenderChartOpen, setIsDefenderChartOpen] = React.useState(false);
+  const [isGoalieChartOpen, setIsGoalieChartOpen] = React.useState(false);
   const [playerStats, setPlayerStats] = React.useState<Record<
     string,
     ParticipantsRoster
@@ -265,7 +273,12 @@ export default function CumulativeTab() {
         columnPinning: { left: ["number", "status", "player"] },
       }}
       meta={{
-        props: poolInfo,
+        props: {
+          poolInfo,
+          setSelectedPlayerId,
+          setIsForwardChartOpen,
+          setIsDefenderChartOpen,
+        },
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -309,7 +322,11 @@ export default function CumulativeTab() {
         columnPinning: { left: ["number", "status", "player"] },
       }}
       meta={{
-        props: poolInfo,
+        props: {
+          poolInfo,
+          setSelectedPlayerId,
+          setIsGoalieChartOpen,
+        },
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -389,6 +406,30 @@ export default function CumulativeTab() {
               ).length
             }/${poolInfo.settings.number_forwards})`}</AccordionTrigger>
             <AccordionContent>
+              <Dialog
+                open={isForwardChartOpen}
+                onOpenChange={setIsForwardChartOpen}
+              >
+                <DialogContent className="sm:max-w-[700px]">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {poolInfo.context?.players[selectedPlayerId ?? ""]?.name}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {t("RecordedPoolPointsDescription", {
+                        playerName:
+                          poolInfo.context?.players[selectedPlayerId ?? ""]
+                            ?.name,
+                        poolerName: selectedPoolUser.name,
+                      })}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <TimeRangeSkaterChart
+                    playerId={selectedPlayerId ?? ""}
+                    skaterSettings={poolInfo.settings.forwards_settings}
+                  />
+                </DialogContent>
+              </Dialog>
               {SkaterTable(
                 playerStats[participant.id].forwards,
                 ForwardColumn,
@@ -415,6 +456,30 @@ export default function CumulativeTab() {
               ).length
             }/${poolInfo.settings.number_defenders})`}</AccordionTrigger>
             <AccordionContent>
+              <Dialog
+                open={isDefenderChartOpen}
+                onOpenChange={setIsDefenderChartOpen}
+              >
+                <DialogContent className="sm:max-w-[700px]">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {poolInfo.context?.players[selectedPlayerId ?? ""]?.name}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {t("RecordedPoolPointsDescription", {
+                        playerName:
+                          poolInfo.context?.players[selectedPlayerId ?? ""]
+                            ?.name,
+                        poolerName: selectedPoolUser.name,
+                      })}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <TimeRangeSkaterChart
+                    playerId={selectedPlayerId ?? ""}
+                    skaterSettings={poolInfo.settings.defense_settings}
+                  />
+                </DialogContent>
+              </Dialog>
               {SkaterTable(
                 playerStats[participant.id].defense,
                 DefenseColumn,
@@ -441,6 +506,30 @@ export default function CumulativeTab() {
               ).length
             }/${poolInfo.settings.number_goalies})`}</AccordionTrigger>
             <AccordionContent>
+              <Dialog
+                open={isGoalieChartOpen}
+                onOpenChange={setIsGoalieChartOpen}
+              >
+                <DialogContent className="sm:max-w-[700px]">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {poolInfo.context?.players[selectedPlayerId ?? ""]?.name}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {t("RecordedPoolPointsDescription", {
+                        playerName:
+                          poolInfo.context?.players[selectedPlayerId ?? ""]
+                            ?.name,
+                        poolerName: selectedPoolUser.name,
+                      })}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <TimeRangeGoalieChart
+                    playerId={selectedPlayerId ?? ""}
+                    goaliesSettings={poolInfo.settings.goalies_settings}
+                  />
+                </DialogContent>
+              </Dialog>
               {GoalieTable(
                 playerStats[participant.id].goalies,
                 GoalieColumn,
