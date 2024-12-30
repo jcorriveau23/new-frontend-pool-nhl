@@ -21,6 +21,7 @@ import team_info from "@/lib/teams";
 import PlayerLink from "@/components/player-link";
 import { Combobox } from "@/components/ui/link-combobox";
 import PageTitle from "@/components/page-title";
+import { heightFormat } from "@/app/utils/formating";
 
 interface Player {
   id: number;
@@ -191,9 +192,7 @@ export default async function Standing(props: {
                   src={team_info[d.draftedByTeamId ?? 0].logo}
                 />
               </TableCell>
-              <TableCell>{`${Math.floor(d.height / 12)}' ${
-                d.height % 12
-              }''`}</TableCell>
+              <TableCell>{heightFormat(d.height)}</TableCell>
               <TableCell>{d.weight}</TableCell>
             </TableRow>
           ))}

@@ -604,7 +604,6 @@ export const getGoalieTimeRangeCharts = (
     chartData.push(chartElement);
     
   }
-  console.log(chartData)
   
   return chartData;
 };
