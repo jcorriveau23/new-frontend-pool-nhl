@@ -359,5 +359,7 @@
   "NoGamesNow": "Il n'y a pas de matchs prévu aujourd'hui",
   "RecordedPoolPointsDescription": "Points de pool ammassés par {playerName} pour {poolerName}.",
   "ShowOnlyNhlStats": "Statistiques NHL seulement",
-  "NhlTotal": "Total NHL"
+  "NhlTotal": "Total NHL",
+  "Unassisted": "Sans assistance",
+  "Watch": "Regarder"
 }

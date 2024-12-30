@@ -359,5 +359,7 @@
   "NoGamesNow": "There is no game planned for today.",
   "RecordedPoolPointsDescription": "Recorded pool stats made by {playerName} for {poolerName}.",
   "ShowOnlyNhlStats": "Show only NHL stats",
-  "NhlTotal": "NHL Total"
+  "NhlTotal": "NHL Total",
+  "Unassisted": "unassisted",
+  "Watch": "Watch"
 }

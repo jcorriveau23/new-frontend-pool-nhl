@@ -27,11 +27,19 @@ import {
 import { getTranslations } from "next-intl/server";
 import { TeamLogo } from "@/components/team-logo";
 import PlayerLink from "@/components/player-link";
-import { Shield } from "lucide-react";
+import { ExternalLink, Shield } from "lucide-react";
 import { getServerSideGameLanding } from "@/actions/game-landing";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface Props {
   gameId: string;
+}
+
+enum GoalSituation {
+  PP = "1541",
+  SHG = "1451",
+  EN = "1560",
 }
 
 export default async function GameSummary(props: Props) {
@@ -40,40 +48,94 @@ export default async function GameSummary(props: Props) {
   );
   const t = await getTranslations();
 
-  const GoalItem = (goalInfo: Goal) => (
-    <div key={goalInfo.playerId} className="flex items-center space-x-4">
-      <div className="w-2/12">
-        <Avatar>
-          <AvatarImage src={goalInfo.headshot} />
-        </Avatar>
-      </div>
-      <div className="w-2/12">
-        <TeamLogo
-          teamId={abbrevToTeamId[goalInfo.teamAbbrev.default]}
-          width={30}
-          height={30}
-        />
-      </div>
-      <div className="text-left w-6/12">
-        <div>
-          <PlayerLink
-            name={`${goalInfo.firstName.default} ${goalInfo.lastName.default} (${goalInfo.goalsToDate})`}
-            id={goalInfo.playerId}
-            textStyle={null}
-          />
-        </div>
-        <div>
-          {goalInfo.assists.map((assistInfo) => (
-            <PlayerLink
-              key={assistInfo.playerId}
-              name={`${assistInfo.firstName.default} ${assistInfo.lastName.default} (${assistInfo.assistsToDate})`}
-              id={assistInfo.playerId}
-              textStyle={"text-sm text-muted-foreground"}
+  function getSituationCodeFormatedName(situationCode: GoalSituation) {
+    switch (situationCode) {
+      case GoalSituation.PP:
+        return "PP";
+      case GoalSituation.SHG:
+        return "SHG";
+      case GoalSituation.EN:
+        return "EN";
+      default:
+        return "";
+    }
+  }
+
+  function GoalCard({ goal }: { goal: Goal }) {
+    return (
+      <Card>
+        <CardContent className="flex items-center space-x-4 p-4">
+          <div className="flex-shrink-0">
+            <TeamLogo
+              teamId={abbrevToTeamId[goal.teamAbbrev.default]}
+              width={40}
+              height={40}
             />
-          ))}
-        </div>
-      </div>
-      <div className="text-right w-2/12">{goalInfo.timeInPeriod}</div>
+          </div>
+          <div className="flex-grow">
+            <div className="flex justify-between items-center">
+              <span className="text-lg font-semibold">{goal.timeInPeriod}</span>
+              {Object.values(GoalSituation).includes(
+                goal.situationCode as GoalSituation
+              ) ? (
+                <Badge variant="destructive">
+                  {getSituationCodeFormatedName(
+                    goal.situationCode as GoalSituation
+                  )}
+                </Badge>
+              ) : null}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Avatar>
+                <AvatarImage src={goal.headshot} />
+              </Avatar>
+              <span>
+                <PlayerLink
+                  name={`${goal.firstName.default} ${goal.lastName.default} (${goal.goalsToDate})`}
+                  id={goal.playerId}
+                  textStyle={null}
+                />
+                {goal.assists.length > 0 ? (
+                  goal.assists.map((assistInfo) => (
+                    <PlayerLink
+                      key={assistInfo.playerId}
+                      name={`${assistInfo.firstName.default} ${assistInfo.lastName.default} (${assistInfo.assistsToDate})`}
+                      id={assistInfo.playerId}
+                      textStyle={"text-sm text-muted-foreground"}
+                    />
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {t("Unassisted")}
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+          <div className="flex-shrink-0 space-y-3">
+            <span className="text-lg font-bold">
+              {goal.awayScore} - {goal.homeScore}
+            </span>
+            <a
+              href={goal.highlightClipSharingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center text-link"
+            >
+              <ExternalLink size={16} className="mr-1" />
+              {t("Watch")}
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const PeriodGoals = (period: number, goals: Goal[]) => (
+    <div className="space-y-2">
+      {goals.map((goal) => (
+        <GoalCard key={goal.timeInPeriod} goal={goal} />
+      ))}
     </div>
   );
 
@@ -180,7 +242,10 @@ export default async function GameSummary(props: Props) {
                     <AccordionContent>
                       <div className="space-y-4">
                         {period.goals?.length > 0
-                          ? period.goals.map((goalInfo) => GoalItem(goalInfo))
+                          ? PeriodGoals(
+                              period.periodDescriptor.number,
+                              period.goals
+                            )
                           : t("NoGoal")}
                       </div>
                     </AccordionContent>

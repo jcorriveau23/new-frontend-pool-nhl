@@ -370,7 +370,7 @@ export const goalieColumns: ColumnDef<GoaliesSeasonTotal>[] = [
   },
   {
     accessorKey: "goalsAgainstAvg",
-    header: "GAAVG",
+    header: "GAA",
     accessorFn: (row) => row.goalsAgainstAvg?.toFixed(2),
   },
   {
@@ -480,17 +480,20 @@ export default function PlayerPointsTable(props: PlayerPointsTableProps) {
         }}
         title={null}
         tableFooter={
-          props.playerInfo.position !== "G"
-            ? TotalNhlSkaterRow(
-                (props.seasonType === SeasonType.SEASON
-                  ? props.playerInfo.careerTotals.regularSeason
-                  : props.playerInfo.careerTotals.playoffs) as SkaterSeasonStats
-              )
-            : TotalNhlGoalieRow(
-                (props.seasonType === SeasonType.SEASON
-                  ? props.playerInfo.careerTotals.regularSeason
-                  : props.playerInfo.careerTotals.playoffs) as GoalieStats
-              )
+          props.playerInfo.careerTotals
+            ? props.playerInfo.position !== "G"
+              ? TotalNhlSkaterRow(
+                  (props.seasonType === SeasonType.SEASON
+                    ? props.playerInfo.careerTotals.regularSeason
+                    : props.playerInfo.careerTotals
+                        .playoffs) as SkaterSeasonStats
+                )
+              : TotalNhlGoalieRow(
+                  (props.seasonType === SeasonType.SEASON
+                    ? props.playerInfo.careerTotals.regularSeason
+                    : props.playerInfo.careerTotals.playoffs) as GoalieStats
+                )
+            : null
         }
       />
     </div>
