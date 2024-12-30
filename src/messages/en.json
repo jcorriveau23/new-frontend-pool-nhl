@@ -115,7 +115,8 @@
   "FinalPoolResult": "These are the final results for the pool.",
   "liveGame": "Live matches currently ongoing.",
   "Position": "Position",
-  "BirthCity": "Birth City",
+  "BirthCity": "Birth city",
+  "BirthDate": "Birth date",
   "Drafted": "Drafted",
   "DraftDetail": "pick {pick} round {round} by {team} in {year}",
   "RegularSeason": "Regular Season",
@@ -356,5 +357,7 @@
   "LivePointsNow": "Games are currently playing right now, points have not been cumulated yet.",
   "FuturePointsNow": "Today's games have not started yet.",
   "NoGamesNow": "There is no game planned for today.",
-  "RecordedPoolPointsDescription": "Recorded pool stats made by {playerName} for {poolerName}."
+  "RecordedPoolPointsDescription": "Recorded pool stats made by {playerName} for {poolerName}.",
+  "ShowOnlyNhlStats": "Show only NHL stats",
+  "NhlTotal": "NHL Total"
 }

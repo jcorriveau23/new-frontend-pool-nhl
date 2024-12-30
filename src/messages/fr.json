@@ -116,6 +116,7 @@
   "liveGame": "Matchs en direct en cours",
   "Position": "Position",
   "BirthCity": "Ville de naissance",
+  "BirthDate": "Date de naissance",
   "Drafted": "Repêchage",
   "DraftDetail": "choix ({pick}) ronde ({round}) par {team} en {year}",
   "RegularSeason": "Saison régulière",
@@ -356,5 +357,7 @@
   "LivePointsNow": "Les matchs sont en cours, les points ne font pas encore partie du cumulatif.",
   "FuturePointsNow": "Les matchs d'aujourd'hui n'ont pas encore débutés",
   "NoGamesNow": "Il n'y a pas de matchs prévu aujourd'hui",
-  "RecordedPoolPointsDescription": "Points de pool ammassés par {playerName} pour {poolerName}."
+  "RecordedPoolPointsDescription": "Points de pool ammassés par {playerName} pour {poolerName}.",
+  "ShowOnlyNhlStats": "Statistiques NHL seulement",
+  "NhlTotal": "Total NHL"
 }
