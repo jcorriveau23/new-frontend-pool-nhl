@@ -182,16 +182,6 @@ export const goaliesSeasonColumns: ColumnDef<GoaliesSeasonStats>[] = [
     ),
   },
   {
-    accessorKey: "goals",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="G" />,
-  },
-  {
-    accessorKey: "points",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="PTS" />
-    ),
-  },
-  {
     accessorKey: "goalsAgainst",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="GA" />
@@ -214,5 +204,13 @@ export const goaliesSeasonColumns: ColumnDef<GoaliesSeasonStats>[] = [
   {
     accessorKey: "saves",
     header: ({ column }) => <DataTableColumnHeader column={column} title="S" />,
+  },
+  {
+    accessorKey: "goals",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="G" />,
+  },
+  {
+    accessorKey: "assists",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="A" />,
   },
 ];
