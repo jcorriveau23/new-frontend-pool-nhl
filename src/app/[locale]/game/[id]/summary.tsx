@@ -65,16 +65,18 @@ export default async function GameSummary(props: Props) {
     return (
       <Card>
         <CardContent className="flex items-center space-x-4 p-4">
-          <div className="flex-shrink-0">
-            <TeamLogo
-              teamId={abbrevToTeamId[goal.teamAbbrev.default]}
-              width={40}
-              height={40}
-            />
-          </div>
           <div className="flex-grow">
             <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold">{goal.timeInPeriod}</span>
+              <div className="flex items-center space-x-2">
+                <TeamLogo
+                  teamId={abbrevToTeamId[goal.teamAbbrev.default]}
+                  width={40}
+                  height={40}
+                />
+                <span className="text-lg font-semibold">
+                  {goal.timeInPeriod}
+                </span>
+              </div>
               {Object.values(GoalSituation).includes(
                 goal.situationCode as GoalSituation
               ) ? (
