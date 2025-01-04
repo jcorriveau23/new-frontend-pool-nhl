@@ -42,7 +42,7 @@ export default function HankoAuth(props: Props) {
 
   useEffect(
     () =>
-      hanko?.onAuthFlowCompleted(() => {
+      hanko?.onSessionCreated(() => {
         redirectAfterLogin();
       }),
     [hanko, redirectAfterLogin]

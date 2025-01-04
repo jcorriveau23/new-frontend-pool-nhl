@@ -28,6 +28,7 @@ import DraftedPlayerIcon from "./drafted-player";
 import PlayerSearchDialog from "./search-players";
 import { toast } from "@/hooks/use-toast";
 import { useSession } from "@/context/useSessionData";
+import { useUser } from "@/context/useUserData";
 
 interface Props {
   userRoster: {
@@ -46,6 +47,7 @@ export default function PoolerRoster(props: Props) {
   const { poolInfo, playersOwner, updatePoolInfo, dictUsers } =
     usePoolContext();
   const userSession = useSession();
+  const userData = useUser();
   const t = useTranslations();
 
   const getFormatedSummaryContractInfo = (players: Player[]): string => {
@@ -265,7 +267,7 @@ export default function PoolerRoster(props: Props) {
       {props.teamSalaryCap
         ? SalarySummaryTable(props.userRoster, props.teamSalaryCap)
         : null}
-      {userSession.info?.userID === poolInfo.owner && (
+      {userData.info?.id === poolInfo.owner && (
         <PlayerSearchDialog
           label={t("Add player")}
           onPlayerSelect={(player) => onPlayerSelect(player)}

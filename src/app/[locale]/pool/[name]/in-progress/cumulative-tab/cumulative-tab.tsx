@@ -63,7 +63,7 @@ import { toast } from "@/hooks/use-toast";
 import InformationIcon from "@/components/information-box";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import StartingRoster from "@/components/starting-roster";
-import { PoolerUserSelector } from "@/components/pool-user-selector";
+import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
 import { TableCell, TableRow } from "@/components/ui/table";
 import {
   GamesNightStatus,
@@ -83,6 +83,7 @@ import { LineChart } from "lucide-react";
 import { TimeRangeSkaterChart } from "@/components/chart/time-range-skater-chart";
 import { TimeRangePoolChart } from "@/components/chart/time-range-pool-chart";
 import { TimeRangeGoalieChart } from "@/components/chart/time-range-goalie-chart";
+import { useUser } from "@/context/useUserData";
 
 export default function CumulativeTab() {
   const t = useTranslations();
@@ -111,6 +112,7 @@ export default function CumulativeTab() {
   } = usePoolContext();
 
   const userSession = useSession();
+  const userData = useUser();
 
   const formSchema = z.object({
     name: z
@@ -372,7 +374,7 @@ export default function CumulativeTab() {
 
   const ParticipantRoster = (participant: PoolUser) => (
     <>
-      {userSession.info?.userID === poolInfo.owner ||
+      {userData.info?.id === poolInfo.owner ||
       poolInfo.settings.number_reservists > 0 ? (
         <Dialog key={participant.id}>
           <DialogTrigger asChild>
@@ -647,13 +649,13 @@ export default function CumulativeTab() {
       <Tabs defaultValue="totalRanking">
         {poolInfo.status === PoolState.InProgress &&
         new Date(poolInfo.season_end + "T00:00:00") < currentDate &&
-        hasPoolPrivilege(userSession.info?.userID, poolInfo) ? (
+        hasPoolPrivilege(userData.info?.id, poolInfo) ? (
           <Button onClick={markAsFinal}>{t("MarkAsFinal")}</Button>
         ) : null}
         {poolInfo.status === PoolState.Final &&
         poolInfo.settings.dynasty_settings &&
         !poolInfo.settings.dynasty_settings.next_season_pool_name &&
-        hasPoolPrivilege(userSession.info?.userID, poolInfo)
+        hasPoolPrivilege(userData.info?.id, poolInfo)
           ? GenerateDynastyDialog()
           : null}
         <div className="overflow-auto">
@@ -685,7 +687,7 @@ export default function CumulativeTab() {
         </TabsContent>
       </Tabs>
       <div className="pt-3 space-y-2">
-        <PoolerUserSelector />
+        <PoolerUserGlobalSelector />
         {ParticipantRoster(selectedPoolUser)}
       </div>
     </div>

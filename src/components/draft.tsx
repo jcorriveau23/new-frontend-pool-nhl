@@ -21,7 +21,6 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Badge } from "./ui/badge";
 import DraftStatus from "./draft-status";
-import { useSession } from "@/context/useSessionData";
 import DraftButton from "./draft-button";
 import {
   Dialog,
@@ -32,6 +31,7 @@ import {
 } from "./ui/dialog";
 import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 import PlayersTable from "./player-table";
+import { useUser } from "@/context/useUserData";
 
 interface Pick {
   drafter: string;
@@ -61,7 +61,7 @@ interface DraftProps {
 export default function Draft(props: DraftProps) {
   const [draftInfo, setDraftInfo] = React.useState<Draft | null>(null);
   const { dictUsers, poolInfo } = usePoolContext();
-  const userSession = useSession();
+  const userData = useUser();
   const t = useTranslations();
 
   // The max number of players per pooler is always the number of players minus the number of players protected
@@ -377,7 +377,7 @@ export default function Draft(props: DraftProps) {
             ? dictUsers[draftInfo.currentDrafter ?? ""]?.name
             : null
         }
-        isUserTurn={draftInfo.currentDrafter === userSession.info?.userID}
+        isUserTurn={draftInfo.currentDrafter === userData.info?.id}
       />
       {draftInfo.rounds.map((round) => RenderRound(round))}
     </div>
