@@ -27,7 +27,7 @@ import {
   usePoolContext,
 } from "@/context/pool-context";
 import { Row } from "@tanstack/react-table";
-import { PoolerUserSelector } from "@/components/pool-user-selector";
+import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useDailyLeadersContext } from "@/context/daily-leaders-context";
 import { GameStatePopover } from "@/components/game-state-popover";
@@ -244,7 +244,7 @@ export default function DailyStatsContent() {
         )}
       </div>
       <div className="py-5 px-0 sm:px-5">
-        <PoolerUserSelector />
+        <PoolerUserGlobalSelector />
         {dailyPointsMade ? (
           <>
             <Accordion

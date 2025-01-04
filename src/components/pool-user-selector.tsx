@@ -11,7 +11,7 @@ import {
 import { PoolUser } from "@/data/pool/model";
 import { usePoolContext } from "@/context/pool-context";
 
-export function PoolerUserSelector() {
+export function PoolerUserGlobalSelector() {
   const { poolInfo, selectedParticipant, updateSelectedParticipant } =
     usePoolContext();
   return (

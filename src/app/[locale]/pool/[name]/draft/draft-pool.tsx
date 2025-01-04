@@ -33,7 +33,7 @@ import React from "react";
 import UndoButton from "@/components/undo-button";
 import { useSession } from "@/context/useSessionData";
 import StartingRoster from "@/components/starting-roster";
-import { PoolerUserSelector } from "@/components/pool-user-selector";
+import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
 
 export default function DraftPage() {
   const { poolInfo, selectedParticipant } = usePoolContext();
@@ -131,7 +131,7 @@ export default function DraftPage() {
               <DialogTitle>{t("PoolersRoster")}</DialogTitle>
             </DialogHeader>
             <ScrollArea className="p-0">
-              <PoolerUserSelector />
+              <PoolerUserGlobalSelector />
               <StartingRoster
                 key={selectedParticipant}
                 userRoster={getPoolerActivePlayers(

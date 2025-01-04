@@ -63,7 +63,7 @@ import { toast } from "@/hooks/use-toast";
 import InformationIcon from "@/components/information-box";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import StartingRoster from "@/components/starting-roster";
-import { PoolerUserSelector } from "@/components/pool-user-selector";
+import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
 import { TableCell, TableRow } from "@/components/ui/table";
 import {
   GamesNightStatus,
@@ -685,7 +685,7 @@ export default function CumulativeTab() {
         </TabsContent>
       </Tabs>
       <div className="pt-3 space-y-2">
-        <PoolerUserSelector />
+        <PoolerUserGlobalSelector />
         {ParticipantRoster(selectedPoolUser)}
       </div>
     </div>
