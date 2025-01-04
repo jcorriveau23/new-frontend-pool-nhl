@@ -6,8 +6,9 @@ import { useTranslations } from "next-intl";
 import * as React from "react";
 import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSession } from "@/context/useSessionData";
 import PoolerRoster from "@/components/pooler-roster";
+import { useUser } from "@/context/useUserData";
+import { useSession } from "@/context/useSessionData";
 
 export default function RosterTab() {
   const {
@@ -16,6 +17,7 @@ export default function RosterTab() {
     updateSelectedParticipant,
     updatePoolInfo,
   } = usePoolContext();
+  const userData = useUser();
   const userSession = useSession();
 
   const [protectedPlayerIds, setProtectedPlayerIds] = React.useState<
@@ -39,10 +41,7 @@ export default function RosterTab() {
 
   const onPlayerSelection = (user: PoolUser, player: Player) => {
     // Need to have an account to protect the players.
-    if (
-      userSession.info?.userID !== user.id &&
-      userSession.info?.userID !== poolInfo.owner
-    ) {
+    if (userData.info?.id !== user.id && userData.info?.id !== poolInfo.owner) {
       toast({
         variant: "destructive",
         title: t("CannotUpdateProtectedPlayers", { userName: user.name }),
@@ -87,10 +86,7 @@ export default function RosterTab() {
 
   const onSaveProtectedPlayers = async (user: PoolUser) => {
     // Need to have an account to protect the players.
-    if (
-      userSession.info?.userID !== user.id &&
-      userSession.info?.userID !== poolInfo.owner
-    ) {
+    if (userData.info?.id !== user.id && userData.info?.id !== poolInfo.owner) {
       toast({
         variant: "destructive",
         title: t("CannotUpdateProtectedPlayers", { userName: user.name }),
@@ -222,7 +218,7 @@ export default function RosterTab() {
             </div>
           </TabsContent>
         ))}
-        {userSession.info?.userID === poolInfo.owner ? (
+        {userData.info?.id === poolInfo.owner ? (
           <Button onClick={() => onCompleteProtection()}>
             {t("StartDraft")}
           </Button>

@@ -34,7 +34,6 @@ import {
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useTranslations } from "next-intl";
 import { Command, RoomUser, useSocketContext } from "@/context/socket-context";
-import { useSession } from "@/context/useSessionData";
 import {
   Dialog,
   DialogContent,
@@ -59,6 +58,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import DraftOrderSelector from "@/components/draft-order-selector";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { CheckedState } from "@radix-ui/react-checkbox";
+import { useUser } from "@/context/useUserData";
 
 const USER_NAME_MIN_LENGTH = 2;
 const USER_NAME_MAX_LENGTH = 12;
@@ -66,7 +66,7 @@ const USER_NAME_MAX_LENGTH = 12;
 export default function CreatedPool() {
   const { poolInfo } = usePoolContext();
 
-  const userSession = useSession();
+  const userData = useUser();
   const { toast } = useToast();
   const t = useTranslations();
   const { roomUsers, sendSocketCommand } = useSocketContext();
@@ -192,9 +192,7 @@ export default function CreatedPool() {
         >
           <div className="flex items-center gap-2"></div>
           <label className="font-medium">{t("SpotAvailable")}</label>
-          {userSession.info?.userID === poolInfo.owner
-            ? CreateUserDialog()
-            : null}
+          {userData.info?.id === poolInfo.owner ? CreateUserDialog() : null}
         </li>
       );
     }
@@ -251,15 +249,15 @@ export default function CreatedPool() {
                     id="is-ready"
                     checked={users[userId].is_ready}
                     onCheckedChange={(checked) => onReady(checked)}
-                    disabled={userId !== userSession.info?.userID}
+                    disabled={userId !== userData.info?.id}
                   />
                 ) : null}
                 <label className="font-medium">{users[userId].name}</label>
                 <div className="text-sm text-muted-foreground">
                   {users[userId].is_ready ? t("Ready") : t("NotReady")}
                 </div>
-                {userSession.info?.userID === poolInfo.owner &&
-                userId !== userSession.info?.userID ? (
+                {userData.info?.id === poolInfo.owner &&
+                userId !== userData.info?.id ? (
                   <Button
                     variant="ghost"
                     size="icon"

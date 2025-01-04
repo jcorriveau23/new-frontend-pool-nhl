@@ -28,6 +28,7 @@ import { useSession } from "@/context/useSessionData";
 import { Button } from "./ui/button";
 import { PlusCircledIcon, MinusCircledIcon } from "@radix-ui/react-icons";
 import PlayerSearchDialog from "./search-players";
+import { useUser } from "@/context/useUserData";
 
 interface Props {
   userRoster: {
@@ -43,6 +44,7 @@ interface Props {
 export default function StartingRoster(props: Props) {
   const { poolInfo, updatePoolInfo, dictUsers } = usePoolContext();
   const userSession = useSession();
+  const userData = useUser();
   const t = useTranslations();
 
   const [selectedForwards, setSelectedForwards] = React.useState<Player[]>(
@@ -229,8 +231,8 @@ export default function StartingRoster(props: Props) {
                       </TableCell>
                     ) : null}
 
-                    {userSession.info?.userID === user.id ||
-                    userSession.info?.userID === poolInfo.owner ? (
+                    {userData.info?.id === user.id ||
+                    userData.info?.id === poolInfo.owner ? (
                       <TableCell>
                         <Button
                           onClick={() =>
@@ -353,7 +355,7 @@ export default function StartingRoster(props: Props) {
 
   return (
     <>
-      {userSession.info?.userID === poolInfo.owner && (
+      {userData.info?.id === poolInfo.owner && (
         <PlayerSearchDialog
           label={t("Add player")}
           onPlayerSelect={(player) => onPlayerSelect(player)}

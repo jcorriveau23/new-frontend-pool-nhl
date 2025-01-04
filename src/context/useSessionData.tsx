@@ -11,7 +11,6 @@ import { getHankoApi } from "@/lib/env-variables";
 const hankoApi = getHankoApi();
 
 interface HankoSession {
-  userID: string;
   jwt: string;
   isValid: boolean;
 }
@@ -42,9 +41,8 @@ export const UserSessionProvider: React.FC<UserSessionProviderProps> = ({
         const session = hankoInstance.session.get();
 
         if (isValid && session) {
-          const { userID, jwt = "" } = session;
+          const { jwt = "" } = session;
           setSessionState({
-            userID,
             jwt,
             isValid,
           });

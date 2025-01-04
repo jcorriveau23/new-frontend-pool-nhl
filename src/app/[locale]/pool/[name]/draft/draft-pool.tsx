@@ -31,9 +31,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import React from "react";
 import UndoButton from "@/components/undo-button";
-import { useSession } from "@/context/useSessionData";
 import StartingRoster from "@/components/starting-roster";
 import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
+import { useUser } from "@/context/useUserData";
 
 export default function DraftPage() {
   const { poolInfo, selectedParticipant } = usePoolContext();
@@ -43,7 +43,7 @@ export default function DraftPage() {
   const [selectedPlayer, setSelectedPlayer] = React.useState<Player | null>(
     null
   );
-  const userSession = useSession();
+  const userData = useUser();
 
   const onPlayerSelect = async (player: Player) => {
     // TODO: Add validation:
@@ -149,7 +149,7 @@ export default function DraftPage() {
         <UndoButton
           disabled={
             poolInfo.context?.players_name_drafted.length == 0 ||
-            userSession.info?.userID !== poolInfo.owner
+            userData.info?.id !== poolInfo.owner
           }
           onClick={() => onUndoDraftPlayer()}
           label={t("Undo")}

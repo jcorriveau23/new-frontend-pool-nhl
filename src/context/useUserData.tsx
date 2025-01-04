@@ -12,7 +12,7 @@ const hankoApi = getHankoApi();
 
 export interface HankoUser {
   id: string;
-  email: string;
+  email: string | undefined;
   isValid: boolean;
 }
 
