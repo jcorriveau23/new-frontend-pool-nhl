@@ -171,7 +171,7 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
   },
   {
     accessorKey: "salary",
-    header: ({ table }) => "$",
+    header: "$",
     cell: ({ table, row }) => {
       return getPlayerSalaryCell(
         row.original.id,
@@ -285,7 +285,7 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
   },
   {
     accessorKey: "salary",
-    header: ({ table }) => "$",
+    header: "$",
     cell: ({ table, row }) => {
       return getPlayerSalaryCell(
         row.original.id,
@@ -403,7 +403,7 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
   },
   {
     accessorKey: "salary",
-    header: ({ table }) => "$",
+    header: "$",
     cell: ({ table, row }) => {
       return getPlayerSalaryCell(
         row.original.id,
