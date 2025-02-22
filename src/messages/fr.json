@@ -332,7 +332,7 @@
   "OverCap": "{diff} au-dessus du cap",
   "UnderCap": "{diff} en-dessous du cap",
   "SalaryDetails": "Salaire {playerName}",
-  "ContractExpiration": "Expiration du contrat:",
+  "ContractExpiration": "Expiration:",
   "ContractExpirationValue": "fin de {season}",
   "PlayerProtectedBy": "{playerName} a été protégé par {userName}.",
   "PlayerDraftedBy": "{playerName} a été drafté par {userName}.",
@@ -361,5 +361,7 @@
   "ShowOnlyNhlStats": "Statistiques NHL seulement",
   "NhlTotal": "Total NHL",
   "Unassisted": "Sans assistance",
-  "Watch": "Regarder"
+  "Watch": "Regarder",
+  "CreateTrade": "Créer une échange",
+  "Players": "Joueurs"
 }
