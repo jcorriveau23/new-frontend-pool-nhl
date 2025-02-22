@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
+import PlayerSalary from "@/components/player-salary";
 
 // const getWarningColor = (playerStatus: PlayerStatus) => {
 //   switch (playerStatus) {
@@ -66,6 +67,20 @@ const getPlayerCell = (playerId: number, poolInfo: Pool) => (
       textStyle={null}
     />
   </div>
+);
+
+const getPlayerSalaryCell = (playerId: number, poolInfo: Pool) => (
+  <PlayerSalary
+    playerName={poolInfo.context?.players[playerId].name}
+    team={poolInfo.context?.players[playerId].team}
+    salary={poolInfo.context?.players[playerId].salary_cap}
+    contractExpirationSeason={
+      poolInfo.context?.players[playerId].contract_expiration_season
+    }
+    onBadgeClick={(e: React.MouseEvent) => {
+      e.stopPropagation();
+    }}
+  />
 );
 
 const getTeamCell = (player: SkaterInfo | GoalieInfo, poolInfo: Pool) => (
@@ -153,6 +168,16 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
       player.numberOfGame > 0
         ? (player.poolPoints / player.numberOfGame).toFixed(3)
         : null,
+  },
+  {
+    accessorKey: "salary",
+    header: ({ table }) => "$",
+    cell: ({ table, row }) => {
+      return getPlayerSalaryCell(
+        row.original.id,
+        table.options.meta?.props?.poolInfo as Pool
+      );
+    },
   },
   {
     id: "actions",
@@ -257,6 +282,16 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
       player.numberOfGame > 0
         ? (player.poolPoints / player.numberOfGame).toFixed(3)
         : null,
+  },
+  {
+    accessorKey: "salary",
+    header: ({ table }) => "$",
+    cell: ({ table, row }) => {
+      return getPlayerSalaryCell(
+        row.original.id,
+        table.options.meta?.props?.poolInfo as Pool
+      );
+    },
   },
   {
     id: "actions",
@@ -365,6 +400,16 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
       player.numberOfGame > 0
         ? (player.poolPoints / player.numberOfGame).toFixed(3)
         : null,
+  },
+  {
+    accessorKey: "salary",
+    header: ({ table }) => "$",
+    cell: ({ table, row }) => {
+      return getPlayerSalaryCell(
+        row.original.id,
+        table.options.meta?.props?.poolInfo as Pool
+      );
+    },
   },
   {
     id: "actions",

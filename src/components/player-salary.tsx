@@ -11,10 +11,10 @@ import { TeamLogo } from "./team-logo";
 import { useTranslations } from "next-intl";
 
 interface PlayerSalary {
-  playerName: string;
-  team: number | null;
-  salary: number; // salary in $.
-  contractExpirationSeason: number; // in the following format 20232024.
+  playerName: string | undefined;
+  team: number | null | undefined;
+  salary: number | null | undefined; // salary in $.
+  contractExpirationSeason: number | null | undefined; // in the following format 20232024.
   onBadgeClick?: (e: React.MouseEvent) => void;
 }
 
@@ -25,7 +25,7 @@ export default function PlayerSalary({
   contractExpirationSeason,
   onBadgeClick,
 }: PlayerSalary) {
-  const formatedSalary = salaryFormat(salary);
+  const formatedSalary = salary ? salaryFormat(salary) : "";
 
   const [isOpen, setIsOpen] = React.useState(false);
   const t = useTranslations();
@@ -59,7 +59,7 @@ export default function PlayerSalary({
               <div className="grid grid-cols-3 items-center gap-4">
                 <span className="text-sm font-medium">{t("Team")}:</span>
                 <span className="col-span-2 text-sm">
-                  <TeamLogo teamId={team} width={30} height={30} />
+                  {team && <TeamLogo teamId={team} width={30} height={30} />}
                 </span>
               </div>
               <div className="grid grid-cols-3 items-center gap-4">
@@ -67,9 +67,10 @@ export default function PlayerSalary({
                   {t("ContractExpiration")}
                 </span>
                 <span className="col-span-2 text-sm">
-                  {t("ContractExpirationValue", {
-                    season: seasonFormat(contractExpirationSeason, 0),
-                  })}
+                  {contractExpirationSeason &&
+                    t("ContractExpirationValue", {
+                      season: seasonFormat(contractExpirationSeason, 0),
+                    })}
                 </span>
               </div>
               <div className="grid grid-cols-3 items-center gap-4">

@@ -84,6 +84,8 @@ import { TimeRangeSkaterChart } from "@/components/chart/time-range-skater-chart
 import { TimeRangePoolChart } from "@/components/chart/time-range-pool-chart";
 import { TimeRangeGoalieChart } from "@/components/chart/time-range-goalie-chart";
 import { useUser } from "@/context/useUserData";
+import PlayersTable from "@/components/player-table";
+import { Search } from "lucide-react";
 
 export default function CumulativeTab() {
   const t = useTranslations();
@@ -669,6 +671,28 @@ export default function CumulativeTab() {
             ) : null}
           </TabsList>
         </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Search /> {t("Players")}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
+            <DialogHeader>
+              <DialogTitle>{t("DraftAPlayer")}</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="p-0">
+              <PlayersTable
+                sortField={"points"}
+                skip={null}
+                limit={51}
+                considerOnlyProtected={false}
+                onPlayerSelect={null}
+              />
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
         <TabsContent value="totalRanking">
           {chartCollapsible(null)}
           {TotalTable(ranking, TotalPointsColumn, t("TotalRanking"))}
