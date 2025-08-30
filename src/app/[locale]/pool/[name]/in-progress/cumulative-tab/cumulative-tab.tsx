@@ -568,7 +568,10 @@ export default function CumulativeTab() {
           <AccordionItem value="picks">
             <AccordionTrigger>{t("NextSeasonPicks")}</AccordionTrigger>
             <AccordionContent>
-              <PickList poolUser={selectedPoolUser} poolInfo={poolInfo} />
+              <PickList
+                poolUser={selectedPoolUser}
+                tradablePicks={poolInfo.context?.tradable_picks ?? null}
+              />
             </AccordionContent>
           </AccordionItem>
         </Accordion>
