@@ -136,7 +136,7 @@
   "Season": "Season",
   "Year": "Year",
   "ManagePool": "Manage Your NHL Hockey Pools with Ease",
-  "AppDescription": "hockeypool.live allows anyone to create their own NHL pool and manage draft, alignment change, trades and dynasty type pool. This website is 100% free to use.",
+  "AppDescription": "slapshot.xyz allows anyone to create their own NHL pool and manage draft, alignment change, trades and dynasty type pool. This website is 100% free to use.",
   "SeeDemo": "See demo!",
   "GetStartedNow": "Get started now by ",
   "CreateYourOwnPool": "creating your own pool!",
@@ -276,7 +276,7 @@
   "SpotAvailable": "Spot Avaible",
   "AddUser": "Add a user",
   "RemoveUser": "Remove a user",
-  "ChoseUsername": "Chose the user name. An hockeypool.live account could be link to this user in the future.",
+  "ChoseUsername": "Chose the user name. An slapshot.xyz account could be link to this user in the future.",
   "Username": "username",
   "Add": "Add",
   "PoolCreatedPageTitle": "Creation of pool {poolName}",
@@ -362,5 +362,6 @@
   "NhlTotal": "NHL Total",
   "Unassisted": "unassisted",
   "Watch": "Watch",
-  "CreateTrade": "Create a trade"
+  "CreateTrade": "Create a trade",
+  "Players": "Players"
 }

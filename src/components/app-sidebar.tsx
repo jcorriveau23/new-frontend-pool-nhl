@@ -126,7 +126,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader>HockeyPool.live</SidebarHeader>
+      <SidebarHeader>slapshot.xyz</SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>{t("MainPages")}</SidebarGroupLabel>

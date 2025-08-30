@@ -61,7 +61,7 @@ function Main({ children }: { children: React.ReactNode }) {
               className="flex items-center gap-2"
             >
               <LucideHome />
-              HockeyPool
+              SlapShot
             </Button>
           </div>
           <Separator />

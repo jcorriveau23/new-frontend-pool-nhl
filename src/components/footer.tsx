@@ -47,7 +47,7 @@ export default function Footer() {
           </Link>
         </div>
         <div className="grid col-span-2">
-          <p className="text-muted-foreground">© 2024 hockeypool.live</p>
+          <p className="text-muted-foreground">© 2025 slapshot.xyz</p>
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 # Free NHL pool
 
-[hockeypool.live](https://hockeypool.live)
+[slapshot.xyz](https://slapshot.xyz)
 
 built with next-js shadcn and rust, [See backend repository](https://github.com/jcorriveau23/backend-pool-nhl)
 

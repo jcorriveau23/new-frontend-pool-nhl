@@ -1,10 +1,10 @@
 import team_info from "./teams";
 
 export const FIRST_NHL_SEASON = 1916;
-export const LAST_NHL_SEASON = 2024;
+export const LAST_NHL_SEASON = 2025;
 
-export const CURRENT_NHL_SEASON = "20242025";
-export const CURRENT_DRAFT_YEAR = "2024";
+export const CURRENT_NHL_SEASON = "20252026";
+export const CURRENT_DRAFT_YEAR = "2025";
 
 export const getAllYears = (
   startYear: number = FIRST_NHL_SEASON,
