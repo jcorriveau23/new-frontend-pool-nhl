@@ -225,9 +225,16 @@ export default function HistoryTab() {
         <AccordionTrigger>{dailyHistory.date}</AccordionTrigger>
         <AccordionContent>
           {dailyHistory.dailyMovements.map((movements) => Movements(movements))}
-          {dailyHistory.dailyTrades.map((trade) => (
-            <TradeItem key={trade.id} trade={trade} poolInfo={poolInfo} />
-          ))}
+          {dailyHistory.dailyTrades
+            ? dailyHistory.dailyTrades.map((trade) => (
+                <TradeItem
+                  key={trade.id}
+                  trade={trade}
+                  poolInfo={poolInfo}
+                  editTrade={null}
+                />
+              ))
+            : null}
         </AccordionContent>
       </AccordionItem>
     </Accordion>

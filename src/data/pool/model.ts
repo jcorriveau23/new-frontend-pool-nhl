@@ -513,8 +513,14 @@ const findGoaliePoints = (poolInfo: Pool , jDate: string, participantId: string,
   return roster?.G?.[playerId] || null;
 }
 
+export const getPoolUserWithName = (
+  poolInfo: Pool,
+  name: string): PoolUser | undefined => {
+  return poolInfo.participants.find(u => u.name == name)
+}
+
 export const getSkaterTimeRangeCharts = (
-  poolInfo: Pool ,
+  poolInfo: Pool,
   poolStartDate: Date,
   poolSelectedEndDate: Date,
   playerId: string,

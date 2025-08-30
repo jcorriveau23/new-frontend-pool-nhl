@@ -55,6 +55,7 @@ export default function PoolerRoster(props: Props) {
       props.protectedPlayerIds?.includes(player.id)
     );
     return t("TotalPlayersProtected", {
+      playerCount: protectedPlayers.length,
       contractCount: protectedPlayers.filter((player) => player.salary_cap)
         .length,
       totalSalary: salaryFormat(

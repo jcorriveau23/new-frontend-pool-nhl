@@ -32,3 +32,32 @@ export function PoolerUserGlobalSelector() {
     </Select>
   );
 }
+
+interface PoolerUserSelectorProps {
+  setSelectedUser: (user: PoolUser) => void;
+  defaultUserSelection: string | undefined;
+}
+
+export function PoolerUserSelector(props: PoolerUserSelectorProps) {
+  const { poolInfo } = usePoolContext();
+  return (
+    <Select
+      value={props.defaultUserSelection}
+      onValueChange={(userName) => {
+        const poolUser = poolInfo.participants.find((u) => u.name === userName);
+        if (poolUser) props.setSelectedUser(poolUser);
+      }}
+    >
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Select a user" />
+      </SelectTrigger>
+      <SelectContent>
+        {poolInfo.participants?.map((user: PoolUser) => (
+          <SelectItem key={user.id} value={user.name}>
+            {user.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}

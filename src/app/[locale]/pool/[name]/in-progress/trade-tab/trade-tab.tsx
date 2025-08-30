@@ -9,6 +9,7 @@ import {
 import { format } from "date-fns";
 import { TradeItem } from "@/components/trade";
 import { usePoolContext } from "@/context/pool-context";
+import TradeCenter from "./trade-center";
 
 export default function TradeTab() {
   const t = useTranslations();
@@ -16,6 +17,7 @@ export default function TradeTab() {
 
   return (
     <div>
+      <TradeCenter />
       {poolInfo.trades?.map((trade) => (
         <Accordion
           key={trade.id}
@@ -33,7 +35,7 @@ export default function TradeTab() {
               )})`}
             </AccordionTrigger>
             <AccordionContent>
-              <TradeItem trade={trade} poolInfo={poolInfo} />
+              <TradeItem trade={trade} poolInfo={poolInfo} editTrade={null} />
             </AccordionContent>
           </AccordionItem>
         </Accordion>

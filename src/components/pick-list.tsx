@@ -9,14 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { Pool, PoolUser } from "@/data/pool/model";
+import { PoolUser } from "@/data/pool/model";
 import { useTranslations } from "next-intl";
 import InformationIcon from "./information-box";
 import { usePoolContext } from "@/context/pool-context";
 
 interface Props {
   poolUser: PoolUser;
-  poolInfo: Pool;
+  tradablePicks: Record<string, string>[] | null;
 }
 
 export default function PickList(props: Props) {
@@ -36,7 +36,7 @@ export default function PickList(props: Props) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {props.poolInfo.context?.tradable_picks?.map((roundPicksOwner, index) =>
+        {props.tradablePicks?.map((roundPicksOwner, index) =>
           Object.keys(roundPicksOwner)
             .filter((from) => roundPicksOwner[from] === props.poolUser.id)
             .map((from) => (
