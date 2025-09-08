@@ -128,8 +128,7 @@ export default function CumulativeTab() {
         message: t("PoolNameMaxLenghtValidation", {
           value: POOL_NAME_MAX_LENGTH,
         }),
-      })
-      .default(""),
+      }),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -423,7 +422,7 @@ export default function CumulativeTab() {
                       {t("RecordedPoolPointsDescription", {
                         playerName:
                           poolInfo.context?.players[selectedPlayerId ?? ""]
-                            ?.name,
+                            ?.name ?? "",
                         poolerName: selectedPoolUser.name,
                       })}
                     </DialogDescription>
@@ -473,7 +472,7 @@ export default function CumulativeTab() {
                       {t("RecordedPoolPointsDescription", {
                         playerName:
                           poolInfo.context?.players[selectedPlayerId ?? ""]
-                            ?.name,
+                            ?.name ?? "",
                         poolerName: selectedPoolUser.name,
                       })}
                     </DialogDescription>
@@ -523,7 +522,7 @@ export default function CumulativeTab() {
                       {t("RecordedPoolPointsDescription", {
                         playerName:
                           poolInfo.context?.players[selectedPlayerId ?? ""]
-                            ?.name,
+                            ?.name ?? "",
                         poolerName: selectedPoolUser.name,
                       })}
                     </DialogDescription>
@@ -563,7 +562,7 @@ export default function CumulativeTab() {
           </AccordionItem>
         </Accordion>
       ) : null}
-      {(poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0) ? (
+      {poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0 ? (
         <Accordion type="single" collapsible defaultValue="picks">
           <AccordionItem value="picks">
             <AccordionTrigger>{t("NextSeasonPicks")}</AccordionTrigger>

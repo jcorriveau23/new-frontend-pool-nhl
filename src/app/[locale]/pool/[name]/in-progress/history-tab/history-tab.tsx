@@ -185,7 +185,7 @@ export default function HistoryTab() {
                 <ShieldPlus size={20} color="green" />
                 <PlayerLink
                   name={`${poolInfo.context?.players[playerId].name}  (${t(
-                    poolInfo.context?.players[playerId].position
+                    poolInfo.context?.players[playerId].position ?? ""
                   )})`}
                   id={Number(playerId)}
                   textStyle=""
@@ -201,7 +201,7 @@ export default function HistoryTab() {
                 <BadgeMinus size={20} color="red" />
                 <PlayerLink
                   name={`${poolInfo.context?.players[playerId].name}  (${t(
-                    poolInfo.context?.players[playerId].position
+                    poolInfo.context?.players[playerId].position ?? ""
                   )})`}
                   id={Number(playerId)}
                   textStyle=""

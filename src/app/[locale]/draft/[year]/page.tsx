@@ -107,7 +107,7 @@ interface DraftData {
 }
 
 const FIRST_DRAFT_YEAR = 1963;
-const LAST_DRAFT_YEAR = 2024;
+const LAST_DRAFT_YEAR = 2025;
 
 const getServerSideSeasonDraft = async (year: string) => {
   /* 
@@ -185,12 +185,14 @@ export default async function Standing(props: {
               </TableCell>
               <TableCell>{d.position}</TableCell>
               <TableCell>
-                <Image
-                  width={30}
-                  height={30}
-                  alt="team"
-                  src={team_info[d.draftedByTeamId ?? 0].logo}
-                />
+                {team_info[d.draftedByTeamId]?.logo ? (
+                  <Image
+                    width={30}
+                    height={30}
+                    alt="team"
+                    src={team_info[d.draftedByTeamId].logo}
+                  />
+                ) : null}
               </TableCell>
               <TableCell>{heightFormat(d.height)}</TableCell>
               <TableCell>{d.weight}</TableCell>

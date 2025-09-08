@@ -106,7 +106,7 @@ export default function StartingRoster(props: Props) {
           0
         )
       ),
-      salaryCap: props.teamSalaryCap ? salaryFormat(props.teamSalaryCap) : null,
+      salaryCap: props.teamSalaryCap ? salaryFormat(props.teamSalaryCap) : "",
     });
   };
 

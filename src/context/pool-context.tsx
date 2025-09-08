@@ -543,8 +543,8 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     querySelectedDate !== "now"
       ? querySelectedDate
       : lastFormatDate
-        ? lastFormatDate
-        : format(currentDate, "yyyy-MM-dd");
+      ? lastFormatDate
+      : format(currentDate, "yyyy-MM-dd");
 
   // Now parse all the pool date from the start of the season to the current date.
   const poolStartDate = new Date(poolInfo.season_start + "T00:00:00");
@@ -555,8 +555,8 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     endDate < poolStartDate
       ? new Date(poolInfo.season_start + "T00:00:00")
       : endDate > poolEndDate
-        ? new Date(poolInfo.season_start + "T00:00:00")
-        : endDate;
+      ? new Date(poolInfo.season_end + "T00:00:00")
+      : endDate;
 
   const getPoolDictUsers = (pool: Pool) =>
     pool.participants.reduce((acc: Record<string, PoolUser>, user) => {

@@ -175,211 +175,210 @@ export default function PoolSettingsComponent(props: Props) {
     name: z
       .string()
       .min(POOL_NAME_MIN_LENGTH, {
-        message: t("PoolNameMinLenghtValidation", {
+        error: t("PoolNameMinLenghtValidation", {
           value: POOL_NAME_MIN_LENGTH,
         }),
       })
       .max(POOL_NAME_MAX_LENGTH, {
-        message: t("PoolNameMaxLenghtValidation", {
+        error: t("PoolNameMaxLenghtValidation", {
           value: POOL_NAME_MAX_LENGTH,
         }),
-      })
-      .default(DEFAULT_POOL_NAME),
-    numberOfPooler: z.coerce
+      }),
+    numberOfPooler: z
       .number()
       .min(MIN_POOLER_NUMBER, {
-        message: t("NumberOfPoolerMinLengthValidation", {
+        error: t("NumberOfPoolerMinLengthValidation", {
           value: MIN_POOLER_NUMBER,
         }),
       })
       .max(MAX_POOLER_NUMBER, {
-        message: t("NumberOfPoolerMaxLengthValidation", {
+        error: t("NumberOfPoolerMaxLengthValidation", {
           value: MAX_POOLER_NUMBER,
         }),
-      })
-      .default(DEFAULT_POOLER_NUMBER),
-    typeOfPool: z
-      .enum([PoolType.STANDARD, PoolType.DYNASTY])
-      .default(DEFAULT_POOL_TYPE),
-    draftType: z
-      .enum([DraftType.SERPENTINE, DraftType.STANDARD])
-      .default(DEFAULT_DRAFT_TYPE),
+      }),
+    typeOfPool: z.enum([PoolType.STANDARD, PoolType.DYNASTY]),
+    draftType: z.enum([DraftType.SERPENTINE, DraftType.STANDARD]),
     // Number of player per types
-    numberOfForwards: z.coerce
+    numberOfForwards: z
       .number()
       .min(NUMBER_FORWARDS_MIN_VALUE, {
-        message: t("NumberOfForwardsMinValidation", {
+        error: t("NumberOfForwardsMinValidation", {
           value: NUMBER_FORWARDS_MIN_VALUE,
         }),
       })
       .max(NUMBER_FORWARDS_MAX_VALUE, {
-        message: t("NumberOfForwardsMaxValidation", {
+        error: t("NumberOfForwardsMaxValidation", {
           value: NUMBER_FORWARDS_MAX_VALUE,
         }),
-      })
-      .default(DEFAULT_NUMBER_FORWARDS),
-    numberOfDefenders: z.coerce
+      }),
+    numberOfDefenders: z
       .number()
       .min(NUMBER_DEFENDERS_MIN_VALUE, {
-        message: t("NumberOfDefendersMinValidation", {
+        error: t("NumberOfDefendersMinValidation", {
           value: NUMBER_DEFENDERS_MIN_VALUE,
         }),
       })
       .max(NUMBER_DEFENDERS_MAX_VALUE, {
-        message: t("NumberOfDefendersMaxValidation", {
+        error: t("NumberOfDefendersMaxValidation", {
           value: NUMBER_DEFENDERS_MAX_VALUE,
         }),
-      })
-      .default(DEFAULT_NUMBER_DEFENDERS),
-    numberOfGoalies: z.coerce
+      }),
+    numberOfGoalies: z
       .number()
       .min(NUMBER_GOALIES_MIN_VALUE, {
-        message: t("NumberOfGoaliesMinValidation", {
+        error: t("NumberOfGoaliesMinValidation", {
           value: NUMBER_GOALIES_MIN_VALUE,
         }),
       })
       .max(NUMBER_GOALIES_MAX_VALUE, {
-        message: t("NumberOfGoaliesMaxValidation", {
+        error: t("NumberOfGoaliesMaxValidation", {
           value: NUMBER_GOALIES_MAX_VALUE,
         }),
-      })
-      .default(DEFAULT_NUMBER_GOALIES),
-    numberOfReservists: z.coerce
+      }),
+    numberOfReservists: z
       .number()
       .min(NUMBER_RESERVISTS_MIN_VALUE, {
-        message: t("NumberOfReservistsMinValidation", {
+        error: t("NumberOfReservistsMinValidation", {
           value: NUMBER_RESERVISTS_MIN_VALUE,
         }),
       })
       .max(NUMBER_RESERVISTS_MAX_VALUE, {
-        message: t("NumberOfReservistsMaxValidation", {
+        error: t("NumberOfReservistsMaxValidation", {
           value: NUMBER_RESERVISTS_MAX_VALUE,
         }),
-      })
-      .default(DEFAULT_NUMBER_RESERVISTS),
+      }),
     // Number of players to ignore points.
-    numberOfWorstForwardsToIgnore: z.coerce
+    numberOfWorstForwardsToIgnore: z
       .number()
       .min(NUMBER_WORST_FORWARDS_TO_IGNORE_MIN_VALUE, {
-        message: t("NumberOfWorstForwardsToIgnoreMinValidation", {
+        error: t("NumberOfWorstForwardsToIgnoreMinValidation", {
           value: NUMBER_WORST_FORWARDS_TO_IGNORE_MIN_VALUE,
         }),
       })
       .max(NUMBER_WORST_FORWARDS_TO_IGNORE_MAX_VALUE, {
-        message: t("NumberOfWorstForwardsToIgnoreMaxValidation", {
+        error: t("NumberOfWorstForwardsToIgnoreMaxValidation", {
           value: NUMBER_WORST_FORWARDS_TO_IGNORE_MAX_VALUE,
         }),
-      })
-      .default(DEFAULT_NUMBER_WORST_FORWARDS_TO_IGNORE),
-    numberOfWorstDefendersToIgnore: z.coerce
+      }),
+    numberOfWorstDefendersToIgnore: z
       .number()
       .min(NUMBER_WORST_DEFENDERS_TO_IGNORE_MIN_VALUE, {
-        message: t("NumberOfWorstDefendersToIgnoreMinValidation", {
+        error: t("NumberOfWorstDefendersToIgnoreMinValidation", {
           value: NUMBER_WORST_DEFENDERS_TO_IGNORE_MIN_VALUE,
         }),
       })
       .max(NUMBER_WORST_DEFENDERS_TO_IGNORE_MAX_VALUE, {
-        message: t("NumberOfWorstDefendersToIgnoreMaxValidation", {
+        error: t("NumberOfWorstDefendersToIgnoreMaxValidation", {
           value: NUMBER_WORST_DEFENDERS_TO_IGNORE_MAX_VALUE,
         }),
-      })
-      .default(DEFAULT_NUMBER_WORST_DEFENDERS_TO_IGNORE),
-    numberOfWorstGoaliesToIgnore: z.coerce
+      }),
+    numberOfWorstGoaliesToIgnore: z
       .number()
       .min(NUMBER_WORST_GOALIES_TO_IGNORE_MIN_VALUE, {
-        message: t("NumberOfWorstGoaliesToIgnoreMinValidation", {
+        error: t("NumberOfWorstGoaliesToIgnoreMinValidation", {
           value: NUMBER_WORST_GOALIES_TO_IGNORE_MIN_VALUE,
         }),
       })
       .max(NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE, {
-        message: t("NumberOfWorstGoaliesToIgnoreMaxValidation", {
+        error: t("NumberOfWorstGoaliesToIgnoreMaxValidation", {
           value: NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE,
         }),
-      })
-      .default(DEFAULT_NUMBER_WORST_GOALIES_TO_IGNORE),
+      }),
     //Forwards
-    forwardsPointsPerGoals: z.coerce
+    forwardsPointsPerGoals: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    forwardsPointsPerAssists: z.coerce
+      .max(POINTS_MAX_VALUE),
+    forwardsPointsPerAssists: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    forwardsPointsPerHatTricks: z.coerce
+      .max(POINTS_MAX_VALUE),
+    forwardsPointsPerHatTricks: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    forwardsPointsPerShootOutGoals: z.coerce
+      .max(POINTS_MAX_VALUE),
+    forwardsPointsPerShootOutGoals: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
+      .max(POINTS_MAX_VALUE),
     // Defenders
-    defendersPointsPerGoals: z.coerce
+    defendersPointsPerGoals: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    defendersPointsPerAssists: z.coerce
+      .max(POINTS_MAX_VALUE),
+    defendersPointsPerAssists: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    defendersPointsPerHatTricks: z.coerce
+      .max(POINTS_MAX_VALUE),
+    defendersPointsPerHatTricks: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    defendersPointsPerShootOutGoals: z.coerce
+      .max(POINTS_MAX_VALUE),
+    defendersPointsPerShootOutGoals: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
+      .max(POINTS_MAX_VALUE),
     // Goalies
-    goaliesPointsPerGoals: z.coerce
+    goaliesPointsPerGoals: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    goaliesPointsPerAssists: z.coerce
+      .max(POINTS_MAX_VALUE),
+    goaliesPointsPerAssists: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    goaliesPointsPerWins: z.coerce
+      .max(POINTS_MAX_VALUE),
+    goaliesPointsPerWins: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    goaliesPointsPerOvertimeLosses: z.coerce
+      .max(POINTS_MAX_VALUE),
+    goaliesPointsPerOvertimeLosses: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    goaliesPointsPerShutout: z.coerce
+      .max(POINTS_MAX_VALUE),
+    goaliesPointsPerShutout: z
       .number()
       .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE)
-      .default(DEFAULT_POINTS_VALUE),
-    tradableDraftPicks: z.coerce
+      .max(POINTS_MAX_VALUE),
+    tradableDraftPicks: z
       .number()
       .min(TRADABLE_DRAFT_PICKS_MIN_VALUE)
-      .max(TRADABLE_DRAFT_PICKS_MAX_VALUE)
-      .default(DEFAULT_TRADABLE_DRAFT_PICKS),
-    numberOfPlayersToProtect: z.coerce
+      .max(TRADABLE_DRAFT_PICKS_MAX_VALUE),
+    numberOfPlayersToProtect: z
       .number()
       .min(NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE)
-      .max(NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE)
-      .default(DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT),
+      .max(NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {},
+    defaultValues: {
+      name: DEFAULT_POOL_NAME,
+      numberOfPooler: DEFAULT_POOLER_NUMBER,
+      typeOfPool: DEFAULT_POOL_TYPE,
+      draftType: DEFAULT_DRAFT_TYPE,
+      numberOfForwards: DEFAULT_NUMBER_FORWARDS,
+      numberOfDefenders: DEFAULT_NUMBER_DEFENDERS,
+      numberOfGoalies: DEFAULT_NUMBER_GOALIES,
+      numberOfReservists: DEFAULT_NUMBER_RESERVISTS,
+      numberOfWorstForwardsToIgnore: DEFAULT_NUMBER_WORST_FORWARDS_TO_IGNORE,
+      numberOfWorstDefendersToIgnore: DEFAULT_NUMBER_WORST_DEFENDERS_TO_IGNORE,
+      numberOfWorstGoaliesToIgnore: DEFAULT_NUMBER_WORST_GOALIES_TO_IGNORE,
+      forwardsPointsPerGoals: DEFAULT_POINTS_VALUE,
+      forwardsPointsPerAssists: DEFAULT_POINTS_VALUE,
+      forwardsPointsPerHatTricks: DEFAULT_POINTS_VALUE,
+      forwardsPointsPerShootOutGoals: DEFAULT_POINTS_VALUE,
+      defendersPointsPerGoals: DEFAULT_POINTS_VALUE,
+      defendersPointsPerAssists: DEFAULT_POINTS_VALUE,
+      defendersPointsPerHatTricks: DEFAULT_POINTS_VALUE,
+      defendersPointsPerShootOutGoals: DEFAULT_POINTS_VALUE,
+      goaliesPointsPerGoals: DEFAULT_POINTS_VALUE,
+      goaliesPointsPerAssists: DEFAULT_POINTS_VALUE,
+      goaliesPointsPerWins: DEFAULT_POINTS_VALUE,
+      goaliesPointsPerOvertimeLosses: DEFAULT_POINTS_VALUE,
+      goaliesPointsPerShutout: DEFAULT_POINTS_VALUE,
+      tradableDraftPicks: DEFAULT_TRADABLE_DRAFT_PICKS,
+      numberOfPlayersToProtect: DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT,
+    },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {

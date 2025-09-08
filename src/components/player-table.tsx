@@ -17,7 +17,7 @@ import {
   PaginationItem,
   PaginationLink,
   PaginationNext,
-  PaginationFirst,
+  PaginationPrevious,
 } from "@/components/ui/pagination";
 import { TeamLogo } from "./team-logo";
 import { usePoolContext } from "@/context/pool-context";
@@ -130,8 +130,8 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     const newSortField = isGoalies
       ? "salary_cap"
       : wasGoalies
-        ? "points"
-        : (sortField ?? "points");
+      ? "points"
+      : sortField ?? "points";
 
     setSortField(newSortField);
     queryParams.set("sortField", newSortField);
@@ -407,17 +407,25 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
         <PaginationContent>
           {pageOffset > 0 ? (
             <PaginationItem>
-              <PaginationFirst onClick={() => handleFirstPage()} />
+              <PaginationPrevious
+                onClick={() => handleFirstPage()}
+                size={undefined}
+              />
             </PaginationItem>
           ) : null}
           <PaginationItem>
             {pageOffset > 0 ? (
-              <PaginationLink onClick={() => handleNextPage(-1)}>
+              <PaginationLink
+                onClick={() => handleNextPage(-1)}
+                size={undefined}
+              >
                 {pageOffset}
               </PaginationLink>
             ) : null}
-            <PaginationLink isActive>{1 + pageOffset}</PaginationLink>
-            <PaginationLink onClick={() => handleNextPage(1)}>
+            <PaginationLink isActive size={undefined}>
+              {1 + pageOffset}
+            </PaginationLink>
+            <PaginationLink onClick={() => handleNextPage(1)} size={undefined}>
               {2 + pageOffset}
             </PaginationLink>
           </PaginationItem>
@@ -425,7 +433,10 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
             <PaginationEllipsis />
           </PaginationItem>
           <PaginationItem>
-            <PaginationNext onClick={() => handleNextPage(1)} />
+            <PaginationNext
+              onClick={() => handleNextPage(1)}
+              size={undefined}
+            />
           </PaginationItem>
         </PaginationContent>
       </Pagination>

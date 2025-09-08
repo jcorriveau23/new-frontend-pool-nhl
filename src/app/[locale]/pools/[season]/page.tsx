@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import PageTitle from "@/components/page-title";
 
 const FIRST_POOL_SEASON = 2021;
-const CURRENT_POOL_SEASON = 2024;
+const CURRENT_POOL_SEASON = 2025;
 
 const getServersidePoolList = async (season: string) => {
   /* 
@@ -66,7 +66,7 @@ export default async function Pools(props: {
   const t = await getTranslations();
 
   const PoolItem = (poolInfo: ProjectedPoolShort) => (
-    <Link href={`/pool/${poolInfo.name}?${queryString}`}>
+    <Link href={`/pool/${poolInfo.name}?${queryString}`} key={poolInfo.name}>
       <div className="m-2 p-2 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted ">
         <div>
           <p className="text-sm font-medium leading-none">{poolInfo.name}</p>

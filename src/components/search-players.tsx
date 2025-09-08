@@ -73,7 +73,7 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
               placeholder={`${t("PlayerName")}`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-grow"
+              className="grow"
             />
             <Button
               onClick={handleSearch}

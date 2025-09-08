@@ -76,16 +76,15 @@ export default function CreatedPool() {
     name: z
       .string()
       .min(USER_NAME_MIN_LENGTH, {
-        message: t("PoolNameMinLenghtValidation", {
+        error: t("PoolNameMinLenghtValidation", {
           value: USER_NAME_MIN_LENGTH,
         }),
       })
       .max(USER_NAME_MAX_LENGTH, {
-        message: t("PoolNameMaxLenghtValidation", {
+        error: t("PoolNameMaxLenghtValidation", {
           value: USER_NAME_MAX_LENGTH,
         }),
-      })
-      .default(""),
+      }),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({

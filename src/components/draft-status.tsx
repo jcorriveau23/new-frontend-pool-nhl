@@ -37,7 +37,7 @@ export default function DraftStatus({
       >
         {isUserTurn
           ? t("DraftStatusYourTurn")
-          : t("DraftStatus", { user: currentDrafter })}
+          : t("DraftStatus", { user: currentDrafter ?? "" })}
         {isOpen ? (
           <ChevronUp className="h-4 w-4 ml-2" />
         ) : (
@@ -51,14 +51,14 @@ export default function DraftStatus({
               <p className="text-sm text-white">
                 <span className="font-semibold">
                   {t("RoundAndPick", {
-                    roundNumber: round,
-                    pickNumber: pickNumber,
+                    roundNumber: round ?? 0,
+                    pickNumber: pickNumber ?? 0,
                   })}
                 </span>
               </p>
               <p className="text-sm text-white mt-1">
                 <span className="font-semibold">
-                  {t("CurrentTurn", { user: currentDrafter })}
+                  {t("CurrentTurn", { user: currentDrafter ?? "" })}
                 </span>
               </p>
               {isUserTurn && (

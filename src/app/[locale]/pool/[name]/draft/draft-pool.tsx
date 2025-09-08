@@ -80,11 +80,13 @@ export default function DraftPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t("DraftAlertDialog", { playerName: selectedPlayer?.name })}
+              {t("DraftAlertDialog", {
+                playerName: selectedPlayer?.name ?? "",
+              })}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {t("DraftAlertDialogQuestion", {
-                playerName: selectedPlayer?.name,
+                playerName: selectedPlayer?.name ?? "",
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>

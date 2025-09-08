@@ -1,4 +1,4 @@
-"use client";
+"use client"; //Only for NextJS App Router
 
 import { useEffect } from "react";
 import { register } from "@teamhanko/hanko-elements";
@@ -12,17 +12,14 @@ const hankoApi: string = process.env.NEXT_PUBLIC_HANKO_API_URL;
 
 export default function HankoProfile() {
   const locale = useLocale();
-
   useEffect(() => {
-    register(hankoApi, { translations: { en, fr } }).catch((error: unknown) => {
-      // handle error
-      console.log(`Error occured when registring to hanko api, ${error}`);
+    register(hankoApi, { translations: { en, fr } }).catch((error: Error) => {
+      console.error(`Error occured when registring to hanko api, ${error}`);
     });
   }, []);
 
   return (
     <div className="hanko-profile">
-      {/*@ts-expect-error, no control on component naming here.*/}
       <hanko-profile lang={locale} />
     </div>
   );
