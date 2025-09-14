@@ -9,6 +9,7 @@
   "CouldNotLoginError": "La requête de connection a échoué: {error}",
   "CouldNotRegisterError": "La requête pour créer le compte a échoué: {error}",
   "CouldNotGeneratePoolError": "La requête pour générer le pool {name} a échoué: {error}",
+  "CouldNotUpdatePoolError": "La requête pour updater le pool {name} a échoué: {error}",
   "CouldNotMarkAsFinalPoolError": "La requête pour terminer le pool {name} a échoué: {error}",
   "CouldNotGetPoolInfoError": "La requête pour recevoir les informations du pool {pool} a échoué: {error}",
   "CouldNotProtectPlayers": "La requête pour protéger la liste de joueur dans le pool {name} a échoué: {error}",

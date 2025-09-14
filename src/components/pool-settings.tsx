@@ -123,33 +123,46 @@ export default function PoolSettingsComponent(props: Props) {
   const DEFAULT_POINTS_VALUE = 1.0;
   // Forwards
   const DEFAULT_FORWARDS_POINTS_PER_GOALS =
-    props.oldPoolSettings?.forwards_settings.points_per_goals ?? 1;
+    props.oldPoolSettings?.forwards_settings.points_per_goals ??
+    DEFAULT_POINTS_VALUE;
   const DEFAULT_FORWARDS_POINTS_PER_ASSITS =
-    props.oldPoolSettings?.forwards_settings.points_per_assists ?? 1;
+    props.oldPoolSettings?.forwards_settings.points_per_assists ??
+    DEFAULT_POINTS_VALUE;
   const DEFAULT_FORWARDS_POINTS_PER_HATTRICKS =
-    props.oldPoolSettings?.forwards_settings.points_per_hattricks ?? 1;
+    props.oldPoolSettings?.forwards_settings.points_per_hattricks ??
+    DEFAULT_POINTS_VALUE;
   const DEFAULT_FORWARDS_POINTS_PER_SHOOTOUT_GOALS =
-    props.oldPoolSettings?.forwards_settings.points_per_shootout_goals ?? 1;
+    props.oldPoolSettings?.forwards_settings.points_per_shootout_goals ??
+    DEFAULT_POINTS_VALUE;
   // Defense
   const DEFAULT_DEFENDERS_POINTS_PER_GOALS =
-    props.oldPoolSettings?.defense_settings.points_per_goals ?? 1;
+    props.oldPoolSettings?.defense_settings.points_per_goals ??
+    DEFAULT_POINTS_VALUE;
   const DEFAULT_DEFENDERS_POINTS_PER_ASSITS =
-    props.oldPoolSettings?.defense_settings.points_per_assists ?? 1;
+    props.oldPoolSettings?.defense_settings.points_per_assists ??
+    DEFAULT_POINTS_VALUE;
   const DEFAULT_DEFENDERS_POINTS_PER_HATTRICKS =
-    props.oldPoolSettings?.defense_settings.points_per_hattricks ?? 1;
+    props.oldPoolSettings?.defense_settings.points_per_hattricks ??
+    DEFAULT_POINTS_VALUE;
   const DEFAULT_DEFENDERS_POINTS_PER_SHOOTOUT_GOALS =
-    props.oldPoolSettings?.defense_settings.points_per_shootout_goals ?? 1;
+    props.oldPoolSettings?.defense_settings.points_per_shootout_goals ??
+    DEFAULT_POINTS_VALUE;
   // Goalies
   const DEFAULT_GOALIES_POINTS_PER_WINS =
-    props.oldPoolSettings?.goalies_settings.points_per_wins ?? 1;
+    props.oldPoolSettings?.goalies_settings.points_per_wins ??
+    DEFAULT_POINTS_VALUE;
   const DEFAULT_GOALIES_POINTS_PER_OVERTIME_LOSSES =
-    props.oldPoolSettings?.goalies_settings.points_per_overtimes ?? 1;
+    props.oldPoolSettings?.goalies_settings.points_per_overtimes ??
+    DEFAULT_POINTS_VALUE;
   const DEFAULT_GOALIES_POINTS_PER_SHUTOUT =
-    props.oldPoolSettings?.goalies_settings.points_per_shutouts ?? 1;
+    props.oldPoolSettings?.goalies_settings.points_per_shutouts ??
+    DEFAULT_POINTS_VALUE;
   const DEFAULT_GOALIES_POINTS_PER_GOALS =
-    props.oldPoolSettings?.goalies_settings.points_per_goals ?? 1;
+    props.oldPoolSettings?.goalies_settings.points_per_goals ??
+    DEFAULT_POINTS_VALUE;
   const DEFAULT_GOALIES_POINTS_PER_ASSITS =
-    props.oldPoolSettings?.goalies_settings.points_per_assists ?? 1;
+    props.oldPoolSettings?.goalies_settings.points_per_assists ??
+    DEFAULT_POINTS_VALUE;
 
   // 4) Dynasty Settings
   const DEFAULT_TRADABLE_DRAFT_PICKS =
@@ -364,19 +377,22 @@ export default function PoolSettingsComponent(props: Props) {
       numberOfWorstForwardsToIgnore: DEFAULT_NUMBER_WORST_FORWARDS_TO_IGNORE,
       numberOfWorstDefendersToIgnore: DEFAULT_NUMBER_WORST_DEFENDERS_TO_IGNORE,
       numberOfWorstGoaliesToIgnore: DEFAULT_NUMBER_WORST_GOALIES_TO_IGNORE,
-      forwardsPointsPerGoals: DEFAULT_POINTS_VALUE,
-      forwardsPointsPerAssists: DEFAULT_POINTS_VALUE,
-      forwardsPointsPerHatTricks: DEFAULT_POINTS_VALUE,
-      forwardsPointsPerShootOutGoals: DEFAULT_POINTS_VALUE,
-      defendersPointsPerGoals: DEFAULT_POINTS_VALUE,
-      defendersPointsPerAssists: DEFAULT_POINTS_VALUE,
-      defendersPointsPerHatTricks: DEFAULT_POINTS_VALUE,
-      defendersPointsPerShootOutGoals: DEFAULT_POINTS_VALUE,
-      goaliesPointsPerGoals: DEFAULT_POINTS_VALUE,
-      goaliesPointsPerAssists: DEFAULT_POINTS_VALUE,
-      goaliesPointsPerWins: DEFAULT_POINTS_VALUE,
-      goaliesPointsPerOvertimeLosses: DEFAULT_POINTS_VALUE,
-      goaliesPointsPerShutout: DEFAULT_POINTS_VALUE,
+      forwardsPointsPerGoals: DEFAULT_FORWARDS_POINTS_PER_GOALS,
+      forwardsPointsPerAssists: DEFAULT_FORWARDS_POINTS_PER_ASSITS,
+      forwardsPointsPerHatTricks: DEFAULT_FORWARDS_POINTS_PER_HATTRICKS,
+      forwardsPointsPerShootOutGoals:
+        DEFAULT_FORWARDS_POINTS_PER_SHOOTOUT_GOALS,
+      defendersPointsPerGoals: DEFAULT_DEFENDERS_POINTS_PER_GOALS,
+      defendersPointsPerAssists: DEFAULT_DEFENDERS_POINTS_PER_ASSITS,
+      defendersPointsPerHatTricks: DEFAULT_DEFENDERS_POINTS_PER_HATTRICKS,
+      defendersPointsPerShootOutGoals:
+        DEFAULT_DEFENDERS_POINTS_PER_SHOOTOUT_GOALS,
+      goaliesPointsPerGoals: DEFAULT_GOALIES_POINTS_PER_GOALS,
+      goaliesPointsPerAssists: DEFAULT_GOALIES_POINTS_PER_ASSITS,
+      goaliesPointsPerWins: DEFAULT_GOALIES_POINTS_PER_WINS,
+      goaliesPointsPerOvertimeLosses:
+        DEFAULT_GOALIES_POINTS_PER_OVERTIME_LOSSES,
+      goaliesPointsPerShutout: DEFAULT_GOALIES_POINTS_PER_SHUTOUT,
       tradableDraftPicks: DEFAULT_TRADABLE_DRAFT_PICKS,
       numberOfPlayersToProtect: DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT,
     },
@@ -384,73 +400,98 @@ export default function PoolSettingsComponent(props: Props) {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     console.log(values);
-    const res = await fetch("/api-rust/create-pool", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userSession.info?.jwt}`,
-      },
-      body: JSON.stringify({
-        pool_name: values.name,
-        settings: {
-          number_poolers: values.numberOfPooler,
-          draft_type: values.draftType,
-          assistants: [],
-          number_forwards: values.numberOfForwards,
-          number_defenders: values.numberOfDefenders,
-          number_goalies: values.numberOfGoalies,
-          number_reservists: values.numberOfReservists,
-          roster_modification_date: [],
-          forwards_settings: {
-            points_per_goals: values.forwardsPointsPerGoals,
-            points_per_assists: values.forwardsPointsPerAssists,
-            points_per_hattricks: values.forwardsPointsPerHatTricks,
-            points_per_shootout_goals: values.forwardsPointsPerShootOutGoals,
-          },
-          defense_settings: {
-            points_per_goals: values.defendersPointsPerGoals,
-            points_per_assists: values.defendersPointsPerAssists,
-            points_per_hattricks: values.defendersPointsPerHatTricks,
-            points_per_shootout_goals: values.defendersPointsPerShootOutGoals,
-          },
-          goalies_settings: {
-            points_per_wins: values.goaliesPointsPerWins,
-            points_per_shutouts: values.goaliesPointsPerShutout,
-            points_per_overtimes: values.goaliesPointsPerOvertimeLosses,
-            points_per_goals: values.goaliesPointsPerGoals,
-            points_per_assists: values.goaliesPointsPerAssists,
-          },
-          ignore_x_worst_players: showIgnorePlayers
-            ? {
-                forwards: values.numberOfWorstForwardsToIgnore,
-                defense: values.numberOfWorstDefendersToIgnore,
-                goalies: values.numberOfWorstGoaliesToIgnore,
-              }
-            : null,
-          dynasty_settings: showDynastySettings
-            ? {
-                next_season_number_players_protected:
-                  values.numberOfPlayersToProtect,
-                tradable_picks: values.tradableDraftPicks,
-              }
-            : null,
-        },
-      }),
-    });
 
-    if (!res.ok) {
-      const error = await res.text();
-      toast({
-        variant: "destructive",
-        title: t("CouldNotGeneratePoolError", {
-          name: values.name,
-          error: error,
-        }),
-        duration: 2000,
+    const poolSettings = {
+      pool_name: values.name,
+      settings: {
+        number_poolers: values.numberOfPooler,
+        draft_type: values.draftType,
+        assistants: [],
+        number_forwards: values.numberOfForwards,
+        number_defenders: values.numberOfDefenders,
+        number_goalies: values.numberOfGoalies,
+        number_reservists: values.numberOfReservists,
+        roster_modification_date: [],
+        forwards_settings: {
+          points_per_goals: values.forwardsPointsPerGoals,
+          points_per_assists: values.forwardsPointsPerAssists,
+          points_per_hattricks: values.forwardsPointsPerHatTricks,
+          points_per_shootout_goals: values.forwardsPointsPerShootOutGoals,
+        },
+        defense_settings: {
+          points_per_goals: values.defendersPointsPerGoals,
+          points_per_assists: values.defendersPointsPerAssists,
+          points_per_hattricks: values.defendersPointsPerHatTricks,
+          points_per_shootout_goals: values.defendersPointsPerShootOutGoals,
+        },
+        goalies_settings: {
+          points_per_wins: values.goaliesPointsPerWins,
+          points_per_shutouts: values.goaliesPointsPerShutout,
+          points_per_overtimes: values.goaliesPointsPerOvertimeLosses,
+          points_per_goals: values.goaliesPointsPerGoals,
+          points_per_assists: values.goaliesPointsPerAssists,
+        },
+        ignore_x_worst_players: showIgnorePlayers
+          ? {
+              forwards: values.numberOfWorstForwardsToIgnore,
+              defense: values.numberOfWorstDefendersToIgnore,
+              goalies: values.numberOfWorstGoaliesToIgnore,
+            }
+          : null,
+        dynasty_settings: showDynastySettings
+          ? {
+              next_season_number_players_protected:
+                values.numberOfPlayersToProtect,
+              tradable_picks: values.tradableDraftPicks,
+            }
+          : null,
+      },
+    };
+
+    if (isCreationContext()) {
+      const res = await fetch("/api-rust/create-pool", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userSession.info?.jwt}`,
+        },
+        body: JSON.stringify(poolSettings),
       });
-      return;
+
+      if (!res.ok) {
+        const error = await res.text();
+        toast({
+          variant: "destructive",
+          title: t("CouldNotGeneratePoolError", {
+            name: values.name,
+            error: error,
+          }),
+          duration: 2000,
+        });
+      }
+      router.push(`/pool/${values.name}?${searchParams.toString()}`);
+    } else {
+      const res = await fetch("/api-rust/update-pool-settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userSession.info?.jwt}`,
+        },
+        body: JSON.stringify(poolSettings),
+      });
+
+      if (!res.ok) {
+        const error = await res.text();
+        toast({
+          variant: "destructive",
+          title: t("CouldNotUpdatePoolError", {
+            name: values.name,
+            error: error,
+          }),
+          duration: 2000,
+        });
+      }
     }
-    router.push(`/pool/${values.name}?${searchParams.toString()}`);
   };
 
   const GeneralSettings = () => (
@@ -471,11 +512,7 @@ export default function PoolSettingsComponent(props: Props) {
               <FormItem>
                 <FormLabel>{t("PoolName")}</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder={t("PoolName")}
-                    {...field}
-                    defaultValue={DEFAULT_POOL_NAME}
-                  />
+                  <Input placeholder={t("PoolName")} {...field} />
                 </FormControl>
                 <FormDescription />
                 <FormMessage />
@@ -494,9 +531,8 @@ export default function PoolSettingsComponent(props: Props) {
                     type="number"
                     min={MIN_POOLER_NUMBER}
                     max={MAX_POOLER_NUMBER}
-                    defaultValue={DEFAULT_POOLER_NUMBER}
                     onChange={(e) =>
-                      field.onChange(Number(e.target.value) || 0)
+                      field.onChange(Number(e.target.value) || null)
                     }
                   />
                 </FormControl>
@@ -555,11 +591,10 @@ export default function PoolSettingsComponent(props: Props) {
                       <Input
                         {...field}
                         type="number"
-                        defaultValue={DEFAULT_TRADABLE_DRAFT_PICKS}
                         min={TRADABLE_DRAFT_PICKS_MIN_VALUE}
                         max={TRADABLE_DRAFT_PICKS_MAX_VALUE}
                         onChange={(e) =>
-                          field.onChange(Number(e.target.value) || 0)
+                          field.onChange(Number(e.target.value) || null)
                         }
                       />
                     </FormControl>
@@ -585,11 +620,10 @@ export default function PoolSettingsComponent(props: Props) {
                       <Input
                         {...field}
                         type="number"
-                        defaultValue={DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT}
                         min={NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE}
                         max={NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE}
                         onChange={(e) =>
-                          field.onChange(Number(e.target.value) || 0)
+                          field.onChange(Number(e.target.value) || null)
                         }
                       />
                     </FormControl>
@@ -627,9 +661,8 @@ export default function PoolSettingsComponent(props: Props) {
                     type="number"
                     min={NUMBER_FORWARDS_MIN_VALUE}
                     max={NUMBER_FORWARDS_MAX_VALUE}
-                    defaultValue={DEFAULT_NUMBER_FORWARDS}
                     onChange={(e) =>
-                      field.onChange(Number(e.target.value) || 0)
+                      field.onChange(Number(e.target.value) || null)
                     }
                   />
                 </FormControl>
@@ -650,9 +683,8 @@ export default function PoolSettingsComponent(props: Props) {
                     type="number"
                     min={NUMBER_DEFENDERS_MIN_VALUE}
                     max={NUMBER_DEFENDERS_MAX_VALUE}
-                    defaultValue={DEFAULT_NUMBER_DEFENDERS}
                     onChange={(e) =>
-                      field.onChange(Number(e.target.value) || 0)
+                      field.onChange(Number(e.target.value) || null)
                     }
                   />
                 </FormControl>
@@ -673,9 +705,8 @@ export default function PoolSettingsComponent(props: Props) {
                     type="number"
                     min={NUMBER_GOALIES_MIN_VALUE}
                     max={NUMBER_GOALIES_MAX_VALUE}
-                    defaultValue={DEFAULT_NUMBER_GOALIES}
                     onChange={(e) =>
-                      field.onChange(Number(e.target.value) || 0)
+                      field.onChange(Number(e.target.value) || null)
                     }
                   />
                 </FormControl>
@@ -696,9 +727,8 @@ export default function PoolSettingsComponent(props: Props) {
                     type="number"
                     min={NUMBER_RESERVISTS_MIN_VALUE}
                     max={NUMBER_RESERVISTS_MAX_VALUE}
-                    defaultValue={DEFAULT_NUMBER_RESERVISTS}
                     onChange={(e) =>
-                      field.onChange(Number(e.target.value) || 0)
+                      field.onChange(Number(e.target.value) || null)
                     }
                   />
                 </FormControl>
@@ -733,9 +763,8 @@ export default function PoolSettingsComponent(props: Props) {
                       type="number"
                       min={NUMBER_WORST_FORWARDS_TO_IGNORE_MIN_VALUE}
                       max={NUMBER_WORST_FORWARDS_TO_IGNORE_MAX_VALUE}
-                      defaultValue={DEFAULT_NUMBER_WORST_FORWARDS_TO_IGNORE}
                       onChange={(e) =>
-                        field.onChange(Number(e.target.value) || 0)
+                        field.onChange(Number(e.target.value) || null)
                       }
                     />
                   </FormControl>
@@ -756,9 +785,8 @@ export default function PoolSettingsComponent(props: Props) {
                       type="number"
                       min={NUMBER_WORST_DEFENDERS_TO_IGNORE_MIN_VALUE}
                       max={NUMBER_WORST_DEFENDERS_TO_IGNORE_MAX_VALUE}
-                      defaultValue={DEFAULT_NUMBER_WORST_DEFENDERS_TO_IGNORE}
                       onChange={(e) =>
-                        field.onChange(Number(e.target.value) || 0)
+                        field.onChange(Number(e.target.value) || null)
                       }
                     />
                   </FormControl>
@@ -779,9 +807,8 @@ export default function PoolSettingsComponent(props: Props) {
                       type="number"
                       min={NUMBER_WORST_GOALIES_TO_IGNORE_MIN_VALUE}
                       max={NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE}
-                      defaultValue={DEFAULT_NUMBER_WORST_GOALIES_TO_IGNORE}
                       onChange={(e) =>
-                        field.onChange(Number(e.target.value) || 0)
+                        field.onChange(Number(e.target.value) || null)
                       }
                     />
                   </FormControl>
@@ -796,11 +823,7 @@ export default function PoolSettingsComponent(props: Props) {
     </Card>
   );
 
-  const PointsField = (
-    fieldName: string,
-    label: string,
-    defaultValue: number
-  ) => (
+  const PointsField = (fieldName: string, label: string) => (
     <FormField
       control={form.control}
       // @ts-expect-error, would require refactor in this whole file.
@@ -819,8 +842,7 @@ export default function PoolSettingsComponent(props: Props) {
               type="number"
               min={POINTS_MIN_VALUE}
               max={POINTS_MAX_VALUE}
-              defaultValue={defaultValue}
-              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+              onChange={(e) => field.onChange(Number(e.target.value) || null)}
             />
           </FormControl>
           <FormDescription />
@@ -842,77 +864,25 @@ export default function PoolSettingsComponent(props: Props) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <h3 className="text-lg font-semibold">{t("Forwards")}</h3>
-            {PointsField(
-              "forwardsPointsPerGoals",
-              "Goals",
-              DEFAULT_FORWARDS_POINTS_PER_GOALS
-            )}
-            {PointsField(
-              "forwardsPointsPerAssists",
-              "Assists",
-              DEFAULT_FORWARDS_POINTS_PER_ASSITS
-            )}
-            {PointsField(
-              "forwardsPointsPerHatTricks",
-              "HatTricks",
-              DEFAULT_FORWARDS_POINTS_PER_HATTRICKS
-            )}
-            {PointsField(
-              "forwardsPointsPerShootOutGoals",
-              "ShootoutGoals",
-              DEFAULT_FORWARDS_POINTS_PER_SHOOTOUT_GOALS
-            )}
+            {PointsField("forwardsPointsPerGoals", "Goals")}
+            {PointsField("forwardsPointsPerAssists", "Assists")}
+            {PointsField("forwardsPointsPerHatTricks", "HatTricks")}
+            {PointsField("forwardsPointsPerShootOutGoals", "ShootoutGoals")}
           </div>
           <div>
             <h3 className="text-lg font-semibold">{t("Defense")}</h3>
-            {PointsField(
-              "defendersPointsPerGoals",
-              "Goals",
-              DEFAULT_DEFENDERS_POINTS_PER_GOALS
-            )}
-            {PointsField(
-              "defendersPointsPerAssists",
-              "Assists",
-              DEFAULT_DEFENDERS_POINTS_PER_ASSITS
-            )}
-            {PointsField(
-              "defendersPointsPerHatTricks",
-              "HatTricks",
-              DEFAULT_DEFENDERS_POINTS_PER_HATTRICKS
-            )}
-            {PointsField(
-              "defendersPointsPerShootOutGoals",
-              "ShootoutGoals",
-              DEFAULT_DEFENDERS_POINTS_PER_SHOOTOUT_GOALS
-            )}
+            {PointsField("defendersPointsPerGoals", "Goals")}
+            {PointsField("defendersPointsPerAssists", "Assists")}
+            {PointsField("defendersPointsPerHatTricks", "HatTricks")}
+            {PointsField("defendersPointsPerShootOutGoals", "ShootoutGoals")}
           </div>
           <div>
             <h3 className="text-lg font-semibold">{t("Goalies")}</h3>
-            {PointsField(
-              "goaliesPointsPerWins",
-              "Wins",
-              DEFAULT_GOALIES_POINTS_PER_WINS
-            )}
-            {PointsField(
-              "goaliesPointsPerOvertimeLosses",
-              "OvertimeLosses",
-              DEFAULT_GOALIES_POINTS_PER_OVERTIME_LOSSES
-            )}
-            {PointsField(
-              "goaliesPointsPerShutout",
-              "Shutouts",
-              DEFAULT_GOALIES_POINTS_PER_SHUTOUT
-            )}
-            {PointsField(
-              "goaliesPointsPerGoals",
-              "Goals",
-              DEFAULT_GOALIES_POINTS_PER_GOALS
-            )}
-            {PointsField(
-              "goaliesPointsPerAssists",
-              "Assists",
-              DEFAULT_GOALIES_POINTS_PER_ASSITS
-            )}
+            {PointsField("goaliesPointsPerWins", "Wins")}
+            {PointsField("goaliesPointsPerOvertimeLosses", "OvertimeLosses")}
+            {PointsField("goaliesPointsPerShutout", "Shutouts")}
+            {PointsField("goaliesPointsPerGoals", "Goals")}
+            {PointsField("goaliesPointsPerAssists", "Assists")}
           </div>
         </div>
       </CardContent>
