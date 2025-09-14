@@ -32,6 +32,7 @@ import { useSession } from "@/context/useSessionData";
 import { toast } from "@/hooks/use-toast";
 import InformationIcon from "./information-box";
 import { useSearchParams } from "next/navigation";
+import { Star } from "lucide-react";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -117,7 +118,7 @@ export default function PoolSettingsComponent(props: Props) {
   const NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE = 5;
 
   // 3) Points Settings
-  const POINTS_MIN_VALUE = 0.5;
+  const POINTS_MIN_VALUE = 0;
   const POINTS_MAX_VALUE = 100.0;
   const DEFAULT_POINTS_VALUE = 1.0;
   // Forwards
@@ -382,6 +383,7 @@ export default function PoolSettingsComponent(props: Props) {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    console.log(values);
     const res = await fetch("/api-rust/create-pool", {
       method: "POST",
       headers: {
@@ -493,6 +495,9 @@ export default function PoolSettingsComponent(props: Props) {
                     min={MIN_POOLER_NUMBER}
                     max={MAX_POOLER_NUMBER}
                     defaultValue={DEFAULT_POOLER_NUMBER}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value) || 0)
+                    }
                   />
                 </FormControl>
                 <FormDescription />
@@ -553,6 +558,9 @@ export default function PoolSettingsComponent(props: Props) {
                         defaultValue={DEFAULT_TRADABLE_DRAFT_PICKS}
                         min={TRADABLE_DRAFT_PICKS_MIN_VALUE}
                         max={TRADABLE_DRAFT_PICKS_MAX_VALUE}
+                        onChange={(e) =>
+                          field.onChange(Number(e.target.value) || 0)
+                        }
                       />
                     </FormControl>
                     <FormDescription />
@@ -580,6 +588,9 @@ export default function PoolSettingsComponent(props: Props) {
                         defaultValue={DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT}
                         min={NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE}
                         max={NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE}
+                        onChange={(e) =>
+                          field.onChange(Number(e.target.value) || 0)
+                        }
                       />
                     </FormControl>
                     <FormDescription />
@@ -617,6 +628,9 @@ export default function PoolSettingsComponent(props: Props) {
                     min={NUMBER_FORWARDS_MIN_VALUE}
                     max={NUMBER_FORWARDS_MAX_VALUE}
                     defaultValue={DEFAULT_NUMBER_FORWARDS}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value) || 0)
+                    }
                   />
                 </FormControl>
                 <FormDescription />
@@ -637,6 +651,9 @@ export default function PoolSettingsComponent(props: Props) {
                     min={NUMBER_DEFENDERS_MIN_VALUE}
                     max={NUMBER_DEFENDERS_MAX_VALUE}
                     defaultValue={DEFAULT_NUMBER_DEFENDERS}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value) || 0)
+                    }
                   />
                 </FormControl>
                 <FormDescription />
@@ -657,6 +674,9 @@ export default function PoolSettingsComponent(props: Props) {
                     min={NUMBER_GOALIES_MIN_VALUE}
                     max={NUMBER_GOALIES_MAX_VALUE}
                     defaultValue={DEFAULT_NUMBER_GOALIES}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value) || 0)
+                    }
                   />
                 </FormControl>
                 <FormDescription />
@@ -677,6 +697,9 @@ export default function PoolSettingsComponent(props: Props) {
                     min={NUMBER_RESERVISTS_MIN_VALUE}
                     max={NUMBER_RESERVISTS_MAX_VALUE}
                     defaultValue={DEFAULT_NUMBER_RESERVISTS}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value) || 0)
+                    }
                   />
                 </FormControl>
                 <FormDescription />
@@ -711,6 +734,9 @@ export default function PoolSettingsComponent(props: Props) {
                       min={NUMBER_WORST_FORWARDS_TO_IGNORE_MIN_VALUE}
                       max={NUMBER_WORST_FORWARDS_TO_IGNORE_MAX_VALUE}
                       defaultValue={DEFAULT_NUMBER_WORST_FORWARDS_TO_IGNORE}
+                      onChange={(e) =>
+                        field.onChange(Number(e.target.value) || 0)
+                      }
                     />
                   </FormControl>
                   <FormDescription />
@@ -731,6 +757,9 @@ export default function PoolSettingsComponent(props: Props) {
                       min={NUMBER_WORST_DEFENDERS_TO_IGNORE_MIN_VALUE}
                       max={NUMBER_WORST_DEFENDERS_TO_IGNORE_MAX_VALUE}
                       defaultValue={DEFAULT_NUMBER_WORST_DEFENDERS_TO_IGNORE}
+                      onChange={(e) =>
+                        field.onChange(Number(e.target.value) || 0)
+                      }
                     />
                   </FormControl>
                   <FormDescription />
@@ -751,6 +780,9 @@ export default function PoolSettingsComponent(props: Props) {
                       min={NUMBER_WORST_GOALIES_TO_IGNORE_MIN_VALUE}
                       max={NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE}
                       defaultValue={DEFAULT_NUMBER_WORST_GOALIES_TO_IGNORE}
+                      onChange={(e) =>
+                        field.onChange(Number(e.target.value) || 0)
+                      }
                     />
                   </FormControl>
                   <FormDescription />
@@ -775,7 +807,10 @@ export default function PoolSettingsComponent(props: Props) {
       name={fieldName}
       render={({ field }) => (
         <FormItem className="flex items-center justify-between">
-          <FormLabel className="w-5/12">{t(label)}</FormLabel>
+          <FormLabel className="w-5/12">
+            <Star className="h-4 w-4 text-pink-500" />
+            {t(label)}
+          </FormLabel>
           <FormControl>
             <Input
               {...field}
@@ -785,6 +820,7 @@ export default function PoolSettingsComponent(props: Props) {
               min={POINTS_MIN_VALUE}
               max={POINTS_MAX_VALUE}
               defaultValue={defaultValue}
+              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
             />
           </FormControl>
           <FormDescription />
