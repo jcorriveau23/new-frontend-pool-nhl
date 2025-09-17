@@ -399,10 +399,8 @@ export default function PoolSettingsComponent(props: Props) {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(values);
-
     const poolSettings = {
-      pool_name: values.name,
+      pool_name: values.name ?? DEFAULT_POOL_NAME,
       settings: {
         number_poolers: values.numberOfPooler,
         draft_type: values.draftType,

@@ -13,9 +13,11 @@ import {
   SelectValue,
 } from "./ui/select";
 import { useTranslations } from "next-intl";
+import { usePoolContext } from "@/context/pool-context";
 
 export default function DraftOrderSelector() {
   const { roomUsers, sendSocketCommand } = useSocketContext();
+  const { poolInfo } = usePoolContext();
   const userIds = Object.keys(roomUsers ?? {});
 
   const t = useTranslations();
@@ -49,7 +51,9 @@ export default function DraftOrderSelector() {
   const areAllUsersReady = (users: Record<string, RoomUser>) =>
     // The draft is ready to start if all poolers are ready and the
     // number of poolers match the number of poolers in the settings.
-    Object.values(users).every((user) => user.is_ready);
+    Object.values(users).every((user) => user.is_ready) &&
+    Object.keys(users).length === poolInfo.settings.number_poolers &&
+    Object.keys(users).length === draftOrder.length;
 
   return (
     <Card className="w-full max-w-2xl mx-auto">

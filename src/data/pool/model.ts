@@ -170,6 +170,10 @@ export interface Player {
   points_per_game: number | null;
   goal_against_average: number | null;
   save_percentage: number | null;
+  wins: number | null;
+  ot: number | null;
+  saves: number | null;
+  shots: number | null;
 }
 
 export enum Position {

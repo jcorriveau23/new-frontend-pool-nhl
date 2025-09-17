@@ -87,7 +87,7 @@ export function DatePicker(props: DatePickerProps) {
           mode="single"
           selected={props.selectedDate ?? props.currentDate}
           onSelect={props.updateDate}
-          className="rounded-lg border"
+          className="rounded-md border shadow-sm"
           required
         />
       </PopoverContent>

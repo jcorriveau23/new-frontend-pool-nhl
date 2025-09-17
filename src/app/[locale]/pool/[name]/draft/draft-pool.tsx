@@ -36,7 +36,8 @@ import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
 import { useUser } from "@/context/useUserData";
 
 export default function DraftPage() {
-  const { poolInfo, selectedParticipant } = usePoolContext();
+  const { poolInfo, selectedParticipant, playersOwner, protectedPlayers } =
+    usePoolContext();
   const t = useTranslations();
   const { sendSocketCommand } = useSocketContext();
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -118,6 +119,9 @@ export default function DraftPage() {
                 skip={null}
                 limit={null}
                 considerOnlyProtected={false}
+                pushUrl={`/pool/${poolInfo.name}`}
+                playersOwner={playersOwner}
+                protectedPlayers={protectedPlayers}
                 onPlayerSelect={onPlayerSelect}
               />
               <ScrollBar orientation="horizontal" />
@@ -140,7 +144,7 @@ export default function DraftPage() {
                   poolInfo.context!,
                   poolInfo.participants.find(
                     (user) => user.name === selectedParticipant
-                  )!
+                  ) ?? poolInfo.participants[0]
                 )}
                 teamSalaryCap={poolInfo.settings.salary_cap}
               />

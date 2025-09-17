@@ -8,6 +8,7 @@ import {
   School,
   Users,
   User2,
+  UserCog,
   ChevronUp,
 } from "lucide-react";
 
@@ -74,6 +75,11 @@ const nhlItems = [
     title: "Rosters",
     url: `roster/${CURRENT_NHL_SEASON}`,
     icon: Users,
+  },
+  {
+    title: "Players",
+    url: `players`,
+    icon: UserCog,
   },
 ];
 

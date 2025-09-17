@@ -109,6 +109,7 @@ export default function CumulativeTab() {
     poolSelectedEndDate,
     selectedParticipant,
     selectedPoolUser,
+    playersOwner,
     dailyPointsMade,
     updateSelectedParticipant,
   } = usePoolContext();
@@ -686,6 +687,9 @@ export default function CumulativeTab() {
                 skip={null}
                 limit={51}
                 considerOnlyProtected={false}
+                pushUrl={`/pool/${poolInfo.name}`}
+                playersOwner={playersOwner}
+                protectedPlayers={null}
                 onPlayerSelect={null}
               />
               <ScrollBar orientation="horizontal" />

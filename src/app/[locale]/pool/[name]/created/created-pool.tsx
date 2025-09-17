@@ -276,7 +276,7 @@ export default function CreatedPool() {
   );
 
   return (
-    <div className="flex items-center justify-center">
+    <div>
       {roomUsers ? <>{renderUsers(roomUsers)}</> : <LoadingSpinner />}
       <DraftOrderSelector />
     </div>
