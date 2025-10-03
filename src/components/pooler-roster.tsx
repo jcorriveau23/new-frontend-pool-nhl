@@ -132,7 +132,7 @@ export default function PoolerRoster(props: Props) {
     );
   };
 
-  const RosterTable = (user: PoolUser, players: Player[], title: string) => (
+  const SkatersTable = (user: PoolUser, players: Player[], title: string) => (
     <Accordion type="single" collapsible defaultValue="all">
       <AccordionItem value="all">
         <AccordionTrigger>{`${t(title)} (${players.length})`}</AccordionTrigger>
@@ -143,7 +143,12 @@ export default function PoolerRoster(props: Props) {
                 <TableHead>#</TableHead>
                 <TableHead>{t("Player")}</TableHead>
                 <TableHead>{t("T")}</TableHead>
-                <TableHead>Age</TableHead>
+                <TableHead>{t("GP")}</TableHead>
+                <TableHead>{t("G")}</TableHead>
+                <TableHead>{t("A")}</TableHead>
+                <TableHead>{t("PTS")}</TableHead>
+                <TableHead>{t("PTS/G")}</TableHead>
+                <TableHead>{t("AGE")}</TableHead>
                 <TableHead>{t("Salary")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -157,34 +162,137 @@ export default function PoolerRoster(props: Props) {
                   >
                     <TableCell>{i + 1}</TableCell>
                     <TableCell>
-                      <div className="flex items-center">
-                        <PlayerLink
-                          name={player.name}
-                          id={player.id}
-                          textStyle={null}
+                      <PlayerLink
+                        name={player.name}
+                        id={player.id}
+                        textStyle={null}
+                      />
+                      {props.protectedPlayerIds?.includes(player.id) ? (
+                        <ProtectedPlayerIcon
+                          playerName={player.name}
+                          userName={props.userRoster.user.name}
+                          onIconClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                          }}
                         />
-                        {props.protectedPlayerIds?.includes(player.id) ? (
-                          <ProtectedPlayerIcon
-                            playerName={player.name}
-                            userName={props.userRoster.user.name}
-                            onIconClick={(e: React.MouseEvent) => {
-                              e.stopPropagation();
-                            }}
-                          />
-                        ) : !props.considerOnlyProtected &&
-                          playersOwner[player.id] ? (
-                          <DraftedPlayerIcon
-                            playerName={player.name}
-                            userName={props.userRoster.user.name}
-                            onIconClick={(e: React.MouseEvent) => {
-                              e.stopPropagation();
-                            }}
-                          />
-                        ) : null}
-                      </div>
+                      ) : !props.considerOnlyProtected &&
+                        playersOwner[player.id] ? (
+                        <DraftedPlayerIcon
+                          playerName={player.name}
+                          userName={props.userRoster.user.name}
+                          onIconClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                          }}
+                        />
+                      ) : null}
                     </TableCell>
                     <TableCell>
                       <TeamLogo teamId={player.team} width={30} height={30} />
+                    </TableCell>
+                    <TableCell>{player.game_played}</TableCell>
+                    <TableCell>{player.goals}</TableCell>
+                    <TableCell>{player.assists}</TableCell>
+                    <TableCell>{player.points}</TableCell>
+                    <TableCell>{player.points_per_game?.toFixed(3)}</TableCell>
+                    <TableCell>{player.age}</TableCell>
+                    <TableCell>
+                      {player.salary_cap &&
+                      player.contract_expiration_season ? (
+                        <PlayerSalary
+                          playerName={player.name}
+                          team={player.team}
+                          salary={player.salary_cap}
+                          contractExpirationSeason={
+                            player.contract_expiration_season
+                          }
+                          onBadgeClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                          }}
+                        />
+                      ) : null}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+            {poolInfo.settings.salary_cap ?? 0 > 0 ? (
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={3}>{t("TotalProtected")}</TableCell>
+                  <TableCell colSpan={7}>
+                    {getFormatedSummaryContractInfo(players)}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            ) : null}
+          </Table>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+
+  const GoaliesTable = (user: PoolUser, players: Player[], title: string) => (
+    <Accordion type="single" collapsible defaultValue="all">
+      <AccordionItem value="all">
+        <AccordionTrigger>{`${t(title)} (${players.length})`}</AccordionTrigger>
+        <AccordionContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("#")}</TableHead>
+                <TableHead>{t("Player")}</TableHead>
+                <TableHead>{t("T")}</TableHead>
+                <TableHead>{t("GP")}</TableHead>
+                <TableHead>{t("wins")}</TableHead>
+                <TableHead>{t("ot")}</TableHead>
+                <TableHead>{t("s%")}</TableHead>
+                <TableHead>{t("GAA")}</TableHead>
+                <TableHead>{t("Age")}</TableHead>
+                <TableHead>{t("Salary")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {players
+                .sort((p1, p2) => p2.salary_cap! - p1.salary_cap!)
+                .map((player, i) => (
+                  <TableRow
+                    key={player.id}
+                    onClick={() => props.onPlayerSelection?.(user, player)}
+                  >
+                    <TableCell>{i + 1}</TableCell>
+                    <TableCell>
+                      <PlayerLink
+                        name={player.name}
+                        id={player.id}
+                        textStyle={null}
+                      />
+                      {props.protectedPlayerIds?.includes(player.id) ? (
+                        <ProtectedPlayerIcon
+                          playerName={player.name}
+                          userName={props.userRoster.user.name}
+                          onIconClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                          }}
+                        />
+                      ) : !props.considerOnlyProtected &&
+                        playersOwner[player.id] ? (
+                        <DraftedPlayerIcon
+                          playerName={player.name}
+                          userName={props.userRoster.user.name}
+                          onIconClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                          }}
+                        />
+                      ) : null}
+                    </TableCell>
+                    <TableCell>
+                      <TeamLogo teamId={player.team} width={30} height={30} />
+                    </TableCell>
+                    <TableCell>{player.game_played}</TableCell>
+                    <TableCell>{player.wins}</TableCell>
+                    <TableCell>{player.ot}</TableCell>
+                    <TableCell>{player.save_percentage?.toFixed(3)}</TableCell>
+                    <TableCell>
+                      {player.goal_against_average?.toFixed(2)}
                     </TableCell>
                     <TableCell>{player.age}</TableCell>
                     <TableCell>
@@ -210,7 +318,7 @@ export default function PoolerRoster(props: Props) {
               <TableFooter>
                 <TableRow>
                   <TableCell colSpan={3}>{t("TotalProtected")}</TableCell>
-                  <TableCell colSpan={4}>
+                  <TableCell colSpan={7}>
                     {getFormatedSummaryContractInfo(players)}
                   </TableCell>
                 </TableRow>
@@ -274,13 +382,13 @@ export default function PoolerRoster(props: Props) {
           onPlayerSelect={(player) => onPlayerSelect(player)}
         />
       )}
-      {RosterTable(
+      {SkatersTable(
         props.userRoster.user,
         props.userRoster.forwards,
         "Forwards"
       )}
-      {RosterTable(props.userRoster.user, props.userRoster.defense, "Defense")}
-      {RosterTable(props.userRoster.user, props.userRoster.goalies, "Goalies")}
+      {SkatersTable(props.userRoster.user, props.userRoster.defense, "Defense")}
+      {GoaliesTable(props.userRoster.user, props.userRoster.goalies, "Goalies")}
     </>
   );
 }

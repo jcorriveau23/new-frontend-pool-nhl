@@ -133,7 +133,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
 
     // If position changed from skater <-> goalies we need to setup the default sorting.
     const newSortField = isGoalies
-      ? "salary_cap"
+      ? "wins"
       : wasGoalies
       ? "points"
       : sortField ?? "points";

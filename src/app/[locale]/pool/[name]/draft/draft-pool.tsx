@@ -61,7 +61,7 @@ export default function DraftPage() {
     if (selectedPlayer) {
       sendSocketCommand(
         Command.DraftPlayer,
-        `{"player": ${JSON.stringify(selectedPlayer)}}`
+        `{"player_id": ${selectedPlayer.id}}`
       );
       setDialogOpen(false); // Close the dialog
       setSelectedPlayer(null); // Clear the selected player

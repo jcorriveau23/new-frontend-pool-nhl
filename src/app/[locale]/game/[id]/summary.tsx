@@ -199,7 +199,7 @@ export default async function GameSummary(props: Props) {
               />
             </TableCell>
             <TableCell className="text-left">
-              {attempt.firstName} {attempt.lastName}
+              {attempt.firstName.default} {attempt.lastName.default}
             </TableCell>
             <TableCell className="text-left">{t(attempt.result)}</TableCell>
           </TableRow>

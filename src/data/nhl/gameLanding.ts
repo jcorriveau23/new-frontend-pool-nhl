@@ -81,8 +81,8 @@ export interface ShootoutAttempt {
   sequence: number;
   playerId: number;
   teamAbbrev: string;
-  firstName: string;
-  lastName: string;
+  firstName: { default: string };
+  lastName: { default: string };
   shotType: string;
   result: string;
   headshot: string;
