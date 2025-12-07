@@ -487,4 +487,14 @@ export const ReservistColumn: ColumnDef<number>[] = [
       );
     },
   },
+  {
+    accessorKey: "salary",
+    header: "$",
+    cell: ({ row, table }) => {
+      return getPlayerSalaryCell(
+        row.original,
+        table.options.meta?.props as Pool
+      );
+    },
+  },
 ];

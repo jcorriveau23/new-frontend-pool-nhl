@@ -1,6 +1,4 @@
 "use client";
-
-import * as React from "react";
 import {
   Select,
   SelectContent,
@@ -8,27 +6,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { PoolUser } from "@/data/pool/model";
+import type { PoolUser } from "@/data/pool/model";
 import { usePoolContext } from "@/context/pool-context";
+import { Label } from "./ui/label";
+import { useTranslations } from "next-intl";
 
 export function PoolerUserGlobalSelector() {
   const { poolInfo, selectedParticipant, updateSelectedParticipant } =
     usePoolContext();
+  const t = useTranslations();
   return (
-    <Select
-      value={selectedParticipant}
-      onValueChange={(userName) => updateSelectedParticipant(userName)}
-    >
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder="Select a user" />
-      </SelectTrigger>
-      <SelectContent>
-        {poolInfo.participants?.map((user: PoolUser) => (
-          <SelectItem key={user.id} value={user.name}>
-            {user.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="space-y-2">
+      <Label htmlFor="pooler-selector" className="text-sm font-medium">
+        {t("PoolerOfInterest")}
+      </Label>
+      <Select
+        value={selectedParticipant}
+        onValueChange={(userName) => updateSelectedParticipant(userName)}
+      >
+        <SelectTrigger className="w-full" id="pooler-selector">
+          <SelectValue placeholder="Select pooler of interest" />
+        </SelectTrigger>
+        <SelectContent>
+          {poolInfo.participants?.map((user: PoolUser) => (
+            <SelectItem key={user.id} value={user.name}>
+              {user.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

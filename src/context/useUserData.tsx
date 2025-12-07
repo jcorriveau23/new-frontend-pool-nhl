@@ -36,7 +36,6 @@ const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     hanko
       ?.getUser()
       .then((user) => {
-        console.log(user);
         setUserState({
           id: user.user_id,
           email: user.emails?.[0]?.address,

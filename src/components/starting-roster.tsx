@@ -402,7 +402,15 @@ export default function StartingRoster(props: Props) {
             false
           )
         : null}
-      <Button onClick={() => onModifyRoster()}>Save</Button>
+      <Button
+        disabled={
+          userData.info?.id !== poolInfo.owner &&
+          userData.info?.id !== props.userRoster.user.id
+        }
+        onClick={() => onModifyRoster()}
+      >
+        Save
+      </Button>
     </>
   );
 }

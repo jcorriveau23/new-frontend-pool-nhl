@@ -458,7 +458,7 @@ export const DailyScoringLeadersColumn: ColumnDef<DailySkater>[] = [
     header: ({ table }) => table.options.meta?.t("Owner"),
     cell: ({ row, table }) => {
       const owner = table.options.meta?.props.playersOwner[row.original.id];
-      return owner ? table.options.meta?.props.dictUsers[owner].name : null;
+      return owner ?? null;
     },
   },
   {
@@ -515,7 +515,7 @@ export const DailyGoaliesLeadersColumn: ColumnDef<DailyGoalie>[] = [
     header: ({ table }) => table.options.meta?.t("Owner"),
     cell: ({ row, table }) => {
       const owner = table.options.meta?.props.playersOwner[row.original.id];
-      return owner ? table.options.meta?.props.dictUsers[owner].name : null;
+      return owner ?? null;
     },
   },
   {

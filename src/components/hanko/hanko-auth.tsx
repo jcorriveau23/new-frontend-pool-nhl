@@ -25,7 +25,6 @@ export default function HankoAuth(props: Props) {
   const locale = useLocale();
   const userSession = useSession();
   const userData = useUser();
-  console.log(hankoApi);
   useEffect(() => setHanko(new Hanko(hankoApi)), []);
 
   const redirectAfterLogin = useCallback(() => {

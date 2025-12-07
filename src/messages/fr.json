@@ -347,7 +347,7 @@
   "shots": "tirs",
   "DraftOrderSelector": "Ordre du repêchage",
   "RandomOrder": "Order aléatoire",
-  "ModifyRoster": "Modifier l'alignement",
+  "ModifyRoster": "Alignement",
   "SocketNotConnected": "La connection web socket doit être active pour envoyer cette requête.",
   "UserNotConnected": "Vous devez être connecté à un compte pour envoyer cette requête.",
   "LiveGame": "Des parties sont actuellement en cours!",
@@ -365,5 +365,6 @@
   "Unassisted": "Sans assistance",
   "Watch": "Regarder",
   "CreateTrade": "Créer une échange",
-  "Players": "Joueurs"
+  "Players": "Joueurs",
+  "PoolerOfInterest": "Pooler d'intérêt"
 }

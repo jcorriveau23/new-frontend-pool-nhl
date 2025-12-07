@@ -44,11 +44,14 @@ interface DataTableProps<TData, TValue> {
   tableFooter: React.ReactElement<unknown> | null;
 }
 
-const getPinnedClassName = (isPinned: "left" | "right" | false) => {
+const getPinnedClassName = (
+  isPinned: "left" | "right" | false,
+  rowStyles: string
+) => {
   if (isPinned === "left") {
-    return "sticky left-0 bg-primary-foreground text-left";
+    return `sticky left-0 bg-primary-foreground text-left ${rowStyles}`;
   } else if (isPinned === "right") {
-    return "sticky right-0 bg-primary-foreground text-right";
+    return `sticky right-0 bg-primary-foreground text-right ${rowStyles}`;
   }
   return "";
 };
@@ -111,7 +114,8 @@ export function DataTable<TData, TValue>({
                       key={header.id}
                       colSpan={header.colSpan}
                       className={`border-2 ${getPinnedClassName(
-                        header.column.getIsPinned()
+                        header.column.getIsPinned(),
+                        ""
                       )}`}
                     >
                       {header.isPlaceholder
@@ -128,30 +132,33 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  onClick={() => table.options.meta?.onRowClick(row)}
-                  className={table.options.meta?.getRowStyles(row) ?? ""}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={`${getPinnedClassName(
-                        cell.column.getIsPinned()
-                      )} ${getSortedColumnClassName(
-                        cell.column.getIsSorted()
-                      )}`}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const rowStyles = table.options.meta?.getRowStyles(row) || "";
+                return (
+                  <TableRow
+                    key={row.id}
+                    onClick={() => table.options.meta?.onRowClick(row)}
+                    className={rowStyles}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className={`${getPinnedClassName(
+                          cell.column.getIsPinned(),
+                          rowStyles
+                        )} ${getSortedColumnClassName(
+                          cell.column.getIsSorted()
+                        )}`}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell

@@ -9,6 +9,7 @@ import DailyPreviewContent from "./preview-content";
 import { useDateContext } from "@/context/date-context";
 import { useTranslations } from "next-intl";
 import { usePoolContext } from "@/context/pool-context";
+import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
 
 export default function DailyTab() {
   const { gamesNightStatus } = useGamesNightContext();
@@ -21,7 +22,7 @@ export default function DailyTab() {
 
   const dateOfInterest = dailyPointsMade
     ? new Date(dailyPointsMade.dateOfInterest + "T00:00:00")
-    : (selectedDate ?? currentDate);
+    : selectedDate ?? currentDate;
 
   if (dateOfInterest > seasonEndDate) {
     return (
@@ -50,15 +51,20 @@ export default function DailyTab() {
       return <div>{t("NoGameOnThatDate")}</div>;
     }
     case GamesNightStatus.NOT_STARTED:
-
     case GamesNightStatus.COMPLETED:
     case GamesNightStatus.LIVE: {
-      if (
-        poolInfo.context?.score_by_day?.[dailyPointsMade?.dateOfInterest ?? ""]
-      ) {
-        return <DailyStatsContent />;
-      }
-      return <DailyPreviewContent />;
+      return (
+        <>
+          <PoolerUserGlobalSelector />
+          {poolInfo.context?.score_by_day?.[
+            dailyPointsMade?.dateOfInterest ?? ""
+          ] ? (
+            <DailyStatsContent />
+          ) : (
+            <DailyPreviewContent />
+          )}
+        </>
+      );
     }
   }
 }
