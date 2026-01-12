@@ -9,6 +9,7 @@
   "CouldNotLoginError": "La requête de connection a échoué: {error}",
   "CouldNotRegisterError": "La requête pour créer le compte a échoué: {error}",
   "CouldNotGeneratePoolError": "La requête pour générer le pool {name} a échoué: {error}",
+  "CouldNotUpdatePoolError": "La requête pour updater le pool {name} a échoué: {error}",
   "CouldNotMarkAsFinalPoolError": "La requête pour terminer le pool {name} a échoué: {error}",
   "CouldNotGetPoolInfoError": "La requête pour recevoir les informations du pool {pool} a échoué: {error}",
   "CouldNotProtectPlayers": "La requête pour protéger la liste de joueur dans le pool {name} a échoué: {error}",
@@ -290,6 +291,7 @@
   "ProfilePageTitle": "Information du profil",
   "NhlTeamRosterPageTitle": "Information de l'alignement d'une équipe NHL",
   "NhlStandingPageTitle": "Classement des équipes de la saison NHL",
+  "PlayerPageTitle": "Joueurs NHL",
   "Age": "Âge",
   "Salary": "Salaire",
   "NhlPlayers": "Joueurs NHL",
@@ -345,7 +347,7 @@
   "shots": "tirs",
   "DraftOrderSelector": "Ordre du repêchage",
   "RandomOrder": "Order aléatoire",
-  "ModifyRoster": "Modifier l'alignement",
+  "ModifyRoster": "Alignement",
   "SocketNotConnected": "La connection web socket doit être active pour envoyer cette requête.",
   "UserNotConnected": "Vous devez être connecté à un compte pour envoyer cette requête.",
   "LiveGame": "Des parties sont actuellement en cours!",
@@ -363,5 +365,6 @@
   "Unassisted": "Sans assistance",
   "Watch": "Regarder",
   "CreateTrade": "Créer une échange",
-  "Players": "Joueurs"
+  "Players": "Joueurs",
+  "PoolerOfInterest": "Pooler d'intérêt"
 }

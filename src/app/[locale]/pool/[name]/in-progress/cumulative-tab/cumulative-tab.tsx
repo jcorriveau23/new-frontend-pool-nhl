@@ -109,6 +109,7 @@ export default function CumulativeTab() {
     poolSelectedEndDate,
     selectedParticipant,
     selectedPoolUser,
+    playersOwner,
     dailyPointsMade,
     updateSelectedParticipant,
   } = usePoolContext();
@@ -128,8 +129,7 @@ export default function CumulativeTab() {
         message: t("PoolNameMaxLenghtValidation", {
           value: POOL_NAME_MAX_LENGTH,
         }),
-      })
-      .default(""),
+      }),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -376,8 +376,7 @@ export default function CumulativeTab() {
 
   const ParticipantRoster = (participant: PoolUser) => (
     <>
-      {userData.info?.id === poolInfo.owner ||
-      poolInfo.settings.number_reservists > 0 ? (
+      {poolInfo.settings.number_reservists > 0 ? (
         <Dialog key={participant.id}>
           <DialogTrigger asChild>
             <Button variant="outline">{t("ModifyRoster")}</Button>
@@ -423,7 +422,7 @@ export default function CumulativeTab() {
                       {t("RecordedPoolPointsDescription", {
                         playerName:
                           poolInfo.context?.players[selectedPlayerId ?? ""]
-                            ?.name,
+                            ?.name ?? "",
                         poolerName: selectedPoolUser.name,
                       })}
                     </DialogDescription>
@@ -473,7 +472,7 @@ export default function CumulativeTab() {
                       {t("RecordedPoolPointsDescription", {
                         playerName:
                           poolInfo.context?.players[selectedPlayerId ?? ""]
-                            ?.name,
+                            ?.name ?? "",
                         poolerName: selectedPoolUser.name,
                       })}
                     </DialogDescription>
@@ -523,7 +522,7 @@ export default function CumulativeTab() {
                       {t("RecordedPoolPointsDescription", {
                         playerName:
                           poolInfo.context?.players[selectedPlayerId ?? ""]
-                            ?.name,
+                            ?.name ?? "",
                         poolerName: selectedPoolUser.name,
                       })}
                     </DialogDescription>
@@ -563,7 +562,7 @@ export default function CumulativeTab() {
           </AccordionItem>
         </Accordion>
       ) : null}
-      {(poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0) ? (
+      {poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0 ? (
         <Accordion type="single" collapsible defaultValue="picks">
           <AccordionItem value="picks">
             <AccordionTrigger>{t("NextSeasonPicks")}</AccordionTrigger>
@@ -647,8 +646,9 @@ export default function CumulativeTab() {
   );
 
   return (
-    <div>
-      <Tabs defaultValue="totalRanking">
+    <div className="space-y-2">
+      <PoolerUserGlobalSelector />
+      <Tabs defaultValue="totalRanking" className="space-y-4">
         {poolInfo.status === PoolState.InProgress &&
         new Date(poolInfo.season_end + "T00:00:00") < currentDate &&
         hasPoolPrivilege(userData.info?.id, poolInfo) ? (
@@ -669,30 +669,34 @@ export default function CumulativeTab() {
             {poolInfo.status === PoolState.Final ? (
               <InformationIcon text={t("FinalPoolResult")} />
             ) : null}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <Search />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
+                <DialogHeader>
+                  <DialogTitle>{t("DraftAPlayer")}</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="p-0">
+                  <PlayersTable
+                    sortField={"points"}
+                    skip={null}
+                    limit={51}
+                    considerOnlyProtected={false}
+                    pushUrl={`/pool/${poolInfo.name}`}
+                    playersOwner={playersOwner}
+                    protectedPlayers={null}
+                    onPlayerSelect={null}
+                  />
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
           </TabsList>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <Search /> {t("Players")}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
-            <DialogHeader>
-              <DialogTitle>{t("DraftAPlayer")}</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="p-0">
-              <PlayersTable
-                sortField={"points"}
-                skip={null}
-                limit={51}
-                considerOnlyProtected={false}
-                onPlayerSelect={null}
-              />
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
+
         <TabsContent value="totalRanking">
           {chartCollapsible(null)}
           {TotalTable(ranking, TotalPointsColumn, t("TotalRanking"))}
@@ -710,10 +714,7 @@ export default function CumulativeTab() {
           {TotalTable(ranking, GoaliesTotalColumn, t("GoaliesRanking"))}
         </TabsContent>
       </Tabs>
-      <div className="pt-3 space-y-2">
-        <PoolerUserGlobalSelector />
-        {ParticipantRoster(selectedPoolUser)}
-      </div>
+      <div>{ParticipantRoster(selectedPoolUser)}</div>
     </div>
   );
 }

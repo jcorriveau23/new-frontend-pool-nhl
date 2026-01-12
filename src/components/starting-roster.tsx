@@ -106,7 +106,7 @@ export default function StartingRoster(props: Props) {
           0
         )
       ),
-      salaryCap: props.teamSalaryCap ? salaryFormat(props.teamSalaryCap) : null,
+      salaryCap: props.teamSalaryCap ? salaryFormat(props.teamSalaryCap) : "",
     });
   };
 
@@ -402,7 +402,15 @@ export default function StartingRoster(props: Props) {
             false
           )
         : null}
-      <Button onClick={() => onModifyRoster()}>Save</Button>
+      <Button
+        disabled={
+          userData.info?.id !== poolInfo.owner &&
+          userData.info?.id !== props.userRoster.user.id
+        }
+        onClick={() => onModifyRoster()}
+      >
+        Save
+      </Button>
     </>
   );
 }

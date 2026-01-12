@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function TeamLogo(props: Props) {
-  return props.teamId ? (
+  return props.teamId && team_info[props.teamId] ? (
     <Image
       width={props.width}
       height={props.height}

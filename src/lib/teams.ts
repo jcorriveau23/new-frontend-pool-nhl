@@ -356,9 +356,9 @@ export const team_info: Record<number, TeamInfo> = {
     firstSeason: 20212022,
     lastSeason: null,
   },
-  59: {
+  68: {
     logo: "https://assets.nhle.com/logos/nhl/svg/UTA_dark.svg",
-    fullName: "Utah Hockey Club",
+    fullName: "Utah Mammoth",
     firstSeason: 20242025,
     lastSeason: null,
   },
@@ -423,7 +423,7 @@ export const abbrevToTeamId: Record<string, number> = {
   MIN: 30,
   VGK: 54,
   SEA: 55,
-  UTA: 59,
+  UTA: 68,
 };
 
 export default team_info;

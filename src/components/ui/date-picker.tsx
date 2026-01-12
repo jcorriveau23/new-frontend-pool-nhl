@@ -86,9 +86,9 @@ export function DatePicker(props: DatePickerProps) {
         <Calendar
           mode="single"
           selected={props.selectedDate ?? props.currentDate}
-          // @ts-expect-error, known type issue possibility of passing null, even if not supported.
           onSelect={props.updateDate}
-          autoFocus
+          className="rounded-md border shadow-sm"
+          required
         />
       </PopoverContent>
     </Popover>

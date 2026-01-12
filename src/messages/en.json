@@ -9,6 +9,7 @@
   "CouldNotLoginError": "Could not login to the account: {error}",
   "CouldNotRegisterError": "Could not register to the account: {error}",
   "CouldNotGeneratePoolError": "Could not generate pool with name {name}: {error}",
+  "CouldNotUpdatePoolError": "Could not update pool with name {name}: {error}",
   "CouldNotMarkAsFinalPoolError": "Could not mark the pool {name} as final: {error}",
   "CouldNotGetPoolInfoError": "Could not get pool information for pool {pool}: {error}",
   "CouldNotProtectPlayers": "Could not protect the list of players for pool {name}: {error}",
@@ -290,6 +291,7 @@
   "ProfilePageTitle": "Profile information",
   "NhlTeamRosterPageTitle": "NHL Team roster informations",
   "NhlStandingPageTitle": "NHL team standing",
+  "PlayerPageTitle": "NHL players",
   "Age": "Age",
   "Salary": "Salary",
   "NhlPlayers": "NHL Players",
@@ -345,7 +347,7 @@
   "shots": "shots",
   "DraftOrderSelector": "Draft Order",
   "RandomOrder": "Random Order",
-  "ModifyRoster": "Modify Roster",
+  "ModifyRoster": "Roster",
   "SocketNotConnected": "The websocket connection needs to be active to send this request.",
   "UserNotConnected": "You need to be connected to an account to send this request.",
   "LiveGame": "There is live game right now!",
@@ -363,5 +365,6 @@
   "Unassisted": "unassisted",
   "Watch": "Watch",
   "CreateTrade": "Create a trade",
-  "Players": "Players"
+  "Players": "Players",
+  "PoolerOfInterest": "Pooler of interest"
 }

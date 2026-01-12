@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import {
   Table,
@@ -17,10 +18,9 @@ import {
   PaginationItem,
   PaginationLink,
   PaginationNext,
-  PaginationFirst,
+  PaginationPrevious,
 } from "@/components/ui/pagination";
 import { TeamLogo } from "./team-logo";
-import { usePoolContext } from "@/context/pool-context";
 import { useTranslations } from "next-intl";
 import { Combobox } from "./ui/combobox";
 import { Badge } from "./ui/badge";
@@ -36,6 +36,9 @@ interface PlayersTableProps {
   skip: number | null;
   limit: number | null;
   considerOnlyProtected: boolean;
+  pushUrl: string; // /players/... || /pool/{name}/...
+  playersOwner: Record<string, string> | null; // maps player id to pooler name
+  protectedPlayers: Record<string, string> | null; // maps player id to pooler name
   onPlayerSelect: ((player: Player) => Promise<boolean>) | null;
 }
 
@@ -44,6 +47,9 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   skip: initialSkip,
   limit: initialLimit,
   considerOnlyProtected,
+  pushUrl,
+  playersOwner,
+  protectedPlayers,
   onPlayerSelect,
 }) => {
   const searchParams = useSearchParams();
@@ -63,7 +69,6 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   const [selectedPositions, setSelectedPositions] = useState<string[] | null>(
     positionsParams.length ? positionsParams : ["F", "D"]
   );
-  const { poolInfo, dictUsers, playersOwner } = usePoolContext();
   const router = useRouter();
   const t = useTranslations();
 
@@ -101,7 +106,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     setDescendingOrder(newDescendingOrder);
     queryParams.set("descendingOrder", newDescendingOrder.toString());
 
-    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
+    router.push(`${pushUrl}/?${queryParams.toString()}`);
   };
 
   const handleNextPage = async (pageOffset: number) => {
@@ -111,7 +116,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     setSkip(newSkip);
     queryParams.set("skip", newSkip.toString());
 
-    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
+    router.push(`${pushUrl}/?${queryParams.toString()}`);
   };
 
   const handleFirstPage = async () => {
@@ -119,7 +124,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     setSkip(newSkip);
     queryParams.set("skip", newSkip.toString());
 
-    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
+    router.push(`${pushUrl}/?${queryParams.toString()}`);
   };
 
   const handlePositionFilter = async (newPositions: string[]) => {
@@ -128,10 +133,10 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
 
     // If position changed from skater <-> goalies we need to setup the default sorting.
     const newSortField = isGoalies
-      ? "salary_cap"
+      ? "wins"
       : wasGoalies
-        ? "points"
-        : (sortField ?? "points");
+      ? "points"
+      : sortField ?? "points";
 
     setSortField(newSortField);
     queryParams.set("sortField", newSortField);
@@ -142,7 +147,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       queryParams.append("positions", p);
     });
 
-    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
+    router.push(`${pushUrl}/?${queryParams.toString()}`);
   };
 
   if (query === null) {
@@ -153,19 +158,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     );
   }
 
-  const findUsersProtectingPlayers = (playerId: number): string | null => {
-    for (const [userId, protectedPlayers] of Object.entries(
-      poolInfo.context?.protected_players ?? {}
-    )) {
-      if (protectedPlayers.includes(playerId)) {
-        return userId; // Return the first user who owns the player
-      }
-    }
-    return null; // Return null if no user owns the player
-  };
-
   const PlayerLinkWithInfo = (player: Player) => {
-    const userProtected = findUsersProtectingPlayers(player.id);
     return (
       <div className="flex items-center space-x-2">
         <div>
@@ -179,12 +172,10 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
           />
         </div>
 
-        {userProtected ? (
-          <Badge variant="secondary">{dictUsers[userProtected].name}</Badge>
-        ) : !considerOnlyProtected && playersOwner[player.id] ? (
-          <Badge variant="secondary">
-            {dictUsers[playersOwner[player.id]].name}
-          </Badge>
+        {protectedPlayers?.[player.id] ? (
+          <Badge variant="secondary">{protectedPlayers[player.id]}</Badge>
+        ) : !considerOnlyProtected && playersOwner?.[player.id] ? (
+          <Badge variant="secondary">{playersOwner[player.id]}</Badge>
         ) : null}
       </div>
     );
@@ -303,6 +294,20 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
               onSort={() => handleSort("game_played")}
             ></SortHeaderCell>
             <SortHeaderCell
+              label={t("wins")}
+              sortKey="wins"
+              currentSortKey={sortField}
+              sortDirection={descendingOrder ? "desc" : "asc"}
+              onSort={() => handleSort("wins")}
+            ></SortHeaderCell>
+            <SortHeaderCell
+              label={t("ot")}
+              sortKey="ot"
+              currentSortKey={sortField}
+              sortDirection={descendingOrder ? "desc" : "asc"}
+              onSort={() => handleSort("ot")}
+            ></SortHeaderCell>
+            <SortHeaderCell
               label={t("s%")}
               sortKey="save_percentage"
               currentSortKey={sortField}
@@ -341,6 +346,8 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
                 <TeamLogo teamId={player.team} width={30} height={30} />
               </TableCell>
               <TableCell>{player.game_played}</TableCell>
+              <TableCell>{player.wins}</TableCell>
+              <TableCell>{player.ot}</TableCell>
               <TableCell>{player.save_percentage?.toFixed(3)}</TableCell>
               <TableCell>{player.goal_against_average?.toFixed(2)}</TableCell>
               <TableCell>{player.age}</TableCell>
@@ -407,17 +414,25 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
         <PaginationContent>
           {pageOffset > 0 ? (
             <PaginationItem>
-              <PaginationFirst onClick={() => handleFirstPage()} />
+              <PaginationPrevious
+                onClick={() => handleFirstPage()}
+                size={undefined}
+              />
             </PaginationItem>
           ) : null}
           <PaginationItem>
             {pageOffset > 0 ? (
-              <PaginationLink onClick={() => handleNextPage(-1)}>
+              <PaginationLink
+                onClick={() => handleNextPage(-1)}
+                size={undefined}
+              >
                 {pageOffset}
               </PaginationLink>
             ) : null}
-            <PaginationLink isActive>{1 + pageOffset}</PaginationLink>
-            <PaginationLink onClick={() => handleNextPage(1)}>
+            <PaginationLink isActive size={undefined}>
+              {1 + pageOffset}
+            </PaginationLink>
+            <PaginationLink onClick={() => handleNextPage(1)} size={undefined}>
               {2 + pageOffset}
             </PaginationLink>
           </PaginationItem>
@@ -425,7 +440,10 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
             <PaginationEllipsis />
           </PaginationItem>
           <PaginationItem>
-            <PaginationNext onClick={() => handleNextPage(1)} />
+            <PaginationNext
+              onClick={() => handleNextPage(1)}
+              size={undefined}
+            />
           </PaginationItem>
         </PaginationContent>
       </Pagination>

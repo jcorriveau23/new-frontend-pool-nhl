@@ -52,7 +52,7 @@ export default function PlayerSalary({
           <div className="grid gap-4">
             <div className="space-y-2">
               <h4 className="font-medium leading-none">
-                {t("SalaryDetails", { playerName: playerName })}
+                {t("SalaryDetails", { playerName: playerName ?? "" })}
               </h4>
             </div>
             <div className="grid gap-2">

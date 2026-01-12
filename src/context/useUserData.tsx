@@ -7,6 +7,7 @@ import React, {
 } from "react";
 
 import { getHankoApi } from "@/lib/env-variables";
+import { Hanko } from "@teamhanko/hanko-elements";
 
 const hankoApi = getHankoApi();
 
@@ -29,26 +30,29 @@ interface UserProviderProps {
 
 const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [userState, setUserState] = useState<HankoUser | null>(null);
+  const [hanko, setHanko] = useState<Hanko>();
 
   const refreshUser = () => {
-    import("@teamhanko/hanko-elements").then(({ Hanko }) => {
-      const hankoInstance = new Hanko(hankoApi);
-
-      hankoInstance?.user
-        .getCurrent()
-        .then(({ id, email }) => {
-          setUserState({ id, email, isValid: true });
-        })
-        .catch((error: unknown) => {
-          console.error(`An error occured during refresh user: ${error}`);
-          setUserState({ id: "", email: "", isValid: false });
+    hanko
+      ?.getUser()
+      .then((user) => {
+        setUserState({
+          id: user.user_id,
+          email: user.emails?.[0]?.address,
+          isValid: true,
         });
-    });
+      })
+      .catch((error: unknown) => {
+        console.error(`An error occured during refresh user: ${error}`);
+        setUserState({ id: "", email: "", isValid: false });
+      });
   };
+
+  useEffect(() => setHanko(new Hanko(hankoApi)), []);
 
   useEffect(() => {
     refreshUser();
-  }, []);
+  }, [hanko]);
 
   return (
     <UserContext.Provider value={{ info: userState, refreshUser }}>

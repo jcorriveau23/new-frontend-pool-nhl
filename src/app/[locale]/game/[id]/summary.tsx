@@ -65,7 +65,7 @@ export default async function GameSummary(props: Props) {
     return (
       <Card>
         <CardContent className="flex items-center space-x-4 p-4">
-          <div className="flex-grow">
+          <div className="grow">
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <TeamLogo
@@ -114,7 +114,7 @@ export default async function GameSummary(props: Props) {
               </span>
             </div>
           </div>
-          <div className="flex-shrink-0 space-y-3">
+          <div className="shrink-0 space-y-3">
             <span className="text-lg font-bold">
               {goal.awayScore} - {goal.homeScore}
             </span>
@@ -199,7 +199,7 @@ export default async function GameSummary(props: Props) {
               />
             </TableCell>
             <TableCell className="text-left">
-              {attempt.firstName} {attempt.lastName}
+              {attempt.firstName.default} {attempt.lastName.default}
             </TableCell>
             <TableCell className="text-left">{t(attempt.result)}</TableCell>
           </TableRow>

@@ -1,4 +1,4 @@
-"use client";
+"use client"; //Only for NextJS App Router
 
 import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "@/i18n/routing";
@@ -25,15 +25,11 @@ export default function HankoAuth(props: Props) {
   const locale = useLocale();
   const userSession = useSession();
   const userData = useUser();
-
-  useEffect(() => {
-    import("@teamhanko/hanko-elements").then(({ Hanko }) =>
-      setHanko(new Hanko(hankoApi))
-    );
-  }, []);
+  useEffect(() => setHanko(new Hanko(hankoApi)), []);
 
   const redirectAfterLogin = useCallback(() => {
     // successfully logged in, redirect to a page in your application
+    console.log(`Redirecting to ${props.redirect}`);
     router.replace(props.redirect);
 
     userSession.refreshSession();
@@ -43,6 +39,7 @@ export default function HankoAuth(props: Props) {
   useEffect(
     () =>
       hanko?.onSessionCreated(() => {
+        console.log("Session successfully created.");
         redirectAfterLogin();
       }),
     [hanko, redirectAfterLogin]
@@ -53,13 +50,12 @@ export default function HankoAuth(props: Props) {
       translations: { en, fr },
     }).catch((error: Error) => {
       // handle error
-      console.log(error);
+      console.log(`Could not loggin the user: ${error}`);
     });
   }, []);
 
   return (
     <div className="hanko-profile">
-      {/* @ts-expect-error, no control on component name style here.*/}
       <hanko-auth lang={locale} />
     </div>
   );

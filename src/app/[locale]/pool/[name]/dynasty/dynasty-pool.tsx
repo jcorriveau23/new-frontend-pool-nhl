@@ -84,7 +84,7 @@ export default function DynastyPool() {
             {t("DynastyDescription", {
               protectedCount:
                 poolInfo.settings.dynasty_settings
-                  ?.next_season_number_players_protected,
+                  ?.next_season_number_players_protected ?? "",
             })}
           </p>
           {poolInfo.settings.salary_cap ? (

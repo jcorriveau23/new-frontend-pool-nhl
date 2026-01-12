@@ -37,18 +37,15 @@ export const UserSessionProvider: React.FC<UserSessionProviderProps> = ({
     import("@teamhanko/hanko-elements").then(({ Hanko }) => {
       const hankoInstance = new Hanko(hankoApi);
       if (hankoInstance) {
-        const isValid = hankoInstance.session.isValid();
-        const session = hankoInstance.session.get();
+        const jwt = hankoInstance.getSessionToken();
 
-        if (isValid && session) {
-          const { jwt = "" } = session;
+        if (jwt) {
           setSessionState({
             jwt,
-            isValid,
+            isValid: true,
           });
         } else {
           setSessionState(() => ({
-            userID: "",
             jwt: "",
             isValid: false,
           }));

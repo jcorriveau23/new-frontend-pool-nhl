@@ -1,9 +1,8 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Undo2 } from "lucide-react";
-import { ButtonProps } from "@/components/ui/button";
 
-interface UndoButtonProps extends ButtonProps {
+interface UndoButtonProps extends React.ComponentProps<"button"> {
   label?: string;
 }
 

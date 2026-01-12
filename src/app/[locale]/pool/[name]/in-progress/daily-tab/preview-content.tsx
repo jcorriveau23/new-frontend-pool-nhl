@@ -15,7 +15,6 @@ import { useDateContext } from "@/context/date-context";
 import { format } from "date-fns";
 import { usePoolContext } from "@/context/pool-context";
 import { Row } from "@tanstack/react-table";
-import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
 
 export class PreviewPlayer {
   constructor(player: Player, playingAgainst: Record<number, number>) {
@@ -205,7 +204,6 @@ export default function DailyPreviewContent() {
           : null}
       </div>
       <div className="py-5 px-0 sm:px-5">
-        <PoolerUserGlobalSelector />
         {forwardsPreview && defensePreview && goaliesPreview ? (
           <>
             <Accordion

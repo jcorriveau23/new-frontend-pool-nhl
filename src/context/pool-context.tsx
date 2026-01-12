@@ -43,9 +43,9 @@ export interface PoolContextProps {
   poolStartDate: Date;
   poolSelectedEndDate: Date;
 
-  // Map the player id to its pool owner.
+  // Map the player id to its pool owner name.
   playersOwner: Record<number, string>;
-  updatePlayersOwner: (poolInfo: Pool) => void;
+  protectedPlayers: Record<number, string> | null;
 
   poolInfo: Pool;
   updatePoolInfo: (newPoolInfo: Pool) => void;
@@ -421,23 +421,45 @@ const getPlayersOwner = (poolInfo: Pool) => {
 
   const playersOwner: Record<number, string> = {};
   for (let i = 0; i < poolInfo.participants.length; i += 1) {
-    const participant = poolInfo.participants[i].id;
+    const participantId = poolInfo.participants[i].id;
+    const participantName = poolInfo.participants[i].name;
 
-    poolInfo.context?.pooler_roster[participant].chosen_forwards.map(
-      (playerId) => (playersOwner[playerId] = participant)
+    poolInfo.context?.pooler_roster[participantId].chosen_forwards.map(
+      (playerId) => (playersOwner[playerId] = participantName)
     );
-    poolInfo.context?.pooler_roster[participant].chosen_defenders.map(
-      (playerId) => (playersOwner[playerId] = participant)
+    poolInfo.context?.pooler_roster[participantId].chosen_defenders.map(
+      (playerId) => (playersOwner[playerId] = participantName)
     );
-    poolInfo.context?.pooler_roster[participant].chosen_goalies.map(
-      (playerId) => (playersOwner[playerId] = participant)
+    poolInfo.context?.pooler_roster[participantId].chosen_goalies.map(
+      (playerId) => (playersOwner[playerId] = participantName)
     );
-    poolInfo.context?.pooler_roster[participant].chosen_reservists.map(
-      (playerId) => (playersOwner[playerId] = participant)
+    poolInfo.context?.pooler_roster[participantId].chosen_reservists.map(
+      (playerId) => (playersOwner[playerId] = participantName)
     );
   }
 
   return playersOwner;
+};
+
+const getProtectedPlayers = (
+  poolInfo: Pool,
+  dictUsers: Record<string, PoolUser>
+): Record<number, string> | null => {
+  const protectedPlayers: Record<number, string> = {};
+
+  if (poolInfo.context?.protected_players === null) {
+    return null;
+  }
+
+  for (const [userId, poolProtectedPlayers] of Object.entries(
+    poolInfo.context?.protected_players ?? {}
+  )) {
+    for (const player of poolProtectedPlayers) {
+      protectedPlayers[player] = dictUsers[userId].name;
+    }
+  }
+
+  return protectedPlayers; // Return null if no user owns the player
 };
 
 const findLastDateInDb = (pool: Pool | null) => {
@@ -543,8 +565,8 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     querySelectedDate !== "now"
       ? querySelectedDate
       : lastFormatDate
-        ? lastFormatDate
-        : format(currentDate, "yyyy-MM-dd");
+      ? lastFormatDate
+      : format(currentDate, "yyyy-MM-dd");
 
   // Now parse all the pool date from the start of the season to the current date.
   const poolStartDate = new Date(poolInfo.season_start + "T00:00:00");
@@ -555,8 +577,8 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     endDate < poolStartDate
       ? new Date(poolInfo.season_start + "T00:00:00")
       : endDate > poolEndDate
-        ? new Date(poolInfo.season_start + "T00:00:00")
-        : endDate;
+      ? new Date(poolInfo.season_end + "T00:00:00")
+      : endDate;
 
   const getPoolDictUsers = (pool: Pool) =>
     pool.participants.reduce((acc: Record<string, PoolUser>, user) => {
@@ -597,10 +619,11 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   const [playersOwner, setPlayersOwner] = React.useState<
     Record<number, string>
   >(getPlayersOwner(poolInfo));
+  const [protectedPlayers, setProtectedPlayers] = React.useState<Record<
+    number,
+    string
+  > | null>(getProtectedPlayers(poolInfo, dictUsers));
 
-  const updatePlayersOwner = (poolInfo: Pool) => {
-    setPlayersOwner(getPlayersOwner(poolInfo));
-  };
   const updateSelectedParticipant = (participant: string) => {
     setSelectedParticipant(participant);
     setSelectedPoolUser(
@@ -701,8 +724,10 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       // @ts-expect-error, dexie is not typed.
       db.pools.put(newPoolInfo, "name");
     });
-    updatePlayersOwner(newPoolInfo);
-    setDictUsers(getPoolDictUsers(newPoolInfo));
+    const newDictUsers = getPoolDictUsers(newPoolInfo);
+    setPlayersOwner(getPlayersOwner(newPoolInfo));
+    setProtectedPlayers(getProtectedPlayers(newPoolInfo, newDictUsers));
+    setDictUsers(newDictUsers);
   };
 
   const contextValue: PoolContextProps = {
@@ -713,7 +738,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     poolStartDate,
     poolSelectedEndDate,
     playersOwner,
-    updatePlayersOwner,
+    protectedPlayers,
     poolInfo,
     updatePoolInfo,
     dictUsers,

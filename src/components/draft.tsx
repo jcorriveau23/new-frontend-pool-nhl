@@ -60,7 +60,7 @@ interface DraftProps {
 
 export default function Draft(props: DraftProps) {
   const [draftInfo, setDraftInfo] = React.useState<Draft | null>(null);
-  const { dictUsers, poolInfo } = usePoolContext();
+  const { dictUsers, poolInfo, playersOwner } = usePoolContext();
   const userData = useUser();
   const t = useTranslations();
 
@@ -283,6 +283,9 @@ export default function Draft(props: DraftProps) {
                 skip={null}
                 limit={null}
                 considerOnlyProtected={false}
+                pushUrl={`/pool/${poolInfo.name}`}
+                playersOwner={playersOwner}
+                protectedPlayers={null}
                 onPlayerSelect={props.onPlayerSelect}
               />
               <ScrollBar orientation="horizontal" />

@@ -1,6 +1,6 @@
-import { Button, ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
-interface DraftButtonProps extends ButtonProps {
+interface DraftButtonProps extends React.ComponentProps<"button"> {
   label?: string;
 }
 
