@@ -36,4 +36,4 @@ yarn-error.log*
 next-env.d.ts
 
 # mock data
-injured-players.json
+public/injured-players.json
