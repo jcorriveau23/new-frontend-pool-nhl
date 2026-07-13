@@ -90,7 +90,6 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
         limit
       );
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Toggle sorting order on column header click
@@ -186,8 +185,8 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>#</TableHead>
-            <TableHead>{t("Player")}</TableHead>
+            <TableHead className="sticky left-0 z-10">#</TableHead>
+            <TableHead className="sticky left-12 z-10">{t("Player")}</TableHead>
             <TableHead>{t("T")}</TableHead>
             <TableHead>P</TableHead>
             <SortHeaderCell
@@ -244,8 +243,12 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
         <TableBody>
           {query.data?.map((player, i) => (
             <TableRow onClick={() => onPlayerSelect?.(player)} key={player.id}>
-              <TableCell>{(skip ?? 0) + i + 1}</TableCell>
-              <TableCell>{PlayerLinkWithInfo(player)}</TableCell>
+              <TableCell className="sticky left-0 z-10">
+                {(skip ?? 0) + i + 1}
+              </TableCell>
+              <TableCell className="sticky left-0 z-10">
+                {PlayerLinkWithInfo(player)}
+              </TableCell>
               <TableCell>
                 <TeamLogo teamId={player.team} width={30} height={30} />
               </TableCell>
@@ -281,8 +284,11 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>#</TableHead>
-            <TableHead onClick={() => handleSort("name")}>
+            <TableHead className="sticky left-0 z-10">#</TableHead>
+            <TableHead
+              className="sticky left-0 z-10"
+              onClick={() => handleSort("name")}
+            >
               {t("Player")}
             </TableHead>
             <TableHead onClick={() => handleSort("team")}>{t("T")}</TableHead>
@@ -340,8 +346,12 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
         <TableBody>
           {query.data?.map((player, i) => (
             <TableRow onClick={() => onPlayerSelect?.(player)} key={player.id}>
-              <TableCell>{(skip ?? 0) + i + 1}</TableCell>
-              <TableCell>{PlayerLinkWithInfo(player)}</TableCell>
+              <TableCell className="sticky left-0 z-10">
+                {(skip ?? 0) + i + 1}
+              </TableCell>
+              <TableCell className="sticky left-0 z-10">
+                {PlayerLinkWithInfo(player)}
+              </TableCell>
               <TableCell>
                 <TeamLogo teamId={player.team} width={30} height={30} />
               </TableCell>

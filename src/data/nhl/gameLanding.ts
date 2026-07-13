@@ -80,7 +80,7 @@ export interface Scoring {
 export interface ShootoutAttempt {
   sequence: number;
   playerId: number;
-  teamAbbrev: string;
+  teamAbbrev: { default: string };
   firstName: { default: string };
   lastName: { default: string };
   shotType: string;
@@ -119,9 +119,13 @@ export interface PenaltyPeriod {
   penalties: Penalty[];
 }
 
+export interface Events {
+  events: ShootoutAttempt[];
+}
+
 export interface Summary {
   scoring: Scoring[];
-  shootout: ShootoutAttempt[];
+  shootout: Events;
   threeStars: StarPlayer[];
   penalties: PenaltyPeriod[];
 }
