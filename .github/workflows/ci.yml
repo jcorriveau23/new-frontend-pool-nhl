@@ -42,5 +42,7 @@ jobs:
           context: .
           push: false
           tags: frontend-pool-nhl:ci
+          build-args: |
+            NEXT_PUBLIC_HANKO_API_URL=test
           cache-from: type=gha
           cache-to: type=gha,mode=max
