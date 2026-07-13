@@ -193,7 +193,7 @@ export default async function GameSummary(props: Props) {
             <TableCell className="text-left">{attempt.sequence}</TableCell>
             <TableCell>
               <TeamLogo
-                teamId={abbrevToTeamId[attempt.teamAbbrev]}
+                teamId={abbrevToTeamId[attempt.teamAbbrev?.default]}
                 width={30}
                 height={30}
               />
@@ -254,12 +254,12 @@ export default async function GameSummary(props: Props) {
                   </AccordionItem>
                 </Accordion>
               ))}
-            {gameLanding.summary.shootout?.length > 0 ? (
+            {gameLanding.summary.shootout?.events?.length > 0 ? (
               <Accordion type="single" collapsible defaultValue="shootout">
                 <AccordionItem value="shootout">
                   <AccordionTrigger>{t("Shootout")}</AccordionTrigger>
                   <AccordionContent>
-                    {ShootoutTable(gameLanding.summary.shootout)}
+                    {ShootoutTable(gameLanding.summary.shootout.events)}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>

@@ -19,7 +19,7 @@ interface Props {
 
 export default async function GameBoxscore(props: Props) {
   const boxscore: GameBoxScore | null = await getServerSideBoxScore(
-    props.gameId
+    props.gameId,
   );
 
   const t = await getTranslations();
@@ -96,29 +96,29 @@ export default async function GameBoxscore(props: Props) {
           <TabsContent value="awayTeam">
             {SkaterTable(
               boxscore.playerByGameStats.awayTeam.forwards,
-              t("ForwardsStats")
+              t("ForwardsStats"),
             )}
             {SkaterTable(
               boxscore.playerByGameStats.awayTeam.defense,
-              t("DefensesStats")
+              t("DefensesStats"),
             )}
             {GoalieTable(
               boxscore.playerByGameStats.awayTeam.goalies,
-              t("GoaliesStats")
+              t("GoaliesStats"),
             )}
           </TabsContent>
           <TabsContent value="homeTeam">
             {SkaterTable(
               boxscore.playerByGameStats.homeTeam.forwards,
-              t("ForwardsStats")
+              t("ForwardsStats"),
             )}
             {SkaterTable(
               boxscore.playerByGameStats.homeTeam.defense,
-              t("DefensesStats")
+              t("DefensesStats"),
             )}
             {GoalieTable(
               boxscore.playerByGameStats.homeTeam.goalies,
-              t("GoaliesStats")
+              t("GoaliesStats"),
             )}
           </TabsContent>
         </Tabs>
