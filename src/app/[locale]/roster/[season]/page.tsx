@@ -3,7 +3,7 @@
 "use server";
 
 import { getAllTeamForSeason } from "@/lib/nhl";
-import Image from "next/image";
+import { TeamLogo } from "@/components/team-logo";
 
 import team_info from "@/lib/teams";
 import { getAllYears } from "@/lib/nhl";
@@ -49,14 +49,7 @@ export default async function Rosters(props: {
           <Link href={`/roster/${params.season}/${teamId}?${queryString}`}>
             <p>{team_info[Number(teamId)]?.fullName}</p>
             <div className="flex justify-center">
-              <Image
-                key={teamId}
-                width={40}
-                height={40}
-                style={{ height: "auto" }}
-                alt="team"
-                src={team_info[Number(teamId)]?.logo}
-              />
+              <TeamLogo teamId={Number(teamId)} width={40} height={40} />
             </div>
           </Link>
         </div>

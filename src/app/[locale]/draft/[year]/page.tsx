@@ -1,7 +1,7 @@
 "use server";
 import * as React from "react";
 
-import Image from "next/image";
+import { TeamLogo } from "@/components/team-logo";
 import {
   Table,
   TableBody,
@@ -17,7 +17,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import team_info from "@/lib/teams";
 import PlayerLink from "@/components/player-link";
 import { Combobox } from "@/components/ui/link-combobox";
 import PageTitle from "@/components/page-title";
@@ -185,15 +184,11 @@ export default async function Standing(props: {
               </TableCell>
               <TableCell>{d.position}</TableCell>
               <TableCell>
-                {team_info[d.draftedByTeamId]?.logo ? (
-                  <Image
-                    width={30}
-                    height={30}
-                    style={{ height: "auto" }}
-                    alt="team"
-                    src={team_info[d.draftedByTeamId].logo}
-                  />
-                ) : null}
+                <TeamLogo
+                  teamId={d.draftedByTeamId}
+                  width={30}
+                  height={30}
+                />
               </TableCell>
               <TableCell>{heightFormat(d.height)}</TableCell>
               <TableCell>{d.weight}</TableCell>

@@ -3,7 +3,7 @@ import React from "react";
 
 import { Game, GameState } from "@/data/nhl/game";
 import { useRouter } from "@/i18n/routing";
-import Image from "next/image";
+import { TeamLogo } from "./team-logo";
 import { useSearchParams } from "next/navigation";
 interface Props {
   game: Game;
@@ -65,24 +65,22 @@ export default function GameItem(props: Props) {
           </tr>
           <tr>
             <td>
-              <Image
+              <TeamLogo
                 src={props.game.awayTeam.logo}
                 alt="Away team logo"
                 width={25}
                 height={25}
-                style={{ height: "auto" }}
               />
             </td>
             <td>{props.game.awayTeam.score ?? 0}</td>
           </tr>
           <tr>
             <td>
-              <Image
+              <TeamLogo
                 src={props.game.homeTeam.logo}
                 alt="Home team logo"
                 width={25}
                 height={25}
-                style={{ height: "auto" }}
               />
             </td>
             <td>{props.game.homeTeam.score ?? 0}</td>

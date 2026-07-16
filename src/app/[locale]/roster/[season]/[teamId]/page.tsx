@@ -2,7 +2,7 @@
 
 // Page displaying yearly data for a specific team on a specific season.
 
-import Image from "next/image";
+import { TeamLogo } from "@/components/team-logo";
 import { DataTable } from "@/components/ui/data-table";
 import { goaliesSeasonColumns, skaterSeasonColumns } from "./columns";
 import team_info from "@/lib/teams";
@@ -124,13 +124,7 @@ export default async function Standing(props: {
   return (
     <div className="items-center text-center">
       <div>
-        <Image
-          width={60}
-          height={60}
-          style={{ height: "auto" }}
-          alt="team"
-          src={team_info[Number(params.teamId)]?.logo}
-        />
+        <TeamLogo teamId={Number(params.teamId)} width={60} height={60} />
         {YearInputs()}
       </div>
       <Accordion type="single" collapsible defaultValue="skaters">
