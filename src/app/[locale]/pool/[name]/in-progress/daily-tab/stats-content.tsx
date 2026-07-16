@@ -20,12 +20,12 @@ import {
 } from "@/components/ui/accordion";
 import { useTranslations } from "next-intl";
 import { ColumnDef } from "@tanstack/react-table";
+import { usePoolContext } from "@/context/pool-context";
 import {
   GoalieDailyInfo,
   SkaterDailyInfo,
   TotalDailyPoints,
-  usePoolContext,
-} from "@/context/pool-context";
+} from "@/lib/scoring";
 import { Row } from "@tanstack/react-table";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useDailyLeadersContext } from "@/context/daily-leaders-context";

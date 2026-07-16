@@ -1,4 +1,5 @@
-import { DailyPoolPointsMade, TotalDailyPoints } from "@/context/pool-context";
+import { DailyPoolPointsMade } from "@/context/pool-context";
+import { TotalDailyPoints } from "@/lib/scoring";
 import {
   GoaliesSettings,
   Pool,
