@@ -15,6 +15,7 @@ export function TeamLogo(props: Props) {
     <Image
       width={props.width}
       height={props.height}
+      style={{ height: "auto" }}
       alt="team"
       src={team_info[props.teamId].logo}
     />

@@ -259,7 +259,13 @@ export default function Draft(props: DraftProps) {
         <TableCell>{player.position}</TableCell>
         <TableCell>
           {teamLogo ? (
-            <Image width={30} height={30} alt="" src={teamLogo} />
+            <Image
+              width={30}
+              height={30}
+              style={{ height: "auto" }}
+              alt=""
+              src={teamLogo}
+            />
           ) : null}
         </TableCell>
       </>

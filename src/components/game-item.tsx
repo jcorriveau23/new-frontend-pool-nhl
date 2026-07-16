@@ -70,6 +70,7 @@ export default function GameItem(props: Props) {
                 alt="Away team logo"
                 width={25}
                 height={25}
+                style={{ height: "auto" }}
               />
             </td>
             <td>{props.game.awayTeam.score ?? 0}</td>
@@ -81,6 +82,7 @@ export default function GameItem(props: Props) {
                 alt="Home team logo"
                 width={25}
                 height={25}
+                style={{ height: "auto" }}
               />
             </td>
             <td>{props.game.homeTeam.score ?? 0}</td>

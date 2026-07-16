@@ -53,6 +53,7 @@ export default async function Rosters(props: {
                 key={teamId}
                 width={40}
                 height={40}
+                style={{ height: "auto" }}
                 alt="team"
                 src={team_info[Number(teamId)]?.logo}
               />
