@@ -78,7 +78,8 @@ export default async function GameBoxscore(props: Props) {
               <Image
                 width={30}
                 height={30}
-                alt="home-team"
+                style={{ height: "auto" }}
+                alt="away-team"
                 src={boxscore.awayTeam.logo}
               />
               {t("AwayTeam")}
@@ -87,6 +88,7 @@ export default async function GameBoxscore(props: Props) {
               <Image
                 width={30}
                 height={30}
+                style={{ height: "auto" }}
                 alt="home-team"
                 src={boxscore.homeTeam.logo}
               />

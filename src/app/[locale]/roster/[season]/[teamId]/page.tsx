@@ -127,6 +127,7 @@ export default async function Standing(props: {
         <Image
           width={60}
           height={60}
+          style={{ height: "auto" }}
           alt="team"
           src={team_info[Number(params.teamId)]?.logo}
         />

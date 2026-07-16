@@ -144,7 +144,13 @@ export default async function GameSummary(props: Props) {
   const TeamInfo = (name: string, logo: string, shots: number) => (
     <div className="flex flex-col items-center space-y-2">
       <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
-        <Image width={60} height={60} alt="team" src={logo} />
+        <Image
+          width={60}
+          height={60}
+          style={{ height: "auto" }}
+          alt="team"
+          src={logo}
+        />
       </div>
       <h2 className="text-lg font-semibold">{name}</h2>
       <div className="flex items-center space-x-1">
