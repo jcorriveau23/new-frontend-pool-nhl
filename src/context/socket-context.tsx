@@ -95,7 +95,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
   const { poolInfo, updatePoolInfo } = usePoolContext();
   const t = useTranslations();
-  const socketUrl = `wss://${window.location.host}/api-rust/ws/${
+  const socketProtocol =
+    window.location.protocol === "https:" ? "wss:" : "ws:";
+  const socketUrl = `${socketProtocol}//${window.location.host}/api-rust/ws/${
     typeof jwt === "string" && jwt !== "" ? jwt : "unauthenticated"
   }`;
   const socketRef = useRef<WebSocket | null>(null);
@@ -185,22 +187,20 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   );
 
   useEffect(() => {
-    if (
-      !socketRef.current ||
-      socketRef.current.readyState === WebSocket.CLOSED
-    ) {
-      const socket = new WebSocket(socketUrl);
-      socketRef.current = socket;
-      setupWebSocket(socket);
-    }
+    const socket = new WebSocket(socketUrl);
+    socketRef.current = socket;
+    setupWebSocket(socket);
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-        toast({
-          title: t("RoomLeft", { poolName: poolInfo.name }),
-          duration: 2000,
-        });
+      // Detach the handlers before closing so this deliberate close (unmount
+      // or React strict-mode dev remount) does not trigger error/close toasts.
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onclose = null;
+      socket.onerror = null;
+      socket.close();
+      if (socketRef.current === socket) {
+        socketRef.current = null;
       }
     };
   }, []);

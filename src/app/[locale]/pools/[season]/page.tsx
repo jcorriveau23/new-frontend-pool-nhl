@@ -10,24 +10,18 @@ import { seasonFormat, seasonWithYearFormat } from "@/app/utils/formating";
 import { Combobox } from "@/components/ui//link-combobox";
 import { Label } from "@/components/ui/label";
 import PageTitle from "@/components/page-title";
+import { backendUrl, fetchJson } from "@/lib/server-api";
 
 const FIRST_POOL_SEASON = 2021;
 const CURRENT_POOL_SEASON = 2025;
 
-const getServersidePoolList = async (season: string) => {
-  /* 
-    Query game boxscore for a specific game id on the server side. 
+const getServersidePoolList = async (season: string) =>
+  /*
+    Query the list of pools for a season on the server side.
     */
-  const res = await fetch(`http://localhost/api-rust/pools/${season}`, {
+  fetchJson<ProjectedPoolShort[]>(backendUrl(`/pools/${season}`), {
     cache: "no-store",
   });
-  if (!res.ok) {
-    return null;
-  }
-
-  const data = await res.json();
-  return data;
-};
 
 const getPoolCountPerStatus = (
   pools: ProjectedPoolShort[]
@@ -56,41 +50,10 @@ export default async function Pools(props: {
 }) {
   const searchParams = await props.searchParams;
   const params = await props.params;
-  const pools: ProjectedPoolShort[] = await getServersidePoolList(
-    params.season
-  );
-  const poolCountPerStatus = getPoolCountPerStatus(pools);
-  const tabIndex = getTabIndex(poolCountPerStatus);
+  const pools = await getServersidePoolList(params.season);
 
   const queryString = new URLSearchParams(searchParams).toString();
   const t = await getTranslations();
-
-  const PoolItem = (poolInfo: ProjectedPoolShort) => (
-    <Link href={`/pool/${poolInfo.name}?${queryString}`} key={poolInfo.name}>
-      <div className="m-2 p-2 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted ">
-        <div>
-          <p className="text-sm font-medium leading-none">{poolInfo.name}</p>
-          <p className="text-sm text-muted-foreground">{poolInfo.owner}</p>
-        </div>
-      </div>
-    </Link>
-  );
-
-  const PoolTabTrigger = (poolStatus: PoolState) =>
-    poolCountPerStatus[poolStatus] > 0 ? (
-      <TabsTrigger value={poolStatus}>{`${t(poolStatus)} (${
-        poolCountPerStatus[poolStatus]
-      })`}</TabsTrigger>
-    ) : null;
-
-  const PoolTabContent = (poolStatus: PoolState) =>
-    poolCountPerStatus[poolStatus] > 0 ? (
-      <TabsContent key={poolStatus} value={poolStatus}>
-        {pools
-          .filter((pool) => pool.status === poolStatus)
-          .map((pool) => PoolItem(pool))}
-      </TabsContent>
-    ) : null;
 
   const YearCombo = () => (
     <div className="space-x-2">
@@ -120,36 +83,56 @@ export default async function Pools(props: {
     );
   }
 
+  const poolCountPerStatus = getPoolCountPerStatus(pools);
+  const tabIndex = getTabIndex(poolCountPerStatus);
+
+  const PoolItem = (poolInfo: ProjectedPoolShort) => (
+    <Link href={`/pool/${poolInfo.name}?${queryString}`} key={poolInfo.name}>
+      <div className="m-2 p-2 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted ">
+        <div>
+          <p className="text-sm font-medium leading-none">{poolInfo.name}</p>
+          <p className="text-sm text-muted-foreground">{poolInfo.owner}</p>
+        </div>
+      </div>
+    </Link>
+  );
+
+  const PoolTabTrigger = (poolStatus: PoolState) =>
+    poolCountPerStatus[poolStatus] > 0 ? (
+      <TabsTrigger value={poolStatus}>{`${t(poolStatus)} (${
+        poolCountPerStatus[poolStatus]
+      })`}</TabsTrigger>
+    ) : null;
+
+  const PoolTabContent = (poolStatus: PoolState) =>
+    poolCountPerStatus[poolStatus] > 0 ? (
+      <TabsContent key={poolStatus} value={poolStatus}>
+        {pools
+          .filter((pool) => pool.status === poolStatus)
+          .map((pool) => PoolItem(pool))}
+      </TabsContent>
+    ) : null;
+
   return (
     <div className="items-center text-center space-y-2">
       <PageTitle title={t("PoolListPageTitle")} />
       {YearCombo()}
-      {pools ? (
-        <Tabs defaultValue={tabIndex}>
-          <div className="overflow-auto">
-            <TabsList>
-              {PoolTabTrigger(PoolState.InProgress)}
-              {PoolTabTrigger(PoolState.Dynasty)}
-              {PoolTabTrigger(PoolState.Created)}
-              {PoolTabTrigger(PoolState.Draft)}
-              {PoolTabTrigger(PoolState.Final)}
-            </TabsList>
-          </div>
-          {PoolTabContent(PoolState.InProgress)}
-          {PoolTabContent(PoolState.Dynasty)}
-          {PoolTabContent(PoolState.Created)}
-          {PoolTabContent(PoolState.Draft)}
-          {PoolTabContent(PoolState.Final)}
-        </Tabs>
-      ) : (
-        <div className="items-center text-center space-y-2">
-          <h1>
-            {t("NoPoolFound", {
-              season: seasonFormat(Number(params.season), 0),
-            })}
-          </h1>
+      <Tabs defaultValue={tabIndex}>
+        <div className="overflow-auto">
+          <TabsList>
+            {PoolTabTrigger(PoolState.InProgress)}
+            {PoolTabTrigger(PoolState.Dynasty)}
+            {PoolTabTrigger(PoolState.Created)}
+            {PoolTabTrigger(PoolState.Draft)}
+            {PoolTabTrigger(PoolState.Final)}
+          </TabsList>
         </div>
-      )}
+        {PoolTabContent(PoolState.InProgress)}
+        {PoolTabContent(PoolState.Dynasty)}
+        {PoolTabContent(PoolState.Created)}
+        {PoolTabContent(PoolState.Draft)}
+        {PoolTabContent(PoolState.Final)}
+      </Tabs>
       <Link
         href={`/create-pool?${queryString}`}
         className="text-link hover:underline"

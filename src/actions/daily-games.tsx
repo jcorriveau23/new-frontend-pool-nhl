@@ -1,30 +1,15 @@
 "use server";
 
 import { Score } from "@/data/nhl/game";
+import { fetchJson } from "@/lib/server-api";
 
 export async function getServerSideDailyGames(
   selectedDate: string
 ): Promise<Score | null> {
-  /* 
+  /*
   Get the daily score for a specific date.
   */
-  try {
-    const res = await fetch(
-      `https://api-web.nhle.com/v1/score/${selectedDate}`,
-      {
-        next: { revalidate: 180 },
-      }
-    );
-    if (!res.ok) {
-      return null;
-    }
-    const data: Score = await res.json();
-
-    return data;
-  } catch (e: unknown) {
-    console.log(
-      `An error occured while fetching the score for ${selectedDate}: ${e}`
-    );
-    return null;
-  }
+  return fetchJson<Score>(`https://api-web.nhle.com/v1/score/${selectedDate}`, {
+    next: { revalidate: 180 },
+  });
 }

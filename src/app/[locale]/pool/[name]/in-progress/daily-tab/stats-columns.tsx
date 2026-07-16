@@ -3,7 +3,7 @@ import {
   SkaterDailyInfo,
   GoalieDailyInfo,
   TotalDailyPoints,
-} from "@/context/pool-context";
+} from "@/lib/scoring";
 import { Pool } from "@/data/pool/model";
 import { DailyGoalie, DailySkater } from "@/data/dailyLeaders/model";
 import { TeamLogo } from "@/components/team-logo";
