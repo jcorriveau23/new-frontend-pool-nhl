@@ -17,7 +17,7 @@ import {
 import { usePoolContext } from "@/context/pool-context";
 import PlayerLink from "@/components/player-link";
 import team_info from "@/lib/teams";
-import Image from "next/image";
+import { TeamLogo } from "./team-logo";
 import { useTranslations } from "next-intl";
 import { Badge } from "./ui/badge";
 import DraftStatus from "./draft-status";
@@ -258,15 +258,7 @@ export default function Draft(props: DraftProps) {
         </TableCell>
         <TableCell>{player.position}</TableCell>
         <TableCell>
-          {teamLogo ? (
-            <Image
-              width={30}
-              height={30}
-              style={{ height: "auto" }}
-              alt=""
-              src={teamLogo}
-            />
-          ) : null}
+          <TeamLogo width={30} height={30} src={teamLogo} />
         </TableCell>
       </>
     ) : player === null &&

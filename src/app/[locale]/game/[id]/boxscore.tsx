@@ -6,7 +6,7 @@ import {
 } from "@/data/nhl/gameBoxScore";
 
 import { DataTable } from "@/components/ui/data-table";
-import Image from "next/image";
+import { TeamLogo } from "@/components/team-logo";
 
 import { getTranslations } from "next-intl/server";
 import { skaterColumns, goalieColumns } from "./boxscore-columns";
@@ -75,20 +75,18 @@ export default async function GameBoxscore(props: Props) {
         <Tabs defaultValue="awayTeam">
           <TabsList>
             <TabsTrigger value="awayTeam">
-              <Image
+              <TeamLogo
                 width={30}
                 height={30}
-                style={{ height: "auto" }}
                 alt="away-team"
                 src={boxscore.awayTeam.logo}
               />
               {t("AwayTeam")}
             </TabsTrigger>
             <TabsTrigger value="homeTeam">
-              <Image
+              <TeamLogo
                 width={30}
                 height={30}
-                style={{ height: "auto" }}
                 alt="home-team"
                 src={boxscore.homeTeam.logo}
               />

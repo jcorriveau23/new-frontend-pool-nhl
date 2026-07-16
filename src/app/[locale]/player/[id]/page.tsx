@@ -32,7 +32,7 @@ const getServerSidePlayerInfo = async (playerId: string) => {
     */
   const res = await fetch(
     `https://api-web.nhle.com/v1/player/${playerId}/landing`,
-    { next: { revalidate: 21600 } } // revalidate each 6 hours
+    { next: { revalidate: 21600 } }, // revalidate each 6 hours
   );
   if (!res.ok) {
     return null;
@@ -67,6 +67,7 @@ export default async function Player(props: {
                 height={60}
                 alt="team"
                 src={playerInfo.teamLogo}
+                style={{ height: "auto" }}
               />
             </div>
           </TableHead>

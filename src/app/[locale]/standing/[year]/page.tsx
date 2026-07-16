@@ -13,6 +13,7 @@ import {
 import { getTranslations } from "next-intl/server";
 import { seasonFormat } from "@/app/utils/formating";
 import PageTitle from "@/components/page-title";
+import { TeamLogo } from "@/components/team-logo";
 
 interface Season {
   id: number;
@@ -125,7 +126,7 @@ const getServerSideStandingSeason = async () => {
       */
   const res = await fetch(
     "https://api-web.nhle.com/v1/standings-season",
-    { next: { revalidate: 86400 } } // revalidate each day
+    { next: { revalidate: 86400 } }, // revalidate each day
   );
   if (!res.ok) {
     return null;
@@ -141,7 +142,7 @@ const getServerSideStanding = async (date: string) => {
   */
   const res = await fetch(
     `https://api-web.nhle.com/v1/standings/${date}`,
-    { next: { revalidate: 21600 } } // revalidate each 6 hours
+    { next: { revalidate: 21600 } }, // revalidate each 6 hours
   );
   if (!res.ok) {
     return null;
@@ -178,11 +179,11 @@ export default async function Standing(props: {
               <TableRow key={team.teamAbbrev.default}>
                 <TableCell>{team.leagueSequence}</TableCell>
                 <TableCell>
-                  <Image
+                  <TeamLogo
+                    src={team.teamLogo}
+                    alt="team"
                     width={30}
                     height={30}
-                    alt="team"
-                    src={team.teamLogo}
                   />
                 </TableCell>
                 <TableCell>{team.teamAbbrev.default}</TableCell>
