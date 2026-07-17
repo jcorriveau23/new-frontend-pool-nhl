@@ -32,8 +32,8 @@ import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
 import PickList from "@/components/pick-list";
 import { useDateContext } from "@/context/date-context";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@radix-ui/react-dialog";
 import {
+  Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,

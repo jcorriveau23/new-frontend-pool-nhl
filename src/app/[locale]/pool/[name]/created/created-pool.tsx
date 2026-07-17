@@ -56,8 +56,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DraftOrderSelector from "@/components/draft-order-selector";
-import { DialogTitle } from "@radix-ui/react-dialog";
-import { CheckedState } from "@radix-ui/react-checkbox";
+import { DialogTitle } from "@/components/ui/dialog";
 import { useUser } from "@/context/useUserData";
 
 const USER_NAME_MIN_LENGTH = 2;
@@ -94,7 +93,7 @@ export default function CreatedPool() {
     },
   });
 
-  const onReady = (checked: CheckedState) => {
+  const onReady = (checked: boolean) => {
     console.log(`on ready '${checked}'!`);
 
     sendSocketCommand(Command.OnReady, null);
