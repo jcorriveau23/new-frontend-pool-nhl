@@ -13,9 +13,10 @@ interface InformationIconProps {
 const InformationIcon: React.FC<InformationIconProps> = ({ text }) => {
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <InfoIcon className="cursor-pointer" />
-      </PopoverTrigger>
+      <PopoverTrigger
+        nativeButton={false}
+        render={<InfoIcon className="cursor-pointer" />}
+      />
       <PopoverContent align="start">{text}</PopoverContent>
     </Popover>
   );

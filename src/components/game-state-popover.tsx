@@ -76,16 +76,19 @@ export function GameStatePopover({ state }: StatePopoverProps) {
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <div
-          className="relative inline-block cursor-pointer"
-          aria-label={`Game status: ${stateDetails.label}`}
-        >
-          {stateDetails.icon}
-          <span
-            className={`absolute -top-1 -right-1 block h-2 w-2 rounded-full ${stateDetails.color} ring-1 ring-white`}
+      <PopoverTrigger
+        nativeButton={false}
+        render={
+          <div
+            className="relative inline-block cursor-pointer"
+            aria-label={`Game status: ${stateDetails.label}`}
           />
-        </div>
+        }
+      >
+        {stateDetails.icon}
+        <span
+          className={`absolute -top-1 -right-1 block h-2 w-2 rounded-full ${stateDetails.color} ring-1 ring-white`}
+        />
       </PopoverTrigger>
       <PopoverContent className="w-60">
         <div className="flex flex-col space-y-2">
