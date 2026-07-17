@@ -22,7 +22,9 @@ export function PoolerUserGlobalSelector() {
       </Label>
       <Select
         value={selectedParticipant}
-        onValueChange={(userName) => updateSelectedParticipant(userName)}
+        onValueChange={(userName) => {
+          if (userName !== null) updateSelectedParticipant(userName);
+        }}
       >
         <SelectTrigger className="w-full" id="pooler-selector">
           <SelectValue placeholder="Select pooler of interest" />
