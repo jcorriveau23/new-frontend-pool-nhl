@@ -208,9 +208,7 @@ export default function DailyPreviewContent() {
           <>
             <Accordion
               key={`${selectedPoolUser.id}-forwards`}
-              type="single"
-              collapsible
-              defaultValue="forwards"
+              defaultValue={["forwards"]}
             >
               <AccordionItem value="forwards">
                 <AccordionTrigger>{`${t("Forwards")} (${
@@ -231,9 +229,7 @@ export default function DailyPreviewContent() {
             </Accordion>
             <Accordion
               key={`${selectedPoolUser.id}-defense`}
-              type="single"
-              collapsible
-              defaultValue="defense"
+              defaultValue={["defense"]}
             >
               <AccordionItem value="defense">
                 <AccordionTrigger>{`${t("Defense")} (${
@@ -254,9 +250,7 @@ export default function DailyPreviewContent() {
             </Accordion>
             <Accordion
               key={`${selectedPoolUser.id}-goalies`}
-              type="single"
-              collapsible
-              defaultValue="goalies"
+              defaultValue={["goalies"]}
             >
               <AccordionItem value="goalies">
                 <AccordionTrigger>{`${t("Goalies")} (${

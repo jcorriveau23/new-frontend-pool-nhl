@@ -399,7 +399,7 @@ export default function CumulativeTab() {
         </Dialog>
       ) : null}
       {poolInfo.settings.number_forwards > 0 ? (
-        <Accordion type="single" collapsible defaultValue="forwards">
+        <Accordion defaultValue={["forwards"]}>
           <AccordionItem value="forwards">
             <AccordionTrigger>{`${t("Forwards")} (${
               playerStats[participant.id].forwards.filter(
@@ -449,7 +449,7 @@ export default function CumulativeTab() {
         </Accordion>
       ) : null}
       {poolInfo.settings.number_defenders > 0 ? (
-        <Accordion type="single" collapsible defaultValue="defense">
+        <Accordion defaultValue={["defense"]}>
           <AccordionItem value="defense">
             <AccordionTrigger>{`${t("Defense")} (${
               playerStats[participant.id].defense.filter(
@@ -499,7 +499,7 @@ export default function CumulativeTab() {
         </Accordion>
       ) : null}
       {poolInfo.settings.number_goalies > 0 ? (
-        <Accordion type="single" collapsible defaultValue="goalies">
+        <Accordion defaultValue={["goalies"]}>
           <AccordionItem value="goalies">
             <AccordionTrigger>{`${t("Goalies")} (${
               playerStats[participant.id].goalies.filter(
@@ -549,7 +549,7 @@ export default function CumulativeTab() {
         </Accordion>
       ) : null}
       {poolInfo.settings.number_reservists > 0 ? (
-        <Accordion type="single" collapsible defaultValue="reservists">
+        <Accordion defaultValue={["reservists"]}>
           <AccordionItem value="reservists">
             <AccordionTrigger>{t("Reservists")}</AccordionTrigger>
             <AccordionContent>
@@ -563,7 +563,7 @@ export default function CumulativeTab() {
         </Accordion>
       ) : null}
       {poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0 ? (
-        <Accordion type="single" collapsible defaultValue="picks">
+        <Accordion defaultValue={["picks"]}>
           <AccordionItem value="picks">
             <AccordionTrigger>{t("NextSeasonPicks")}</AccordionTrigger>
             <AccordionContent>
@@ -630,7 +630,7 @@ export default function CumulativeTab() {
   );
 
   const chartCollapsible = (positionFilter: "F" | "D" | "G" | null) => (
-    <Accordion type="single" collapsible>
+    <Accordion>
       <AccordionItem value={positionFilter ?? "All"}>
         <AccordionTrigger>
           <span className="inline-flex items-center space-x-2">

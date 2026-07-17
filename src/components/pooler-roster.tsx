@@ -133,7 +133,7 @@ export default function PoolerRoster(props: Props) {
   };
 
   const SkatersTable = (user: PoolUser, players: Player[], title: string) => (
-    <Accordion type="single" collapsible defaultValue="all">
+    <Accordion defaultValue={["all"]}>
       <AccordionItem value="all">
         <AccordionTrigger>{`${t(title)} (${players.length})`}</AccordionTrigger>
         <AccordionContent>
@@ -231,7 +231,7 @@ export default function PoolerRoster(props: Props) {
   );
 
   const GoaliesTable = (user: PoolUser, players: Player[], title: string) => (
-    <Accordion type="single" collapsible defaultValue="all">
+    <Accordion defaultValue={["all"]}>
       <AccordionItem value="all">
         <AccordionTrigger>{`${t(title)} (${players.length})`}</AccordionTrigger>
         <AccordionContent>

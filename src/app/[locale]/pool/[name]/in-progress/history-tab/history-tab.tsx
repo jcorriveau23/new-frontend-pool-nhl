@@ -217,9 +217,7 @@ export default function HistoryTab() {
   return history.map((dailyHistory) => (
     <Accordion
       key={dailyHistory.date}
-      type="single"
-      collapsible
-      defaultValue={dailyHistory.date}
+      defaultValue={[dailyHistory.date]}
     >
       <AccordionItem value={dailyHistory.date}>
         <AccordionTrigger>{dailyHistory.date}</AccordionTrigger>

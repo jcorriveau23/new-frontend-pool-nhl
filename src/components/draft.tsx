@@ -341,9 +341,7 @@ export default function Draft(props: DraftProps) {
   const RenderRound = (round: Round) => (
     <Accordion
       key={round.round}
-      type="single"
-      collapsible
-      defaultValue={round.round.toString()}
+      defaultValue={[round.round.toString()]}
     >
       <AccordionItem value={round.round.toString()}>
         <AccordionTrigger>
