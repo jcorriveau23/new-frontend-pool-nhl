@@ -127,7 +127,7 @@ export default async function Standing(props: {
         <TeamLogo teamId={Number(params.teamId)} width={60} height={60} />
         {YearInputs()}
       </div>
-      <Accordion type="single" collapsible defaultValue="skaters">
+      <Accordion defaultValue={["skaters"]}>
         <AccordionItem value="skaters">
           <AccordionTrigger>{t("Skaters")}</AccordionTrigger>
           <AccordionContent>
@@ -150,7 +150,7 @@ export default async function Standing(props: {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-      <Accordion type="single" collapsible defaultValue="goalies">
+      <Accordion defaultValue={["goalies"]}>
         <AccordionItem value="goalies">
           <AccordionTrigger>{t("Goalies")}</AccordionTrigger>
           <AccordionContent>

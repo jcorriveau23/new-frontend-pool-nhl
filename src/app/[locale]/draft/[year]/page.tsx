@@ -214,9 +214,7 @@ export default async function Standing(props: {
       {rounds.map((r) => (
         <Accordion
           key={r}
-          type="single"
-          collapsible
-          defaultValue={r.toString()}
+          defaultValue={[r.toString()]}
         >
           <AccordionItem value={r.toString()}>
             <AccordionTrigger>

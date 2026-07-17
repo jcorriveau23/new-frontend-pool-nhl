@@ -35,13 +35,13 @@ export default function LanguageSelector() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" aria-expanded={open}>
-          <Globe className="mr-2 h-4 w-4 shrink-0" />
-          {t(
-            languages.find((language) => language.value === locale)?.label ?? ""
-          )}
-        </Button>
+      <PopoverTrigger
+        render={<Button variant="outline" role="combobox" aria-expanded={open} />}
+      >
+        <Globe className="mr-2 h-4 w-4 shrink-0" />
+        {t(
+          languages.find((language) => language.value === locale)?.label ?? ""
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-[150px] p-0">
         <Command>

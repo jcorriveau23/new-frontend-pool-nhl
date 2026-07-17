@@ -218,10 +218,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const renderSocketConnection = (socketStatus: SocketStatus) => (
     <div className="fixed bottom-4 left-4 z-50">
       <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline">
-            <Signal color={SOCKET_STATUS_TO_COLOR[socketStatus]} />
-          </Button>
+        <PopoverTrigger render={<Button variant="outline" />}>
+          <Signal color={SOCKET_STATUS_TO_COLOR[socketStatus]} />
         </PopoverTrigger>
         <PopoverContent>
           <div className="text-sm font-medium">

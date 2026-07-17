@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { Accordion } from "@radix-ui/react-accordion";
 import {
+  Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
@@ -19,9 +19,7 @@ export default function TradeTab() {
       {poolInfo.trades?.map((trade) => (
         <Accordion
           key={trade.id}
-          type="single"
-          collapsible
-          defaultValue={trade.id.toString()}
+          defaultValue={[trade.id.toString()]}
         >
           <AccordionItem value={trade.id.toString()}>
             <AccordionTrigger>

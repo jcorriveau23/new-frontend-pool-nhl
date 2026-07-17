@@ -131,7 +131,7 @@ export default async function Player(props: {
         title={`${playerInfo.firstName.default} ${playerInfo.lastName.default}`}
       />
       {PlayerBaseInfo()}
-      <Accordion type="single" collapsible defaultValue="regularSeason">
+      <Accordion defaultValue={["regularSeason"]}>
         <AccordionItem value="regularSeason">
           <AccordionTrigger>{t("RegularSeason")}</AccordionTrigger>
           <AccordionContent>
@@ -142,7 +142,7 @@ export default async function Player(props: {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-      <Accordion type="single" collapsible defaultValue="playoff">
+      <Accordion defaultValue={["playoff"]}>
         <AccordionItem value="playoff">
           <AccordionTrigger>{t("Playoff")}</AccordionTrigger>
           <AccordionContent>

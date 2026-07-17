@@ -34,8 +34,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import LogoutMenuItem from "./hanko/logout-button";
 import LanguageSelector from "./language-selector";
 import { ThemeToggle } from "./theme-toggle";
@@ -94,16 +94,11 @@ export function AppSidebar() {
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton>
-                <User2 /> {userInfo.email}
-                <ChevronUp className="ml-auto" />
-              </SidebarMenuButton>
+            <DropdownMenuTrigger render={<SidebarMenuButton />}>
+              <User2 /> {userInfo.email}
+              <ChevronUp className="ml-auto" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              side="top"
-              className="w-[--radix-popper-anchor-width]"
-            >
+            <DropdownMenuContent side="top" className="w-(--anchor-width)">
               <DropdownMenuItem onClick={() => router.push("/profile")}>
                 <span>{t("Account")}</span>
               </DropdownMenuItem>
@@ -140,11 +135,12 @@ export function AppSidebar() {
             <SidebarMenu>
               {hockeyPoolItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton className="hover:cursor-pointer" asChild>
-                    <a onClick={() => navigate(item.url)}>
-                      <item.icon />
-                      <span>{t(item.title)}</span>
-                    </a>
+                  <SidebarMenuButton
+                    className="hover:cursor-pointer"
+                    render={<a onClick={() => navigate(item.url)} />}
+                  >
+                    <item.icon />
+                    <span>{t(item.title)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -157,11 +153,12 @@ export function AppSidebar() {
             <SidebarMenu>
               {nhlItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton className="hover:cursor-pointer" asChild>
-                    <a onClick={() => navigate(item.url)}>
-                      <item.icon />
-                      <span>{t(item.title)}</span>
-                    </a>
+                  <SidebarMenuButton
+                    className="hover:cursor-pointer"
+                    render={<a onClick={() => navigate(item.url)} />}
+                  >
+                    <item.icon />
+                    <span>{t(item.title)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

@@ -32,12 +32,15 @@ export default function DraftedPlayerIcon({
   return (
     <>
       <Popover>
-        <PopoverTrigger asChild>
-          <Shield
-            className="cursor-pointer h-4 w-4 text-red-500 ml-2"
-            onClick={handleIconClick}
-          />
-        </PopoverTrigger>
+        <PopoverTrigger
+          nativeButton={false}
+          render={
+            <Shield
+              className="cursor-pointer h-4 w-4 text-red-500 ml-2"
+              onClick={handleIconClick}
+            />
+          }
+        />
         <PopoverContent align="start">
           {t("PlayerDraftedBy", {
             playerName: playerName,

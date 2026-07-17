@@ -56,11 +56,9 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Search className="w-4 h-4" />
-          {props.label}
-        </Button>
+      <DialogTrigger render={<Button className="flex items-center gap-2" />}>
+        <Search className="w-4 h-4" />
+        {props.label}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

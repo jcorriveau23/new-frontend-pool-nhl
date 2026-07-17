@@ -266,10 +266,11 @@ export default function Draft(props: DraftProps) {
       draftIndex === poolInfo.context?.players_name_drafted.length ? (
       <>
         <Dialog>
-          <DialogTrigger asChild>
-            <TableCell colSpan={3}>
-              <DraftButton label="Draft Player" />
-            </TableCell>
+          <DialogTrigger
+            nativeButton={false}
+            render={<TableCell colSpan={3} />}
+          >
+            <DraftButton label="Draft Player" />
           </DialogTrigger>
           <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
             <DialogHeader>
@@ -341,9 +342,7 @@ export default function Draft(props: DraftProps) {
   const RenderRound = (round: Round) => (
     <Accordion
       key={round.round}
-      type="single"
-      collapsible
-      defaultValue={round.round.toString()}
+      defaultValue={[round.round.toString()]}
     >
       <AccordionItem value={round.round.toString()}>
         <AccordionTrigger>

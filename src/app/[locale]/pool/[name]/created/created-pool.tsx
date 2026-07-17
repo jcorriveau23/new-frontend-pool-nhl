@@ -56,8 +56,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DraftOrderSelector from "@/components/draft-order-selector";
-import { DialogTitle } from "@radix-ui/react-dialog";
-import { CheckedState } from "@radix-ui/react-checkbox";
+import { DialogTitle } from "@/components/ui/dialog";
 import { useUser } from "@/context/useUserData";
 
 const USER_NAME_MIN_LENGTH = 2;
@@ -94,7 +93,7 @@ export default function CreatedPool() {
     },
   });
 
-  const onReady = (checked: CheckedState) => {
+  const onReady = (checked: boolean) => {
     console.log(`on ready '${checked}'!`);
 
     sendSocketCommand(Command.OnReady, null);
@@ -113,20 +112,22 @@ export default function CreatedPool() {
   const copiedRoomUrl = () => (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.href);
-              toast({
-                title: t("CopiedRoomUrl"),
-                duration: 2000,
-              });
-            }}
-          >
-            <CopyIcon className="h-4 w-4" />
-          </Button>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast({
+                  title: t("CopiedRoomUrl"),
+                  duration: 2000,
+                });
+              }}
+            />
+          }
+        >
+          <CopyIcon className="h-4 w-4" />
         </TooltipTrigger>
         <TooltipContent>{t("ClickToCopy")}</TooltipContent>
       </Tooltip>
@@ -140,10 +141,8 @@ export default function CreatedPool() {
 
   const CreateUserDialog = () => (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <PlusCircledIcon className="h-4 w-4" />
-        </Button>
+      <DialogTrigger render={<Button variant="ghost" size="icon" />}>
+        <PlusCircledIcon className="h-4 w-4" />
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -201,10 +200,8 @@ export default function CreatedPool() {
 
   const PoolSettingsDialog = () => (
     <Dialog modal={true}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="icon">
-          <GearIcon />
-        </Button>
+      <DialogTrigger render={<Button variant="outline" size="icon" />}>
+        <GearIcon />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

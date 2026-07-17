@@ -230,9 +230,7 @@ export default async function GameSummary(props: Props) {
               .map((period) => (
                 <Accordion
                   key={period.periodDescriptor.number}
-                  type="single"
-                  collapsible
-                  defaultValue="all"
+                  defaultValue={["all"]}
                 >
                   <AccordionItem value="all">
                     <AccordionTrigger>
@@ -254,7 +252,7 @@ export default async function GameSummary(props: Props) {
                 </Accordion>
               ))}
             {gameLanding.summary.shootout?.events?.length > 0 ? (
-              <Accordion type="single" collapsible defaultValue="shootout">
+              <Accordion defaultValue={["shootout"]}>
                 <AccordionItem value="shootout">
                   <AccordionTrigger>{t("Shootout")}</AccordionTrigger>
                   <AccordionContent>

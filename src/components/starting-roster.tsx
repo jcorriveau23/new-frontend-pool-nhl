@@ -175,7 +175,7 @@ export default function StartingRoster(props: Props) {
     title: string,
     isStarter: boolean
   ) => (
-    <Accordion type="single" collapsible defaultValue="all">
+    <Accordion defaultValue={["all"]}>
       <AccordionItem value="all">
         <AccordionTrigger>{`${t(title)} (${
           players.length

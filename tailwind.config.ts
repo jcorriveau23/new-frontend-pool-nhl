@@ -82,12 +82,12 @@ const config = {
             height: "0",
           },
           to: {
-            height: "var(--radix-accordion-content-height)",
+            height: "var(--accordion-panel-height)",
           },
         },
         "accordion-up": {
           from: {
-            height: "var(--radix-accordion-content-height)",
+            height: "var(--accordion-panel-height)",
           },
           to: {
             height: "0",

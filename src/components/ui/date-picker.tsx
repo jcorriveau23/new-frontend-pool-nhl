@@ -46,14 +46,17 @@ export function DatePicker(props: DatePickerProps) {
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "w-[240px] justify-start text-left font-normal",
-            !props.selectedDate && "text-muted-foreground"
-          )}
-        >
+      <PopoverTrigger
+        render={
+          <Button
+            variant={"outline"}
+            className={cn(
+              "w-[240px] justify-start text-left font-normal",
+              !props.selectedDate && "text-muted-foreground"
+            )}
+          />
+        }
+      >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {props.selectedDate ? (
             format(props.selectedDate, "PPPP", {
@@ -68,11 +71,11 @@ export function DatePicker(props: DatePickerProps) {
             <div className="ml-auto">
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AlertTriangle
-                      onClick={handleSelectCurrentDate}
-                    ></AlertTriangle>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <AlertTriangle onClick={handleSelectCurrentDate} />
+                    }
+                  />
                   <TooltipContent>
                     <p>{t("NotCurrentDateSelected")}</p>
                   </TooltipContent>
@@ -80,7 +83,6 @@ export function DatePicker(props: DatePickerProps) {
               </TooltipProvider>
             </div>
           )}
-        </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar

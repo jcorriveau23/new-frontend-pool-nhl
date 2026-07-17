@@ -34,13 +34,14 @@ export default function PlayerLink(props: Props) {
       {injuredPlayers.hasOwnProperty(playerId) ? (
         <Popover>
           <PopoverTrigger
-            asChild
+            nativeButton={false}
             onClick={(e: React.MouseEvent) => {
               e.stopPropagation();
             }}
-          >
-            <Ambulance size={18} color="red" className="cursor-pointer" />
-          </PopoverTrigger>
+            render={
+              <Ambulance size={18} color="red" className="cursor-pointer" />
+            }
+          />
           <PopoverContent align="start">
             <div className="grid gap-4">
               <div className="grid gap-2">

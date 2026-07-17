@@ -32,8 +32,8 @@ import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
 import PickList from "@/components/pick-list";
 import { useDateContext } from "@/context/date-context";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@radix-ui/react-dialog";
 import {
+  Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -378,8 +378,8 @@ export default function CumulativeTab() {
     <>
       {poolInfo.settings.number_reservists > 0 ? (
         <Dialog key={participant.id}>
-          <DialogTrigger asChild>
-            <Button variant="outline">{t("ModifyRoster")}</Button>
+          <DialogTrigger render={<Button variant="outline" />}>
+            {t("ModifyRoster")}
           </DialogTrigger>
           <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
             <DialogHeader>
@@ -399,7 +399,7 @@ export default function CumulativeTab() {
         </Dialog>
       ) : null}
       {poolInfo.settings.number_forwards > 0 ? (
-        <Accordion type="single" collapsible defaultValue="forwards">
+        <Accordion defaultValue={["forwards"]}>
           <AccordionItem value="forwards">
             <AccordionTrigger>{`${t("Forwards")} (${
               playerStats[participant.id].forwards.filter(
@@ -449,7 +449,7 @@ export default function CumulativeTab() {
         </Accordion>
       ) : null}
       {poolInfo.settings.number_defenders > 0 ? (
-        <Accordion type="single" collapsible defaultValue="defense">
+        <Accordion defaultValue={["defense"]}>
           <AccordionItem value="defense">
             <AccordionTrigger>{`${t("Defense")} (${
               playerStats[participant.id].defense.filter(
@@ -499,7 +499,7 @@ export default function CumulativeTab() {
         </Accordion>
       ) : null}
       {poolInfo.settings.number_goalies > 0 ? (
-        <Accordion type="single" collapsible defaultValue="goalies">
+        <Accordion defaultValue={["goalies"]}>
           <AccordionItem value="goalies">
             <AccordionTrigger>{`${t("Goalies")} (${
               playerStats[participant.id].goalies.filter(
@@ -549,7 +549,7 @@ export default function CumulativeTab() {
         </Accordion>
       ) : null}
       {poolInfo.settings.number_reservists > 0 ? (
-        <Accordion type="single" collapsible defaultValue="reservists">
+        <Accordion defaultValue={["reservists"]}>
           <AccordionItem value="reservists">
             <AccordionTrigger>{t("Reservists")}</AccordionTrigger>
             <AccordionContent>
@@ -563,7 +563,7 @@ export default function CumulativeTab() {
         </Accordion>
       ) : null}
       {poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0 ? (
-        <Accordion type="single" collapsible defaultValue="picks">
+        <Accordion defaultValue={["picks"]}>
           <AccordionItem value="picks">
             <AccordionTrigger>{t("NextSeasonPicks")}</AccordionTrigger>
             <AccordionContent>
@@ -584,12 +584,10 @@ export default function CumulativeTab() {
 
   const GenerateDynastyDialog = () => (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          {t("ContinuePoolForNextSeason", {
-            season: seasonFormat(poolInfo.season, 1),
-          })}
-        </Button>
+      <DialogTrigger render={<Button variant="outline" />}>
+        {t("ContinuePoolForNextSeason", {
+          season: seasonFormat(poolInfo.season, 1),
+        })}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -630,7 +628,7 @@ export default function CumulativeTab() {
   );
 
   const chartCollapsible = (positionFilter: "F" | "D" | "G" | null) => (
-    <Accordion type="single" collapsible>
+    <Accordion>
       <AccordionItem value={positionFilter ?? "All"}>
         <AccordionTrigger>
           <span className="inline-flex items-center space-x-2">
@@ -670,10 +668,8 @@ export default function CumulativeTab() {
               <InformationIcon text={t("FinalPoolResult")} />
             ) : null}
             <Dialog>
-              <DialogTrigger asChild>
-                <Button>
-                  <Search />
-                </Button>
+              <DialogTrigger render={<Button />}>
+                <Search />
               </DialogTrigger>
               <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
                 <DialogHeader>

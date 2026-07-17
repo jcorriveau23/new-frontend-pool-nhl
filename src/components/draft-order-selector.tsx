@@ -75,8 +75,12 @@ export default function DraftOrderSelector() {
               </span>
               <Select
                 value={draftOrder[positionIndex]}
+                items={userIds.map((user) => ({
+                  value: user,
+                  label: roomUsers?.[user]?.name ?? "",
+                }))}
                 onValueChange={(value) =>
-                  handleSelectionChange(positionIndex, value)
+                  handleSelectionChange(positionIndex, value as string)
                 }
               >
                 <SelectTrigger className="w-full">
