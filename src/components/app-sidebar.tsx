@@ -135,11 +135,12 @@ export function AppSidebar() {
             <SidebarMenu>
               {hockeyPoolItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton className="hover:cursor-pointer" asChild>
-                    <a onClick={() => navigate(item.url)}>
-                      <item.icon />
-                      <span>{t(item.title)}</span>
-                    </a>
+                  <SidebarMenuButton
+                    className="hover:cursor-pointer"
+                    render={<a onClick={() => navigate(item.url)} />}
+                  >
+                    <item.icon />
+                    <span>{t(item.title)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -152,11 +153,12 @@ export function AppSidebar() {
             <SidebarMenu>
               {nhlItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton className="hover:cursor-pointer" asChild>
-                    <a onClick={() => navigate(item.url)}>
-                      <item.icon />
-                      <span>{t(item.title)}</span>
-                    </a>
+                  <SidebarMenuButton
+                    className="hover:cursor-pointer"
+                    render={<a onClick={() => navigate(item.url)} />}
+                  >
+                    <item.icon />
+                    <span>{t(item.title)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
