@@ -378,8 +378,8 @@ export default function CumulativeTab() {
     <>
       {poolInfo.settings.number_reservists > 0 ? (
         <Dialog key={participant.id}>
-          <DialogTrigger asChild>
-            <Button variant="outline">{t("ModifyRoster")}</Button>
+          <DialogTrigger render={<Button variant="outline" />}>
+            {t("ModifyRoster")}
           </DialogTrigger>
           <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
             <DialogHeader>
@@ -584,12 +584,10 @@ export default function CumulativeTab() {
 
   const GenerateDynastyDialog = () => (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          {t("ContinuePoolForNextSeason", {
-            season: seasonFormat(poolInfo.season, 1),
-          })}
-        </Button>
+      <DialogTrigger render={<Button variant="outline" />}>
+        {t("ContinuePoolForNextSeason", {
+          season: seasonFormat(poolInfo.season, 1),
+        })}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -670,10 +668,8 @@ export default function CumulativeTab() {
               <InformationIcon text={t("FinalPoolResult")} />
             ) : null}
             <Dialog>
-              <DialogTrigger asChild>
-                <Button>
-                  <Search />
-                </Button>
+              <DialogTrigger render={<Button />}>
+                <Search />
               </DialogTrigger>
               <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
                 <DialogHeader>

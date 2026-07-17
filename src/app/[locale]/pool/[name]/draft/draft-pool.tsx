@@ -106,8 +106,8 @@ export default function DraftPage() {
     <div>
       <div className="mt-2 justify-center space-x-2 space-y-2">
         <Dialog>
-          <DialogTrigger asChild>
-            <Button>{t("DraftAPlayer")}</Button>
+          <DialogTrigger render={<Button />}>
+            {t("DraftAPlayer")}
           </DialogTrigger>
           <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
             <DialogHeader>
@@ -129,8 +129,8 @@ export default function DraftPage() {
           </DialogContent>
         </Dialog>
         <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">{t("PoolersRoster")}</Button>
+          <DialogTrigger render={<Button variant="outline" />}>
+            {t("PoolersRoster")}
           </DialogTrigger>
           <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
             <DialogHeader>

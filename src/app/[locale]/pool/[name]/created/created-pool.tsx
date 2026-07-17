@@ -113,20 +113,22 @@ export default function CreatedPool() {
   const copiedRoomUrl = () => (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.href);
-              toast({
-                title: t("CopiedRoomUrl"),
-                duration: 2000,
-              });
-            }}
-          >
-            <CopyIcon className="h-4 w-4" />
-          </Button>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast({
+                  title: t("CopiedRoomUrl"),
+                  duration: 2000,
+                });
+              }}
+            />
+          }
+        >
+          <CopyIcon className="h-4 w-4" />
         </TooltipTrigger>
         <TooltipContent>{t("ClickToCopy")}</TooltipContent>
       </Tooltip>
@@ -140,10 +142,8 @@ export default function CreatedPool() {
 
   const CreateUserDialog = () => (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <PlusCircledIcon className="h-4 w-4" />
-        </Button>
+      <DialogTrigger render={<Button variant="ghost" size="icon" />}>
+        <PlusCircledIcon className="h-4 w-4" />
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -201,10 +201,8 @@ export default function CreatedPool() {
 
   const PoolSettingsDialog = () => (
     <Dialog modal={true}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="icon">
-          <GearIcon />
-        </Button>
+      <DialogTrigger render={<Button variant="outline" size="icon" />}>
+        <GearIcon />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
