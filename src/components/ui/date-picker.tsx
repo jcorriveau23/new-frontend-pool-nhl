@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CalendarIcon } from "@radix-ui/react-icons";
+import { CalendarIcon } from "lucide-react";
 import { AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 

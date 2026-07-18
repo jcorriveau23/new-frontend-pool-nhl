@@ -32,9 +32,9 @@ export default function SortHeaderCell({
         <span>{label}</span>
         {currentSortKey === sortKey ? (
           sortDirection === "asc" ? (
-            <ArrowUp className="h-4 w-4" />
+            <ArrowUp className="size-4" />
           ) : (
-            <ArrowDown className="h-4 w-4" />
+            <ArrowDown className="size-4" />
           )
         ) : null}
       </Button>

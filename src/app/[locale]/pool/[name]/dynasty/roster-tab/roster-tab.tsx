@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePoolContext } from "@/context/pool-context";
 import { getPoolerAllPlayers, Player, PoolUser } from "@/data/pool/model";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { Shield } from "lucide-react";
@@ -42,11 +42,7 @@ export default function RosterTab() {
   const onPlayerSelection = (user: PoolUser, player: Player) => {
     // Need to have an account to protect the players.
     if (userData.info?.id !== user.id && userData.info?.id !== poolInfo.owner) {
-      toast({
-        variant: "destructive",
-        title: t("CannotUpdateProtectedPlayers", { userName: user.name }),
-        duration: 5000,
-      });
+      toast.error(t("CannotUpdateProtectedPlayers", { userName: user.name }), { duration: 5000 });
       return;
     }
 
@@ -67,15 +63,11 @@ export default function RosterTab() {
             (poolInfo.settings.dynasty_settings
               ?.next_season_number_players_protected ?? 0)
         ) {
-          toast({
-            variant: "destructive",
-            title: t("TooMuchProtectedPlayers", {
+          toast.error(t("TooMuchProtectedPlayers", {
               limit:
                 poolInfo.settings.dynasty_settings
                   ?.next_season_number_players_protected ?? 0,
-            }),
-            duration: 5000,
-          });
+            }), { duration: 5000 });
           return prevPlayers;
         }
         // Add the player to the list
@@ -87,11 +79,7 @@ export default function RosterTab() {
   const onSaveProtectedPlayers = async (user: PoolUser) => {
     // Need to have an account to protect the players.
     if (userData.info?.id !== user.id && userData.info?.id !== poolInfo.owner) {
-      toast({
-        variant: "destructive",
-        title: t("CannotUpdateProtectedPlayers", { userName: user.name }),
-        duration: 2000,
-      });
+      toast.error(t("CannotUpdateProtectedPlayers", { userName: user.name }), { duration: 2000 });
       return;
     }
 
@@ -110,23 +98,16 @@ export default function RosterTab() {
 
     if (!res.ok) {
       const error = await res.text();
-      toast({
-        variant: "destructive",
-        title: t("CouldNotProtectPlayers", {
+      toast.error(t("CouldNotProtectPlayers", {
           name: poolInfo.name,
           error: error,
-        }),
-        duration: 5000,
-      });
+        }), { duration: 5000 });
       return;
     }
 
     const data = await res.json();
     updatePoolInfo(data);
-    toast({
-      title: t("SuccessProtectingPlayers"),
-      duration: 2000,
-    });
+    toast.success(t("SuccessProtectingPlayers"), { duration: 2000 });
   };
 
   const onCompleteProtection = async () => {
@@ -144,23 +125,16 @@ export default function RosterTab() {
 
     if (!res.ok) {
       const error = await res.text();
-      toast({
-        variant: "destructive",
-        title: t("CouldNotCompleteProtection", {
+      toast.error(t("CouldNotCompleteProtection", {
           name: poolInfo.name,
           error: error,
-        }),
-        duration: 5000,
-      });
+        }), { duration: 5000 });
       return;
     }
 
     const data = await res.json();
     updatePoolInfo(data);
-    toast({
-      title: t("SuccessCompleteProtection"),
-      duration: 2000,
-    });
+    toast.success(t("SuccessCompleteProtection"), { duration: 2000 });
   };
 
   return (
@@ -179,7 +153,7 @@ export default function RosterTab() {
                   <div className="text-right">
                     {poolInfo.context?.protected_players?.[user.id]?.length ??
                     0 > 0 ? (
-                      <Shield className="h-4 w-4 text-green-500 ml-2" />
+                      <Shield className="size-4 text-success ml-2" />
                     ) : null}
                   </div>
                 </div>

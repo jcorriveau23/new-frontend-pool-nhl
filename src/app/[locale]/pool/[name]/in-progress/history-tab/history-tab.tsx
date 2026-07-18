@@ -173,7 +173,7 @@ export default function HistoryTab() {
   }
 
   const Movements = (movements: DailyMovements) => (
-    <div key={movements.participant} className="border space-y-4">
+    <div key={movements.participant} className="flex flex-col border gap-4">
       <div>
         <h1 className="text-lg">{movements.participant}</h1>
       </div>

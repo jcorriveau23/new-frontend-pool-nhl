@@ -188,10 +188,10 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="ghost" className="h-4 w-4 p-0" />}
+            render={<Button variant="ghost" className="size-4 p-0" />}
           >
             <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
@@ -302,10 +302,10 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="ghost" className="h-4 w-4 p-0" />}
+            render={<Button variant="ghost" className="size-4 p-0" />}
           >
             <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
@@ -420,10 +420,10 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="ghost" className="h-4 w-4 p-0" />}
+            render={<Button variant="ghost" className="size-4 p-0" />}
           >
             <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>

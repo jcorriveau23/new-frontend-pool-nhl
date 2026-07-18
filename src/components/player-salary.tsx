@@ -50,7 +50,7 @@ export default function PlayerSalary({
         </PopoverTrigger>
         <PopoverContent>
           <div className="grid gap-4">
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               <h4 className="font-medium leading-none">
                 {t("SalaryDetails", { playerName: playerName ?? "" })}
               </h4>

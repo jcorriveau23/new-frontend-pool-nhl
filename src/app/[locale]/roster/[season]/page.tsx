@@ -38,7 +38,7 @@ export default async function Rosters(props: {
   );
 
   return (
-    <div className="items-center text-center space-y-2">
+    <div className="flex flex-col items-center text-center gap-2">
       <PageTitle title={t("NhlTeamRosterPageTitle")} />
       {YearInputs()}
       {getAllTeamForSeason(Number(params.season)).map((teamId) => (

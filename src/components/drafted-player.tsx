@@ -36,7 +36,7 @@ export default function DraftedPlayerIcon({
           nativeButton={false}
           render={
             <Shield
-              className="cursor-pointer h-4 w-4 text-red-500 ml-2"
+              className="cursor-pointer size-4 text-destructive ml-2"
               onClick={handleIconClick}
             />
           }

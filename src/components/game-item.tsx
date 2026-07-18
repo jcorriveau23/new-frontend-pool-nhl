@@ -5,6 +5,8 @@ import { Game, GameState } from "@/data/nhl/game";
 import { useRouter } from "@/i18n/routing";
 import { TeamLogo } from "./team-logo";
 import { useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
+
 interface Props {
   game: Game;
 }
@@ -20,6 +22,14 @@ export default function GameItem(props: Props) {
       minute: "2-digit",
     });
 
+  const isLive =
+    props.game.gameState === GameState.LIVE ||
+    props.game.gameState === GameState.CRIT;
+
+  const isFinal =
+    props.game.gameState === GameState.OFF ||
+    props.game.gameState === GameState.FINAL;
+
   const renderGameState = (status: GameState) => {
     /*
     Render the game status.
@@ -29,7 +39,8 @@ export default function GameItem(props: Props) {
       case GameState.LIVE:
       case GameState.CRIT: {
         return props.game && props.game.period && props.game.clock ? (
-          <span className="text-red-500">
+          <span className="text-destructive inline-flex items-center justify-center gap-1 font-medium">
+            <span className="bg-destructive inline-flex size-1.5 animate-pulse rounded-full" />
             P{props.game.period} - {props.game.clock.timeRemaining}
           </span>
         ) : (
@@ -49,44 +60,39 @@ export default function GameItem(props: Props) {
     }
   };
 
+  const awayScore = props.game.awayTeam.score ?? 0;
+  const homeScore = props.game.homeTeam.score ?? 0;
+
+  const teamRow = (team: typeof props.game.awayTeam, won: boolean) => (
+    <div className="flex items-center justify-between gap-2">
+      <TeamLogo src={team.logo} alt="Team logo" width={24} height={24} />
+      <span
+        className={cn(
+          "text-sm tabular-nums",
+          won ? "font-semibold" : isFinal && "text-muted-foreground"
+        )}
+      >
+        {team.score ?? 0}
+      </span>
+    </div>
+  );
+
   return (
-    <div
-      className="shrink-0 min-w-[80px] h-[80px] p-2 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted text-sm"
+    <button
+      type="button"
+      className={cn(
+        "bg-card hover:border-primary/50 flex min-w-[92px] shrink-0 cursor-pointer flex-col gap-1 rounded-lg border p-2 text-left shadow-xs transition-colors",
+        isLive && "border-destructive/40"
+      )}
       onClick={() =>
         router.push(`/game/${props.game.id}?${searchParams.toString()}`)
       }
     >
-      <table width="100%">
-        <tbody>
-          <tr>
-            <td colSpan={2} align="center">
-              <p className="text-sm">{renderGameState(props.game.gameState)}</p>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <TeamLogo
-                src={props.game.awayTeam.logo}
-                alt="Away team logo"
-                width={25}
-                height={25}
-              />
-            </td>
-            <td>{props.game.awayTeam.score ?? 0}</td>
-          </tr>
-          <tr>
-            <td>
-              <TeamLogo
-                src={props.game.homeTeam.logo}
-                alt="Home team logo"
-                width={25}
-                height={25}
-              />
-            </td>
-            <td>{props.game.homeTeam.score ?? 0}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <div className="text-muted-foreground text-center text-xs">
+        {renderGameState(props.game.gameState)}
+      </div>
+      {teamRow(props.game.awayTeam, isFinal && awayScore > homeScore)}
+      {teamRow(props.game.homeTeam, isFinal && homeScore > awayScore)}
+    </button>
   );
 }

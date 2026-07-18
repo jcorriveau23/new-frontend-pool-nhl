@@ -29,7 +29,7 @@ import { useForm } from "react-hook-form";
 import { Checkbox } from "./ui/checkbox";
 import { useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import InformationIcon from "./information-box";
 import { useSearchParams } from "next/navigation";
 import { Star } from "lucide-react";
@@ -458,14 +458,10 @@ export default function PoolSettingsComponent(props: Props) {
 
       if (!res.ok) {
         const error = await res.text();
-        toast({
-          variant: "destructive",
-          title: t("CouldNotGeneratePoolError", {
+        toast.error(t("CouldNotGeneratePoolError", {
             name: values.name,
             error: error,
-          }),
-          duration: 2000,
-        });
+          }), { duration: 2000 });
       }
       router.push(`/pool/${values.name}?${searchParams.toString()}`);
     } else {
@@ -480,14 +476,10 @@ export default function PoolSettingsComponent(props: Props) {
 
       if (!res.ok) {
         const error = await res.text();
-        toast({
-          variant: "destructive",
-          title: t("CouldNotUpdatePoolError", {
+        toast.error(t("CouldNotUpdatePoolError", {
             name: values.name,
             error: error,
-          }),
-          duration: 2000,
-        });
+          }), { duration: 2000 });
       }
     }
   };
@@ -829,7 +821,7 @@ export default function PoolSettingsComponent(props: Props) {
       render={({ field }) => (
         <FormItem className="flex items-center justify-between">
           <FormLabel className="w-5/12">
-            <Star className="h-4 w-4 text-pink-500" />
+            <Star className="size-4 text-pink-500" />
             {t(label)}
           </FormLabel>
           <FormControl>
@@ -888,7 +880,7 @@ export default function PoolSettingsComponent(props: Props) {
   );
 
   return (
-    <div className="text-left mx-auto space-y-8">
+    <div className="flex flex-col text-left mx-auto gap-8">
       <Form {...form}>
         <fieldset disabled={DISABLE_OPTIONS}>
           <form onSubmit={form.handleSubmit(onSubmit)}>

@@ -366,5 +366,15 @@
   "Watch": "Regarder",
   "CreateTrade": "Créer une échange",
   "Players": "Joueurs",
-  "PoolerOfInterest": "Pooler d'intérêt"
+  "PoolerOfInterest": "Pooler d'intérêt",
+  "Tagline": "Pools de hockey LNH gratuits",
+  "HeroGetStarted": "Créez votre pool",
+  "HeroSeeDemo": "Voir une démo",
+  "FeatureDraftTitle": "Repêchages en direct",
+  "FeatureDraftDescription": "Faites des repêchages en temps réel avec vos amis, en mode serpent ou avec un ordre personnalisé.",
+  "FeatureStatsTitle": "Pointage automatique",
+  "FeatureStatsDescription": "Les points quotidiens et cumulatifs sont calculés automatiquement à partir des statistiques officielles de la LNH.",
+  "FeatureDynastyTitle": "Dynastie et échanges",
+  "FeatureDynastyDescription": "Faites durer votre ligue année après année avec des joueurs protégés et des échanges.",
+  "FreeForever": "100% gratuit, pour toujours"
 }

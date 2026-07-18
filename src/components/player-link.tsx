@@ -27,7 +27,7 @@ export default function PlayerLink(props: Props) {
         href={`/player/${props.id}?${searchParams}`}
         target="_blank"
       >
-        <p className={`${props.textStyle ?? ""} text-link hover:underline`}>
+        <p className={`${props.textStyle ?? ""} text-primary hover:underline`}>
           {props.name}
         </p>
       </Link>

@@ -1,45 +1,77 @@
 import { Link } from "@/i18n/routing";
 import { setRequestLocale } from "next-intl/server";
 import { useLocale, useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ArrowRight, ArrowLeftRight, BarChart3, Radio } from "lucide-react";
 
 export default function Home() {
   const locale = useLocale();
 
   setRequestLocale(locale);
   const t = useTranslations();
+
+  const features = [
+    {
+      icon: Radio,
+      title: t("FeatureDraftTitle"),
+      description: t("FeatureDraftDescription"),
+    },
+    {
+      icon: BarChart3,
+      title: t("FeatureStatsTitle"),
+      description: t("FeatureStatsDescription"),
+    },
+    {
+      icon: ArrowLeftRight,
+      title: t("FeatureDynastyTitle"),
+      description: t("FeatureDynastyDescription"),
+    },
+  ];
+
   return (
-    <>
-      <main className="flex-1">
-        <div className="space-y-10 xl:space-y-16">
-          <div className="grid gap-4 px-4 sm:px-6 md:px-10 md:grid-cols-2 md:gap-16">
-            <div>
-              <h1 className="lg:leading-tighter text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl xl:text-[3.4rem] 2xl:text-[3.75rem]">
-                {t("ManagePool")}
-              </h1>
-            </div>
-            <div className="space-y-6">
-              <p className="text-gray-500 md:text-xl dark:text-gray-400">
-                {t("AppDescription")}{" "}
-                <Link
-                  href={`/pool/william`}
-                  className="text-link hover:underline"
-                >
-                  {t("SeeDemo")}
-                </Link>
-              </p>
-              <p className="text-gray-500 md:text-xl dark:text-gray-400">
-                {t("GetStartedNow")}
-                <Link
-                  href={`/create-pool`}
-                  className="text-link hover:underline"
-                >
-                  {t("CreateYourOwnPool")}
-                </Link>
-              </p>
-            </div>
-          </div>
+    <main className="flex flex-col gap-16 py-8">
+      <section className="flex flex-col items-center gap-6 px-4 text-center">
+        <Badge variant="secondary">{t("FreeForever")}</Badge>
+        <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+          {t("ManagePool")}
+        </h1>
+        <p className="text-muted-foreground max-w-2xl text-lg text-balance">
+          {t("AppDescription")}
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button size="lg" render={<Link href={`/create-pool`} />}>
+            {t("HeroGetStarted")}
+            <ArrowRight />
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            render={<Link href={`/pool/william`} />}
+          >
+            {t("HeroSeeDemo")}
+          </Button>
         </div>
-      </main>
-    </>
+      </section>
+      <section className="grid gap-4 px-4 sm:grid-cols-3">
+        {features.map((feature) => (
+          <Card key={feature.title}>
+            <CardHeader>
+              <div className="bg-primary/10 text-primary mb-2 flex size-10 items-center justify-center rounded-lg">
+                <feature.icon className="size-5" />
+              </div>
+              <CardTitle>{feature.title}</CardTitle>
+              <CardDescription>{feature.description}</CardDescription>
+            </CardHeader>
+          </Card>
+        ))}
+      </section>
+    </main>
   );
 }

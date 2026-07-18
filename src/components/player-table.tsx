@@ -462,7 +462,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
 
   return (
     <div>
-      <div className="p-2 space-y-2">
+      <div className="flex flex-col p-2 gap-2">
         <PlayerSearchDialog
           label={t("PlayerSearch")}
           onPlayerSelect={onPlayerSelect}

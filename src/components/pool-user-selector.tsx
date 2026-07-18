@@ -16,7 +16,7 @@ export function PoolerUserGlobalSelector() {
     usePoolContext();
   const t = useTranslations();
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <Label htmlFor="pooler-selector" className="text-sm font-medium">
         {t("PoolerOfInterest")}
       </Label>

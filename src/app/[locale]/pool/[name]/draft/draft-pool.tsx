@@ -104,7 +104,7 @@ export default function DraftPage() {
 
   return (
     <div>
-      <div className="mt-2 justify-center space-x-2 space-y-2">
+      <div className="flex flex-col mt-2 justify-center space-x-2 gap-2">
         <Dialog>
           <DialogTrigger render={<Button />}>
             {t("DraftAPlayer")}

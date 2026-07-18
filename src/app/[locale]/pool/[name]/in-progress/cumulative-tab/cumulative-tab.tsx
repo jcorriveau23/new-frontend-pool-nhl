@@ -59,7 +59,7 @@ import {
 } from "@/components/pool-settings";
 import { seasonFormat } from "@/app/utils/formating";
 import { useSession } from "@/context/useSessionData";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import InformationIcon from "@/components/information-box";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import StartingRoster from "@/components/starting-roster";
@@ -153,14 +153,10 @@ export default function CumulativeTab() {
 
     if (!res.ok) {
       const error = await res.text();
-      toast({
-        variant: "destructive",
-        title: t("CouldNotMarkAsFinalPoolError", {
+      toast.error(t("CouldNotMarkAsFinalPoolError", {
           name: poolInfo.name,
           error: error,
-        }),
-        duration: 2000,
-      });
+        }), { duration: 2000 });
       return;
     }
     const data = await res.json();
@@ -182,14 +178,10 @@ export default function CumulativeTab() {
 
     if (!res.ok) {
       const error = await res.text();
-      toast({
-        variant: "destructive",
-        title: t("CouldNotGeneratePoolError", {
+      toast.error(t("CouldNotGeneratePoolError", {
           name: newPoolName,
           error: error,
-        }),
-        duration: 2000,
-      });
+        }), { duration: 2000 });
       return;
     }
     const data = await res.json();
@@ -644,9 +636,9 @@ export default function CumulativeTab() {
   );
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <PoolerUserGlobalSelector />
-      <Tabs defaultValue="totalRanking" className="space-y-4">
+      <Tabs defaultValue="totalRanking" className="flex flex-col gap-4">
         {poolInfo.status === PoolState.InProgress &&
         new Date(poolInfo.season_end + "T00:00:00") < currentDate &&
         hasPoolPrivilege(userData.info?.id, poolInfo) ? (

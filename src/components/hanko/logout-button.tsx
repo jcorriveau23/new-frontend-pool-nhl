@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "@/i18n/routing";
 import { Hanko } from "@teamhanko/hanko-elements";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -26,11 +26,7 @@ export default function LogoutMenuItem() {
       router.refresh();
       return;
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: `Error during logout: ${error}`,
-        duration: 2000,
-      });
+      toast.error(`Error during logout: ${error}`, { duration: 2000 });
     }
   };
 

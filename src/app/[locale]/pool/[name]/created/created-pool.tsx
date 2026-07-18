@@ -5,7 +5,7 @@ of the pool is allowed to update pool settings and kick people out of the
 room.
 */
 
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 import { usePoolContext } from "@/context/pool-context";
 import * as React from "react";
@@ -27,10 +27,10 @@ import {
 } from "@/components/ui/tooltip";
 import {
   CopyIcon,
-  PlusCircledIcon,
-  MinusCircledIcon,
-  GearIcon,
-} from "@radix-ui/react-icons";
+  PlusCircleIcon,
+  MinusCircleIcon,
+  SettingsIcon,
+} from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useTranslations } from "next-intl";
 import { Command, RoomUser, useSocketContext } from "@/context/socket-context";
@@ -66,7 +66,6 @@ export default function CreatedPool() {
   const { poolInfo } = usePoolContext();
 
   const userData = useUser();
-  const { toast } = useToast();
   const t = useTranslations();
   const { roomUsers, sendSocketCommand } = useSocketContext();
   const [open, setOpen] = React.useState(false);
@@ -119,15 +118,12 @@ export default function CreatedPool() {
               size="icon"
               onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
-                toast({
-                  title: t("CopiedRoomUrl"),
-                  duration: 2000,
-                });
+                toast(t("CopiedRoomUrl"), { duration: 2000 });
               }}
             />
           }
         >
-          <CopyIcon className="h-4 w-4" />
+          <CopyIcon className="size-4" />
         </TooltipTrigger>
         <TooltipContent>{t("ClickToCopy")}</TooltipContent>
       </Tooltip>
@@ -142,7 +138,7 @@ export default function CreatedPool() {
   const CreateUserDialog = () => (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button variant="ghost" size="icon" />}>
-        <PlusCircledIcon className="h-4 w-4" />
+        <PlusCircleIcon className="size-4" />
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -201,7 +197,7 @@ export default function CreatedPool() {
   const PoolSettingsDialog = () => (
     <Dialog modal={true}>
       <DialogTrigger render={<Button variant="outline" size="icon" />}>
-        <GearIcon />
+        <SettingsIcon />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -233,7 +229,7 @@ export default function CreatedPool() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
+        <ul className="flex flex-col gap-2">
           {Object.keys(users).map((userId) => (
             <>
               <li
@@ -259,7 +255,7 @@ export default function CreatedPool() {
                     size="icon"
                     onClick={() => RemoveUser(userId)}
                   >
-                    <MinusCircledIcon className="h-4 w-4" />
+                    <MinusCircleIcon className="size-4" />
                   </Button>
                 ) : null}
               </li>

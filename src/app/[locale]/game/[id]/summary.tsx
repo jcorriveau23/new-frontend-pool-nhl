@@ -113,7 +113,7 @@ export default async function GameSummary(props: Props) {
               </span>
             </div>
           </div>
-          <div className="shrink-0 space-y-3">
+          <div className="flex flex-col shrink-0 gap-3">
             <span className="text-lg font-bold">
               {goal.awayScore} - {goal.homeScore}
             </span>
@@ -121,7 +121,7 @@ export default async function GameSummary(props: Props) {
               href={goal.highlightClipSharingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center text-link"
+              className="flex items-center text-primary"
             >
               <ExternalLink size={16} className="mr-1" />
               {t("Watch")}
@@ -133,7 +133,7 @@ export default async function GameSummary(props: Props) {
   }
 
   const PeriodGoals = (period: number, goals: Goal[]) => (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       {goals.map((goal) => (
         <GoalCard key={goal.timeInPeriod} goal={goal} />
       ))}
@@ -142,12 +142,12 @@ export default async function GameSummary(props: Props) {
 
   const TeamInfo = (name: string, logo: string, shots: number) => (
     <div className="flex flex-col items-center space-y-2">
-      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+      <div className="size-16 bg-muted rounded-full flex items-center justify-center">
         <TeamLogo width={60} height={60} src={logo} />
       </div>
       <h2 className="text-lg font-semibold">{name}</h2>
       <div className="flex items-center space-x-1">
-        <Shield className="w-4 h-4" />
+        <Shield className="size-4" />
         <span className="text-sm">
           {shots} {t("shots")}
         </span>
@@ -165,7 +165,7 @@ export default async function GameSummary(props: Props) {
 
   const GameSummary = (awayTeam: Team, homeTeam: Team) => (
     <div className="w-full max-w-3xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden">
-      <div className="p-6 space-y-6">
+      <div className="flex flex-col p-6 gap-6">
         <div className="flex justify-between items-center">
           {TeamInfo(awayTeam.commonName.default, awayTeam.logo, awayTeam.sog)}
           {ScoreDisplay(awayTeam.score, homeTeam.score)}
@@ -239,7 +239,7 @@ export default async function GameSummary(props: Props) {
                         : "OT"}
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className="space-y-4">
+                      <div className="flex flex-col gap-4">
                         {period.goals?.length > 0
                           ? PeriodGoals(
                               period.periodDescriptor.number,

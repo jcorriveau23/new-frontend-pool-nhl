@@ -366,5 +366,15 @@
   "Watch": "Watch",
   "CreateTrade": "Create a trade",
   "Players": "Players",
-  "PoolerOfInterest": "Pooler of interest"
+  "PoolerOfInterest": "Pooler of interest",
+  "Tagline": "Free NHL hockey pools",
+  "HeroGetStarted": "Create your pool",
+  "HeroSeeDemo": "See a demo",
+  "FeatureDraftTitle": "Live drafts",
+  "FeatureDraftDescription": "Run real-time drafts with your friends, with snake or custom draft orders.",
+  "FeatureStatsTitle": "Automatic scoring",
+  "FeatureStatsDescription": "Daily and cumulative points are computed automatically from official NHL stats.",
+  "FeatureDynastyTitle": "Dynasty & trades",
+  "FeatureDynastyDescription": "Keep your league going year after year with protected players and trades.",
+  "FreeForever": "100% free, forever"
 }

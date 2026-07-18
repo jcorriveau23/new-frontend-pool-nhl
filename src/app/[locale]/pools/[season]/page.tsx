@@ -74,7 +74,7 @@ export default async function Pools(props: {
 
   if (pools === null) {
     return (
-      <div className="items-center text-center space-y-2">
+      <div className="flex flex-col items-center text-center gap-2">
         {YearCombo()}
         <h1>
           {t("NoPoolFound", { season: seasonFormat(Number(params.season), 0) })}
@@ -114,7 +114,7 @@ export default async function Pools(props: {
     ) : null;
 
   return (
-    <div className="items-center text-center space-y-2">
+    <div className="flex flex-col items-center text-center gap-2">
       <PageTitle title={t("PoolListPageTitle")} />
       {YearCombo()}
       <Tabs defaultValue={tabIndex}>
@@ -135,7 +135,7 @@ export default async function Pools(props: {
       </Tabs>
       <Link
         href={`/create-pool?${queryString}`}
-        className="text-link hover:underline"
+        className="text-primary hover:underline"
       >
         {t("CreatePool")}
       </Link>
