@@ -16,7 +16,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
 } from "@/components/ui/card";
 import {
@@ -47,14 +46,12 @@ import { z } from "zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import DraftOrderSelector from "@/components/draft-order-selector";
 import { DialogTitle } from "@/components/ui/dialog";
 import { useUser } from "@/context/useUserData";
@@ -108,19 +105,34 @@ export default function CreatedPool() {
     sendSocketCommand(Command.RemoveUser, `{"user_id": "${userId}"}`);
   };
 
+  const copyRoomUrl = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        // Clipboard API is unavailable in non-secure contexts (plain http).
+        const textArea = document.createElement("textarea");
+        textArea.value = url;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+      toast(t("CopiedRoomUrl"), { duration: 2000 });
+    } catch {
+      toast.error(url, { duration: 5000 });
+    }
+  };
+
   const copiedRoomUrl = () => (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger
           render={
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                toast(t("CopiedRoomUrl"), { duration: 2000 });
-              }}
-            />
+            <Button variant="outline" size="icon" onClick={copyRoomUrl} />
           }
         >
           <CopyIcon className="size-4" />
@@ -142,11 +154,14 @@ export default function CreatedPool() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create a user</DialogTitle>
+          <DialogTitle>{t("CreateUser")}</DialogTitle>
           <DialogDescription>{t("ChoseUsername")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onCreateUser)}>
+          <form
+            onSubmit={form.handleSubmit(onCreateUser)}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -160,12 +175,13 @@ export default function CreatedPool() {
                       defaultValue=""
                     />
                   </FormControl>
-                  <FormDescription />
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit">{t("Add")}</Button>
+            <div className="flex justify-end">
+              <Button type="submit">{t("Add")}</Button>
+            </div>
           </form>
         </Form>
       </DialogContent>
@@ -181,12 +197,15 @@ export default function CreatedPool() {
     for (let i = 0; i < numberOfAvailableSpot; i++) {
       spots.push(
         <li
-          key={i}
-          className="flex items-center justify-between rounded-md bg-muted px-4"
+          key={`spot-${i}`}
+          className="flex min-h-12 items-center gap-3 rounded-md border border-dashed px-4 py-1"
         >
-          <div className="flex items-center gap-2"></div>
-          <label className="font-medium">{t("SpotAvailable")}</label>
-          {userData.info?.id === poolInfo.owner ? CreateUserDialog() : null}
+          <span className="flex-1 text-sm text-muted-foreground">
+            {t("SpotAvailable")}
+          </span>
+          {i === 0 && userData.info?.id === poolInfo.owner
+            ? CreateUserDialog()
+            : null}
         </li>
       );
     }
@@ -199,56 +218,64 @@ export default function CreatedPool() {
       <DialogTrigger render={<Button variant="outline" size="icon" />}>
         <SettingsIcon />
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Pool Settings</DialogTitle>
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-3xl">
+        <DialogHeader className="border-b px-6 py-4">
+          <DialogTitle>{t("PoolSettings")}</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="h-96">
-          <PoolSettingsComponent
-            poolName={poolInfo.name}
-            poolStatus={poolInfo.status}
-            oldPoolSettings={poolInfo.settings}
-          />
-        </ScrollArea>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6">
+            <PoolSettingsComponent
+              poolName={poolInfo.name}
+              poolStatus={poolInfo.status}
+              oldPoolSettings={poolInfo.settings}
+            />
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
 
   const renderUsers = (users: Record<string, RoomUser>) => (
-    <Card className="w-full max-w-md">
-      <CardHeader>
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
         <CardDescription>
-          <div className="p-2">
-            {t("UsersForPoolDescription", {
-              current: Object.keys(users).length,
-              expected: poolInfo.settings.number_poolers,
-            })}
-            {copiedRoomUrl()}
-            {PoolSettingsDialog()}
-          </div>
+          {t("UsersForPoolDescription", {
+            current: Object.keys(users).length,
+            expected: poolInfo.settings.number_poolers,
+          })}
         </CardDescription>
+        <div className="flex shrink-0 items-center gap-2">
+          {copiedRoomUrl()}
+          {PoolSettingsDialog()}
+        </div>
       </CardHeader>
       <CardContent>
         <ul className="flex flex-col gap-2">
           {Object.keys(users).map((userId) => (
-            <>
-              <li
-                key={users[userId].id}
-                className="flex items-center justify-between rounded-md bg-muted px-4"
+            <li
+              key={users[userId].id}
+              className="flex min-h-12 items-center gap-3 rounded-md bg-muted px-4 py-1"
+            >
+              {users[userId].email ? (
+                <Checkbox
+                  id={`is-ready-${userId}`}
+                  checked={users[userId].is_ready}
+                  onCheckedChange={(checked) => onReady(checked)}
+                  disabled={userId !== userData.info?.id}
+                />
+              ) : (
+                <span className="size-4" aria-hidden />
+              )}
+              <label
+                htmlFor={`is-ready-${userId}`}
+                className="flex-1 truncate font-medium"
               >
-                {users[userId].email ? (
-                  <Checkbox
-                    id="is-ready"
-                    checked={users[userId].is_ready}
-                    onCheckedChange={(checked) => onReady(checked)}
-                    disabled={userId !== userData.info?.id}
-                  />
-                ) : null}
-                <label className="font-medium">{users[userId].name}</label>
-                <div className="text-sm text-muted-foreground">
-                  {users[userId].is_ready ? t("Ready") : t("NotReady")}
-                </div>
-                {userData.info?.id === poolInfo.owner &&
+                {users[userId].name}
+              </label>
+              <div className="text-sm text-muted-foreground">
+                {users[userId].is_ready ? t("Ready") : t("NotReady")}
+              </div>
+              {userData.info?.id === poolInfo.owner ? (
                 userId !== userData.info?.id ? (
                   <Button
                     variant="ghost"
@@ -257,20 +284,21 @@ export default function CreatedPool() {
                   >
                     <MinusCircleIcon className="size-4" />
                   </Button>
-                ) : null}
-              </li>
-            </>
+                ) : (
+                  <span className="size-9" aria-hidden />
+                )
+              ) : null}
+            </li>
           ))}
           {renderUserSpots(users)}
         </ul>
       </CardContent>
-      <CardFooter className="flex justify-end"></CardFooter>
     </Card>
   );
 
   return (
-    <div>
-      {roomUsers ? <>{renderUsers(roomUsers)}</> : <LoadingSpinner />}
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+      {roomUsers ? renderUsers(roomUsers) : <LoadingSpinner />}
       <DraftOrderSelector />
     </div>
   );

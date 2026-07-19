@@ -27,7 +27,7 @@ export function PoolerUserGlobalSelector() {
         }}
       >
         <SelectTrigger className="w-full" id="pooler-selector">
-          <SelectValue placeholder="Select pooler of interest" />
+          <SelectValue placeholder={t("SelectPoolerOfInterest")} />
         </SelectTrigger>
         <SelectContent>
           {poolInfo.participants?.map((user: PoolUser) => (

@@ -120,7 +120,14 @@ export function AppSidebar() {
           <div className="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
             <User2 className="size-4" />
           </div>
-          <span className="truncate text-sm">{userInfo.email}</span>
+          <div className="flex flex-col gap-0.5 overflow-hidden leading-none">
+            <span className="truncate text-sm font-medium">{t("Profile")}</span>
+            {userInfo.email && (
+              <span className="text-muted-foreground truncate text-xs">
+                {userInfo.email}
+              </span>
+            )}
+          </div>
           <ChevronUp className="ml-auto" />
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" className="w-(--anchor-width)">

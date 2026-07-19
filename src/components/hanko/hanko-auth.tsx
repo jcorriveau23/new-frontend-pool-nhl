@@ -34,7 +34,7 @@ export default function HankoAuth(props: Props) {
 
     userSession.refreshSession();
     userData.refreshUser();
-  }, [router]);
+  }, [router, userSession, userData]);
 
   useEffect(
     () =>

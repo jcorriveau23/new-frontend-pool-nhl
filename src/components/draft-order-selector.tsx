@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Dice2Icon } from "lucide-react";
 import { Command, RoomUser, useSocketContext } from "@/context/socket-context";
 import {
@@ -55,23 +61,25 @@ export default function DraftOrderSelector() {
     Object.keys(users).length === poolInfo.settings.number_poolers &&
     Object.keys(users).length === draftOrder.length;
 
+  const isReadyToStart = areAllUsersReady(roomUsers ?? {});
+
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
         <CardTitle className="text-2xl font-bold">
           {t("DraftOrderSelector")}
         </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Button onClick={generateRandomOrder} className="mb-6">
+        <Button variant="outline" onClick={generateRandomOrder}>
           <Dice2Icon />
           {t("RandomOrder")}
         </Button>
+      </CardHeader>
+      <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Array.from({ length: positions }, (_, positionIndex) => (
             <div key={positionIndex} className="flex flex-col space-y-1">
               <span className="text-sm font-medium">
-                Position {positionIndex + 1}:
+                {t("Position")} {positionIndex + 1}
               </span>
               <Select
                 value={draftOrder[positionIndex]}
@@ -84,7 +92,7 @@ export default function DraftOrderSelector() {
                 }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a user" />
+                  <SelectValue placeholder={t("SelectUser")} />
                 </SelectTrigger>
                 <SelectContent>
                   {userIds.map((user) => (
@@ -97,13 +105,17 @@ export default function DraftOrderSelector() {
             </div>
           ))}
         </div>
-        <Button
-          onClick={() => startDraft()}
-          disabled={!areAllUsersReady(roomUsers ?? {})}
-        >
+      </CardContent>
+      <CardFooter className="flex flex-col items-stretch gap-2">
+        <Button onClick={() => startDraft()} disabled={!isReadyToStart}>
           {t("StartDraft")}
         </Button>
-      </CardContent>
+        {!isReadyToStart ? (
+          <p className="text-center text-sm text-muted-foreground">
+            {t("StartDraftHint")}
+          </p>
+        ) : null}
+      </CardFooter>
     </Card>
   );
 }
