@@ -12,7 +12,10 @@ export const skaterColumns: ColumnDef<SkaterStats>[] = [
     cell: ({ row }) => {
       const player = row.original;
       return (
-        <div className="w-[75px] sm:w-full">
+        <div className="flex w-[90px] items-center gap-1 sm:w-full">
+          <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+            #{player.sweaterNumber}
+          </span>
           <PlayerLink
             name={player.name.default}
             id={player.playerId}
@@ -39,6 +42,10 @@ export const skaterColumns: ColumnDef<SkaterStats>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="+/-" />
     ),
+    cell: ({ row }) => {
+      const value = row.original.plusMinus;
+      return <span>{value > 0 ? `+${value}` : value}</span>;
+    },
   },
   {
     accessorKey: "pim",
@@ -57,11 +64,31 @@ export const skaterColumns: ColumnDef<SkaterStats>[] = [
     header: ({ column }) => <DataTableColumnHeader column={column} title="H" />,
   },
   {
+    accessorKey: "blockedShots",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="BkS" />
+    ),
+  },
+  {
+    accessorKey: "giveaways",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="GV" />,
+  },
+  {
+    accessorKey: "takeaways",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="TK" />,
+  },
+  {
     accessorKey: "faceoffWinningPctg",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="F%" />
     ),
     accessorFn: (row) => row.faceoffWinningPctg?.toFixed(3),
+  },
+  {
+    accessorKey: "shifts",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="SFT" />
+    ),
   },
   {
     accessorKey: "toi",
@@ -78,23 +105,48 @@ export const goalieColumns: ColumnDef<GoalieStats>[] = [
     cell: ({ row }) => {
       const player = row.original;
       return (
-        <div className="w-[75px]">
+        <div className="flex w-[90px] items-center gap-1">
+          <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+            #{player.sweaterNumber}
+          </span>
           <PlayerLink
             name={player.name.default}
             id={player.playerId}
             textStyle={null}
           />
+          {player.starter ? (
+            <span
+              className="bg-primary size-1.5 shrink-0 rounded-full"
+              title="Starter"
+            />
+          ) : null}
         </div>
       );
     },
   },
   {
     accessorKey: "saveShotsAgainst",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="S" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="SV/SA" />
+    ),
   },
   {
     accessorKey: "savePctg",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="%" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="SV%" />,
+    accessorFn: (row) =>
+      row.savePctg != null && row.savePctg !== ""
+        ? Number(row.savePctg).toFixed(3)
+        : "-",
+  },
+  {
+    accessorKey: "goalsAgainst",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="GA" />,
+  },
+  {
+    accessorKey: "pim",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="PIM" />
+    ),
   },
   {
     accessorKey: "toi",
