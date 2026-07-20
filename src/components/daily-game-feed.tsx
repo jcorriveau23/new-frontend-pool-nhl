@@ -22,6 +22,10 @@ export default function DailyGameFeed() {
     updateDateWithString(newDate);
   };
 
+  // The date of the games being displayed, as returned by the score api.
+  // Parsed as local time to avoid an off-by-one day shift.
+  const scoreDate = score ? new Date(score.currentDate + "T00:00:00") : null;
+
   return (
     <div className="m-2">
       <div className="flex items-center justify-center gap-1 text-center">
@@ -36,6 +40,7 @@ export default function DailyGameFeed() {
         <DatePicker
           currentDate={currentDate}
           selectedDate={selectedDate}
+          fallbackDate={scoreDate}
           updateDate={updateDate}
           updateDateWithString={updateDateWithString}
         />
@@ -52,7 +57,7 @@ export default function DailyGameFeed() {
         <div className="mt-2 flex gap-2 py-2">
           {!score ? (
             Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-[88px] w-[92px] shrink-0 rounded-lg" />
+              <Skeleton key={i} className="h-[74px] w-[80px] shrink-0 rounded-lg" />
             ))
           ) : score.games.length > 0 ? (
             score.games

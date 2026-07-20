@@ -197,15 +197,17 @@ const MenubarLabel = React.forwardRef<
     inset?: boolean
   }
 >(({ className, inset, ...props }, ref) => (
-  <MenuPrimitive.GroupLabel
-    ref={ref}
-    className={cn(
-      "px-2 py-1.5 text-sm font-semibold",
-      inset && "pl-8",
-      className
-    )}
-    {...props}
-  />
+  <MenuPrimitive.Group>
+    <MenuPrimitive.GroupLabel
+      ref={ref}
+      className={cn(
+        "px-2 py-1.5 text-sm font-semibold",
+        inset && "pl-8",
+        className
+      )}
+      {...props}
+    />
+  </MenuPrimitive.Group>
 ))
 MenubarLabel.displayName = "MenubarLabel"
 

@@ -46,13 +46,18 @@ export default function Home() {
           {t("AppDescription")}
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Button size="lg" render={<Link href={`/create-pool`} />}>
+          <Button
+            size="lg"
+            nativeButton={false}
+            render={<Link href={`/create-pool`} />}
+          >
             {t("HeroGetStarted")}
             <ArrowRight />
           </Button>
           <Button
             size="lg"
             variant="outline"
+            nativeButton={false}
             render={<Link href={`/pool/william`} />}
           >
             {t("HeroSeeDemo")}

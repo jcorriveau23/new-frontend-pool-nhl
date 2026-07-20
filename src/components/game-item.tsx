@@ -65,7 +65,7 @@ export default function GameItem(props: Props) {
 
   const teamRow = (team: typeof props.game.awayTeam, won: boolean) => (
     <div className="flex items-center justify-between gap-2">
-      <TeamLogo src={team.logo} alt="Team logo" width={24} height={24} />
+      <TeamLogo src={team.logo} alt="Team logo" width={20} height={20} />
       <span
         className={cn(
           "text-sm tabular-nums",
@@ -81,7 +81,7 @@ export default function GameItem(props: Props) {
     <button
       type="button"
       className={cn(
-        "bg-card hover:border-primary/50 flex min-w-[92px] shrink-0 cursor-pointer flex-col gap-1 rounded-lg border p-2 text-left shadow-xs transition-colors",
+        "bg-card hover:border-primary/50 hover:shadow-sm flex min-w-[80px] shrink-0 cursor-pointer flex-col gap-0.5 rounded-lg border p-1.5 text-left shadow-xs transition-all duration-150 active:scale-[0.96] active:shadow-none",
         isLive && "border-destructive/40"
       )}
       onClick={() =>
