@@ -86,13 +86,14 @@ import { TimeRangeGoalieChart } from "@/components/chart/time-range-goalie-chart
 import { useUser } from "@/context/useUserData";
 import PlayersTable from "@/components/player-table";
 import { Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function CumulativeTab() {
   const t = useTranslations();
   const { currentDate, querySelectedDate } = useDateContext();
   const { gamesNightStatus } = useGamesNightContext();
   const [selectedPlayerId, setSelectedPlayerId] = React.useState<string | null>(
-    null
+    null,
   );
   const [isForwardChartOpen, setIsForwardChartOpen] = React.useState(false);
   const [isDefenderChartOpen, setIsDefenderChartOpen] = React.useState(false);
@@ -153,10 +154,13 @@ export default function CumulativeTab() {
 
     if (!res.ok) {
       const error = await res.text();
-      toast.error(t("CouldNotMarkAsFinalPoolError", {
+      toast.error(
+        t("CouldNotMarkAsFinalPoolError", {
           name: poolInfo.name,
           error: error,
-        }), { duration: 2000 });
+        }),
+        { duration: 2000 },
+      );
       return;
     }
     const data = await res.json();
@@ -178,10 +182,13 @@ export default function CumulativeTab() {
 
     if (!res.ok) {
       const error = await res.text();
-      toast.error(t("CouldNotGeneratePoolError", {
+      toast.error(
+        t("CouldNotGeneratePoolError", {
           name: newPoolName,
           error: error,
-        }), { duration: 2000 });
+        }),
+        { duration: 2000 },
+      );
       return;
     }
     const data = await res.json();
@@ -193,7 +200,7 @@ export default function CumulativeTab() {
       poolInfo,
       poolStartDate,
       poolSelectedEndDate,
-      dailyPointsMade
+      dailyPointsMade,
     );
 
     setPlayerStats(stats);
@@ -203,6 +210,15 @@ export default function CumulativeTab() {
   if (ranking === null || playerStats === null) {
     return <h1>Loading ranking and player stats...</h1>;
   }
+
+  const rankedByPoints = [...ranking].sort(
+    (a, b) => b.getTotalPoolPoints() - a.getTotalPoolPoints(),
+  );
+  const selectedRankIndex = rankedByPoints.findIndex(
+    (rank) => rank.participant === selectedParticipant,
+  );
+  const selectedRankingEntry =
+    selectedRankIndex >= 0 ? rankedByPoints[selectedRankIndex] : null;
 
   const getDailyGameState = (cumulated: boolean | undefined) => {
     if (cumulated) {
@@ -215,7 +231,7 @@ export default function CumulativeTab() {
   const TotalTable = (
     ranking: TotalRanking[],
     columns: ColumnDef<TotalRanking>[],
-    title: string
+    title: string,
   ) => (
     <DataTable
       data={ranking}
@@ -234,10 +250,11 @@ export default function CumulativeTab() {
           poolInfo: poolInfo,
           gamesState: getDailyGameState(dailyPointsMade?.cumulated),
           dateOfInterest: querySelectedDate,
+          selectedParticipant,
         },
         getRowStyles: (row: Row<TotalRanking>) => {
           if (row.original.participant === selectedParticipant) {
-            return "bg-selection hover:bg-selection";
+            return "bg-selection hover:bg-selection font-semibold border-l-4 border-l-primary";
           }
         },
         onRowClick: (row: Row<TotalRanking>) => {
@@ -254,7 +271,7 @@ export default function CumulativeTab() {
     rows: SkaterInfo[],
     columns: ColumnDef<SkaterInfo>[],
     title: string,
-    total: SkaterTotal
+    total: SkaterTotal,
   ) => (
     <DataTable
       data={rows}
@@ -266,7 +283,10 @@ export default function CumulativeTab() {
             desc: true,
           },
         ],
-        columnPinning: { left: ["number", "status", "player"] },
+        columnPinning: {
+          left: ["number", "status", "player"],
+          right: ["actions"],
+        },
       }}
       meta={{
         props: {
@@ -303,7 +323,7 @@ export default function CumulativeTab() {
     rows: GoalieInfo[],
     columns: ColumnDef<GoalieInfo>[],
     title: string,
-    total: GoalieTotal
+    total: GoalieTotal,
   ) => (
     <DataTable
       data={rows}
@@ -315,7 +335,10 @@ export default function CumulativeTab() {
             desc: true,
           },
         ],
-        columnPinning: { left: ["number", "status", "player"] },
+        columnPinning: {
+          left: ["number", "status", "player"],
+          right: ["actions"],
+        },
       }}
       meta={{
         props: {
@@ -381,7 +404,7 @@ export default function CumulativeTab() {
               <StartingRoster
                 userRoster={getPoolerActivePlayers(
                   poolInfo.context!,
-                  selectedPoolUser
+                  selectedPoolUser,
                 )}
                 teamSalaryCap={poolInfo.settings.salary_cap}
               />
@@ -397,7 +420,7 @@ export default function CumulativeTab() {
               playerStats[participant.id].forwards.filter(
                 (player) =>
                   player.status === PlayerStatus.InAlignment ||
-                  player.status === PlayerStatus.PointsIgnored
+                  player.status === PlayerStatus.PointsIgnored,
               ).length
             }/${poolInfo.settings.number_forwards})`}</AccordionTrigger>
             <AccordionContent>
@@ -430,11 +453,11 @@ export default function CumulativeTab() {
                 ForwardColumn,
                 getFormatedPlayersTableTitle(
                   participant.name,
-                  "TotalPointsMadeByForwardsFor"
+                  "TotalPointsMadeByForwardsFor",
                 ),
                 ranking.find(
-                  (rank) => rank.participant === selectedPoolUser.name
-                )!.forwards
+                  (rank) => rank.participant === selectedPoolUser.name,
+                )!.forwards,
               )}
             </AccordionContent>
           </AccordionItem>
@@ -447,7 +470,7 @@ export default function CumulativeTab() {
               playerStats[participant.id].defense.filter(
                 (player) =>
                   player.status === PlayerStatus.InAlignment ||
-                  player.status === PlayerStatus.PointsIgnored
+                  player.status === PlayerStatus.PointsIgnored,
               ).length
             }/${poolInfo.settings.number_defenders})`}</AccordionTrigger>
             <AccordionContent>
@@ -480,11 +503,11 @@ export default function CumulativeTab() {
                 DefenseColumn,
                 getFormatedPlayersTableTitle(
                   participant.name,
-                  "TotalPointsMadeByDefenseFor"
+                  "TotalPointsMadeByDefenseFor",
                 ),
                 ranking.find(
-                  (rank) => rank.participant === selectedPoolUser.name
-                )!.defense
+                  (rank) => rank.participant === selectedPoolUser.name,
+                )!.defense,
               )}
             </AccordionContent>
           </AccordionItem>
@@ -497,7 +520,7 @@ export default function CumulativeTab() {
               playerStats[participant.id].goalies.filter(
                 (player) =>
                   player.status === PlayerStatus.InAlignment ||
-                  player.status === PlayerStatus.PointsIgnored
+                  player.status === PlayerStatus.PointsIgnored,
               ).length
             }/${poolInfo.settings.number_goalies})`}</AccordionTrigger>
             <AccordionContent>
@@ -530,11 +553,11 @@ export default function CumulativeTab() {
                 GoalieColumn,
                 getFormatedPlayersTableTitle(
                   participant.name,
-                  "TotalPointsMadeByGoaliesFor"
+                  "TotalPointsMadeByGoaliesFor",
                 ),
                 ranking.find(
-                  (rank) => rank.participant === selectedPoolUser.name
-                )!.goalies
+                  (rank) => rank.participant === selectedPoolUser.name,
+                )!.goalies,
               )}
             </AccordionContent>
           </AccordionItem>
@@ -548,13 +571,13 @@ export default function CumulativeTab() {
               {ReservistTable(
                 poolInfo.context?.pooler_roster[participant.id]
                   .chosen_reservists as number[],
-                ReservistColumn
+                ReservistColumn,
               )}
             </AccordionContent>
           </AccordionItem>
         </Accordion>
       ) : null}
-      {poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0 ? (
+      {(poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0) ? (
         <Accordion defaultValue={["picks"]}>
           <AccordionItem value="picks">
             <AccordionTrigger>{t("NextSeasonPicks")}</AccordionTrigger>
@@ -637,7 +660,21 @@ export default function CumulativeTab() {
 
   return (
     <div className="flex flex-col gap-2">
-      <PoolerUserGlobalSelector />
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="flex-1 min-w-[200px]">
+          <PoolerUserGlobalSelector />
+        </div>
+        {selectedRankingEntry ? (
+          <Badge
+            variant="secondary"
+            className="h-9 gap-2 px-3 text-sm whitespace-nowrap"
+          >
+            <span>#{selectedRankIndex + 1}</span>
+            <span className="text-muted-foreground">·</span>
+            <span>{selectedRankingEntry.getTotalPoolPoints()} PTS</span>
+          </Badge>
+        ) : null}
+      </div>
       <Tabs defaultValue="totalRanking" className="flex flex-col gap-4">
         {poolInfo.status === PoolState.InProgress &&
         new Date(poolInfo.season_end + "T00:00:00") < currentDate &&

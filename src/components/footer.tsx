@@ -5,7 +5,8 @@ import { Link } from "@/i18n/routing";
 The footer of the web app.
  */
 
-import { GithubIcon, TwitterIcon, Trophy } from "lucide-react";
+import { GithubIcon, TwitterIcon } from "lucide-react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 export default function Footer() {
@@ -15,9 +16,13 @@ export default function Footer() {
       <div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-10 sm:grid-cols-3 md:px-6">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 font-semibold tracking-tight">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <Trophy className="size-3.5" />
-            </div>
+            <Image
+              src="/logo-mark.png"
+              alt="slapshot.xyz"
+              width={24}
+              height={24}
+              className="size-6 shrink-0 rounded-md object-cover"
+            />
             slapshot.xyz
           </div>
           <p className="text-muted-foreground text-sm">{t("Tagline")}</p>

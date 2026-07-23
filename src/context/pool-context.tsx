@@ -288,7 +288,12 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     );
     const queryParams = new URLSearchParams(searchParams.toString());
     queryParams.set("selectedParticipant", participant);
-    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
+    // Keep the URL query in sync without scrolling back to the top. The UI is
+    // already driven by the local state set above, so this is only for
+    // shareable/reloadable URLs — use replace + scroll:false to avoid the jump.
+    router.replace(`/pool/${poolInfo.name}/?${queryParams.toString()}`, {
+      scroll: false,
+    });
   };
 
   React.useEffect(() => {

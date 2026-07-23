@@ -45,7 +45,7 @@ const getWarningMessage = (playerStatus: PlayerStatus) => {
 
 const getWarningCell = (
   player: SkaterInfo | GoalieInfo,
-  meta: TableMeta<SkaterInfo> | TableMeta<GoalieInfo> | undefined
+  meta: TableMeta<SkaterInfo> | TableMeta<GoalieInfo> | undefined,
 ) => {
   if (player.status === PlayerStatus.InAlignment) {
     return null;
@@ -116,7 +116,7 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
     cell: ({ row, table }) => {
       return getPlayerCell(
         row.original.id,
-        table.options.meta?.props?.poolInfo as Pool
+        table.options.meta?.props?.poolInfo as Pool,
       );
     },
   },
@@ -126,7 +126,7 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
     cell: ({ row, table }) => {
       return getTeamCell(
         row.original,
-        table.options.meta?.props?.poolInfo as Pool
+        table.options.meta?.props?.poolInfo as Pool,
       );
     },
   },
@@ -175,13 +175,14 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
     cell: ({ table, row }) => {
       return getPlayerSalaryCell(
         row.original.id,
-        table.options.meta?.props?.poolInfo as Pool
+        table.options.meta?.props?.poolInfo as Pool,
       );
     },
   },
   {
     id: "actions",
     enableHiding: false,
+    size: 48,
     cell: ({ table, row }) => {
       const player = row.original;
 
@@ -198,7 +199,7 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
             <DropdownMenuItem
               onClick={() => {
                 table.options.meta?.props?.setSelectedPlayerId(
-                  player.id.toString()
+                  player.id.toString(),
                 );
                 table.options.meta?.props?.setIsForwardChartOpen(true);
               }}
@@ -237,7 +238,7 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
     cell: ({ row, table }) => {
       return getPlayerCell(
         row.original.id,
-        table.options.meta?.props?.poolInfo as Pool
+        table.options.meta?.props?.poolInfo as Pool,
       );
     },
   },
@@ -247,7 +248,7 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
     cell: ({ row, table }) => {
       return getTeamCell(
         row.original,
-        table.options.meta?.props?.poolInfo as Pool
+        table.options.meta?.props?.poolInfo as Pool,
       );
     },
   },
@@ -289,13 +290,14 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
     cell: ({ table, row }) => {
       return getPlayerSalaryCell(
         row.original.id,
-        table.options.meta?.props?.poolInfo as Pool
+        table.options.meta?.props?.poolInfo as Pool,
       );
     },
   },
   {
     id: "actions",
     enableHiding: false,
+    size: 48,
     cell: ({ table, row }) => {
       const player = row.original;
 
@@ -312,7 +314,7 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
             <DropdownMenuItem
               onClick={() => {
                 table.options.meta?.props?.setSelectedPlayerId(
-                  player.id.toString()
+                  player.id.toString(),
                 );
                 table.options.meta?.props?.setIsDefenderChartOpen(true);
               }}
@@ -351,7 +353,7 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
     cell: ({ row, table }) => {
       return getPlayerCell(
         row.original.id,
-        table.options.meta?.props?.poolInfo as Pool
+        table.options.meta?.props?.poolInfo as Pool,
       );
     },
   },
@@ -361,7 +363,7 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
     cell: ({ row, table }) => {
       return getTeamCell(
         row.original,
-        table.options.meta?.props?.poolInfo as Pool
+        table.options.meta?.props?.poolInfo as Pool,
       );
     },
   },
@@ -407,13 +409,14 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
     cell: ({ table, row }) => {
       return getPlayerSalaryCell(
         row.original.id,
-        table.options.meta?.props?.poolInfo as Pool
+        table.options.meta?.props?.poolInfo as Pool,
       );
     },
   },
   {
     id: "actions",
     enableHiding: false,
+    size: 48,
     cell: ({ table, row }) => {
       const player = row.original;
 
@@ -430,7 +433,7 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
             <DropdownMenuItem
               onClick={() => {
                 table.options.meta?.props?.setSelectedPlayerId(
-                  player.id.toString()
+                  player.id.toString(),
                 );
                 table.options.meta?.props?.setIsGoalieChartOpen(true);
               }}
@@ -483,7 +486,7 @@ export const ReservistColumn: ColumnDef<number>[] = [
     cell: ({ row, table }) => {
       const poolInfo = table.options.meta?.props as Pool;
       return table.options.meta?.t(
-        poolInfo.context?.players[row.original].position
+        poolInfo.context?.players[row.original].position,
       );
     },
   },
@@ -493,7 +496,7 @@ export const ReservistColumn: ColumnDef<number>[] = [
     cell: ({ row, table }) => {
       return getPlayerSalaryCell(
         row.original,
-        table.options.meta?.props as Pool
+        table.options.meta?.props as Pool,
       );
     },
   },

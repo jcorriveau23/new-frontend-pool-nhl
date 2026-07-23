@@ -6,11 +6,21 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { ShieldPlus, BadgeMinus } from "lucide-react";
+import {
+  ShieldPlus,
+  BadgeMinus,
+  CalendarDays,
+  ArrowLeftRight,
+  History as HistoryIcon,
+} from "lucide-react";
 import PlayerLink from "@/components/player-link";
 import { usePoolContext } from "@/context/pool-context";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { TradeItem } from "@/components/trade";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DailyMovements {
   // Daily movements for a specific date and pooler
@@ -29,7 +39,18 @@ interface DailyHistory {
 export default function HistoryTab() {
   const { poolInfo, lastFormatDate } = usePoolContext();
   const t = useTranslations();
+  const format = useFormatter();
   const [history, setHistory] = React.useState<DailyHistory[] | null>(null);
+
+  const formatDate = (date: string) =>
+    date === "Today"
+      ? t("Today")
+      : format.dateTime(new Date(date + "T00:00:00"), {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
 
   const getDailyMovement = (
     participant: string,
@@ -169,65 +190,125 @@ export default function HistoryTab() {
   }, []);
 
   if (history === null) {
-    return <h1>test</h1>;
+    return (
+      <div className="flex flex-col gap-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} className="p-4">
+            <Skeleton className="mb-4 h-5 w-40" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
   }
 
-  const Movements = (movements: DailyMovements) => (
-    <div key={movements.participant} className="flex flex-col border gap-4">
-      <div>
-        <h1 className="text-lg">{movements.participant}</h1>
+  if (history.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-16 text-center">
+        <HistoryIcon className="h-8 w-8 text-muted-foreground" />
+        <p className="font-medium">{t("NoRosterChanges")}</p>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          {t("NoRosterChangesDescription")}
+        </p>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          {movements.addedPlayerIds.map((playerId) => (
-            <div key={playerId}>
-              <div className="flex">
-                <ShieldPlus size={20} color="green" />
-                <PlayerLink
-                  name={`${poolInfo.context?.players[playerId].name}  (${t(
-                    poolInfo.context?.players[playerId].position ?? ""
-                  )})`}
-                  id={Number(playerId)}
-                  textStyle=""
-                />
-              </div>
-            </div>
-          ))}
+    );
+  }
+
+  const PlayerRow = (playerId: string) => (
+    <PlayerLink
+      key={playerId}
+      name={`${poolInfo.context?.players[playerId].name} (${t(
+        poolInfo.context?.players[playerId].position ?? ""
+      )})`}
+      id={Number(playerId)}
+      textStyle="text-sm"
+    />
+  );
+
+  const Movements = (movements: DailyMovements) => (
+    <div
+      key={movements.participant}
+      className="rounded-lg border bg-muted/30 p-3"
+    >
+      <div className="mb-3 flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold uppercase text-primary">
+          {movements.participant.slice(0, 2)}
+        </span>
+        <span className="font-semibold">{movements.participant}</span>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+            <ShieldPlus size={14} />
+            {t("Added")}
+          </div>
+          {movements.addedPlayerIds.length > 0 ? (
+            movements.addedPlayerIds.map(PlayerRow)
+          ) : (
+            <span className="text-sm text-muted-foreground">—</span>
+          )}
         </div>
-        <div>
-          {movements.removedPlayerIds.map((playerId) => (
-            <div key={playerId}>
-              <div className="flex">
-                <BadgeMinus size={20} color="red" />
-                <PlayerLink
-                  name={`${poolInfo.context?.players[playerId].name}  (${t(
-                    poolInfo.context?.players[playerId].position ?? ""
-                  )})`}
-                  id={Number(playerId)}
-                  textStyle=""
-                />
-              </div>
-            </div>
-          ))}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-rose-600 dark:text-rose-400">
+            <BadgeMinus size={14} />
+            {t("Removed")}
+          </div>
+          {movements.removedPlayerIds.length > 0 ? (
+            movements.removedPlayerIds.map(PlayerRow)
+          ) : (
+            <span className="text-sm text-muted-foreground">—</span>
+          )}
         </div>
       </div>
     </div>
   );
 
-  return history.map((dailyHistory) => (
-    <Accordion
-      key={dailyHistory.date}
-      defaultValue={[dailyHistory.date]}
-    >
-      <AccordionItem value={dailyHistory.date}>
-        <AccordionTrigger>{dailyHistory.date}</AccordionTrigger>
-        <AccordionContent>
-          {dailyHistory.dailyMovements.map((movements) => Movements(movements))}
-          {dailyHistory.dailyTrades.map((trade) => (
-            <TradeItem key={trade.id} trade={trade} poolInfo={poolInfo} />
-          ))}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  ));
+  return (
+    <div className="flex flex-col gap-3">
+      {history.map((dailyHistory) => {
+        const changeCount =
+          dailyHistory.dailyMovements.length + dailyHistory.dailyTrades.length;
+        return (
+          <Card key={dailyHistory.date} className="overflow-hidden">
+            <Accordion defaultValue={[dailyHistory.date]}>
+              <AccordionItem value={dailyHistory.date} className="border-b-0">
+                <AccordionTrigger className="px-4 hover:no-underline">
+                  <span className="flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold">
+                      {formatDate(dailyHistory.date)}
+                    </span>
+                    <Badge variant="secondary" className="font-normal">
+                      {changeCount}
+                    </Badge>
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="px-4">
+                  <div className="flex flex-col gap-3">
+                    {dailyHistory.dailyMovements.map((movements) =>
+                      Movements(movements)
+                    )}
+                    {dailyHistory.dailyTrades.length > 0 &&
+                      dailyHistory.dailyMovements.length > 0 && <Separator />}
+                    {dailyHistory.dailyTrades.map((trade) => (
+                      <div key={trade.id} className="space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          <ArrowLeftRight size={14} />
+                          {t("Trade")}
+                        </div>
+                        <TradeItem trade={trade} poolInfo={poolInfo} />
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </Card>
+        );
+      })}
+    </div>
+  );
 }

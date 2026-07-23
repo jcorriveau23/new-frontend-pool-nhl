@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { setRequestLocale } from "next-intl/server";
 import { useLocale, useTranslations } from "next-intl";
@@ -38,6 +39,14 @@ export default function Home() {
   return (
     <main className="flex flex-col gap-16 py-8">
       <section className="flex flex-col items-center gap-6 px-4 text-center">
+        <Image
+          src="/logo.png"
+          alt="slapshot.xyz"
+          width={512}
+          height={512}
+          className="h-40 w-auto sm:h-52"
+          priority
+        />
         <Badge variant="secondary">{t("FreeForever")}</Badge>
         <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl">
           {t("ManagePool")}

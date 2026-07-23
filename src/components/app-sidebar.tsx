@@ -26,6 +26,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { CURRENT_DRAFT_YEAR, CURRENT_NHL_SEASON } from "@/lib/nhl";
 import { HankoUser, useUser } from "@/context/useUserData";
@@ -167,9 +168,14 @@ export function AppSidebar() {
               size="lg"
               render={<Link href="/" onClick={closeOnMobile} />}
             >
-              <div className="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
-                <Trophy className="size-4" />
-              </div>
+              <Image
+                src="/logo-mark.png"
+                alt="slapshot.xyz"
+                width={32}
+                height={32}
+                className="size-8 shrink-0 rounded-lg object-cover"
+                priority
+              />
               <div className="flex flex-col gap-0.5 leading-none">
                 <span className="font-semibold tracking-tight">
                   slapshot.xyz

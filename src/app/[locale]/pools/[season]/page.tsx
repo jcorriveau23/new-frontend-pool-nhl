@@ -1,16 +1,18 @@
 // The pools page, list all the pools stored in the db.
 
 import * as React from "react";
-import { PoolState, ProjectedPoolShort } from "@/data/pool/model";
+import { ProjectedPoolShort } from "@/data/pool/model";
 import { Link } from "@/i18n/routing";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getTranslations } from "next-intl/server";
 import { getAllYears } from "@/lib/nhl";
 import { seasonFormat, seasonWithYearFormat } from "@/app/utils/formating";
 import { Combobox } from "@/components/ui//link-combobox";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 import PageTitle from "@/components/page-title";
 import { backendUrl, fetchJson } from "@/lib/server-api";
+import PoolList from "./pool-list";
 
 const FIRST_POOL_SEASON = 2021;
 const CURRENT_POOL_SEASON = 2025;
@@ -22,27 +24,6 @@ const getServersidePoolList = async (season: string) =>
   fetchJson<ProjectedPoolShort[]>(backendUrl(`/pools/${season}`), {
     cache: "no-store",
   });
-
-const getPoolCountPerStatus = (
-  pools: ProjectedPoolShort[]
-): Record<PoolState, number> => {
-  const poolCountPerStatus = Object.fromEntries(
-    Object.values(PoolState).map((poolStatus) => [
-      poolStatus,
-      pools?.filter((pool) => pool.status === poolStatus).length ?? 0,
-    ])
-  ) as Record<PoolState, number>;
-
-  return poolCountPerStatus;
-};
-
-const getTabIndex = (poolCountPerStatus: Record<PoolState, number>) => {
-  for (const poolStatus of Object.values(PoolState)) {
-    if (poolCountPerStatus[poolStatus] > 0) {
-      return poolStatus;
-    }
-  }
-};
 
 export default async function Pools(props: {
   params: Promise<{ season: string }>;
@@ -83,62 +64,19 @@ export default async function Pools(props: {
     );
   }
 
-  const poolCountPerStatus = getPoolCountPerStatus(pools);
-  const tabIndex = getTabIndex(poolCountPerStatus);
-
-  const PoolItem = (poolInfo: ProjectedPoolShort) => (
-    <Link href={`/pool/${poolInfo.name}?${queryString}`} key={poolInfo.name}>
-      <div className="m-2 p-2 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted ">
-        <div>
-          <p className="text-sm font-medium leading-none">{poolInfo.name}</p>
-          <p className="text-sm text-muted-foreground">{poolInfo.owner}</p>
-        </div>
-      </div>
-    </Link>
-  );
-
-  const PoolTabTrigger = (poolStatus: PoolState) =>
-    poolCountPerStatus[poolStatus] > 0 ? (
-      <TabsTrigger value={poolStatus}>{`${t(poolStatus)} (${
-        poolCountPerStatus[poolStatus]
-      })`}</TabsTrigger>
-    ) : null;
-
-  const PoolTabContent = (poolStatus: PoolState) =>
-    poolCountPerStatus[poolStatus] > 0 ? (
-      <TabsContent key={poolStatus} value={poolStatus}>
-        {pools
-          .filter((pool) => pool.status === poolStatus)
-          .map((pool) => PoolItem(pool))}
-      </TabsContent>
-    ) : null;
-
   return (
-    <div className="flex flex-col items-center text-center gap-2">
+    <div className="flex flex-col items-center text-center gap-4">
       <PageTitle title={t("PoolListPageTitle")} />
       {YearCombo()}
-      <Tabs defaultValue={tabIndex}>
-        <div className="overflow-auto">
-          <TabsList>
-            {PoolTabTrigger(PoolState.InProgress)}
-            {PoolTabTrigger(PoolState.Dynasty)}
-            {PoolTabTrigger(PoolState.Created)}
-            {PoolTabTrigger(PoolState.Draft)}
-            {PoolTabTrigger(PoolState.Final)}
-          </TabsList>
-        </div>
-        {PoolTabContent(PoolState.InProgress)}
-        {PoolTabContent(PoolState.Dynasty)}
-        {PoolTabContent(PoolState.Created)}
-        {PoolTabContent(PoolState.Draft)}
-        {PoolTabContent(PoolState.Final)}
-      </Tabs>
-      <Link
-        href={`/create-pool?${queryString}`}
-        className="text-primary hover:underline"
+      <PoolList pools={pools} queryString={queryString} />
+      <Button
+        size="lg"
+        nativeButton={false}
+        render={<Link href={`/create-pool?${queryString}`} />}
       >
         {t("CreatePool")}
-      </Link>
+        <ArrowRight />
+      </Button>
     </div>
   );
 }

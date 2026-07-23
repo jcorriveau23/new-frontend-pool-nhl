@@ -32,6 +32,8 @@ export interface Team {
   score: number;
   sog: number;
   logo: string;
+  darkLogo?: string;
+  record?: string;
 }
 
 export interface PlayerName {
@@ -104,13 +106,21 @@ export interface StarPlayer {
   points?: number;
 }
 
+export interface PenaltyPlayer {
+  firstName: { default: string };
+  lastName: { default: string };
+  sweaterNumber: number;
+}
+
 export interface Penalty {
   timeInPeriod: string;
   type: string;
   duration: number;
-  committedByPlayer: string;
+  committedByPlayer?: PenaltyPlayer;
   teamAbbrev: { default: string };
-  drawnBy: string;
+  drawnBy?: PenaltyPlayer;
+  // Bench/served penalties expose the player as a pre-formatted name only.
+  servedBy?: { default: string };
   descKey: string;
 }
 
@@ -137,6 +147,126 @@ export interface Clock {
   inIntermission: boolean;
 }
 
+// --- Pre-game "matchup" preview (present when a game has not started) ---
+
+export interface MatchupPlayer {
+  playerId: number;
+  name: PlayerName;
+  firstName?: { default: string };
+  lastName?: { default: string };
+  sweaterNumber: number;
+  positionCode: string;
+  headshot: string;
+  value: number;
+}
+
+export interface SkaterComparisonLeader {
+  category: string; // e.g. "points" | "goals" | "assists"
+  awayLeader: MatchupPlayer;
+  homeLeader: MatchupPlayer;
+}
+
+export interface SkaterComparison {
+  contextLabel: string;
+  contextSeason: number;
+  leaders: SkaterComparisonLeader[];
+}
+
+export interface GoalieComparisonPlayer {
+  playerId: number;
+  name: PlayerName;
+  sweaterNumber: number;
+  headshot: string;
+  positionCode: string;
+  gamesPlayed: number;
+  record: string;
+  gaa: number;
+  savePctg: number;
+  shutouts: number;
+}
+
+export interface GoalieTeamTotals {
+  record: string;
+  gaa: number;
+  savePctg: number;
+  shutouts: number;
+  gamesPlayed: number;
+}
+
+export interface GoalieTeamComparison {
+  teamTotals: GoalieTeamTotals;
+  leaders: GoalieComparisonPlayer[];
+}
+
+export interface GoalieComparison {
+  contextLabel: string;
+  contextSeason: number;
+  awayTeam: GoalieTeamComparison;
+  homeTeam: GoalieTeamComparison;
+}
+
+export interface SkaterSeasonStat {
+  playerId: number;
+  teamId: number;
+  sweaterNumber?: number;
+  name: PlayerName;
+  position: string;
+  gamesPlayed?: number;
+  goals?: number;
+  assists?: number;
+  points?: number;
+  plusMinus?: number;
+  pim?: number;
+  avgPoints?: number;
+  avgTimeOnIce?: string;
+  gameWinningGoals?: number;
+  shots?: number;
+  shootingPctg?: number;
+  faceoffWinningPctg?: number;
+  powerPlayGoals?: number;
+  blockedShots?: number;
+  hits?: number;
+}
+
+export interface GoalieSeasonStat {
+  playerId: number;
+  teamId: number;
+  sweaterNumber?: number;
+  name: PlayerName;
+  gamesPlayed?: number;
+  wins?: number;
+  losses?: number;
+  otLosses?: number;
+  shotsAgainst?: number;
+  goalsAgainst?: number;
+  goalsAgainstAvg?: number;
+  savePctg?: number;
+  shutouts?: number;
+  saves?: number;
+  toi?: string;
+}
+
+export interface SkaterSeasonStats {
+  contextLabel: string;
+  contextSeason: number;
+  skaters: SkaterSeasonStat[];
+}
+
+export interface GoalieSeasonStats {
+  contextLabel: string;
+  contextSeason: number;
+  goalies: GoalieSeasonStat[];
+}
+
+export interface Matchup {
+  season: number;
+  gameType: number;
+  skaterComparison: SkaterComparison;
+  goalieComparison: GoalieComparison;
+  skaterSeasonStats?: SkaterSeasonStats;
+  goalieSeasonStats?: GoalieSeasonStats;
+}
+
 export interface GameLanding {
   id: number;
   season: number;
@@ -153,6 +283,7 @@ export interface GameLanding {
   tvBroadcasts: Broadcast[];
   gameState: string;
   gameScheduleState: string;
+  ticketsLink?: string;
   awayTeam: Team;
   homeTeam: Team;
   shootoutInUse: boolean;
@@ -160,6 +291,7 @@ export interface GameLanding {
   regPeriods: number;
   otInUse: boolean;
   tiesInUse: boolean;
-  summary: Summary;
+  summary?: Summary;
+  matchup?: Matchup;
   clock: Clock;
 }

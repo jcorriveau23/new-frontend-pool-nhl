@@ -30,7 +30,7 @@ import {
   MinusCircleIcon,
   SettingsIcon,
 } from "lucide-react";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useTranslations } from "next-intl";
 import { Command, RoomUser, useSocketContext } from "@/context/socket-context";
 import {
@@ -298,7 +298,7 @@ export default function CreatedPool() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-      {roomUsers ? renderUsers(roomUsers) : <LoadingSpinner />}
+      {roomUsers ? renderUsers(roomUsers) : <TableSkeleton />}
       <DraftOrderSelector />
     </div>
   );

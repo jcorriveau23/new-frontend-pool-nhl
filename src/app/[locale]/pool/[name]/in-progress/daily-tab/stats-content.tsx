@@ -27,7 +27,7 @@ import {
   TotalDailyPoints,
 } from "@/lib/scoring";
 import { Row } from "@tanstack/react-table";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useDailyLeadersContext } from "@/context/daily-leaders-context";
 import { GameStatePopover } from "@/components/game-state-popover";
 import { GamesNightStatus } from "@/context/games-night-context";
@@ -48,7 +48,7 @@ export default function DailyStatsContent() {
   const SkatersTable = (
     skaters: SkaterDailyInfo[],
     columns: ColumnDef<SkaterDailyInfo>[],
-    title: string
+    title: string,
   ) => (
     <DataTable
       data={skaters}
@@ -100,7 +100,7 @@ export default function DailyStatsContent() {
   const TotalDailyRankTable = (
     totalDailyPoints: TotalDailyPoints[],
     columns: ColumnDef<TotalDailyPoints>[],
-    title: string
+    title: string,
   ) => (
     <DataTable
       data={totalDailyPoints}
@@ -213,33 +213,33 @@ export default function DailyStatsContent() {
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 TotalDailyColumn,
-                getFormatedRankingTableTitle("DailyRanking")
+                getFormatedRankingTableTitle("DailyRanking"),
               )}
             </TabsContent>
             <TabsContent value="forwardRanking">
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 ForwardsDailyTotalColumn,
-                getFormatedRankingTableTitle("ForwardDailyRanking")
+                getFormatedRankingTableTitle("ForwardDailyRanking"),
               )}
             </TabsContent>
             <TabsContent value="defenseRanking">
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 DefensesDailyTotalColumn,
-                getFormatedRankingTableTitle("DefenseDailyRanking")
+                getFormatedRankingTableTitle("DefenseDailyRanking"),
               )}
             </TabsContent>
             <TabsContent value="goaliesRanking">
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 GoaliesDailyTotalColumn,
-                getFormatedRankingTableTitle("GoaliesDailyRanking")
+                getFormatedRankingTableTitle("GoaliesDailyRanking"),
               )}
             </TabsContent>
           </Tabs>
         ) : (
-          <LoadingSpinner />
+          <TableSkeleton />
         )}
       </div>
       <div className="py-5 px-0 sm:px-5">
@@ -257,8 +257,8 @@ export default function DailyStatsContent() {
                     SkaterDailyColumn,
                     getFormatedDateTitle(
                       selectedPoolUser.name,
-                      "DailyPointsMadeByForwardsFor"
-                    )
+                      "DailyPointsMadeByForwardsFor",
+                    ),
                   )}
                 </AccordionContent>
               </AccordionItem>
@@ -275,8 +275,8 @@ export default function DailyStatsContent() {
                     SkaterDailyColumn,
                     getFormatedDateTitle(
                       selectedPoolUser.name,
-                      "DailyPointsMadeByDefenseFor"
-                    )
+                      "DailyPointsMadeByDefenseFor",
+                    ),
                   )}
                 </AccordionContent>
               </AccordionItem>
@@ -292,15 +292,15 @@ export default function DailyStatsContent() {
                     dailyPointsMade.goaliesDailyStats[selectedPoolUser.id],
                     getFormatedDateTitle(
                       selectedPoolUser.name,
-                      "DailyPointsMadeByGoaliesFor"
-                    )
+                      "DailyPointsMadeByGoaliesFor",
+                    ),
                   )}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
           </>
         ) : (
-          <LoadingSpinner />
+          <TableSkeleton />
         )}
       </div>
       {dailyLeaders ? (
@@ -316,18 +316,18 @@ export default function DailyStatsContent() {
           <TabsContent value="scoringLeaders">
             {DailyScoringLeadersTable(
               dailyLeaders.skaters,
-              t("DailyScoringLeaders")
+              t("DailyScoringLeaders"),
             )}
           </TabsContent>
           <TabsContent value="goaliesLeaders">
             {DailyGoaliesLeadersTable(
               dailyLeaders.goalies,
-              t("DailyGoaliesLeaders")
+              t("DailyGoaliesLeaders"),
             )}
           </TabsContent>
         </Tabs>
       ) : (
-        <LoadingSpinner />
+        <TableSkeleton />
       )}
     </div>
   );

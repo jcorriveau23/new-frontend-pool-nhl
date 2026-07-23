@@ -1,5 +1,3 @@
-import { TeamInfo } from "./shared";
-
 export interface PlayerName {
   default: string;
 }
@@ -16,8 +14,12 @@ export interface SkaterStats {
   pim?: number | null;
   hits: number;
   powerPlayGoals: number;
-  shots: number;
+  sog: number;
   faceoffWinningPctg: number;
+  blockedShots?: number;
+  shifts?: number;
+  giveaways?: number;
+  takeaways?: number;
   toi: string;
 }
 
@@ -30,12 +32,15 @@ export interface GoalieStats {
   powerPlayShotsAgainst: string;
   shorthandedShotsAgainst: string;
   saveShotsAgainst: string;
-  savePctg?: string | null;
+  savePctg?: string | number | null;
   evenStrengthGoalsAgainst: number;
   powerPlayGoalsAgainst: number;
   shorthandedGoalsAgainst: number;
   pim?: number | null;
   goalsAgainst: number;
+  shotsAgainst?: number;
+  saves?: number;
+  starter?: boolean;
   toi: string;
 }
 
@@ -50,9 +55,27 @@ export interface PlayerByGameStats {
   homeTeam: TeamBoxScore;
 }
 
+export interface BoxScoreTeam {
+  id: number;
+  commonName?: { default: string };
+  abbrev?: string;
+  score?: number | null;
+  sog?: number | null;
+  logo: string;
+  darkLogo?: string;
+  placeName?: { default: string; fr?: string };
+}
+
+export interface GameOutcome {
+  lastPeriodType: string;
+}
+
 export interface GameBoxScore {
   id: number;
-  awayTeam: TeamInfo;
-  homeTeam: TeamInfo;
-  playerByGameStats: PlayerByGameStats;
+  gameState: string;
+  gameType?: number;
+  awayTeam: BoxScoreTeam;
+  homeTeam: BoxScoreTeam;
+  gameOutcome?: GameOutcome;
+  playerByGameStats?: PlayerByGameStats | null;
 }

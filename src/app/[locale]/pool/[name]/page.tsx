@@ -8,7 +8,7 @@ import { PoolContextProvider, fetchPoolInfo } from "@/context/pool-context";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import PoolStatus from "./pool";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 export default function PoolPage(props: { params: Promise<{ name: string }> }) {
   const [poolInfo, setPoolInfo] = React.useState<Pool | null>(null);
@@ -20,10 +20,13 @@ export default function PoolPage(props: { params: Promise<{ name: string }> }) {
       const poolResponse = await fetchPoolInfo(params.name);
 
       if (typeof poolResponse === "string") {
-        toast.error(t("CouldNotGetPoolInfoError", {
+        toast.error(
+          t("CouldNotGetPoolInfoError", {
             pool: params.name,
             error: poolResponse,
-          }), { duration: 2000 });
+          }),
+          { duration: 2000 },
+        );
         return;
       }
 
@@ -39,7 +42,7 @@ export default function PoolPage(props: { params: Promise<{ name: string }> }) {
           <PoolStatus />
         </PoolContextProvider>
       ) : (
-        <LoadingSpinner />
+        <TableSkeleton />
       )}
     </div>
   );
