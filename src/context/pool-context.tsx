@@ -159,7 +159,7 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
 
   const lastFormatDate = findLastDateInDb(poolDb);
 
-  console.log(`Last format date ${lastFormatDate} found in indexed db.`);
+  console.info(`Last format date ${lastFormatDate} found in indexed db.`);
   let res;
 
   // TODO: risk here since we used the start date of the pool stored locally in database.
@@ -191,7 +191,7 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
       // This is in the case we called the pool information for only a range of date since the rest of the date
       // were already stored and valid in the client database, we then only merge the needed data of the client database pool.
       mergeScoreByDay(data, poolDb);
-      console.log("merging score in database.");
+      console.info("merging score in database.");
       // TODO hash the results and compare with server hash to determine if an update is needed.
       // If we do that, we could remove the logic of comparing the field date_updated above that would be cleaner and more robust.
     }
@@ -310,7 +310,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       const user = poolInfo.participants[i];
 
       if (dayInfo && dayInfo[user.id].is_cumulated) {
-        console.log(
+        console.info(
           `processing daily ranking for ${dateOfInterest} using cumulative.`
         );
         cumulated = true;
@@ -329,7 +329,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
           poolInfo.settings.goalies_settings
         );
       } else if (dailyLeaders && dayInfo) {
-        console.log(
+        console.info(
           `processing daily ranking for ${dateOfInterest} using daily_leaders.`
         );
 

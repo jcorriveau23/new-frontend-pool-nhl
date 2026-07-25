@@ -29,7 +29,7 @@ export default function HankoAuth(props: Props) {
 
   const redirectAfterLogin = useCallback(() => {
     // successfully logged in, redirect to a page in your application
-    console.log(`Redirecting to ${props.redirect}`);
+    console.info(`Redirecting to ${props.redirect}`);
     router.replace(props.redirect);
 
     userSession.refreshSession();
@@ -39,7 +39,7 @@ export default function HankoAuth(props: Props) {
   useEffect(
     () =>
       hanko?.onSessionCreated(() => {
-        console.log("Session successfully created.");
+        console.info("Session successfully created.");
         redirectAfterLogin();
       }),
     [hanko, redirectAfterLogin]
@@ -49,8 +49,7 @@ export default function HankoAuth(props: Props) {
     register(hankoApi, {
       translations: { en, fr },
     }).catch((error: Error) => {
-      // handle error
-      console.log(`Could not loggin the user: ${error}`);
+      console.error(`Could not log in the user: ${error}`);
     });
   }, []);
 

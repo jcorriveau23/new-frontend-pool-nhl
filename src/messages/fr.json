@@ -7,6 +7,8 @@
   "Profile": "Profil",
   "NoAccount": "Pas de compte?",
   "SignOut": "Se déconnecter",
+  "ErrorTitle": "Une erreur est survenue",
+  "Retry": "Réessayer",
   "CouldNotLoginError": "La requête de connection a échoué: {error}",
   "CouldNotRegisterError": "La requête pour créer le compte a échoué: {error}",
   "CouldNotGeneratePoolError": "La requête pour générer le pool {name} a échoué: {error}",

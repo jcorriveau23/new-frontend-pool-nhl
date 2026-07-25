@@ -6,7 +6,7 @@ import { TeamLogo } from "@/components/team-logo";
 import { DataTable } from "@/components/ui/data-table";
 import { goaliesSeasonColumns, skaterSeasonColumns } from "./columns";
 import team_info from "@/lib/teams";
-import { Combobox } from "@/components/ui//link-combobox";
+import { Combobox } from "@/components/ui/link-combobox";
 import {
   Accordion,
   AccordionContent,

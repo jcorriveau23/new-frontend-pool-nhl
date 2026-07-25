@@ -103,7 +103,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const socketRef = useRef<WebSocket | null>(null);
 
   const sendSocketCommand = (command: string, arg: string | null) => {
-    console.log(`send command ${command}`);
+    console.info(`send command ${command}`);
     if (!socketRef.current) {
       toast.error(t("SocketNotConnected"), { duration: 5000 });
       return;
@@ -157,7 +157,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       };
 
       socket.onerror = (error) => {
-        console.log(error);
+        console.error("WebSocket error", error);
         toast.error(`WebSocket error`, { duration: 2000 });
       };
     },

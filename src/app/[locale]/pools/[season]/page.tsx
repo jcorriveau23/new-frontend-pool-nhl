@@ -6,7 +6,7 @@ import { Link } from "@/i18n/routing";
 import { getTranslations } from "next-intl/server";
 import { getAllYears } from "@/lib/nhl";
 import { seasonFormat, seasonWithYearFormat } from "@/app/utils/formating";
-import { Combobox } from "@/components/ui//link-combobox";
+import { Combobox } from "@/components/ui/link-combobox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";

@@ -90,18 +90,17 @@ export default function CreatedPool() {
   });
 
   const onReady = (checked: boolean) => {
-    console.log(`on ready '${checked}'!`);
-
+    console.info(`on ready '${checked}'!`);
     sendSocketCommand(Command.OnReady, null);
   };
 
   const AddUser = (userName: string) => {
-    console.log("Add user!");
+    console.info("Add user!");
     sendSocketCommand(Command.AddUser, `{"user_name": "${userName}"}`);
   };
 
   const RemoveUser = (userId: string) => {
-    console.log("remove user!");
+    console.info("remove user!");
     sendSocketCommand(Command.RemoveUser, `{"user_id": "${userId}"}`);
   };
 

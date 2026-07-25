@@ -19,7 +19,7 @@ export default function LogoutMenuItem() {
   useEffect(() => setHanko(new Hanko(hankoApi)), []);
 
   const logout = async () => {
-    console.log("trying to logout the user.j");
+    console.info("trying to logout the user.");
     try {
       await hanko?.logout();
       router.push(`/login?${searchParams.toString()}`);

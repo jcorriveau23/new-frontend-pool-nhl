@@ -347,7 +347,7 @@ export const getPoolTimeRangeCharts = (
   positionFilter: "F" | "D" | "G" | null
 ) => {
   // Return a charts of the amout of points accumulated between 2 dates.
-  console.log(
+  console.info(
     `Calculating cumulative chart from ${poolStartDate} to ${poolSelectedEndDate}`
   );
   const chartData = [];
