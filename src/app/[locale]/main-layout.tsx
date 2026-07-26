@@ -18,15 +18,19 @@ import { Link } from "@/i18n/routing";
 
 export default function MainLayout({
   children,
+  currentSeason,
+  draftYear,
 }: {
   children: React.ReactNode;
+  currentSeason: string;
+  draftYear: string;
 }) {
   return (
     <DateProvider>
       <DailyLeadersProvider>
         <GamesNightProvider>
           <SidebarProvider>
-            <AppSidebar />
+            <AppSidebar currentSeason={currentSeason} draftYear={draftYear} />
             <SidebarInset>
               <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
                 <SidebarTrigger className="-ml-1" />

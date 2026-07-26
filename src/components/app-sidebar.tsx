@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { CURRENT_DRAFT_YEAR, CURRENT_NHL_SEASON } from "@/lib/nhl";
 import { HankoUser, useUser } from "@/context/useUserData";
 import { Link, usePathname, useRouter } from "@/i18n/routing";
 import {
@@ -39,51 +38,58 @@ import {
 } from "./ui/dropdown-menu";
 import LogoutMenuItem from "./hanko/logout-button";
 
-// Menu items.
-const hockeyPoolItems = [
-  {
-    title: "Home",
-    url: "/",
-    icon: HomeIcon,
-  },
-  {
-    title: "PoolList",
-    url: `/pools/${CURRENT_NHL_SEASON}`,
-    icon: Database,
-  },
-  {
-    title: "CreatePool",
-    url: "/create-pool",
-    icon: PencilIcon,
-  },
-];
-
-// Menu items.
-const nhlItems = [
-  {
-    title: "Standing",
-    url: "/standing/now",
-    icon: Trophy,
-  },
-  {
-    title: "Draft",
-    url: `/draft/${CURRENT_DRAFT_YEAR}`,
-    icon: School,
-  },
-  {
-    title: "Rosters",
-    url: `/roster/${CURRENT_NHL_SEASON}`,
-    icon: Users,
-  },
-  {
-    title: "Players",
-    url: `/players`,
-    icon: UserCog,
-  },
-];
-
-export function AppSidebar() {
+export function AppSidebar({
+  currentSeason,
+  draftYear,
+}: {
+  currentSeason: string;
+  draftYear: string;
+}) {
   const t = useTranslations();
+
+  // Menu items.
+  const hockeyPoolItems = [
+    {
+      title: "Home",
+      url: "/",
+      icon: HomeIcon,
+    },
+    {
+      title: "PoolList",
+      url: `/pools/${currentSeason}`,
+      icon: Database,
+    },
+    {
+      title: "CreatePool",
+      url: "/create-pool",
+      icon: PencilIcon,
+    },
+  ];
+
+  // Menu items.
+  const nhlItems = [
+    {
+      title: "Standing",
+      url: "/standing/now",
+      icon: Trophy,
+    },
+    {
+      title: "Draft",
+      url: `/draft/${draftYear}`,
+      icon: School,
+    },
+    {
+      title: "Rosters",
+      url: `/roster/${currentSeason}`,
+      icon: Users,
+    },
+    {
+      title: "Players",
+      url: `/players`,
+      icon: UserCog,
+    },
+  ];
+
   const user = useUser();
   const router = useRouter();
   const pathname = usePathname();
