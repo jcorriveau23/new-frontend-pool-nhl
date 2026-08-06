@@ -1,9 +1,10 @@
 /*
-Pure scoring logic for pool daily points.
+Pure scoring display helpers for pool daily points.
 
-These classes and helpers compute the pool points made by skaters and goalies
-for a day, either from the cumulated data stored in the pool or from the live
-daily leaders feed. They are framework-free so they can be unit tested.
+These classes and helpers turn the per-player breakdown the server derives
+(stored in the score_by_day shape) into the aggregated daily totals the UI
+renders. The scoring rules themselves live on the server; this file only
+computes display totals from the already-derived per-player stats.
 */
 import {
   GoaliePoints,
@@ -12,7 +13,6 @@ import {
   SkaterPoints,
   SkaterSettings,
 } from "@/data/pool/model";
-import { DailyLeaders } from "@/data/dailyLeaders/model";
 
 export class SkatersDailyTotalPoints {
   constructor(skaters: SkaterDailyInfo[], skaters_settings: SkaterSettings) {
@@ -200,7 +200,7 @@ export const getDailySkaterStatsWithCumulative = (
   playerId: string,
   skaters_settings: SkaterSettings
 ): SkaterDailyInfo => {
-  // Get the daily score informations based on the pool informations.
+  // Build the daily display info from the per-player breakdown derived by the server.
   if (skaterPoints === null) {
     return new SkaterDailyInfo(Number(playerId), false);
   }
@@ -215,38 +215,12 @@ export const getDailySkaterStatsWithCumulative = (
   return skaterDailyStats;
 };
 
-export const getDailySkaterStatsWithDailyStats = (
-  leaders: DailyLeaders,
-  playerId: string,
-  skaters_settings: SkaterSettings
-): SkaterDailyInfo => {
-  // Get the daily score informations based on the daily stats informations.
-  // This is usually being called when the daily stats have not been cumulated yet in the pool.
-  const i = leaders.skaters.findIndex((p) => p.id === Number(playerId));
-  if (i > -1) {
-    const skaterDailyStats = new SkaterDailyInfo(Number(playerId), true);
-
-    skaterDailyStats.goals = leaders.skaters[i].stats.goals;
-    skaterDailyStats.assists = leaders.skaters[i].stats.assists;
-    skaterDailyStats.shootoutGoals = leaders.skaters[i].stats.shootoutGoals;
-    skaterDailyStats.poolPoints =
-      skaterDailyStats.getTotalPoolPts(skaters_settings);
-
-    return skaterDailyStats;
-  }
-
-  return new SkaterDailyInfo(
-    Number(playerId),
-    leaders.played.includes(Number(playerId))
-  );
-};
-
 export const getDailyGoalieStatsWithCumulative = (
   goaliePoints: GoaliePoints | null,
   playerId: string,
   settings: GoaliesSettings
 ): GoalieDailyInfo => {
-  // Get the daily score informations based on the pool informations.
+  // Build the daily display info from the per-player breakdown derived by the server.
   if (goaliePoints === null) {
     return new GoalieDailyInfo(Number(playerId), false);
   }
@@ -269,56 +243,11 @@ export const getDailyGoalieStatsWithCumulative = (
   return goalieDailyStats;
 };
 
-export const getDailyGoalieStatsWithDailyStats = (
-  leaders: DailyLeaders,
-  playerId: string,
-  settings: GoaliesSettings
-): GoalieDailyInfo => {
-  // Get the daily score informations based on the daily stats informations.
-  // This is usually being called when the daily stats have not been cumulated yet in the pool.
-  const i = leaders.goalies.findIndex((p) => p.id === Number(playerId));
-  if (i > -1) {
-    const goalieDailyStats = new GoalieDailyInfo(Number(playerId), true);
-
-    goalieDailyStats.goals = leaders.goalies[i].stats.goals;
-    goalieDailyStats.assists = leaders.goalies[i].stats.assists;
-
-    if (leaders.goalies[i].stats.decision !== null) {
-      switch (leaders.goalies[i].stats.decision) {
-        case "W": {
-          goalieDailyStats.status =
-            leaders.goalies[i].stats.savePercentage === 1.0
-              ? GoalieGameStatus.Shutout
-              : GoalieGameStatus.Win;
-          break;
-        }
-        case "L": {
-          goalieDailyStats.status = GoalieGameStatus.Losses;
-          break;
-        }
-        case "O": {
-          goalieDailyStats.status = GoalieGameStatus.OverTime;
-          break;
-        }
-      }
-    }
-
-    goalieDailyStats.poolPoints = goalieDailyStats.getTotalPoolPts(settings);
-
-    return goalieDailyStats;
-  }
-
-  return new GoalieDailyInfo(
-    Number(playerId),
-    leaders.played.includes(Number(playerId))
-  );
-};
-
 export const getDailySkatersStatsWithCumulative = (
   rosterInfo: Record<string, SkaterPoints | null>,
   skaters_settings: SkaterSettings
 ): SkaterDailyInfo[] =>
-  // The skaters stats is stored into the pool. We can display the informations stored in the pool this will match what is cumulated in the pool.
+  // The per-player breakdown derived by the server, turned into display totals.
   Object.keys(rosterInfo).map((key) => {
     return getDailySkaterStatsWithCumulative(
       rosterInfo[key],
@@ -327,33 +256,11 @@ export const getDailySkatersStatsWithCumulative = (
     );
   });
 
-export const getDailySkaterStatsWithDailyLeaders = (
-  rosterInfo: Record<string, SkaterPoints | null>,
-  leaders: DailyLeaders,
-  skaters_settings: SkaterSettings
-): SkaterDailyInfo[] =>
-  // The skaters stats is not yet stored into the pool information,
-  // we can take the information from the daiLeaders that is being update live.
-  Object.keys(rosterInfo).map((key) => {
-    return getDailySkaterStatsWithDailyStats(leaders, key, skaters_settings);
-  });
-
 export const getDailyGoaliesStatsWithCumulative = (
   rosterInfo: Record<string, GoaliePoints | null>,
   settings: GoaliesSettings
 ): GoalieDailyInfo[] =>
-  // The goalies stats is stored into the pool. We can display the informations stored in the pool this will match what is cumulated in the pool.
+  // The per-player breakdown derived by the server, turned into display totals.
   Object.keys(rosterInfo).map((key) => {
     return getDailyGoalieStatsWithCumulative(rosterInfo[key], key, settings);
-  });
-
-export const getDailyGoaliesStatsWithDailyLeaders = (
-  rosterInfo: Record<string, GoaliePoints | null>,
-  leaders: DailyLeaders,
-  settings: GoaliesSettings
-): GoalieDailyInfo[] =>
-  // The goalies stats is not yet stored into the pool information,
-  // we can take the information from the daiLeaders that is being update live.
-  Object.keys(rosterInfo).map((key) => {
-    return getDailyGoalieStatsWithDailyStats(leaders, key, settings);
   });
