@@ -26,7 +26,7 @@ import ProtectedPlayerIcon from "./protected-player";
 import { usePoolContext } from "@/context/pool-context";
 import DraftedPlayerIcon from "./drafted-player";
 import PlayerSearchDialog from "./search-players";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
 
@@ -117,7 +117,7 @@ export default function PoolerRoster(props: Props) {
         </p>
         <p
           className={
-            isOverCap ? "text-red-500 font-bold" : "text-green-500 font-bold"
+            isOverCap ? "text-destructive font-bold" : "text-success font-bold"
           }
         >
           {isOverCap
@@ -346,27 +346,20 @@ export default function PoolerRoster(props: Props) {
 
     if (!res.ok) {
       const error = await res.text();
-      toast({
-        variant: "destructive",
-        title: t("CouldNotAddPlayerToRoster", {
+      toast.error(t("CouldNotAddPlayerToRoster", {
           playerName: player.name,
           userName: dictUsers[props.userRoster.user.id].name,
           error: error,
-        }),
-        duration: 5000,
-      });
+        }), { duration: 5000 });
       return false;
     }
 
     const data = await res.json();
     updatePoolInfo(data);
-    toast({
-      title: t("SuccessAddPlayerToRoster", {
+    toast.success(t("SuccessAddPlayerToRoster", {
         playerName: player.name,
         userName: dictUsers[props.userRoster.user.id].name,
-      }),
-      duration: 2000,
-    });
+      }), { duration: 2000 });
 
     return true;
   };

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "@/i18n/routing";
 import { Hanko } from "@teamhanko/hanko-elements";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -19,18 +19,14 @@ export default function LogoutMenuItem() {
   useEffect(() => setHanko(new Hanko(hankoApi)), []);
 
   const logout = async () => {
-    console.log("trying to logout the user.j");
+    console.info("trying to logout the user.");
     try {
       await hanko?.logout();
       router.push(`/login?${searchParams.toString()}`);
       router.refresh();
       return;
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: `Error during logout: ${error}`,
-        duration: 2000,
-      });
+      toast.error(`Error during logout: ${error}`, { duration: 2000 });
     }
   };
 

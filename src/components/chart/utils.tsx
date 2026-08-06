@@ -1,38 +1,49 @@
 import { ReferenceArea } from "recharts";
 
 export const generateReferenceAreas = (
-  data: Record<string, string | number | boolean>[]
+  data: Record<string, string | number | boolean>[],
+  visibleStartIndex = 0,
+  visibleEndIndex = data.length - 1
 ) => {
-  // Returns the areas where the player was not in the alignment to display the background in red when it occur.
-  const areas = [];
+  // Returns the areas where the player was not in the alignment to display a
+  // shaded background when it occurs. Areas are clamped to the visible window
+  // (controlled by the brush) since recharts discards reference areas whose
+  // bounds fall outside the rendered domain.
+  const areas: React.ReactElement[] = [];
   let start: number | null = null;
+
+  const pushArea = (startIndex: number, endIndex: number) => {
+    const clampedStart = Math.max(startIndex, visibleStartIndex);
+    const clampedEnd = Math.min(endIndex, visibleEndIndex);
+    if (clampedStart > clampedEnd) {
+      return;
+    }
+    areas.push(
+      <ReferenceArea
+        key={`area-${startIndex}-${endIndex}`}
+        x1={data[clampedStart].date as string}
+        x2={data[clampedEnd].date as string}
+        fill="var(--destructive)"
+        fillOpacity={0.12}
+        stroke="var(--destructive)"
+        strokeOpacity={0.35}
+        strokeDasharray="4 4"
+      />
+    );
+  };
 
   data.forEach((point, index) => {
     if (!point.isInRoster && start === null) {
       start = index;
     } else if (point.isInRoster && start !== null) {
-      areas.push(
-        <ReferenceArea
-          key={`area-${start}-${index - 1}`}
-          x1={data[start].date as string}
-          x2={data[index - 1].date as string}
-          fill="rgba(255, 0, 0, 0.4)"
-        />
-      );
+      pushArea(start, index - 1);
       start = null;
     }
   });
 
   // Handle case where the last area extends to the end
   if (start !== null) {
-    areas.push(
-      <ReferenceArea
-        key={`area-${start}-${data.length - 1}`}
-        x1={data[start].date as string}
-        x2={data[data.length - 1].date as string}
-        fill="rgba(255, 0, 0, 0.4)"
-      />
-    );
+    pushArea(start, data.length - 1);
   }
 
   return areas;

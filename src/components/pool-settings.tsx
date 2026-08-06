@@ -19,20 +19,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldPath } from "react-hook-form";
 import { Checkbox } from "./ui/checkbox";
 import { useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import InformationIcon from "./information-box";
 import { useSearchParams } from "next/navigation";
-import { Star } from "lucide-react";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -458,14 +456,10 @@ export default function PoolSettingsComponent(props: Props) {
 
       if (!res.ok) {
         const error = await res.text();
-        toast({
-          variant: "destructive",
-          title: t("CouldNotGeneratePoolError", {
+        toast.error(t("CouldNotGeneratePoolError", {
             name: values.name,
             error: error,
-          }),
-          duration: 2000,
-        });
+          }), { duration: 2000 });
       }
       router.push(`/pool/${values.name}?${searchParams.toString()}`);
     } else {
@@ -480,28 +474,72 @@ export default function PoolSettingsComponent(props: Props) {
 
       if (!res.ok) {
         const error = await res.text();
-        toast({
-          variant: "destructive",
-          title: t("CouldNotUpdatePoolError", {
+        toast.error(t("CouldNotUpdatePoolError", {
             name: values.name,
             error: error,
-          }),
-          duration: 2000,
-        });
+          }), { duration: 2000 });
       }
     }
   };
 
+  type FormValues = z.infer<typeof formSchema>;
+
+  const NumberField = (
+    fieldName: FieldPath<FormValues>,
+    label: string,
+    min: number,
+    max: number,
+    info?: string
+  ) => (
+    <FormField
+      control={form.control}
+      name={fieldName}
+      render={({ field }) => (
+        <FormItem>
+          <div className="flex items-center gap-1.5">
+            <FormLabel>{label}</FormLabel>
+            {info ? <InformationIcon text={info} /> : null}
+          </div>
+          <FormControl>
+            <Input
+              {...field}
+              type="number"
+              min={min}
+              max={max}
+              onChange={(e) => field.onChange(Number(e.target.value) || null)}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+
+  const RadioOption = (
+    id: string,
+    value: string,
+    label: string,
+    info?: string
+  ) => (
+    <div className="flex items-center gap-2">
+      <RadioGroupItem value={value} id={id} />
+      <Label htmlFor={id} className="font-normal">
+        {label}
+      </Label>
+      {info ? <InformationIcon text={info} /> : null}
+    </div>
+  );
+
   const GeneralSettings = () => (
     <Card>
-      <CardHeader>
-        <CardTitle>{t("GeneralSettings")}</CardTitle>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg">{t("GeneralSettings")}</CardTitle>
         {isCreationContext() ? (
           <CardDescription>{t("GeneralSettingsDescription")}</CardDescription>
         ) : null}
       </CardHeader>
-      <CardContent className="grid gap-6">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="name"
@@ -512,125 +550,94 @@ export default function PoolSettingsComponent(props: Props) {
                 <FormControl>
                   <Input placeholder={t("PoolName")} {...field} />
                 </FormControl>
-                <FormDescription />
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+          {NumberField(
+            "numberOfPooler",
+            t("NumberPooler"),
+            MIN_POOLER_NUMBER,
+            MAX_POOLER_NUMBER
+          )}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="typeOfPool"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("PoolType")}</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setShowDynastySettings(value === PoolType.DYNASTY);
+                    }}
+                    className="flex min-h-9 flex-wrap items-center gap-x-6 gap-y-2"
+                  >
+                    {RadioOption(
+                      "pool-type-standard",
+                      PoolType.STANDARD,
+                      "Standard"
+                    )}
+                    {RadioOption(
+                      "pool-type-dynasty",
+                      PoolType.DYNASTY,
+                      t("Dynasty"),
+                      t("DynastyPoolTypeDescription")
+                    )}
+                  </RadioGroup>
+                </FormControl>
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="numberOfPooler"
+            name="draftType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("NumberPooler")}</FormLabel>
+                <FormLabel>{t("DraftType")}</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    min={MIN_POOLER_NUMBER}
-                    max={MAX_POOLER_NUMBER}
-                    onChange={(e) =>
-                      field.onChange(Number(e.target.value) || null)
-                    }
-                  />
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex min-h-9 flex-wrap items-center gap-x-6 gap-y-2"
+                  >
+                    {RadioOption(
+                      "draft-type-standard",
+                      DraftType.STANDARD,
+                      "Standard"
+                    )}
+                    {RadioOption(
+                      "draft-type-serpentine",
+                      DraftType.SERPENTINE,
+                      t("Serpentine"),
+                      t("SerpentinDescription")
+                    )}
+                  </RadioGroup>
                 </FormControl>
-                <FormDescription />
-                <FormMessage />
               </FormItem>
             )}
           />
-          <div>
-            <Label>{t("PoolType")}</Label>
-            <RadioGroup
-              onValueChange={(value) =>
-                setShowDynastySettings(value === PoolType.DYNASTY)
-              }
-              defaultValue={DEFAULT_POOL_TYPE}
-            >
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value={PoolType.STANDARD} id="r1" />
-                <Label htmlFor="r1">Standard</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value={PoolType.DYNASTY} id="r2" />
-                <Label htmlFor="r2">{t("Dynasty")} </Label>
-                <InformationIcon text={t("DynastyPoolTypeDescription")} />
-              </div>
-            </RadioGroup>
-          </div>
-          <div>
-            <Label>{t("DraftType")}</Label>
-            <RadioGroup defaultValue={DEFAULT_DRAFT_TYPE}>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value={DraftType.STANDARD} />
-                <Label>Standard</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value={DraftType.SERPENTINE} />
-                <Label>{t("Serpentine")}</Label>
-                <InformationIcon text={t("SerpentinDescription")} />
-              </div>
-            </RadioGroup>
-          </div>
         </div>
         {showDynastySettings ? (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <FormField
-                control={form.control}
-                name="tradableDraftPicks"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-2">
-                      <FormLabel>{t("TradableDraftPicks")}</FormLabel>
-                      <InformationIcon text={t("TradablePicksDescription")} />
-                    </div>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        min={TRADABLE_DRAFT_PICKS_MIN_VALUE}
-                        max={TRADABLE_DRAFT_PICKS_MAX_VALUE}
-                        onChange={(e) =>
-                          field.onChange(Number(e.target.value) || null)
-                        }
-                      />
-                    </FormControl>
-                    <FormDescription />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div>
-              <FormField
-                control={form.control}
-                name="numberOfPlayersToProtect"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-2">
-                      <FormLabel>{t("NumberOfProtectedPlayers")}</FormLabel>
-                      <InformationIcon
-                        text={t("NumberOfPlayersToProtectDescription")}
-                      />
-                    </div>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        min={NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE}
-                        max={NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE}
-                        onChange={(e) =>
-                          field.onChange(Number(e.target.value) || null)
-                        }
-                      />
-                    </FormControl>
-                    <FormDescription />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <div className="grid gap-4 rounded-lg border bg-muted/50 p-4 sm:grid-cols-2">
+            {NumberField(
+              "tradableDraftPicks",
+              t("TradableDraftPicks"),
+              TRADABLE_DRAFT_PICKS_MIN_VALUE,
+              TRADABLE_DRAFT_PICKS_MAX_VALUE,
+              t("TradablePicksDescription")
+            )}
+            {NumberField(
+              "numberOfPlayersToProtect",
+              t("NumberOfProtectedPlayers"),
+              NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE,
+              NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE,
+              t("NumberOfPlayersToProtectDescription")
+            )}
           </div>
         ) : null}
       </CardContent>
@@ -639,104 +646,40 @@ export default function PoolSettingsComponent(props: Props) {
 
   const PlayerSettings = () => (
     <Card>
-      <CardHeader>
-        <CardTitle>{t("PlayerSettings")}</CardTitle>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg">{t("PlayerSettings")}</CardTitle>
         {isCreationContext() ? (
           <CardDescription>{t("PlayerSettingsDescription")}</CardDescription>
         ) : null}
       </CardHeader>
-      <CardContent className="grid gap-6">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <FormField
-            control={form.control}
-            name="numberOfForwards"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("NumberOfForwards")}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    min={NUMBER_FORWARDS_MIN_VALUE}
-                    max={NUMBER_FORWARDS_MAX_VALUE}
-                    onChange={(e) =>
-                      field.onChange(Number(e.target.value) || null)
-                    }
-                  />
-                </FormControl>
-                <FormDescription />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="numberOfDefenders"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("NumberOfDefenders")}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    min={NUMBER_DEFENDERS_MIN_VALUE}
-                    max={NUMBER_DEFENDERS_MAX_VALUE}
-                    onChange={(e) =>
-                      field.onChange(Number(e.target.value) || null)
-                    }
-                  />
-                </FormControl>
-                <FormDescription />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="numberOfGoalies"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("NumberOfGoalies")}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    min={NUMBER_GOALIES_MIN_VALUE}
-                    max={NUMBER_GOALIES_MAX_VALUE}
-                    onChange={(e) =>
-                      field.onChange(Number(e.target.value) || null)
-                    }
-                  />
-                </FormControl>
-                <FormDescription />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="numberOfReservists"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("NumberOfReservists")}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    min={NUMBER_RESERVISTS_MIN_VALUE}
-                    max={NUMBER_RESERVISTS_MAX_VALUE}
-                    onChange={(e) =>
-                      field.onChange(Number(e.target.value) || null)
-                    }
-                  />
-                </FormControl>
-                <FormDescription />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {NumberField(
+            "numberOfForwards",
+            t("NumberOfForwards"),
+            NUMBER_FORWARDS_MIN_VALUE,
+            NUMBER_FORWARDS_MAX_VALUE
+          )}
+          {NumberField(
+            "numberOfDefenders",
+            t("NumberOfDefenders"),
+            NUMBER_DEFENDERS_MIN_VALUE,
+            NUMBER_DEFENDERS_MAX_VALUE
+          )}
+          {NumberField(
+            "numberOfGoalies",
+            t("NumberOfGoalies"),
+            NUMBER_GOALIES_MIN_VALUE,
+            NUMBER_GOALIES_MAX_VALUE
+          )}
+          {NumberField(
+            "numberOfReservists",
+            t("NumberOfReservists"),
+            NUMBER_RESERVISTS_MIN_VALUE,
+            NUMBER_RESERVISTS_MAX_VALUE
+          )}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2 pt-2">
           <Checkbox
             id="ignore-players"
             defaultChecked={DEFAULT_IGNORE_WORST_PLAYERS}
@@ -744,98 +687,50 @@ export default function PoolSettingsComponent(props: Props) {
               setShowIgnorePlayers(checkedState as boolean);
             }}
           />
-          <Label>{t("IgnoreWorstPlayers")}</Label>
+          <Label htmlFor="ignore-players" className="font-normal">
+            {t("IgnoreWorstPlayers")}
+          </Label>
           <InformationIcon text={t("IgnoreWorstPlayersDescription")} />
         </div>
         {showIgnorePlayers ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <FormField
-              control={form.control}
-              name="numberOfWorstForwardsToIgnore"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("Forwards")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="number"
-                      min={NUMBER_WORST_FORWARDS_TO_IGNORE_MIN_VALUE}
-                      max={NUMBER_WORST_FORWARDS_TO_IGNORE_MAX_VALUE}
-                      onChange={(e) =>
-                        field.onChange(Number(e.target.value) || null)
-                      }
-                    />
-                  </FormControl>
-                  <FormDescription />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="numberOfWorstDefendersToIgnore"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("Defense")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="number"
-                      min={NUMBER_WORST_DEFENDERS_TO_IGNORE_MIN_VALUE}
-                      max={NUMBER_WORST_DEFENDERS_TO_IGNORE_MAX_VALUE}
-                      onChange={(e) =>
-                        field.onChange(Number(e.target.value) || null)
-                      }
-                    />
-                  </FormControl>
-                  <FormDescription />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="numberOfWorstGoaliesToIgnore"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("Goalies")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="number"
-                      min={NUMBER_WORST_GOALIES_TO_IGNORE_MIN_VALUE}
-                      max={NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE}
-                      onChange={(e) =>
-                        field.onChange(Number(e.target.value) || null)
-                      }
-                    />
-                  </FormControl>
-                  <FormDescription />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="grid grid-cols-3 gap-4 rounded-lg border bg-muted/50 p-4">
+            {NumberField(
+              "numberOfWorstForwardsToIgnore",
+              t("Forwards"),
+              NUMBER_WORST_FORWARDS_TO_IGNORE_MIN_VALUE,
+              NUMBER_WORST_FORWARDS_TO_IGNORE_MAX_VALUE
+            )}
+            {NumberField(
+              "numberOfWorstDefendersToIgnore",
+              t("Defense"),
+              NUMBER_WORST_DEFENDERS_TO_IGNORE_MIN_VALUE,
+              NUMBER_WORST_DEFENDERS_TO_IGNORE_MAX_VALUE
+            )}
+            {NumberField(
+              "numberOfWorstGoaliesToIgnore",
+              t("Goalies"),
+              NUMBER_WORST_GOALIES_TO_IGNORE_MIN_VALUE,
+              NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE
+            )}
           </div>
         ) : null}
       </CardContent>
     </Card>
   );
 
-  const PointsField = (fieldName: string, label: string) => (
+  const PointsField = (fieldName: FieldPath<FormValues>, label: string) => (
     <FormField
       control={form.control}
-      // @ts-expect-error, would require refactor in this whole file.
       name={fieldName}
       render={({ field }) => (
-        <FormItem className="flex items-center justify-between">
-          <FormLabel className="w-5/12">
-            <Star className="h-4 w-4 text-pink-500" />
+        <FormItem className="flex flex-row items-center justify-between gap-3 space-y-0">
+          <FormLabel className="font-normal text-muted-foreground">
             {t(label)}
           </FormLabel>
           <FormControl>
             <Input
               {...field}
-              className="w-7/12"
+              className="h-8 w-20 text-right"
               step="any"
               type="number"
               min={POINTS_MIN_VALUE}
@@ -843,70 +738,80 @@ export default function PoolSettingsComponent(props: Props) {
               onChange={(e) => field.onChange(Number(e.target.value) || null)}
             />
           </FormControl>
-          <FormDescription />
-          <FormMessage />
         </FormItem>
       )}
     />
   );
 
+  const PointsGroup = (title: string, fields: React.ReactNode) => (
+    <div className="space-y-3 rounded-lg border p-4">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      {fields}
+    </div>
+  );
+
   const PointsSettings = () => (
     <Card>
-      <CardHeader>
-        <CardTitle>{t("PointsSettings")}</CardTitle>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg">{t("PointsSettings")}</CardTitle>
         {isCreationContext() ? (
           <CardDescription>{t("PontsSettingsDescription")}</CardDescription>
         ) : null}
       </CardHeader>
-      <CardContent className="grid gap-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <h3 className="text-lg font-semibold">{t("Forwards")}</h3>
-            {PointsField("forwardsPointsPerGoals", "Goals")}
-            {PointsField("forwardsPointsPerAssists", "Assists")}
-            {PointsField("forwardsPointsPerHatTricks", "HatTricks")}
-            {PointsField("forwardsPointsPerShootOutGoals", "ShootoutGoals")}
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold">{t("Defense")}</h3>
-            {PointsField("defendersPointsPerGoals", "Goals")}
-            {PointsField("defendersPointsPerAssists", "Assists")}
-            {PointsField("defendersPointsPerHatTricks", "HatTricks")}
-            {PointsField("defendersPointsPerShootOutGoals", "ShootoutGoals")}
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold">{t("Goalies")}</h3>
-            {PointsField("goaliesPointsPerWins", "Wins")}
-            {PointsField("goaliesPointsPerOvertimeLosses", "OvertimeLosses")}
-            {PointsField("goaliesPointsPerShutout", "Shutouts")}
-            {PointsField("goaliesPointsPerGoals", "Goals")}
-            {PointsField("goaliesPointsPerAssists", "Assists")}
-          </div>
+      <CardContent>
+        <div className="grid gap-4 md:grid-cols-3">
+          {PointsGroup(
+            t("Forwards"),
+            <>
+              {PointsField("forwardsPointsPerGoals", "Goals")}
+              {PointsField("forwardsPointsPerAssists", "Assists")}
+              {PointsField("forwardsPointsPerHatTricks", "HatTricks")}
+              {PointsField("forwardsPointsPerShootOutGoals", "ShootoutGoals")}
+            </>
+          )}
+          {PointsGroup(
+            t("Defense"),
+            <>
+              {PointsField("defendersPointsPerGoals", "Goals")}
+              {PointsField("defendersPointsPerAssists", "Assists")}
+              {PointsField("defendersPointsPerHatTricks", "HatTricks")}
+              {PointsField("defendersPointsPerShootOutGoals", "ShootoutGoals")}
+            </>
+          )}
+          {PointsGroup(
+            t("Goalies"),
+            <>
+              {PointsField("goaliesPointsPerWins", "Wins")}
+              {PointsField("goaliesPointsPerOvertimeLosses", "OvertimeLosses")}
+              {PointsField("goaliesPointsPerShutout", "Shutouts")}
+              {PointsField("goaliesPointsPerGoals", "Goals")}
+              {PointsField("goaliesPointsPerAssists", "Assists")}
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 
   return (
-    <div className="text-left mx-auto space-y-8">
-      <Form {...form}>
-        <fieldset disabled={DISABLE_OPTIONS}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            {GeneralSettings()}
-            {PlayerSettings()}
-            {PointsSettings()}
-            <div className="flex justify-end gap-4 p-2">
-              <Button type="submit">
-                {props.oldPoolSettings ? (
-                  <>{t("Update")}</>
-                ) : (
-                  <>{t("Create")}</>
-                )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <fieldset
+          disabled={DISABLE_OPTIONS}
+          className="mx-auto min-w-0 max-w-4xl space-y-4 text-left"
+        >
+          {GeneralSettings()}
+          {PlayerSettings()}
+          {PointsSettings()}
+          {DISABLE_OPTIONS ? null : (
+            <div className="flex justify-end">
+              <Button type="submit" className="w-full sm:w-auto sm:px-8">
+                {props.oldPoolSettings ? t("Update") : t("Create")}
               </Button>
             </div>
-          </form>
+          )}
         </fieldset>
-      </Form>
-    </div>
+      </form>
+    </Form>
   );
 }

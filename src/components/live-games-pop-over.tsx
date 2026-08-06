@@ -12,13 +12,16 @@ export default function LiveGamePopOver() {
     <Popover>
       <PopoverTrigger
         nativeButton={false}
-        render={<span className="relative flex h-2 w-2" />}
+        render={<span className="relative flex size-2" />}
       >
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+        <span className="bg-destructive absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
+        <span className="bg-destructive relative inline-flex size-2 rounded-full"></span>
       </PopoverTrigger>
-      <PopoverContent className="w-48 bg-red-50 border-red-100 text-red-800">
-        <p className="text-sm font-medium">{t("LiveGame")}</p>
+      <PopoverContent className="w-48">
+        <div className="flex items-center gap-2">
+          <span className="bg-destructive inline-flex size-2 animate-pulse rounded-full" />
+          <p className="text-sm font-medium">{t("LiveGame")}</p>
+        </div>
       </PopoverContent>
     </Popover>
   );

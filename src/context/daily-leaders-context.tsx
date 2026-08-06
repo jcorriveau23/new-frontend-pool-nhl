@@ -30,11 +30,17 @@ export function DailyLeadersProvider({
   children: React.ReactNode;
 }) {
   const { querySelectedDate } = useDateContext();
+  // The Rust backend doesn't understand the "now" keyword (unlike the NHL
+  // score API), so resolve it to today's date before querying.
+  const keyDay =
+    querySelectedDate === "now"
+      ? new Date().toISOString().split("T")[0]
+      : querySelectedDate;
 
   const query = useQuery({
-    queryKey: ["daily_leaders", querySelectedDate],
+    queryKey: ["daily_leaders", keyDay],
     queryFn: () => {
-      return getServerSideDailyLeaders(querySelectedDate);
+      return getServerSideDailyLeaders(keyDay);
     },
     staleTime: 1000 * 60 * 3, // 3 minutes in ms
   });

@@ -107,7 +107,7 @@ export default async function Player(props: {
           <TableCell className="text-left">
             {playerInfo.draftDetails ? (
               <Link
-                className="text-link hover:underline"
+                className="text-primary hover:underline"
                 href={`/draft/${playerInfo.draftDetails.year}?${queryString}`}
               >
                 {t("DraftDetail", {

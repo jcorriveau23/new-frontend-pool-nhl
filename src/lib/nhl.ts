@@ -1,14 +1,12 @@
 import team_info from "./teams";
 
+// The first season the NHL ever played. This never changes, unlike the current
+// season constants which come from the backend (see @/lib/season-info).
 export const FIRST_NHL_SEASON = 1916;
-export const LAST_NHL_SEASON = 2025;
-
-export const CURRENT_NHL_SEASON = "20252026";
-export const CURRENT_DRAFT_YEAR = "2025";
 
 export const getAllYears = (
-  startYear: number = FIRST_NHL_SEASON,
-  endYear: number = LAST_NHL_SEASON,
+  startYear: number,
+  endYear: number,
 ) => {
   // Return all the years between 2 years.
   const seasonArray = [];
@@ -19,8 +17,8 @@ export const getAllYears = (
 };
 
 export const getAllSeasons = (
-  startYear: number = FIRST_NHL_SEASON,
-  endYear: number = LAST_NHL_SEASON,
+  startYear: number,
+  endYear: number,
 ) => {
   // Return all the season between 2 years.
   const seasonArray = [];
@@ -38,20 +36,20 @@ export const getAllTeamForSeason = (season: number) =>
         team_info[Number(teamId)].lastSeason! >= season),
   );
 
-export const getAllSeasonsForTeam = (teamId: number) =>
+export const getAllSeasonsForTeam = (teamId: number, lastSeason: number) =>
   getAllSeasons(
     Math.floor(team_info[teamId]?.firstSeason / 10000),
     team_info[teamId]?.lastSeason
       ?
         Math.floor(team_info[teamId]?.lastSeason / 10000)
-      : LAST_NHL_SEASON,
+      : lastSeason,
   );
 
-export const getAllYearsForTeam = (teamId: number) =>
+export const getAllYearsForTeam = (teamId: number, lastSeason: number) =>
   getAllYears(
     Math.floor(team_info[teamId]?.firstSeason / 10000),
     team_info[teamId]?.lastSeason
       ?
         Math.floor(team_info[teamId]?.lastSeason / 10000)
-      : LAST_NHL_SEASON,
+      : lastSeason,
   );

@@ -23,7 +23,7 @@ export function GameStatePopover({ state }: StatePopoverProps) {
     switch (state) {
       case GamesNightStatus.LIVE:
         return {
-          icon: <Radio className="h-4 w-4 text-red-500 animate-pulse" />,
+          icon: <Radio className="text-destructive size-4 animate-pulse" />,
           label: "Live",
           description:
             querySelectedDate === "now"
@@ -31,11 +31,11 @@ export function GameStatePopover({ state }: StatePopoverProps) {
               : t("LivePoints", {
                   selectedDate: querySelectedDate,
                 }),
-          color: "bg-red-500",
+          color: "bg-destructive",
         };
       case GamesNightStatus.COMPLETED:
         return {
-          icon: <Lock className="h-4 w-4 text-blue-500" />,
+          icon: <Lock className="text-primary size-4" />,
           label: "Completed",
           description:
             querySelectedDate === "now"
@@ -43,11 +43,11 @@ export function GameStatePopover({ state }: StatePopoverProps) {
               : t("CumulatedPoints", {
                   selectedDate: querySelectedDate,
                 }),
-          color: "bg-blue-500",
+          color: "bg-primary",
         };
       case GamesNightStatus.NOT_STARTED:
         return {
-          icon: <AlertCircle className="h-4 w-4 text-yellow-500" />,
+          icon: <AlertCircle className="text-chart-4 size-4" />,
           label: "Not Started",
           description:
             querySelectedDate === "now"
@@ -55,11 +55,11 @@ export function GameStatePopover({ state }: StatePopoverProps) {
               : t("FuturePoints", {
                   selectedDate: querySelectedDate,
                 }),
-          color: "bg-yellow-500",
+          color: "bg-chart-4",
         };
       case GamesNightStatus.NO_GAMES:
         return {
-          icon: <CalendarX className="h-4 w-4 text-gray-500" />,
+          icon: <CalendarX className="text-muted-foreground size-4" />,
           label: "No Games",
           description:
             querySelectedDate === "now"
@@ -67,7 +67,7 @@ export function GameStatePopover({ state }: StatePopoverProps) {
               : t("NoGames", {
                   selectedDate: querySelectedDate,
                 }),
-          color: "bg-gray-500",
+          color: "bg-muted-foreground",
         };
     }
   };
@@ -87,11 +87,11 @@ export function GameStatePopover({ state }: StatePopoverProps) {
       >
         {stateDetails.icon}
         <span
-          className={`absolute -top-1 -right-1 block h-2 w-2 rounded-full ${stateDetails.color} ring-1 ring-white`}
+          className={`absolute -top-1 -right-1 block size-2 rounded-full ${stateDetails.color} ring-background ring-2`}
         />
       </PopoverTrigger>
       <PopoverContent className="w-60">
-        <div className="flex flex-col space-y-2">
+        <div className="flex flex-col gap-2">
           <p className="text-sm font-medium leading-none">
             {stateDetails.label}
           </p>

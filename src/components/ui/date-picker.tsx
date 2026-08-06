@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CalendarIcon } from "@radix-ui/react-icons";
+import { CalendarIcon } from "lucide-react";
 import { AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 
@@ -26,9 +26,19 @@ const localeMap = {
   fr: fr,
 };
 
+// date-fns localized patterns (P, PP, ...) always include the year and the
+// word order differs between languages, so short formats are defined per locale.
+const dateFormatMap = {
+  en: { short: "EEE, MMM d", long: "EEE, MMM d, yyyy" },
+  fr: { short: "EEE d MMM", long: "EEE d MMM yyyy" },
+};
+
 interface DatePickerProps {
   currentDate: Date;
   selectedDate: Date | null;
+  // Date to display when the user has not explicitly selected one
+  // (e.g. the current date returned by the NHL score api).
+  fallbackDate?: Date | null;
   updateDate: (newDate: Date | null) => void;
   updateDateWithString: (newDate: string) => void;
 }
@@ -36,6 +46,14 @@ interface DatePickerProps {
 export function DatePicker(props: DatePickerProps) {
   const t = useTranslations();
   const locale = useLocale();
+
+  const displayedDate = props.selectedDate ?? props.fallbackDate ?? null;
+  const dateLocale = localeMap[locale as "en" | "fr"];
+  const dateFormat = dateFormatMap[locale as "en" | "fr"];
+
+  const isOffCurrentDate =
+    props.selectedDate !== null &&
+    props.selectedDate.toDateString() !== props.currentDate.toDateString();
 
   const handleSelectCurrentDate = (
     event: React.MouseEvent<SVGSVGElement, MouseEvent>
@@ -51,29 +69,41 @@ export function DatePicker(props: DatePickerProps) {
           <Button
             variant={"outline"}
             className={cn(
-              "w-[240px] justify-start text-left font-normal",
-              !props.selectedDate && "text-muted-foreground"
+              "justify-start text-left font-normal",
+              // Extra width when the warning icon is shown so the date stays fully visible.
+              isOffCurrentDate
+                ? "w-[168px] sm:w-[230px]"
+                : "w-[144px] sm:w-[200px]",
+              !displayedDate && "text-muted-foreground",
+              isOffCurrentDate &&
+                "border-amber-500/70 bg-amber-500/10 text-amber-600 hover:bg-amber-500/15 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-400"
             )}
           />
         }
       >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {props.selectedDate ? (
-            format(props.selectedDate, "PPPP", {
-              locale: localeMap[locale as "en" | "fr"],
-            })
+          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+          {displayedDate ? (
+            <>
+              <span className="whitespace-nowrap sm:hidden">
+                {format(displayedDate, dateFormat.short, { locale: dateLocale })}
+              </span>
+              <span className="hidden whitespace-nowrap sm:inline">
+                {format(displayedDate, dateFormat.long, { locale: dateLocale })}
+              </span>
+            </>
           ) : (
             <span>{t("PickDate")}</span>
           )}
-          {props.selectedDate === null ||
-          props.selectedDate.toDateString() ===
-            props.currentDate.toDateString() ? null : (
-            <div className="ml-auto">
+          {isOffCurrentDate && (
+            <div className="ml-auto pl-1">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger
                     render={
-                      <AlertTriangle onClick={handleSelectCurrentDate} />
+                      <AlertTriangle
+                        className="size-4 shrink-0 text-amber-500"
+                        onClick={handleSelectCurrentDate}
+                      />
                     }
                   />
                   <TooltipContent>
@@ -87,7 +117,7 @@ export function DatePicker(props: DatePickerProps) {
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
-          selected={props.selectedDate ?? props.currentDate}
+          selected={displayedDate ?? props.currentDate}
           onSelect={props.updateDate}
           className="rounded-md border shadow-sm"
           required

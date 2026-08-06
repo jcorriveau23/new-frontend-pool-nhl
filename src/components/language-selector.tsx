@@ -38,7 +38,7 @@ export default function LanguageSelector() {
       <PopoverTrigger
         render={<Button variant="outline" role="combobox" aria-expanded={open} />}
       >
-        <Globe className="mr-2 h-4 w-4 shrink-0" />
+        <Globe className="mr-2 size-4 shrink-0" />
         {t(
           languages.find((language) => language.value === locale)?.label ?? ""
         )}
@@ -58,7 +58,7 @@ export default function LanguageSelector() {
                 {t(language.label)}
                 <Check
                   className={cn(
-                    "ml-auto h-4 w-4",
+                    "ml-auto size-4",
                     locale === language.value ? "opacity-100" : "opacity-0"
                   )}
                 />

@@ -13,7 +13,7 @@ import React, {
   useRef,
 } from "react";
 import { usePoolContext } from "./pool-context";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
@@ -103,22 +103,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const socketRef = useRef<WebSocket | null>(null);
 
   const sendSocketCommand = (command: string, arg: string | null) => {
-    console.log(`send command ${command}`);
+    console.info(`send command ${command}`);
     if (!socketRef.current) {
-      toast({
-        variant: "destructive",
-        title: t("SocketNotConnected"),
-        duration: 5000,
-      });
+      toast.error(t("SocketNotConnected"), { duration: 5000 });
       return;
     }
 
     if (session.info === null || session.info.isValid === false) {
-      toast({
-        variant: "destructive",
-        title: t("UserNotConnected"),
-        duration: 5000,
-      });
+      toast.error(t("UserNotConnected"), { duration: 5000 });
       return;
     }
 
@@ -143,11 +135,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
           }
         } catch (e) {
           console.error("Failed to parse WebSocket message:", e);
-          toast({
-            variant: "destructive",
-            title: event.data,
-            duration: 2000,
-          });
+          toast.error(event.data, { duration: 2000 });
         }
       };
 
@@ -158,29 +146,19 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
             `{"pool_name": "${poolInfo.name}", "number_poolers": ${poolInfo.settings.number_poolers}}`
           )
         );
-        toast({
-          title: t("RoomJoined", { poolName: poolInfo.name }),
-          duration: 2000,
-        });
+        toast(t("RoomJoined", { poolName: poolInfo.name }), { duration: 2000 });
         setSocketStatus(SocketStatus.Opened);
       };
 
       socket.onclose = () => {
         setSocketStatus(SocketStatus.Closed);
 
-        toast({
-          title: t("ConnectionClosed", { poolName: poolInfo.name }),
-          duration: 2000,
-        });
+        toast(t("ConnectionClosed", { poolName: poolInfo.name }), { duration: 2000 });
       };
 
       socket.onerror = (error) => {
-        console.log(error);
-        toast({
-          variant: "destructive",
-          title: `WebSocket error`,
-          duration: 2000,
-        });
+        console.error("WebSocket error", error);
+        toast.error(`WebSocket error`, { duration: 2000 });
       };
     },
     [updatePoolInfo, poolInfo.name, t]

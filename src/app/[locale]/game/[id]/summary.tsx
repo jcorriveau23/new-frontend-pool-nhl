@@ -5,6 +5,9 @@ import {
   Team,
   PeriodType,
   ShootoutAttempt,
+  StarPlayer,
+  PenaltyPeriod,
+  Penalty,
 } from "@/data/nhl/gameLanding";
 import { abbrevToTeamId } from "@/lib/teams";
 import {
@@ -13,7 +16,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -30,6 +33,8 @@ import { ExternalLink, Shield } from "lucide-react";
 import { getServerSideGameLanding } from "@/actions/game-landing";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import GameInfoCard from "./game-info-card";
+import GamePreview from "./game-preview";
 
 interface Props {
   gameId: string;
@@ -39,6 +44,16 @@ enum GoalSituation {
   PP = "1541",
   SHG = "1451",
   EN = "1560",
+}
+
+function starInitials(name: string): string {
+  return name
+    .split(/[\s.]+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 export default async function GameSummary(props: Props) {
@@ -89,6 +104,11 @@ export default async function GameSummary(props: Props) {
             <div className="flex items-center space-x-2">
               <Avatar>
                 <AvatarImage src={goal.headshot} />
+                <AvatarFallback className="text-xs">
+                  {starInitials(
+                    `${goal.firstName.default} ${goal.lastName.default}`
+                  )}
+                </AvatarFallback>
               </Avatar>
               <span>
                 <PlayerLink
@@ -113,41 +133,43 @@ export default async function GameSummary(props: Props) {
               </span>
             </div>
           </div>
-          <div className="shrink-0 space-y-3">
+          <div className="flex flex-col shrink-0 gap-3">
             <span className="text-lg font-bold">
               {goal.awayScore} - {goal.homeScore}
             </span>
-            <a
-              href={goal.highlightClipSharingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center text-link"
-            >
-              <ExternalLink size={16} className="mr-1" />
-              {t("Watch")}
-            </a>
+            {goal.highlightClipSharingUrl ? (
+              <a
+                href={goal.highlightClipSharingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center text-primary"
+              >
+                <ExternalLink size={16} className="mr-1" />
+                {t("Watch")}
+              </a>
+            ) : null}
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  const PeriodGoals = (period: number, goals: Goal[]) => (
-    <div className="space-y-2">
+  const PeriodGoals = (goals: Goal[]) => (
+    <div className="flex flex-col gap-2">
       {goals.map((goal) => (
-        <GoalCard key={goal.timeInPeriod} goal={goal} />
+        <GoalCard key={`${goal.timeInPeriod}-${goal.playerId}`} goal={goal} />
       ))}
     </div>
   );
 
   const TeamInfo = (name: string, logo: string, shots: number) => (
     <div className="flex flex-col items-center space-y-2">
-      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+      <div className="size-16 bg-muted rounded-full flex items-center justify-center">
         <TeamLogo width={60} height={60} src={logo} />
       </div>
       <h2 className="text-lg font-semibold">{name}</h2>
       <div className="flex items-center space-x-1">
-        <Shield className="w-4 h-4" />
+        <Shield className="size-4" />
         <span className="text-sm">
           {shots} {t("shots")}
         </span>
@@ -155,17 +177,39 @@ export default async function GameSummary(props: Props) {
     </div>
   );
 
+  // A short status line derived from the game state (Final / OT / clock).
+  const gameStatusLabel = (): string => {
+    const state = gameLanding?.gameState;
+    const periodType = gameLanding?.periodDescriptor?.periodType;
+    if (state === "OFF" || state === "FINAL") {
+      return periodType && periodType !== PeriodType.REG
+        ? `${t("Final")} / ${periodType}`
+        : t("Final");
+    }
+    if (state === "LIVE" || state === "CRIT") {
+      const clock = gameLanding?.clock?.timeRemaining;
+      const period = gameLanding?.periodDescriptor?.number;
+      return clock && period ? `P${period} · ${clock}` : t("Live");
+    }
+    return "";
+  };
+
   const ScoreDisplay = (awayScore: number, homeScore: number) => (
-    <div className="flex items-center justify-center bg-primary text-primary-foreground rounded-lg px-6 py-3">
-      <span className="text-4xl font-bold">{awayScore}</span>
-      <span className="text-2xl font-semibold mx-2">-</span>
-      <span className="text-4xl font-bold">{homeScore}</span>
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex items-center justify-center bg-primary text-primary-foreground rounded-lg px-6 py-3">
+        <span className="text-4xl font-bold">{awayScore}</span>
+        <span className="text-2xl font-semibold mx-2">-</span>
+        <span className="text-4xl font-bold">{homeScore}</span>
+      </div>
+      {gameStatusLabel() ? (
+        <Badge variant="secondary">{gameStatusLabel()}</Badge>
+      ) : null}
     </div>
   );
 
-  const GameSummary = (awayTeam: Team, homeTeam: Team) => (
+  const GameHeader = (awayTeam: Team, homeTeam: Team) => (
     <div className="w-full max-w-3xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden">
-      <div className="p-6 space-y-6">
+      <div className="flex flex-col p-6 gap-6">
         <div className="flex justify-between items-center">
           {TeamInfo(awayTeam.commonName.default, awayTeam.logo, awayTeam.sog)}
           {ScoreDisplay(awayTeam.score, homeTeam.score)}
@@ -173,6 +217,113 @@ export default async function GameSummary(props: Props) {
         </div>
       </div>
     </div>
+  );
+
+  const StarCard = (star: StarPlayer) => (
+    <Card key={star.playerId} className="flex-1">
+      <CardContent className="flex items-center gap-3 p-4">
+        <div className="relative">
+          <Avatar className="size-12">
+            <AvatarImage src={star.headshot} />
+            <AvatarFallback className="text-xs">
+              {starInitials(star.name.default)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="bg-primary text-primary-foreground absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full text-xs font-bold">
+            {star.star}
+          </span>
+        </div>
+        <div className="min-w-0">
+          <PlayerLink
+            name={star.name.default}
+            id={star.playerId}
+            textStyle="font-medium"
+          />
+          <div className="text-muted-foreground text-xs">
+            {star.teamAbbrev} · {star.position}
+          </div>
+          <div className="text-xs">
+            {star.position === "G"
+              ? `${star.goalsAgainstAverage?.toFixed(2) ?? "-"} ${t("Gaa")} · ${
+                  star.savePctg?.toFixed(3) ?? "-"
+                } ${t("SvPctg")}`
+              : `${star.goals ?? 0}G · ${star.assists ?? 0}A · ${
+                  star.points ?? 0
+                }P`}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const ThreeStars = (stars: StarPlayer[]) => (
+    <div className="flex flex-col gap-3 sm:flex-row">
+      {stars
+        .slice()
+        .sort((a, b) => a.star - b.star)
+        .map((star) => StarCard(star))}
+    </div>
+  );
+
+  const formatPenaltyDesc = (descKey: string) => {
+    const key = `PenaltyType.${descKey}`;
+    if (t.has(key)) {
+      return t(key);
+    }
+    // Fallback for penalty types we haven't translated yet.
+    return descKey
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  const penaltyPlayerName = (penalty: Penalty): string => {
+    if (penalty.committedByPlayer) {
+      return `${penalty.committedByPlayer.firstName.default} ${penalty.committedByPlayer.lastName.default}`;
+    }
+    if (penalty.servedBy) {
+      return `${penalty.servedBy.default} (${t("BenchPenalty")})`;
+    }
+    return t("BenchPenalty");
+  };
+
+  const PenaltyTable = (penaltyPeriod: PenaltyPeriod) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{t("Time")}</TableHead>
+          <TableHead>{t("Team")}</TableHead>
+          <TableHead>{t("Player")}</TableHead>
+          <TableHead>{t("Infraction")}</TableHead>
+          <TableHead className="text-right">{t("Duration")}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {penaltyPeriod.penalties.map((penalty, index) => (
+          <TableRow key={`${penalty.timeInPeriod}-${index}`}>
+            <TableCell className="px-2 text-left tabular-nums">
+              {penalty.timeInPeriod}
+            </TableCell>
+            <TableCell className="px-2">
+              <TeamLogo
+                teamId={abbrevToTeamId[penalty.teamAbbrev.default]}
+                width={24}
+                height={24}
+              />
+            </TableCell>
+            <TableCell className="px-2 text-left whitespace-nowrap">
+              {penaltyPlayerName(penalty)}
+            </TableCell>
+            <TableCell className="px-2 text-left">
+              {formatPenaltyDesc(penalty.descKey)}
+            </TableCell>
+            <TableCell className="text-muted-foreground px-2 text-right tabular-nums whitespace-nowrap">
+              {penalty.duration} {t("MinuteUnit")}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 
   const ShootoutTable = (shootoutInfo: ShootoutAttempt[]) => (
@@ -215,15 +366,42 @@ export default async function GameSummary(props: Props) {
     );
   }
 
+  const summary = gameLanding.summary;
+  const hasPenalties = summary?.penalties?.some(
+    (period) => period.penalties.length > 0
+  );
+
   return (
     <div>
-      {gameLanding.summary ? (
-        <>
-          <div className="py-5 px-0 sm:px-5">
-            {GameSummary(gameLanding.awayTeam, gameLanding.homeTeam)}
-          </div>
-          <div className="py-5 px-0 sm:px-5">
-            {gameLanding.summary.scoring
+      {summary ? (
+        <div className="py-5 px-0 sm:px-5">
+          {GameHeader(gameLanding.awayTeam, gameLanding.homeTeam)}
+        </div>
+      ) : null}
+
+      <div className="mx-auto max-w-3xl px-0 pb-5 sm:px-5">
+        <GameInfoCard
+          startTimeUTC={gameLanding.startTimeUTC}
+          venue={gameLanding.venue}
+          venueLocation={gameLanding.venueLocation}
+          broadcasts={gameLanding.tvBroadcasts}
+          ticketsLink={gameLanding.ticketsLink}
+        />
+      </div>
+
+      {summary ? (
+        <div className="mx-auto max-w-3xl">
+          {summary.threeStars?.length > 0 ? (
+            <div className="px-0 pb-5 sm:px-5">
+              <h3 className="mb-3 text-center text-sm font-semibold uppercase tracking-wide">
+                {t("ThreeStars")}
+              </h3>
+              {ThreeStars(summary.threeStars)}
+            </div>
+          ) : null}
+
+          <div className="px-0 pb-5 sm:px-5">
+            {summary.scoring
               .filter(
                 (period) => period.periodDescriptor.periodType !== PeriodType.SO
               )
@@ -239,32 +417,65 @@ export default async function GameSummary(props: Props) {
                         : "OT"}
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className="space-y-4">
+                      <div className="flex flex-col gap-4">
                         {period.goals?.length > 0
-                          ? PeriodGoals(
-                              period.periodDescriptor.number,
-                              period.goals
-                            )
+                          ? PeriodGoals(period.goals)
                           : t("NoGoal")}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
               ))}
-            {gameLanding.summary.shootout?.events?.length > 0 ? (
+
+            {summary.shootout?.events?.length > 0 ? (
               <Accordion defaultValue={["shootout"]}>
                 <AccordionItem value="shootout">
                   <AccordionTrigger>{t("Shootout")}</AccordionTrigger>
                   <AccordionContent>
-                    {ShootoutTable(gameLanding.summary.shootout.events)}
+                    {ShootoutTable(summary.shootout.events)}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            ) : null}
+
+            {hasPenalties ? (
+              <Accordion defaultValue={[]}>
+                <AccordionItem value="penalties">
+                  <AccordionTrigger>{t("Penalties")}</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col gap-4">
+                      {summary.penalties
+                        .filter((period) => period.penalties.length > 0)
+                        .map((period) => (
+                          <div key={period.periodDescriptor.number}>
+                            <div className="text-muted-foreground mb-1 text-sm font-medium">
+                              {period.periodDescriptor.periodType ===
+                              PeriodType.REG
+                                ? `${t("Period")} ${period.periodDescriptor.number}`
+                                : period.periodDescriptor.periodType}
+                            </div>
+                            {PenaltyTable(period)}
+                          </div>
+                        ))}
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
             ) : null}
           </div>
-        </>
+        </div>
+      ) : gameLanding.matchup ? (
+        <div className="px-0 pb-5 sm:px-5">
+          <GamePreview
+            matchup={gameLanding.matchup}
+            awayTeam={gameLanding.awayTeam}
+            homeTeam={gameLanding.homeTeam}
+          />
+        </div>
       ) : (
-        <h1>TODO: Summary game preview information.</h1>
+        <p className="text-muted-foreground py-8 text-center">
+          {t("NoGamePreview")}
+        </p>
       )}
     </div>
   );

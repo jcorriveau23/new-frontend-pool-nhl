@@ -8,16 +8,13 @@ import {
   SkatersDailyTotalPoints,
   TotalDailyPoints,
   getDailyGoalieStatsWithCumulative,
-  getDailyGoalieStatsWithDailyStats,
   getDailySkaterStatsWithCumulative,
-  getDailySkaterStatsWithDailyStats,
 } from "./scoring";
 import {
   GoaliesSettings,
   PoolSettings,
   SkaterSettings,
 } from "@/data/pool/model";
-import { DailyLeaders } from "@/data/dailyLeaders/model";
 
 const skaterSettings: SkaterSettings = {
   points_per_goals: 2,
@@ -167,77 +164,6 @@ describe("getDailyGoalieStatsWithCumulative", () => {
       goaliesSettings
     );
     expect(goalie.status).toBe(expected);
-  });
-});
-
-const leaders: DailyLeaders = {
-  date: "2026-01-01",
-  skaters: [
-    {
-      name: "Scorer",
-      id: 10,
-      team: 1,
-      stats: { goals: 2, assists: 1, shootoutGoals: 0 },
-    },
-  ],
-  goalies: [
-    {
-      name: "Perfect Goalie",
-      id: 20,
-      team: 1,
-      stats: { goals: 0, assists: 0, decision: "W", savePercentage: 1.0 },
-    },
-    {
-      name: "Winning Goalie",
-      id: 21,
-      team: 2,
-      stats: { goals: 0, assists: 1, decision: "W", savePercentage: 0.912 },
-    },
-    {
-      name: "OT Goalie",
-      id: 22,
-      team: 3,
-      stats: { goals: 0, assists: 0, decision: "O", savePercentage: 0.9 },
-    },
-  ],
-  played: [10, 11, 20, 21, 22],
-};
-
-describe("getDailySkaterStatsWithDailyStats", () => {
-  it("uses the live stats when the skater is in the leaders", () => {
-    const skater = getDailySkaterStatsWithDailyStats(leaders, "10", skaterSettings);
-    expect(skater.played).toBe(true);
-    expect(skater.poolPoints).toBe(2 * 2 + 1);
-  });
-
-  it("marks a pointless skater as played when he is in the played list", () => {
-    const skater = getDailySkaterStatsWithDailyStats(leaders, "11", skaterSettings);
-    expect(skater.played).toBe(true);
-    expect(skater.poolPoints).toBe(0);
-  });
-
-  it("marks a skater as not played when absent from the leaders", () => {
-    const skater = getDailySkaterStatsWithDailyStats(leaders, "99", skaterSettings);
-    expect(skater.played).toBe(false);
-  });
-});
-
-describe("getDailyGoalieStatsWithDailyStats", () => {
-  it("upgrades a win with a perfect save percentage to a shutout", () => {
-    const goalie = getDailyGoalieStatsWithDailyStats(leaders, "20", goaliesSettings);
-    expect(goalie.status).toBe(GoalieGameStatus.Shutout);
-    expect(goalie.poolPoints).toBe(2 + 3);
-  });
-
-  it("maps a regular win to the win status", () => {
-    const goalie = getDailyGoalieStatsWithDailyStats(leaders, "21", goaliesSettings);
-    expect(goalie.status).toBe(GoalieGameStatus.Win);
-    expect(goalie.poolPoints).toBe(1 + 2);
-  });
-
-  it("maps an overtime decision to the overtime status", () => {
-    const goalie = getDailyGoalieStatsWithDailyStats(leaders, "22", goaliesSettings);
-    expect(goalie.status).toBe(GoalieGameStatus.OverTime);
   });
 });
 

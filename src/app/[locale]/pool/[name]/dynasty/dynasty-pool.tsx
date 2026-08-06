@@ -51,7 +51,7 @@ export default function DynastyPool() {
     // That way if the user go into another page and come back using the "Go Back" or "Go forward"
     // options in the browser he will be in the selected tab.
     const handlePopState = (_event: PopStateEvent) => {
-      console.log(
+      console.info(
         `A '${_event.type}' event has been triggered, active tabs and selected participants needs to be updated.`
       );
       const queryParams = new URLSearchParams(searchParams.toString());

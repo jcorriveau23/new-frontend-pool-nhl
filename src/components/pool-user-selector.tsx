@@ -16,7 +16,7 @@ export function PoolerUserGlobalSelector() {
     usePoolContext();
   const t = useTranslations();
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <Label htmlFor="pooler-selector" className="text-sm font-medium">
         {t("PoolerOfInterest")}
       </Label>
@@ -27,7 +27,7 @@ export function PoolerUserGlobalSelector() {
         }}
       >
         <SelectTrigger className="w-full" id="pooler-selector">
-          <SelectValue placeholder="Select pooler of interest" />
+          <SelectValue placeholder={t("SelectPoolerOfInterest")} />
         </SelectTrigger>
         <SelectContent>
           {poolInfo.participants?.map((user: PoolUser) => (

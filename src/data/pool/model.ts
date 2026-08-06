@@ -347,7 +347,7 @@ export const getPoolTimeRangeCharts = (
   positionFilter: "F" | "D" | "G" | null
 ) => {
   // Return a charts of the amout of points accumulated between 2 dates.
-  console.log(
+  console.info(
     `Calculating cumulative chart from ${poolStartDate} to ${poolSelectedEndDate}`
   );
   const chartData = [];
@@ -526,9 +526,6 @@ export const getSkaterTimeRangeCharts = (
   skaterSettings: SkaterSettings,
 ) => {
   // Return a charts of the amout of points accumulated between 2 dates.
-  console.log(
-    `Calculating skater cumulative chart from ${poolStartDate} to ${poolSelectedEndDate}`
-  );
   let prevChartElement = null;
   const chartData = [];
  
@@ -553,7 +550,8 @@ export const getSkaterTimeRangeCharts = (
     chartElement["goals"] = Number(prevChartElement?.["goals"] ?? 0) + (skaterPoints?.G ?? 0);
     chartElement["assists"] = Number(prevChartElement?.["assists"] ?? 0) + (skaterPoints?.A ?? 0);
     chartElement["hattricks"] = Number(prevChartElement?.["hattricks"] ?? 0) + (skaterPoints && skaterPoints.G >= 3 ? 1 : 0);
-    chartElement["shootoutGoals"] = Number(prevChartElement?.["shootoutGoals"] ?? 0) + (skaterPoints && skaterPoints.SOG ? skaterPoints.SOG : 0);  
+    chartElement["shootoutGoals"] = Number(prevChartElement?.["shootoutGoals"] ?? 0) + (skaterPoints && skaterPoints.SOG ? skaterPoints.SOG : 0);
+    chartElement["games"] = Number(prevChartElement?.["games"] ?? 0) + (skaterPoints ? 1 : 0);
     chartElement["isInRoster"] = (playerId in poolInfo.context.score_by_day[jDate][userId].roster.F) || (playerId in poolInfo.context.score_by_day[jDate][userId].roster.D)
     
     prevChartElement = chartElement;
@@ -573,9 +571,6 @@ export const getGoalieTimeRangeCharts = (
   goaliesSettings: GoaliesSettings,
 ) => {
   // Return a charts of the amout of points accumulated between 2 dates.
-  console.log(
-    `Calculating goalie cumulative chart from ${poolStartDate} to ${poolSelectedEndDate}`
-  );
   let prevChartElement = null;
   const chartData = [];
  
@@ -602,6 +597,7 @@ export const getGoalieTimeRangeCharts = (
     chartElement["otlosses"] = Number(prevChartElement?.["otlosses"] ?? 0) + (goaliePoints?.OT ? 1 : 0);
     chartElement["goals"] = Number(prevChartElement?.["goals"] ?? 0) + (goaliePoints?.G ?? 0 );
     chartElement["assists"] = Number(prevChartElement?.["assists"] ?? 0) + (goaliePoints?.A ?? 0 );
+    chartElement["games"] = Number(prevChartElement?.["games"] ?? 0) + (goaliePoints ? 1 : 0);
     chartElement["isInRoster"] = playerId in poolInfo.context.score_by_day[jDate][userId].roster.G
     
     prevChartElement = chartElement;

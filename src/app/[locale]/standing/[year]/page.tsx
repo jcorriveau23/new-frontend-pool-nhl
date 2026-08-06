@@ -1,7 +1,6 @@
 import * as React from "react";
 
-import Image from "next/image";
-import { Combobox } from "@/components/ui//link-combobox";
+import { Combobox } from "@/components/ui/link-combobox";
 import {
   Table,
   TableBody,

@@ -5,49 +5,65 @@ import { Link } from "@/i18n/routing";
 The footer of the web app.
  */
 
-import { GitHubLogoIcon } from "@radix-ui/react-icons";
-import { TwitterLogoIcon } from "@radix-ui/react-icons";
+import { GithubIcon, TwitterIcon } from "lucide-react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 export default function Footer() {
   const t = useTranslations();
   return (
-    <footer className="mx-0 py-4 w-full">
-      <div className="container grid grid-cols-2  gap-8">
-        <div className="grid gap-1">
-          <h3 className="font-bold">{t("FollowUs")}</h3>
+    <footer className="w-full">
+      <div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-10 sm:grid-cols-3 md:px-6">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 font-semibold tracking-tight">
+            <Image
+              src="/logo-mark.png"
+              alt="slapshot.xyz"
+              width={24}
+              height={24}
+              className="size-6 shrink-0 rounded-md object-cover"
+            />
+            slapshot.xyz
+          </div>
+          <p className="text-muted-foreground text-sm">{t("Tagline")}</p>
+          <p className="text-muted-foreground text-sm">{t("FreeForever")}</p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold">{t("FollowUs")}</h3>
           <Link
             href="https://twitter.com/hockeypool3"
-            className="flex items-center gap-2 hover:underline text-muted-foreground"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
           >
-            <TwitterLogoIcon className="h-5 w-5" />
+            <TwitterIcon className="size-4" />
             Twitter
           </Link>
           <Link
             href="https://github.com/jcorriveau23/new-frontend-pool-nhl"
-            className="flex items-center gap-2 hover:underline text-muted-foreground"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
           >
-            <GitHubLogoIcon className="h-5 w-5" />
+            <GithubIcon className="size-4" />
             GitHub
           </Link>
         </div>
-        <div className="grid gap-1">
-          <h3 className="font-bold">{t("Legal")}</h3>
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold">{t("Legal")}</h3>
           <Link
             href={`/privacy-policy`}
-            className="hover:underline text-muted-foreground"
+            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
           >
             {t("PrivacyPolicy")}
           </Link>
           <Link
-            href={`/term-of-service?`}
-            className="hover:underline text-muted-foreground"
+            href={`/term-of-service`}
+            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
           >
             {t("TermOfService")}
           </Link>
         </div>
-        <div className="grid col-span-2">
-          <p className="text-muted-foreground">© 2025 slapshot.xyz</p>
+      </div>
+      <div className="border-t">
+        <div className="mx-auto w-full max-w-5xl px-4 py-4 md:px-6">
+          <p className="text-muted-foreground text-xs">© 2026 slapshot.xyz</p>
         </div>
       </div>
     </footer>

@@ -6,7 +6,6 @@ import { Pool, PoolUser } from "@/data/pool/model";
 import React, { createContext, useContext, ReactNode, useState } from "react";
 import { useRouter } from "@/i18n/routing";
 import { db } from "@/db";
-import { useDailyLeadersContext } from "./daily-leaders-context";
 import { format } from "date-fns";
 import { useDateContext } from "./date-context";
 import { useSearchParams } from "next/navigation";
@@ -15,9 +14,7 @@ import {
   SkaterDailyInfo,
   TotalDailyPoints,
   getDailyGoaliesStatsWithCumulative,
-  getDailyGoaliesStatsWithDailyLeaders,
   getDailySkatersStatsWithCumulative,
-  getDailySkaterStatsWithDailyLeaders,
 } from "@/lib/scoring";
 
 export interface DailyPoolPointsMade {
@@ -154,48 +151,58 @@ const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
 };
 
 export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
-  // @ts-expect-error, Dexie is not typed.
-  const poolDb: Pool = await db.pools.get({ name: name });
-
-  const lastFormatDate = findLastDateInDb(poolDb);
-
-  console.log(`Last format date ${lastFormatDate} found in indexed db.`);
-  let res;
-
-  // TODO: risk here since we used the start date of the pool stored locally in database.
-  // It could be corrupt or changed. Should process that server side.
-  res = await fetch(
-    lastFormatDate
-      ? `/api-rust/pool/${name}/${poolDb.season_start}/${lastFormatDate}`
-      : `/api-rust/pool/${name}`
-  );
-
+  // Pool metadata (participants, settings, roster, lineup events).
+  const res = await fetch(`/api-rust/pool/${name}`);
   if (!res.ok) {
     return await res.text();
   }
+  const data: Pool = await res.json();
 
-  let data: Pool = await res.json();
+  // The locally cached copy of the pool (Dexie), used both to fetch only the
+  // missing score days and to preserve the row id so the put() updates in place.
+  // @ts-expect-error, Dexie is not typed.
+  const poolDb: Pool = await db.pools.get({ name: name });
+
+  // Scores are derived on demand server-side from the lineup events + daily
+  // stats, shaped like the legacy score_by_day so the rest of the UI is
+  // unchanged. Past days never change, so only fetch the days missing from the
+  // local cache; the last cached day is re-fetched since it may have been
+  // stored while its games were still in progress.
+  if (data.context) {
+    const today = format(new Date(), "yyyy-MM-dd");
+    const rangeEnd = today < data.season_end ? today : data.season_end;
+
+    // Only trust cached days inside the current season range (guards against a
+    // stale cache from a previous dynasty season).
+    const cachedScores = poolDb?.context?.score_by_day ?? null;
+    const cachedDates = cachedScores
+      ? Object.keys(cachedScores)
+          .filter((date) => date >= data.season_start && date <= rangeEnd)
+          .sort()
+      : [];
+    const lastCachedDate = cachedDates[cachedDates.length - 1];
+    const rangeStart = lastCachedDate ?? data.season_start;
+
+    const scoresRes = await fetch(
+      `/api-rust/pool-scores/${name}/cumulative/${rangeStart}/${rangeEnd}`
+    );
+    const cachedByDay = Object.fromEntries(
+      cachedDates.map((date) => [date, cachedScores![date]])
+    );
+    if (scoresRes.ok) {
+      // Freshly derived days override the cached ones.
+      data.context.score_by_day = {
+        ...cachedByDay,
+        ...(await scoresRes.json()),
+      };
+    } else {
+      // Keep whatever we had locally so the UI can still render history.
+      data.context.score_by_day = cachedByDay;
+      console.error(`could not fetch derived scores: ${await scoresRes.text()}`);
+    }
+  }
 
   if (poolDb) {
-    // If we detect that the pool stored in the database date_updated field does not match the one
-    // from the server, we will force a complete update.
-    if (data.date_updated !== poolDb.date_updated) {
-      res = await fetch(`/api-rust/pool/${name}`);
-
-      if (!res.ok) {
-        return await res.text();
-      }
-
-      data = await res.json();
-    } else if (lastFormatDate) {
-      // This is in the case we called the pool information for only a range of date since the rest of the date
-      // were already stored and valid in the client database, we then only merge the needed data of the client database pool.
-      mergeScoreByDay(data, poolDb);
-      console.log("merging score in database.");
-      // TODO hash the results and compare with server hash to determine if an update is needed.
-      // If we do that, we could remove the logic of comparing the field date_updated above that would be cleaner and more robust.
-    }
-
     data.id = poolDb.id;
   }
 
@@ -210,7 +217,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
 }) => {
   const searchParams = useSearchParams();
   const [poolInfo, setPoolInfo] = useState<Pool>(pool);
-  const { dailyLeaders } = useDailyLeadersContext();
   const { currentDate, querySelectedDate } = useDateContext();
   const [dailyPointsMade, setDailyPointsMade] =
     useState<DailyPoolPointsMade | null>(null);
@@ -288,7 +294,12 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     );
     const queryParams = new URLSearchParams(searchParams.toString());
     queryParams.set("selectedParticipant", participant);
-    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
+    // Keep the URL query in sync without scrolling back to the top. The UI is
+    // already driven by the local state set above, so this is only for
+    // shareable/reloadable URLs — use replace + scroll:false to avoid the jump.
+    router.replace(`/pool/${poolInfo.name}/?${queryParams.toString()}`, {
+      scroll: false,
+    });
   };
 
   React.useEffect(() => {
@@ -305,7 +316,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       const user = poolInfo.participants[i];
 
       if (dayInfo && dayInfo[user.id].is_cumulated) {
-        console.log(
+        console.info(
           `processing daily ranking for ${dateOfInterest} using cumulative.`
         );
         cumulated = true;
@@ -323,30 +334,8 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
           dayInfo[user.id].roster.G,
           poolInfo.settings.goalies_settings
         );
-      } else if (dailyLeaders && dayInfo) {
-        console.log(
-          `processing daily ranking for ${dateOfInterest} using daily_leaders.`
-        );
-
-        // The players stats is not yet stored into the pool information
-        // we can take the information from the daiLeaders that is being update live.
-        forwardsDailyStatsTemp[user.id] = getDailySkaterStatsWithDailyLeaders(
-          dayInfo[user.id].roster.F,
-          dailyLeaders,
-          poolInfo.settings.forwards_settings
-        );
-        defendersDailyStatsTemp[user.id] = getDailySkaterStatsWithDailyLeaders(
-          dayInfo[user.id].roster.D,
-          dailyLeaders,
-          poolInfo.settings.defense_settings
-        );
-        goaliesDailyStatsTemp[user.id] = getDailyGoaliesStatsWithDailyLeaders(
-          dayInfo[user.id].roster.G,
-          dailyLeaders,
-          poolInfo.settings.goalies_settings
-        );
       } else {
-        // It means that it should be previewing the roster.
+        // No derived scores for this day yet (e.g. previewing a future roster).
         setDailyPointsMade(null);
         return;
       }
@@ -369,7 +358,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       goaliesDailyStats: goaliesDailyStatsTemp,
       totalDailyPoints: totalDailyPointsTemp,
     });
-  }, [dateOfInterest, dailyLeaders]);
+  }, [dateOfInterest, poolInfo]);
 
   const updatePoolInfo = (newPoolInfo: Pool) => {
     // @ts-expect-error, dexie is not typed.

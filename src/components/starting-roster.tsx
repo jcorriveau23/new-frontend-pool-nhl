@@ -23,10 +23,10 @@ import { TeamLogo } from "./team-logo";
 import PlayerSalary from "./player-salary";
 import { salaryFormat } from "@/app/utils/formating";
 import { usePoolContext } from "@/context/pool-context";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useSession } from "@/context/useSessionData";
 import { Button } from "./ui/button";
-import { PlusCircledIcon, MinusCircledIcon } from "@radix-ui/react-icons";
+import { PlusCircleIcon, MinusCircleIcon } from "lucide-react";
 import PlayerSearchDialog from "./search-players";
 import { useUser } from "@/context/useUserData";
 
@@ -153,7 +153,7 @@ export default function StartingRoster(props: Props) {
         </p>
         <p
           className={
-            isOverCap ? "text-red-500 font-bold" : "text-green-500 font-bold"
+            isOverCap ? "text-destructive font-bold" : "text-success font-bold"
           }
         >
           {isOverCap
@@ -244,9 +244,9 @@ export default function StartingRoster(props: Props) {
                           size="sm"
                         >
                           {isStarter ? (
-                            <MinusCircledIcon />
+                            <MinusCircleIcon />
                           ) : (
-                            <PlusCircledIcon />
+                            <PlusCircleIcon />
                           )}
                         </Button>
                       </TableCell>
@@ -289,25 +289,18 @@ export default function StartingRoster(props: Props) {
 
     if (!res.ok) {
       const error = await res.text();
-      toast({
-        variant: "destructive",
-        title: t("CouldNotSaveRosterModification", {
+      toast.error(t("CouldNotSaveRosterModification", {
           userName: dictUsers[props.userRoster.user.id].name,
           error: error,
-        }),
-        duration: 5000,
-      });
+        }), { duration: 5000 });
       return false;
     }
 
     const data = await res.json();
     updatePoolInfo(data);
-    toast({
-      title: t("SuccessSaveRosterModification", {
+    toast.success(t("SuccessSaveRosterModification", {
         userName: dictUsers[props.userRoster.user.id].name,
-      }),
-      duration: 2000,
-    });
+      }), { duration: 2000 });
 
     return true;
   };
@@ -328,27 +321,20 @@ export default function StartingRoster(props: Props) {
 
     if (!res.ok) {
       const error = await res.text();
-      toast({
-        variant: "destructive",
-        title: t("CouldNotAddPlayerToRoster", {
+      toast.error(t("CouldNotAddPlayerToRoster", {
           playerName: player.name,
           userName: dictUsers[props.userRoster.user.id].name,
           error: error,
-        }),
-        duration: 5000,
-      });
+        }), { duration: 5000 });
       return false;
     }
 
     const data = await res.json();
     updatePoolInfo(data);
-    toast({
-      title: t("SuccessAddPlayerToRoster", {
+    toast.success(t("SuccessAddPlayerToRoster", {
         playerName: player.name,
         userName: dictUsers[props.userRoster.user.id].name,
-      }),
-      duration: 2000,
-    });
+      }), { duration: 2000 });
 
     return true;
   };

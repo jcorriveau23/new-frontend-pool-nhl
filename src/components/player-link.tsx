@@ -21,13 +21,13 @@ export default function PlayerLink(props: Props) {
   const playerId = props.id?.toString() ?? "";
 
   return props.name && props.id ? (
-    <div className="flex space-x-1">
+    <div className="flex items-center space-x-1.5">
       <Link
         onClick={(e) => props.onLinkClick?.(e)}
         href={`/player/${props.id}?${searchParams}`}
         target="_blank"
       >
-        <p className={`${props.textStyle ?? ""} text-link hover:underline`}>
+        <p className={`${props.textStyle ?? ""} text-primary hover:underline`}>
           {props.name}
         </p>
       </Link>
@@ -39,7 +39,10 @@ export default function PlayerLink(props: Props) {
               e.stopPropagation();
             }}
             render={
-              <Ambulance size={18} color="red" className="cursor-pointer" />
+              <Ambulance
+                size={16}
+                className="shrink-0 cursor-pointer text-red-500 transition-colors hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+              />
             }
           />
           <PopoverContent align="start">

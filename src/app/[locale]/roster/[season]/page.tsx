@@ -6,8 +6,9 @@ import { getAllTeamForSeason } from "@/lib/nhl";
 import { TeamLogo } from "@/components/team-logo";
 
 import team_info from "@/lib/teams";
-import { getAllYears } from "@/lib/nhl";
-import { Combobox } from "@/components/ui//link-combobox";
+import { getAllYears, FIRST_NHL_SEASON } from "@/lib/nhl";
+import { getSeasonInfo, lastSeasonYear } from "@/lib/season-info";
+import { Combobox } from "@/components/ui/link-combobox";
 import { Link } from "@/i18n/routing";
 import { getTranslations } from "next-intl/server";
 import { seasonWithYearFormat } from "@/app/utils/formating";
@@ -21,12 +22,13 @@ export default async function Rosters(props: {
   const params = await props.params;
   const queryString = new URLSearchParams(searchParams).toString();
   const t = await getTranslations();
+  const lastSeason = lastSeasonYear(await getSeasonInfo());
 
   const YearInputs = () => (
     <div className="space-x-2">
       {t("Season")}
       <Combobox
-        selections={getAllYears().map((season) => ({
+        selections={getAllYears(FIRST_NHL_SEASON, lastSeason).map((season) => ({
           value: `${season}${season + 1}`,
           label: seasonWithYearFormat(season),
         }))}
@@ -38,7 +40,7 @@ export default async function Rosters(props: {
   );
 
   return (
-    <div className="items-center text-center space-y-2">
+    <div className="flex flex-col items-center text-center gap-2">
       <PageTitle title={t("NhlTeamRosterPageTitle")} />
       {YearInputs()}
       {getAllTeamForSeason(Number(params.season)).map((teamId) => (

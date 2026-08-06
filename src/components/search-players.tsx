@@ -57,7 +57,7 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger render={<Button className="flex items-center gap-2" />}>
-        <Search className="w-4 h-4" />
+        <Search className="size-4" />
         {props.label}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -83,7 +83,7 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
             </Button>
           </div>
           <div className="max-h-[300px] overflow-y-auto">
-            <ul className="space-y-2">
+            <ul className="flex flex-col gap-2">
               {searchResults?.map((player) => (
                 <li
                   key={player.id}
@@ -116,7 +116,7 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
               ))}
             </ul>
             {searchResults?.length === 0 && (
-              <p className="text-center text-gray-500 mt-4">
+              <p className="text-center text-muted-foreground mt-4">
                 {t(`NoPlayersFoundWith`, { searchValue: searchQuery })}
               </p>
             )}

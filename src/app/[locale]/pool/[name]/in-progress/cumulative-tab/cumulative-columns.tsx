@@ -1,7 +1,25 @@
 "use client";
-import { ColumnDef } from "@tanstack/react-table";
+import { CellContext, ColumnDef } from "@tanstack/react-table";
 import { GameStatePopover } from "@/components/game-state-popover";
 import { TotalRanking } from "./cumulative-calculation";
+
+// Renders the pooler name, highlighting the selected pooler of interest with a
+// leading dot so the active row is easy to spot in the ranking.
+const PoolerCell = ({ row, table }: CellContext<TotalRanking, unknown>) => {
+  const isSelected =
+    row.original.participant === table.options.meta?.props?.selectedParticipant;
+  return (
+    <span className="flex items-center gap-1.5">
+      {isSelected ? (
+        <span
+          className="size-1.5 shrink-0 rounded-full bg-primary"
+          aria-hidden
+        />
+      ) : null}
+      {row.original.participant}
+    </span>
+  );
+};
 
 export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
   {
@@ -112,9 +130,7 @@ export const ForwardsTotalColumn: ColumnDef<TotalRanking>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row }) => {
-      return row.original.participant;
-    },
+    cell: PoolerCell,
   },
   {
     accessorKey: "gamePlayed",
@@ -178,9 +194,7 @@ export const DefensesTotalColumn: ColumnDef<TotalRanking>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row }) => {
-      return row.original.participant;
-    },
+    cell: PoolerCell,
   },
   {
     accessorKey: "gamePlayed",
@@ -244,9 +258,7 @@ export const GoaliesTotalColumn: ColumnDef<TotalRanking>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row }) => {
-      return row.original.participant;
-    },
+    cell: PoolerCell,
   },
   {
     accessorKey: "gamePlayed",

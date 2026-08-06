@@ -1,13 +1,13 @@
 "use client";
 import React from "react";
-import { ChevronRightIcon, ChevronLeftIcon } from "@radix-ui/react-icons";
+import { ChevronRightIcon, ChevronLeftIcon } from "lucide-react";
 
 // component
 import GameItem from "./game-item";
 import { useDateContext } from "@/context/date-context";
 import { DatePicker } from "./ui/date-picker";
 import { Button } from "./ui/button";
-import { LoadingSpinner } from "./ui/loading-spinner";
+import { Skeleton } from "./ui/skeleton";
 import { useTranslations } from "next-intl";
 import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 import { GameState } from "@/data/nhl/game";
@@ -22,6 +22,10 @@ export default function DailyGameFeed() {
     updateDateWithString(newDate);
   };
 
+  // The date of the games being displayed, as returned by the score api.
+  // Parsed as local time to avoid an off-by-one day shift.
+  const scoreDate = score ? new Date(score.currentDate + "T00:00:00") : null;
+
   return (
     <div className="m-2">
       <div className="flex items-center justify-center gap-1 text-center">
@@ -31,11 +35,12 @@ export default function DailyGameFeed() {
           size="icon"
           onClick={() => (score ? changeDate(score.prevDate) : null)}
         >
-          <ChevronLeftIcon className="h-4 w-4" />
+          <ChevronLeftIcon className="size-4" />
         </Button>
         <DatePicker
           currentDate={currentDate}
           selectedDate={selectedDate}
+          fallbackDate={scoreDate}
           updateDate={updateDate}
           updateDateWithString={updateDateWithString}
         />
@@ -45,13 +50,15 @@ export default function DailyGameFeed() {
           size="icon"
           onClick={() => (score ? changeDate(score.nextDate) : null)}
         >
-          <ChevronRightIcon className="h-4 w-4" />
+          <ChevronRightIcon className="size-4" />
         </Button>
       </div>
       <ScrollArea>
-        <div className="flex gap-1 mt-2 py-2">
+        <div className="mt-2 flex gap-2 py-2">
           {!score ? (
-            <LoadingSpinner />
+            Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-[74px] w-[80px] shrink-0 rounded-lg" />
+            ))
           ) : score.games.length > 0 ? (
             score.games
               .sort((a, b) => {
@@ -66,7 +73,9 @@ export default function DailyGameFeed() {
               })
               .map((game) => <GameItem key={game.id} game={game} />)
           ) : (
-            t("NoGameOnThatDate")
+            <p className="text-muted-foreground w-full py-8 text-center text-sm">
+              {t("NoGameOnThatDate")}
+            </p>
           )}
           <ScrollBar orientation="horizontal" />
         </div>
