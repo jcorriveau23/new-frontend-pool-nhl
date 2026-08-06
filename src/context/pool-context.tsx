@@ -158,25 +158,50 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
   }
   const data: Pool = await res.json();
 
+  // The locally cached copy of the pool (Dexie), used both to fetch only the
+  // missing score days and to preserve the row id so the put() updates in place.
+  // @ts-expect-error, Dexie is not typed.
+  const poolDb: Pool = await db.pools.get({ name: name });
+
   // Scores are derived on demand server-side from the lineup events + daily
-  // stats. Fetch the whole season-to-date, shaped like the legacy score_by_day
-  // so the rest of the UI is unchanged, and drop it onto the context.
+  // stats, shaped like the legacy score_by_day so the rest of the UI is
+  // unchanged. Past days never change, so only fetch the days missing from the
+  // local cache; the last cached day is re-fetched since it may have been
+  // stored while its games were still in progress.
   if (data.context) {
     const today = format(new Date(), "yyyy-MM-dd");
     const rangeEnd = today < data.season_end ? today : data.season_end;
+
+    // Only trust cached days inside the current season range (guards against a
+    // stale cache from a previous dynasty season).
+    const cachedScores = poolDb?.context?.score_by_day ?? null;
+    const cachedDates = cachedScores
+      ? Object.keys(cachedScores)
+          .filter((date) => date >= data.season_start && date <= rangeEnd)
+          .sort()
+      : [];
+    const lastCachedDate = cachedDates[cachedDates.length - 1];
+    const rangeStart = lastCachedDate ?? data.season_start;
+
     const scoresRes = await fetch(
-      `/api-rust/pool-scores/${name}/cumulative/${data.season_start}/${rangeEnd}`
+      `/api-rust/pool-scores/${name}/cumulative/${rangeStart}/${rangeEnd}`
+    );
+    const cachedByDay = Object.fromEntries(
+      cachedDates.map((date) => [date, cachedScores![date]])
     );
     if (scoresRes.ok) {
-      data.context.score_by_day = await scoresRes.json();
+      // Freshly derived days override the cached ones.
+      data.context.score_by_day = {
+        ...cachedByDay,
+        ...(await scoresRes.json()),
+      };
     } else {
+      // Keep whatever we had locally so the UI can still render history.
+      data.context.score_by_day = cachedByDay;
       console.error(`could not fetch derived scores: ${await scoresRes.text()}`);
     }
   }
 
-  // Preserve the local (Dexie) row id so the put() updates in place.
-  // @ts-expect-error, Dexie is not typed.
-  const poolDb: Pool = await db.pools.get({ name: name });
   if (poolDb) {
     data.id = poolDb.id;
   }
