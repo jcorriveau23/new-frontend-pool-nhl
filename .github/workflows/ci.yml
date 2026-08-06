@@ -21,14 +21,6 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Debug environment and React/Preact resolution
-        run: |
-          node --version && npm --version
-          npm ls react react-dom @types/react @types/react-dom preact || true
-          node -e "console.log('react =>', require.resolve('react'))"
-          node -e "console.log('react/jsx-runtime =>', require.resolve('react/jsx-runtime'))"
-          echo "--- tsc version ---" && npx tsc --version
-
       - name: Lint
         run: npm run lint
 
