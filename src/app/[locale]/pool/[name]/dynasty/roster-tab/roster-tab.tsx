@@ -1,12 +1,29 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+"use client";
+
 import { usePoolContext } from "@/context/pool-context";
-import { getPoolerAllPlayers, Player, PoolUser } from "@/data/pool/model";
+import { getPoolerAllPlayers, Pool, PoolUser } from "@/data/pool/model";
+import { apiPost } from "@/lib/client-api";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import * as React from "react";
-import { Shield } from "lucide-react";
+import { ShieldAlertIcon, ShieldCheckIcon } from "lucide-react";
+import { calculatePoolStats } from "../../in-progress/cumulative-tab/cumulative-calculation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import PoolerRoster from "@/components/pooler-roster";
+import { cn } from "@/lib/utils";
+import ProtectionRoster from "@/components/protection-roster";
+import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
 import { useUser } from "@/context/useUserData";
 import { useSession } from "@/context/useSessionData";
 
@@ -16,188 +33,177 @@ export default function RosterTab() {
     selectedParticipant,
     updateSelectedParticipant,
     updatePoolInfo,
+    poolStartDate,
+    poolSelectedEndDate,
+    dailyPointsMade,
   } = usePoolContext();
   const userData = useUser();
   const userSession = useSession();
 
-  const [protectedPlayerIds, setProtectedPlayerIds] = React.useState<
-    number[] | null
-  >(null);
-
   const t = useTranslations();
 
-  React.useEffect(() => {
-    const selectedUser = poolInfo.participants.find(
-      (user) => user.name == selectedParticipant
+  // Pool points made over the season that just ended, the only honest way to
+  // weigh a contract when choosing who to keep. Same calculation as the
+  // cumulative tab, run once for the whole pool.
+  const playerPoolPoints = React.useMemo(() => {
+    const [stats] = calculatePoolStats(
+      poolInfo,
+      poolStartDate,
+      poolSelectedEndDate,
+      dailyPointsMade,
     );
-
-    // If the user has already a list of protected players, set it as default.
-    setProtectedPlayerIds(
-      selectedUser
-        ? poolInfo.context?.protected_players?.[selectedUser.id] ?? null
-        : null
-    );
-  }, [selectedParticipant]);
-
-  const onPlayerSelection = (user: PoolUser, player: Player) => {
-    // Need to have an account to protect the players.
-    if (userData.info?.id !== user.id && userData.info?.id !== poolInfo.owner) {
-      toast.error(t("CannotUpdateProtectedPlayers", { userName: user.name }), { duration: 5000 });
-      return;
+    if (stats === null) {
+      return undefined;
     }
 
-    // Update the list of protected players.
-    setProtectedPlayerIds((prevPlayers) => {
-      if (prevPlayers === null) {
-        return [player.id];
+    const points: Record<number, number> = {};
+    let total = 0;
+    for (const roster of Object.values(stats)) {
+      for (const player of [
+        ...roster.forwards,
+        ...roster.defense,
+        ...roster.goalies,
+      ]) {
+        points[player.id] = player.poolPoints;
+        total += player.poolPoints;
       }
-      // Check if the player is already in the list
-      if (prevPlayers.includes(player.id)) {
-        // Remove the player from the list
-        return prevPlayers.filter((id) => id !== player.id);
-      } else {
-        // Cannot protect to much players.
-        if (
-          prevPlayers &&
-          prevPlayers.length >=
-            (poolInfo.settings.dynasty_settings
-              ?.next_season_number_players_protected ?? 0)
-        ) {
-          toast.error(t("TooMuchProtectedPlayers", {
-              limit:
-                poolInfo.settings.dynasty_settings
-                  ?.next_season_number_players_protected ?? 0,
-            }), { duration: 5000 });
-          return prevPlayers;
-        }
-        // Add the player to the list
-        return [...prevPlayers, player.id];
-      }
-    });
-  };
-
-  const onSaveProtectedPlayers = async (user: PoolUser) => {
-    // Need to have an account to protect the players.
-    if (userData.info?.id !== user.id && userData.info?.id !== poolInfo.owner) {
-      toast.error(t("CannotUpdateProtectedPlayers", { userName: user.name }), { duration: 2000 });
-      return;
     }
 
-    const res = await fetch("/api-rust/protect-players", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userSession.info?.jwt}`,
-      },
-      body: JSON.stringify({
-        pool_name: poolInfo.name,
-        protected_players_user_id: user.id,
-        protected_players: protectedPlayerIds ?? [],
-      }),
-    });
+    // A season that was never scored has nothing to compare, the charts that
+    // read production are then left out rather than showing a wall of zeros.
+    return total > 0 ? points : undefined;
+  }, [poolInfo, poolStartDate, poolSelectedEndDate, dailyPointsMade]);
 
-    if (!res.ok) {
-      const error = await res.text();
-      toast.error(t("CouldNotProtectPlayers", {
-          name: poolInfo.name,
-          error: error,
-        }), { duration: 5000 });
-      return;
-    }
+  const protectionLimit =
+    poolInfo.settings.dynasty_settings?.next_season_number_players_protected ??
+    0;
+  const participants: PoolUser[] = poolInfo.participants ?? [];
 
-    const data = await res.json();
-    updatePoolInfo(data);
-    toast.success(t("SuccessProtectingPlayers"), { duration: 2000 });
-  };
+  const hasCompletedProtection = (user: PoolUser) =>
+    (poolInfo.context?.protected_players?.[user.id]?.length ?? 0) >=
+    protectionLimit;
+
+  const readyCount = participants.filter(hasCompletedProtection).length;
+  const selectedUser =
+    participants.find((user) => user.name === selectedParticipant) ??
+    participants[0];
 
   const onCompleteProtection = async () => {
-    // Need to have an account to protect the players.
-    const res = await fetch("/api-rust/complete-protection", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userSession.info?.jwt}`,
-      },
-      body: JSON.stringify({
-        pool_name: poolInfo.name,
-      }),
-    });
+    const res = await apiPost<Pool>(
+      "/complete-protection",
+      { pool_name: poolInfo.name },
+      userSession.info?.jwt,
+    );
 
     if (!res.ok) {
-      const error = await res.text();
-      toast.error(t("CouldNotCompleteProtection", {
+      toast.error(
+        t("CouldNotCompleteProtection", {
           name: poolInfo.name,
-          error: error,
-        }), { duration: 5000 });
+          error: res.error,
+        }),
+        { duration: 5000 },
+      );
       return;
     }
 
-    const data = await res.json();
-    updatePoolInfo(data);
+    updatePoolInfo(res.data);
     toast.success(t("SuccessCompleteProtection"), { duration: 2000 });
   };
 
-  return (
-    <>
-      <Tabs
-        defaultValue={selectedParticipant}
-        value={selectedParticipant}
-        onValueChange={(userName) => updateSelectedParticipant(userName)}
-      >
-        <div className="overflow-auto">
-          <TabsList>
-            {poolInfo.participants?.map((user: PoolUser) => (
-              <TabsTrigger key={user.id} value={user.name}>
-                <div className="flex justify-between items-center">
-                  <div className="text-left">{user.name}</div>
-                  <div className="text-right">
-                    {poolInfo.context?.protected_players?.[user.id]?.length ??
-                    0 > 0 ? (
-                      <Shield className="size-4 text-success ml-2" />
-                    ) : null}
-                  </div>
-                </div>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-        {poolInfo.participants?.map((user) => (
-          <TabsContent key={user.id} value={user.name}>
-            <PoolerRoster
-              userRoster={getPoolerAllPlayers(poolInfo.context!, user)}
-              protectedPlayerIds={protectedPlayerIds}
-              teamSalaryCap={poolInfo.settings.salary_cap}
-              onPlayerSelection={(user, player) =>
-                onPlayerSelection(user, player)
-              }
-              considerOnlyProtected={true}
-            />
-            <div className="flex justify-end">
-              <Button
-                disabled={
-                  !userSession.info?.jwt ||
-                  protectedPlayerIds?.length !==
-                    poolInfo.settings.dynasty_settings
-                      ?.next_season_number_players_protected ||
-                  protectedPlayerIds?.every((item) =>
-                    poolInfo.context?.protected_players?.[user.id]?.includes(
-                      item
-                    )
-                  )
-                }
-                onClick={() => onSaveProtectedPlayers(user)}
+  // Who is done and who is not, which is what everybody watches while the
+  // protection window is open, and what tells the owner the draft can start.
+  const LeagueProtectionStatus = () => (
+    <div className="rounded-xl border bg-card px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <span className="text-sm font-medium">{t("ProtectionStatus")}</span>
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {t("TeamsReady", {
+            count: readyCount,
+            total: participants.length,
+          })}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {participants.map((user) => {
+          const isReady = hasCompletedProtection(user);
+
+          return (
+            <button
+              key={user.id}
+              type="button"
+              onClick={() => updateSelectedParticipant(user.name)}
+              aria-pressed={user.name === selectedParticipant}
+              className="rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <Badge
+                variant={isReady ? "secondary" : "outline"}
+                className={cn(
+                  "cursor-pointer gap-1 transition-colors hover:bg-accent hover:text-accent-foreground",
+                  user.name === selectedParticipant && "ring-2 ring-ring/50",
+                )}
               >
-                {t("Save")}
-              </Button>
-            </div>
-          </TabsContent>
-        ))}
-        {userData.info?.id === poolInfo.owner ? (
-          <Button onClick={() => onCompleteProtection()}>
-            {t("StartDraft")}
-          </Button>
-        ) : null}
-      </Tabs>
-    </>
+                {isReady ? (
+                  <ShieldCheckIcon className="size-3.5 text-success" />
+                ) : (
+                  <ShieldAlertIcon className="size-3.5 text-muted-foreground" />
+                )}
+                {user.name}
+              </Badge>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const StartDraftAlertDialog = () => (
+    <AlertDialog>
+      <AlertDialogTrigger render={<Button />}>
+        {t("StartDraft")}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("StartDraftAlertDialog")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("StartDraftAlertDialogQuestion")}
+            {readyCount < participants.length
+              ? ` ${t("StartDraftMissingTeams", {
+                  count: participants.length - readyCount,
+                })}`
+              : null}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
+          <AlertDialogAction onClick={() => onCompleteProtection()}>
+            {t("Continue")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
+  if (!selectedUser || poolInfo.context === null) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col gap-3 text-left">
+      <div className="grid items-end gap-3 sm:grid-cols-2">
+        <PoolerUserGlobalSelector />
+        {LeagueProtectionStatus()}
+      </div>
+
+      <ProtectionRoster
+        userRoster={getPoolerAllPlayers(poolInfo.context, selectedUser)}
+        teamSalaryCap={poolInfo.settings.salary_cap}
+        protectionLimit={protectionLimit}
+        playerPoolPoints={playerPoolPoints}
+      />
+
+      {userData.info?.id === poolInfo.owner ? (
+        <div className="flex justify-end">{StartDraftAlertDialog()}</div>
+      ) : null}
+    </div>
   );
 }

@@ -8,6 +8,7 @@ import SettingsTab from "./settings-tab/settings-tab";
 import RosterTab from "./roster-tab/roster-tab";
 import NhlPlayersTab from "./nhl-players-tab/nhl-players-tab";
 import { salaryFormat, seasonFormat } from "@/app/utils/formating";
+import { ShieldIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 enum DynastyTabs {
@@ -54,11 +55,13 @@ export default function DynastyPool() {
       console.info(
         `A '${_event.type}' event has been triggered, active tabs and selected participants needs to be updated.`
       );
-      const queryParams = new URLSearchParams(searchParams.toString());
+      // Read the live URL rather than the `searchParams` of the render that
+      // registered this listener, which is the state *before* the navigation.
+      const queryParams = new URLSearchParams(window.location.search);
       const newActiveTab = queryParams.get("activeTab");
       const newSelectedParticipant = queryParams.get("selectedParticipant");
 
-      if (newActiveTab && newActiveTab !== activeTab) {
+      if (newActiveTab) {
         setActiveTab(newActiveTab);
       }
       if (newSelectedParticipant) {
@@ -72,29 +75,38 @@ export default function DynastyPool() {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, []);
+  }, [updateSelectedParticipant]);
 
   const t = useTranslations();
 
   return (
     <div className="items-center text-center">
-      <div className="px-5 text-left">
-        <div>
-          <p>
-            {t("DynastyDescription", {
-              protectedCount:
-                poolInfo.settings.dynasty_settings
-                  ?.next_season_number_players_protected ?? "",
-            })}
-          </p>
-          {poolInfo.settings.salary_cap ? (
-            <p>
-              {t("DynastySalaryCapDescription", {
-                season: seasonFormat(poolInfo.season, 0),
-                salaryCap: salaryFormat(poolInfo.settings.salary_cap),
+      {/* text-left cancels the page-level text-center, and no horizontal
+          padding of its own so the banner shares the left edge of the tab bar
+          and of the panels below it. */}
+      <div className="mb-4 text-left">
+        <div className="flex items-start gap-3 rounded-xl border bg-card px-4 py-3">
+          <ShieldIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold leading-tight">
+              {t("PoolDynastyState")}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t("DynastyDescription", {
+                protectedCount:
+                  poolInfo.settings.dynasty_settings
+                    ?.next_season_number_players_protected ?? "",
               })}
             </p>
-          ) : null}
+            {poolInfo.settings.salary_cap ? (
+              <p className="text-xs text-muted-foreground">
+                {t("DynastySalaryCapDescription", {
+                  season: seasonFormat(poolInfo.season, 0),
+                  salaryCap: salaryFormat(poolInfo.settings.salary_cap),
+                })}
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
       <Tabs
@@ -102,7 +114,7 @@ export default function DynastyPool() {
         defaultValue={activeTab}
         onValueChange={handleTabChange}
       >
-        <div className="overflow-auto">
+        <div className="overflow-auto text-left">
           <TabsList>
             <TabsTrigger value={DynastyTabs.ROSTER}>{t("Roster")}</TabsTrigger>
             <TabsTrigger value={DynastyTabs.NHL_PLAYERS}>

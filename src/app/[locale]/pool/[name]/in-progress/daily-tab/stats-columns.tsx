@@ -13,14 +13,12 @@ const getPlayerCell = (
   player: SkaterDailyInfo | GoalieDailyInfo,
   poolInfo: Pool
 ) => (
-  <div>
-    <span>
-      <PlayerLink
-        name={poolInfo.context?.players[player.id].name}
-        id={poolInfo.context?.players[player.id].id}
-        textStyle={null}
-      />
-    </span>
+  <div className="w-[105px] sm:w-auto">
+    <PlayerLink
+      name={poolInfo.context?.players[player.id].name}
+      id={poolInfo.context?.players[player.id].id}
+      textStyle={null}
+    />
   </div>
 );
 
@@ -30,8 +28,8 @@ const getTeamCell = (
 ) => (
   <TeamLogo
     teamId={poolInfo.context?.players[player.id].team ?? null}
-    width={30}
-    height={30}
+    width={22}
+    height={22}
   />
 );
 
@@ -450,7 +448,7 @@ export const DailyScoringLeadersColumn: ColumnDef<DailySkater>[] = [
     accessorKey: "team",
     header: ({ table }) => table.options.meta?.t("T"),
     cell: ({ row }) => (
-      <TeamLogo teamId={row.original.team} width={30} height={30} />
+      <TeamLogo teamId={row.original.team} width={22} height={22} />
     ),
   },
   {
@@ -507,7 +505,7 @@ export const DailyGoaliesLeadersColumn: ColumnDef<DailyGoalie>[] = [
     accessorKey: "team",
     header: ({ table }) => table.options.meta?.t("T"),
     cell: ({ row }) => (
-      <TeamLogo teamId={row.original.team} width={30} height={30} />
+      <TeamLogo teamId={row.original.team} width={22} height={22} />
     ),
   },
   {

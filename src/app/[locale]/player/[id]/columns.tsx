@@ -470,9 +470,9 @@ export default function PlayerPointsTable(props: PlayerPointsTableProps) {
             if (showOnlyNHL) return "";
 
             if (row.original.leagueAbbrev === "NHL") {
-              return "bg-[#DDD700] hover:bg-[#DDD700]";
+              return "bg-[#DDD700] hover:bg-[#DDD700] group-hover:bg-[#DDD700]";
             } else if (["AHL", "KHL"].includes(row.original.leagueAbbrev)) {
-              return "bg-[#DD7272] hover:bg-[#DD7272]";
+              return "bg-[#DD7272] hover:bg-[#DD7272] group-hover:bg-[#DD7272]";
             }
           },
           onRowClick: () => null,

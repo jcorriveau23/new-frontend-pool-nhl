@@ -1,11 +1,10 @@
 "use client";
 
-import { ColumnDef, TableMeta } from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
 
 import { Pool } from "@/data/pool/model";
 import PlayerLink from "@/components/player-link";
 import { TeamLogo } from "@/components/team-logo";
-import InformationIcon from "@/components/information-box";
 import { GoalieInfo, PlayerStatus, SkaterInfo } from "./cumulative-calculation";
 import {
   DropdownMenu,
@@ -18,45 +17,22 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import PlayerSalary from "@/components/player-salary";
 
-// const getWarningColor = (playerStatus: PlayerStatus) => {
-//   switch (playerStatus) {
-//     case PlayerStatus.InAlignment:
-//       return "green";
-//     case PlayerStatus.IsReservists:
-//       return "yellow";
-//     case PlayerStatus.PointsIgnored:
-//     case PlayerStatus.Traded:
-//       return "red";
-//   }
-// };
-
-const getWarningMessage = (playerStatus: PlayerStatus) => {
+// Players that are not counted in the alignment are colour coded on the whole
+// row instead of an extra information column: a left accent plus an opaque
+// tint (opaque because pinned cells scroll over the other columns).
+export const getPlayerStatusRowStyle = (
+  playerStatus: PlayerStatus,
+): string | null => {
   switch (playerStatus) {
     case PlayerStatus.InAlignment:
       return null;
     case PlayerStatus.IsReservists:
-      return "IsReservist";
-    case PlayerStatus.PointsIgnored:
-      return "PointsIgnored";
+      return "border-l-2 border-l-chart-4 bg-[color-mix(in_oklab,var(--chart-4)_12%,var(--card))] hover:bg-[color-mix(in_oklab,var(--chart-4)_20%,var(--card))] group-hover:bg-[color-mix(in_oklab,var(--chart-4)_20%,var(--card))]";
     case PlayerStatus.Traded:
-      return "TradedToOtherPooler";
+      return "border-l-2 border-l-destructive bg-[color-mix(in_oklab,var(--destructive)_12%,var(--card))] hover:bg-[color-mix(in_oklab,var(--destructive)_20%,var(--card))] group-hover:bg-[color-mix(in_oklab,var(--destructive)_20%,var(--card))]";
+    case PlayerStatus.PointsIgnored:
+      return "border-l-2 border-l-muted-foreground bg-muted text-muted-foreground hover:bg-muted group-hover:bg-muted";
   }
-};
-
-const getWarningCell = (
-  player: SkaterInfo | GoalieInfo,
-  meta: TableMeta<SkaterInfo> | TableMeta<GoalieInfo> | undefined,
-) => {
-  if (player.status === PlayerStatus.InAlignment) {
-    return null;
-  }
-  return (
-    <InformationIcon
-      text={`${meta?.t(getWarningMessage(player.status), {
-        playerName: meta.props.context?.players[player.id].name,
-      })}`}
-    />
-  );
 };
 
 const getPlayerCell = (playerId: number, poolInfo: Pool) => (
@@ -101,13 +77,6 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
           ?.getSortedRowModel()
           ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
       );
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "",
-    cell: ({ row, table }) => {
-      return getWarningCell(row.original, table.options.meta);
     },
   },
   {
@@ -185,6 +154,7 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
     size: 48,
     cell: ({ table, row }) => {
       const player = row.original;
+      const poolInfo = table.options.meta?.props?.poolInfo as Pool;
 
       return (
         <DropdownMenu>
@@ -206,6 +176,16 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
             >
               Chart
             </DropdownMenuItem>
+            {/* Trades only exist in dynasty pools, like the trade tab itself. */}
+            {poolInfo?.settings.dynasty_settings ? (
+              <DropdownMenuItem
+                onClick={() =>
+                  table.options.meta?.props?.openTradeForPlayer?.(player.id)
+                }
+              >
+                {table.options.meta?.t("ProposeTrade")}
+              </DropdownMenuItem>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -223,13 +203,6 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
           ?.getSortedRowModel()
           ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
       );
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "",
-    cell: ({ row, table }) => {
-      return getWarningCell(row.original, table.options.meta);
     },
   },
   {
@@ -300,6 +273,7 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
     size: 48,
     cell: ({ table, row }) => {
       const player = row.original;
+      const poolInfo = table.options.meta?.props?.poolInfo as Pool;
 
       return (
         <DropdownMenu>
@@ -321,6 +295,16 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
             >
               Chart
             </DropdownMenuItem>
+            {/* Trades only exist in dynasty pools, like the trade tab itself. */}
+            {poolInfo?.settings.dynasty_settings ? (
+              <DropdownMenuItem
+                onClick={() =>
+                  table.options.meta?.props?.openTradeForPlayer?.(player.id)
+                }
+              >
+                {table.options.meta?.t("ProposeTrade")}
+              </DropdownMenuItem>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -338,13 +322,6 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
           ?.getSortedRowModel()
           ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
       );
-    },
-  },
-  {
-    accessorKey: "status",
-    header: "",
-    cell: ({ row, table }) => {
-      return getWarningCell(row.original, table.options.meta);
     },
   },
   {
@@ -419,6 +396,7 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
     size: 48,
     cell: ({ table, row }) => {
       const player = row.original;
+      const poolInfo = table.options.meta?.props?.poolInfo as Pool;
 
       return (
         <DropdownMenu>
@@ -440,6 +418,16 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
             >
               Chart
             </DropdownMenuItem>
+            {/* Trades only exist in dynasty pools, like the trade tab itself. */}
+            {poolInfo?.settings.dynasty_settings ? (
+              <DropdownMenuItem
+                onClick={() =>
+                  table.options.meta?.props?.openTradeForPlayer?.(player.id)
+                }
+              >
+                {table.options.meta?.t("ProposeTrade")}
+              </DropdownMenuItem>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       );

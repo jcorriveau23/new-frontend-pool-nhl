@@ -21,98 +21,108 @@ const PoolerCell = ({ row, table }: CellContext<TotalRanking, unknown>) => {
   );
 };
 
-export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
-  {
-    id: "1",
-    header: ({ table }) => {
-      return (
-        <>
-          {table.options.meta?.t("TotalCumulatedPoints")}
-          <h1>{`(${table.options.meta?.props?.dateOfInterest})`}</h1>
-        </>
-      );
+const TotalCumulatedPointsGroup: ColumnDef<TotalRanking> = {
+  id: "1",
+  header: ({ table }) => {
+    return (
+      <>
+        {table.options.meta?.t("TotalCumulatedPoints")}
+        <h1>{`(${table.options.meta?.props?.dateOfInterest})`}</h1>
+      </>
+    );
+  },
+  columns: [
+    {
+      accessorKey: "ranking",
+      header: "#",
+      cell: ({ row, table }) => {
+        return (
+          (table
+            ?.getSortedRowModel()
+            ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
+        );
+      },
     },
-    columns: [
-      {
-        accessorKey: "ranking",
-        header: "#",
-        cell: ({ row, table }) => {
-          return (
-            (table
-              ?.getSortedRowModel()
-              ?.flatRows?.findIndex((flatRow) => flatRow.id == row.id) || 0) + 1
-          );
-        },
+    {
+      accessorKey: "pooler",
+      header: "Pooler",
+      cell: ({ row }) => {
+        return row.original.participant;
       },
-      {
-        accessorKey: "pooler",
-        header: "Pooler",
-        cell: ({ row }) => {
-          return row.original.participant;
-        },
+    },
+    {
+      accessorKey: "gamePlayed",
+      header: ({ table }) => table.options.meta?.t("GP"),
+      accessorFn: (ranking) =>
+        ranking.forwards.numberOfGame +
+        ranking.defense.numberOfGame +
+        ranking.goalies.numberOfGame,
+    },
+    {
+      accessorKey: "totalPoolPoints",
+      header: "PTS",
+      accessorFn: (ranking) => ranking.getTotalPoolPoints(),
+    },
+    {
+      accessorKey: "pointDifference",
+      header: "Diff",
+      cell: ({ row, table }) => {
+        const maxPoints = table
+          ?.getSortedRowModel()
+          ?.flatRows?.[0].original.getTotalPoolPoints();
+        const diff = maxPoints - row.original.getTotalPoolPoints();
+        return diff ? `+ ${diff}` : "-";
       },
-      {
-        accessorKey: "gamePlayed",
-        header: ({ table }) => table.options.meta?.t("GP"),
-        accessorFn: (ranking) =>
+    },
+    {
+      accessorKey: "totalPoolPointsPerGame",
+      header: ({ table }) => table.options.meta?.t("PTS/G"),
+      accessorFn: (ranking) => {
+        const totalNumberOfGame =
           ranking.forwards.numberOfGame +
           ranking.defense.numberOfGame +
-          ranking.goalies.numberOfGame,
+          ranking.goalies.numberOfGame;
+        return totalNumberOfGame > 0
+          ? (ranking.getTotalPoolPoints() / totalNumberOfGame).toFixed(3)
+          : null;
       },
-      {
-        accessorKey: "totalPoolPoints",
-        header: "PTS",
-        accessorFn: (ranking) => ranking.getTotalPoolPoints(),
-      },
-      {
-        accessorKey: "pointDifference",
-        header: "Diff",
-        cell: ({ row, table }) => {
-          const maxPoints = table
-            ?.getSortedRowModel()
-            ?.flatRows?.[0].original.getTotalPoolPoints();
-          const diff = maxPoints - row.original.getTotalPoolPoints();
-          return diff ? `+ ${diff}` : "-";
-        },
-      },
-      {
-        accessorKey: "totalPoolPointsPerGame",
-        header: ({ table }) => table.options.meta?.t("PTS/G"),
-        accessorFn: (ranking) => {
-          const totalNumberOfGame =
-            ranking.forwards.numberOfGame +
-            ranking.defense.numberOfGame +
-            ranking.goalies.numberOfGame;
-          return totalNumberOfGame > 0
-            ? (ranking.getTotalPoolPoints() / totalNumberOfGame).toFixed(3)
-            : null;
-        },
-      },
-    ],
-  },
-  {
-    id: "2",
-    header: ({ table }) => (
-      <>
-        <h1 className="flex items-center space-x-2">
-          <GameStatePopover state={table.options.meta?.props?.gamesState} />
-          <span>{table.options.meta?.t("DailyPoints")}</span>
-        </h1>
-      </>
-    ),
-    columns: [
-      {
-        accessorKey: "DailyGP",
-        header: ({ table }) => table.options.meta?.t("GP"),
-        accessorFn: (ranking) => ranking.numberOfGames,
-      },
-      {
-        accessorKey: "DailyPTS",
-        header: "PTS",
-        accessorFn: (ranking) => ranking.totalPoolPoints,
-      },
-    ],
-  },
+    },
+  ],
+};
+
+const DailyPointsGroup: ColumnDef<TotalRanking> = {
+  id: "2",
+  header: ({ table }) => (
+    <>
+      <h1 className="flex items-center space-x-2">
+        <GameStatePopover state={table.options.meta?.props?.gamesState} />
+        <span>{table.options.meta?.t("DailyPoints")}</span>
+      </h1>
+    </>
+  ),
+  columns: [
+    {
+      accessorKey: "DailyGP",
+      header: ({ table }) => table.options.meta?.t("GP"),
+      accessorFn: (ranking) => ranking.numberOfGames,
+    },
+    {
+      accessorKey: "DailyPTS",
+      header: "PTS",
+      accessorFn: (ranking) => ranking.totalPoolPoints,
+    },
+  ],
+};
+
+export const TotalPointsColumn: ColumnDef<TotalRanking>[] = [
+  TotalCumulatedPointsGroup,
+  DailyPointsGroup,
+];
+
+// Used when the selected date sits outside of the pool season range: there is
+// no day in the pool to report daily points for.
+export const TotalPointsColumnWithoutDaily: ColumnDef<TotalRanking>[] = [
+  TotalCumulatedPointsGroup,
 ];
 
 export const ForwardsTotalColumn: ColumnDef<TotalRanking>[] = [

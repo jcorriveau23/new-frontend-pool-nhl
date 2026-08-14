@@ -2,17 +2,16 @@
 // selecting a team will link to the team per season page.
 "use server";
 
-import { getAllTeamForSeason } from "@/lib/nhl";
-import { TeamLogo } from "@/components/team-logo";
-
+import * as React from "react";
+import { getAllTeamForSeason, getAllYears, FIRST_NHL_SEASON } from "@/lib/nhl";
 import team_info from "@/lib/teams";
-import { getAllYears, FIRST_NHL_SEASON } from "@/lib/nhl";
 import { getSeasonInfo, lastSeasonYear } from "@/lib/season-info";
 import { Combobox } from "@/components/ui/link-combobox";
-import { Link } from "@/i18n/routing";
+import { Label } from "@/components/ui/label";
 import { getTranslations } from "next-intl/server";
-import { seasonWithYearFormat } from "@/app/utils/formating";
+import { seasonFormat, seasonWithYearFormat } from "@/app/utils/formating";
 import PageTitle from "@/components/page-title";
+import TeamList, { Team } from "./team-list";
 
 export default async function Rosters(props: {
   params: Promise<{ season: string }>;
@@ -24,9 +23,16 @@ export default async function Rosters(props: {
   const t = await getTranslations();
   const lastSeason = lastSeasonYear(await getSeasonInfo());
 
-  const YearInputs = () => (
-    <div className="space-x-2">
-      {t("Season")}
+  const teams: Team[] = getAllTeamForSeason(Number(params.season)).map(
+    (teamId) => ({
+      id: Number(teamId),
+      name: team_info[Number(teamId)]?.fullName,
+    }),
+  );
+
+  const seasonSelector = (
+    <div className="flex items-center gap-2">
+      <Label className="text-muted-foreground">{t("Season")}</Label>
       <Combobox
         selections={getAllYears(FIRST_NHL_SEASON, lastSeason).map((season) => ({
           value: `${season}${season + 1}`,
@@ -40,22 +46,20 @@ export default async function Rosters(props: {
   );
 
   return (
-    <div className="flex flex-col items-center text-center gap-2">
-      <PageTitle title={t("NhlTeamRosterPageTitle")} />
-      {YearInputs()}
-      {getAllTeamForSeason(Number(params.season)).map((teamId) => (
-        <div
-          key={teamId}
-          className="mx-10 border-2 rounded-sm hover:border-primary hover:cursor-pointer bg-muted"
-        >
-          <Link href={`/roster/${params.season}/${teamId}?${queryString}`}>
-            <p>{team_info[Number(teamId)]?.fullName}</p>
-            <div className="flex justify-center">
-              <TeamLogo teamId={Number(teamId)} width={40} height={40} />
-            </div>
-          </Link>
-        </div>
-      ))}
+    <div>
+      <PageTitle
+        title={t("NhlTeamRosterPageTitle")}
+        subtitle={t("TeamCountForSeason", {
+          count: teams.length,
+          season: seasonFormat(Number(params.season), 0),
+        })}
+      />
+      <TeamList
+        teams={teams}
+        season={params.season}
+        queryString={queryString}
+        seasonSelector={seasonSelector}
+      />
     </div>
   );
 }

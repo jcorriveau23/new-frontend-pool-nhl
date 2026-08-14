@@ -3,9 +3,19 @@ import CumulativeTab from "./cumulative-tab/cumulative-tab";
 import DailyTab from "./daily-tab/daily-tab";
 import TradeTab from "./trade-tab/trade-tab";
 import HistoryTab from "./history-tab/history-tab";
+import RecordsTab from "./records-tab/records-tab";
 import DraftTab from "./draft-tab/draft-tab";
 import SettingsTab from "./settings-tab/settings-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ArrowLeftRight,
+  CalendarDays,
+  ClipboardList,
+  History,
+  LineChart,
+  Settings,
+  Trophy,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   GamesNightStatus,
@@ -16,11 +26,18 @@ import { usePoolContext } from "@/context/pool-context";
 import LiveGamePopOver from "@/components/live-games-pop-over";
 import { useSearchParams } from "next/navigation";
 
+const TabLabel = ({ children }: { children: React.ReactNode }) => (
+  <span className="sr-only md:not-sr-only group-data-[active]:not-sr-only">
+    {children}
+  </span>
+);
+
 enum InProgressTabs {
   CUMULATIVE = "cumulative",
   DAILY = "daily",
   TRADE = "trade",
   HISTORY = "history",
+  RECORDS = "records",
   DRAFT = "draft",
   SETTINGS = "settings",
 }
@@ -62,13 +79,13 @@ export default function InProgressPool() {
     // options in the browser he will be in the selected tab.
     const handlePopState = (_event: PopStateEvent) => {
       console.info(
-        `A '${_event.type}' event has been triggered, active tabs and selected participants needs to be updated.`
+        `A '${_event.type}' event has been triggered, active tabs and selected participants needs to be updated.`,
       );
-      const queryParams = new URLSearchParams(searchParams.toString());
+      const queryParams = new URLSearchParams(window.location.search);
       const newActiveTab = queryParams.get("activeTab");
       const newSelectedParticipant = queryParams.get("selectedParticipant");
 
-      if (newActiveTab && newActiveTab !== activeTab) {
+      if (newActiveTab) {
         setActiveTab(newActiveTab);
       }
       if (newSelectedParticipant) {
@@ -82,7 +99,7 @@ export default function InProgressPool() {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, []);
+  }, [updateSelectedParticipant]);
 
   return (
     <div className="items-center text-center">
@@ -91,38 +108,55 @@ export default function InProgressPool() {
         defaultValue={activeTab}
         onValueChange={handleTabChange}
       >
-        <div className="overflow-auto">
+        <div className="overflow-auto text-left">
           <TabsList>
-            <TabsTrigger value={InProgressTabs.CUMULATIVE}>
-              {t("Cumulative")}
+            <TabsTrigger
+              value={InProgressTabs.CUMULATIVE}
+              className="group gap-2"
+            >
+              <LineChart className="size-4" />
+              <TabLabel>{t("Cumulative")}</TabLabel>
               {gamesNightStatus === GamesNightStatus.LIVE ? (
-                <div className="ml-2">
-                  <LiveGamePopOver />
-                </div>
+                <LiveGamePopOver />
               ) : null}
             </TabsTrigger>
-            <TabsTrigger value={InProgressTabs.DAILY}>
-              {t("Daily")}
+            <TabsTrigger value={InProgressTabs.DAILY} className="group gap-2">
+              <CalendarDays className="size-4" />
+              <TabLabel>{t("Daily")}</TabLabel>
               {gamesNightStatus === GamesNightStatus.LIVE ? (
-                <div className="ml-2">
-                  <LiveGamePopOver />
-                </div>
+                <LiveGamePopOver />
               ) : null}
             </TabsTrigger>
             {poolInfo.settings.dynasty_settings ? (
-              <TabsTrigger value={InProgressTabs.TRADE}>
-                {t("Trade")}
+              <TabsTrigger value={InProgressTabs.TRADE} className="group gap-2">
+                <ArrowLeftRight className="size-4" />
+                <TabLabel>{t("Trade")}</TabLabel>
               </TabsTrigger>
             ) : null}
             {poolInfo.settings.dynasty_settings ||
             poolInfo.settings.roster_modification_date.length > 0 ? (
-              <TabsTrigger value={InProgressTabs.HISTORY}>
-                {t("History")}
+              <TabsTrigger
+                value={InProgressTabs.HISTORY}
+                className="group gap-2"
+              >
+                <History className="size-4" />
+                <TabLabel>{t("History")}</TabLabel>
               </TabsTrigger>
             ) : null}
-            <TabsTrigger value={InProgressTabs.DRAFT}>{t("Draft")}</TabsTrigger>
-            <TabsTrigger value={InProgressTabs.SETTINGS}>
-              {t("Settings")}
+            <TabsTrigger value={InProgressTabs.RECORDS} className="group gap-2">
+              <Trophy className="size-4" />
+              <TabLabel>{t("Records")}</TabLabel>
+            </TabsTrigger>
+            <TabsTrigger value={InProgressTabs.DRAFT} className="group gap-2">
+              <ClipboardList className="size-4" />
+              <TabLabel>{t("Draft")}</TabLabel>
+            </TabsTrigger>
+            <TabsTrigger
+              value={InProgressTabs.SETTINGS}
+              className="group gap-2"
+            >
+              <Settings className="size-4" />
+              <TabLabel>{t("Settings")}</TabLabel>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -143,6 +177,9 @@ export default function InProgressPool() {
             <HistoryTab />
           </TabsContent>
         ) : null}
+        <TabsContent value={InProgressTabs.RECORDS}>
+          <RecordsTab />
+        </TabsContent>
         <TabsContent value={InProgressTabs.DRAFT}>
           <DraftTab />
         </TabsContent>

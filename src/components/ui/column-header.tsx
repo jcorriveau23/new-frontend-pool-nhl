@@ -23,10 +23,10 @@ export function DataTableColumnHeader<TData, TValue>({
       <Button
         variant="ghost"
         size={null}
-        className="h-8 data-popup-open:bg-accent"
+        className="h-6 px-1 data-popup-open:bg-accent sm:h-8 sm:px-2"
         onClick={() => column.toggleSorting()}
       >
-        <span className="text-xs sm:text-base">{title}</span>
+        <span className="text-[11px] sm:text-sm">{title}</span>
       </Button>
     </div>
   );

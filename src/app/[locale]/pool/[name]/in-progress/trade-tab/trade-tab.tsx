@@ -1,13 +1,22 @@
 import * as React from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import { toast } from "sonner";
-import { ArrowLeftRight, Check, X, Trash2, Handshake } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Check,
+  X,
+  Trash2,
+  Handshake,
+  Plus,
+} from "lucide-react";
 import {
   DraftPick,
+  Pool,
   Trade,
   TradeItems,
   TradeStatus,
 } from "@/data/pool/model";
+import { apiPost } from "@/lib/client-api";
 import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
 import { useUser } from "@/context/useUserData";
 import { useSession } from "@/context/useSessionData";
@@ -16,10 +25,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ordinal } from "@/app/utils/formating";
-import CreateTradeDialog from "./create-trade-dialog";
+import { useTradeBuilder } from "@/context/trade-builder-context";
 
 const statusVariant = (
-  status: TradeStatus
+  status: TradeStatus,
 ): "default" | "secondary" | "destructive" | "outline" => {
   switch (status) {
     case TradeStatus.NEW:
@@ -35,11 +44,12 @@ export default function TradeTab() {
   const { poolInfo, updatePoolInfo, dictUsers } = usePoolContext();
   const userData = useUser();
   const userSession = useSession();
+  const { openTradeBuilder } = useTradeBuilder();
   const t = useTranslations();
   const format = useFormatter();
 
   const [pendingTradeId, setPendingTradeId] = React.useState<number | null>(
-    null
+    null,
   );
 
   // Whether the current user is allowed to act on behalf of a given pooler.
@@ -58,29 +68,25 @@ export default function TradeTab() {
     }
     setPendingTradeId(trade.id);
     try {
-      const res = await fetch("/api-rust/respond-trade", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userSession.info.jwt}`,
-        },
-        body: JSON.stringify({
+      const res = await apiPost<Pool>(
+        "/respond-trade",
+        {
           pool_name: poolInfo.name,
           trade_id: trade.id,
           is_accepted: isAccepted,
-        }),
-      });
+        },
+        userSession.info.jwt,
+      );
 
       if (!res.ok) {
-        const error = await res.text();
         toast.error(
-          t("CouldNotRespondTrade", { name: poolInfo.name, error }),
-          { duration: 5000 }
+          t("CouldNotRespondTrade", { name: poolInfo.name, error: res.error }),
+          { duration: 5000 },
         );
         return;
       }
 
-      updatePoolInfo(await res.json());
+      updatePoolInfo(res.data);
       toast.success(isAccepted ? t("TradeAccepted") : t("TradeRefused"), {
         duration: 2000,
       });
@@ -96,28 +102,21 @@ export default function TradeTab() {
     }
     setPendingTradeId(trade.id);
     try {
-      const res = await fetch("/api-rust/delete-trade", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userSession.info.jwt}`,
-        },
-        body: JSON.stringify({
-          pool_name: poolInfo.name,
-          trade_id: trade.id,
-        }),
-      });
+      const res = await apiPost<Pool>(
+        "/delete-trade",
+        { pool_name: poolInfo.name, trade_id: trade.id },
+        userSession.info.jwt,
+      );
 
       if (!res.ok) {
-        const error = await res.text();
         toast.error(
-          t("CouldNotCancelTrade", { name: poolInfo.name, error }),
-          { duration: 5000 }
+          t("CouldNotCancelTrade", { name: poolInfo.name, error: res.error }),
+          { duration: 5000 },
         );
         return;
       }
 
-      updatePoolInfo(await res.json());
+      updatePoolInfo(res.data);
       toast.success(t("TradeCancelled"), { duration: 2000 });
     } finally {
       setPendingTradeId(null);
@@ -244,7 +243,10 @@ export default function TradeTab() {
     <div className="mx-auto flex max-w-4xl flex-col gap-4 p-1 text-left">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg font-semibold">{t("Trade")}</h2>
-        <CreateTradeDialog />
+        <Button onClick={() => openTradeBuilder()}>
+          <Plus className="mr-2 h-4 w-4" />
+          {t("ProposeTrade")}
+        </Button>
       </div>
 
       {trades.length === 0 ? (

@@ -12,10 +12,53 @@ import { usePoolContext } from "@/context/pool-context";
 import { useTranslations } from "next-intl";
 import PageTitle from "@/components/page-title";
 import { useSession } from "@/context/useSessionData";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Activity,
+  ClipboardList,
+  Flag,
+  LucideIcon,
+  Settings2,
+  ShieldCheck,
+} from "lucide-react";
+
+// The pool state is not worth a subtitle line, it sits next to the pool name as
+// an icon. The label is both the tooltip and the accessible name.
+const POOL_STATE_MARKER: Record<
+  PoolState,
+  { icon: LucideIcon; labelKey: string }
+> = {
+  [PoolState.Created]: { icon: Settings2, labelKey: "PoolCreatedState" },
+  [PoolState.Draft]: { icon: ClipboardList, labelKey: "PoolDraftState" },
+  [PoolState.InProgress]: { icon: Activity, labelKey: "PoolInProgressState" },
+  [PoolState.Final]: { icon: Flag, labelKey: "PoolFinalState" },
+  [PoolState.Dynasty]: { icon: ShieldCheck, labelKey: "PoolDynastyState" },
+};
+
+function PoolStateIcon({ status }: { status: PoolState }) {
+  const t = useTranslations();
+  const { icon: Icon, labelKey } = POOL_STATE_MARKER[status];
+  const label = t(labelKey);
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        aria-label={label}
+        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex cursor-default rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
+      >
+        <Icon className="size-5" />
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export default function PoolStatus() {
   const { poolInfo } = usePoolContext();
-  const t = useTranslations();
 
   const userSession = useSession();
 
@@ -25,21 +68,11 @@ export default function PoolStatus() {
   ) {
     return (
       <SocketProvider jwt={userSession.info?.jwt}>
-        {poolInfo.status === PoolState.Created ? (
-          <>
-            <PageTitle
-              title={t("PoolCreatedPageTitle", { poolName: poolInfo.name })}
-            />
-            <CreatedPool />
-          </>
-        ) : (
-          <>
-            <PageTitle
-              title={t("PoolDraftPageTitle", { poolName: poolInfo.name })}
-            />
-            <DraftPool />
-          </>
-        )}
+        <PageTitle
+          title={poolInfo.name}
+          titleAdornment={<PoolStateIcon status={poolInfo.status} />}
+        />
+        {poolInfo.status === PoolState.Created ? <CreatedPool /> : <DraftPool />}
       </SocketProvider>
     );
   }
@@ -50,7 +83,8 @@ export default function PoolStatus() {
       return (
         <>
           <PageTitle
-            title={t("PoolInProgressPageTitle", { poolName: poolInfo.name })}
+            title={poolInfo.name}
+            titleAdornment={<PoolStateIcon status={poolInfo.status} />}
           />
           <InProgressPool />
         </>
@@ -58,7 +92,10 @@ export default function PoolStatus() {
     case PoolState.Dynasty:
       return (
         <>
-          <PageTitle title={t("PoolDynastyPageTitle")} />
+          <PageTitle
+            title={poolInfo.name}
+            titleAdornment={<PoolStateIcon status={poolInfo.status} />}
+          />
           <DynastyPool />
         </>
       );

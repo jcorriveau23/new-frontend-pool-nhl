@@ -1,402 +1,729 @@
 "use client";
 
 import * as React from "react";
-import { Player, PoolUser, Position } from "@/data/pool/model";
-import { useTranslations } from "next-intl";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "./ui/accordion";
+  Player,
+  Pool,
+  PoolState,
+  PoolUser,
+  Position,
+} from "@/data/pool/model";
+import { apiPost } from "@/lib/client-api";
+import { useLocale, useTranslations } from "next-intl";
 import PlayerLink from "./player-link";
 import { TeamLogo } from "./team-logo";
 import PlayerSalary from "./player-salary";
+import InformationIcon from "./information-box";
 import { salaryFormat } from "@/app/utils/formating";
-import { usePoolContext } from "@/context/pool-context";
+import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
 import { toast } from "sonner";
 import { useSession } from "@/context/useSessionData";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { PlusCircleIcon, MinusCircleIcon } from "lucide-react";
+import { Progress } from "./ui/progress";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import {
+  AlertCircleIcon,
+  ArrowDownIcon,
+  ArrowUpIcon,
+  CalendarClockIcon,
+  InfoIcon,
+  LoaderCircleIcon,
+  RotateCcwIcon,
+  UnlockIcon,
+} from "lucide-react";
 import PlayerSearchDialog from "./search-players";
 import { useUser } from "@/context/useUserData";
+import { getRosterModificationWindow } from "@/lib/roster-modification";
+import { cn } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import {
+  PoolerSelectorEntry,
+  PoolerUserGlobalSelector,
+} from "./pool-user-selector";
+import LineupAnalysis, { LineupAnalytics } from "./lineup-analysis";
+
+interface Lineup {
+  forwards: Player[];
+  defense: Player[];
+  goalies: Player[];
+  reservists: Player[];
+}
 
 interface Props {
-  userRoster: {
-    user: PoolUser;
-    forwards: Player[];
-    defense: Player[];
-    goalies: Player[];
-    reservists: Player[];
-  };
+  userRoster: Lineup & { user: PoolUser };
   teamSalaryCap: number | null;
+  // Poolers to list in the selector, in standing order when the caller knows it.
+  poolerEntries?: PoolerSelectorEntry[];
+  // Production data behind the analysis charts. Absent outside of a running
+  // pool, where nothing has been scored yet.
+  analytics?: LineupAnalytics;
 }
+
+type StarterGroup = "forwards" | "defense" | "goalies";
+
+const STARTER_GROUP: Record<Position, StarterGroup> = {
+  [Position.F]: "forwards",
+  [Position.D]: "defense",
+  [Position.G]: "goalies",
+};
+
+const GROUP_TITLE: Record<StarterGroup, string> = {
+  forwards: "Forwards",
+  defense: "Defense",
+  goalies: "Goalies",
+};
+
+const POSITION_ORDER = [Position.F, Position.D, Position.G];
+
+const bySalary = (players: Player[]): Player[] =>
+  [...players].sort((p1, p2) => (p2.salary_cap ?? 0) - (p1.salary_cap ?? 0));
+
+// The bench mixes positions, grouping them keeps it readable.
+const byPositionThenSalary = (players: Player[]): Player[] =>
+  [...players].sort(
+    (p1, p2) =>
+      POSITION_ORDER.indexOf(p1.position) -
+        POSITION_ORDER.indexOf(p2.position) ||
+      (p2.salary_cap ?? 0) - (p1.salary_cap ?? 0)
+  );
+
+const toLineup = (roster: Lineup): Lineup => ({
+  forwards: [...roster.forwards],
+  defense: [...roster.defense],
+  goalies: [...roster.goalies],
+  reservists: [...roster.reservists],
+});
+
+const LINEUP_GROUPS: (keyof Lineup)[] = [
+  "forwards",
+  "defense",
+  "goalies",
+  "reservists",
+];
+
+const lineupSignature = (lineup: Lineup): string =>
+  LINEUP_GROUPS.map((group) =>
+    lineup[group]
+      .map((player) => player.id)
+      .sort((a, b) => a - b)
+      .join(",")
+  ).join("|");
 
 export default function StartingRoster(props: Props) {
   const { poolInfo, updatePoolInfo, dictUsers } = usePoolContext();
   const userSession = useSession();
   const userData = useUser();
   const t = useTranslations();
+  const locale = useLocale();
 
-  const [selectedForwards, setSelectedForwards] = React.useState<Player[]>(
-    props.userRoster.forwards.map((player) => player)
+  const [lineup, setLineup] = React.useState<Lineup>(() =>
+    toLineup(props.userRoster)
   );
-  const [selectedDefense, setSelectedDefense] = React.useState<Player[]>(
-    props.userRoster.defense.map((player) => player)
-  );
-  const [selectedGoalies, setSelectedGoalies] = React.useState<Player[]>(
-    props.userRoster.goalies.map((player) => player)
-  );
-  const [selectedReservists, setSelectedReservists] = React.useState<Player[]>(
-    props.userRoster.reservists.map((player) => player)
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  // Whatever comes from the pool (a save, a player added, another participant
+  // being selected) wins over the local edits, otherwise the dialog would keep
+  // showing a roster that no longer exists.
+  const savedSignature = lineupSignature(props.userRoster);
+  const [renderedSignature, setRenderedSignature] =
+    React.useState(savedSignature);
+  if (renderedSignature !== savedSignature) {
+    setRenderedSignature(savedSignature);
+    setLineup(toLineup(props.userRoster));
+  }
+
+  const isOwnRoster = userData.info?.id === props.userRoster.user.id;
+  const isPoolInProgress = poolInfo.status === PoolState.InProgress;
+  // The backend only accepts a roster modification from the pooler itself, the
+  // owner or an assistant, and only while the pool is running.
+  const canSaveLineup =
+    isPoolInProgress &&
+    (isOwnRoster || hasPoolPrivilege(userData.info?.id, poolInfo));
+  const canAddPlayer =
+    isPoolInProgress && hasPoolPrivilege(userData.info?.id, poolInfo);
+
+  // Shuffling players around costs nothing and is the whole point of looking at
+  // a lineup, so anybody can try combinations. Only saving needs the rights.
+  const hasBench =
+    poolInfo.settings.number_reservists > 0 || lineup.reservists.length > 0;
+  const canMovePlayers = hasBench;
+
+  const modificationWindow = React.useMemo(
+    () => getRosterModificationWindow(poolInfo, new Date()),
+    [poolInfo]
   );
 
-  const moveToReserves = (player: Player) => {
-    setSelectedReservists([...selectedReservists, player]);
-    switch (player.position) {
-      case Position.F: {
-        setSelectedForwards(selectedForwards.filter((p) => p.id !== player.id));
-        break;
-      }
-      case Position.D: {
-        setSelectedDefense(selectedDefense.filter((p) => p.id !== player.id));
-        break;
-      }
-      case Position.G: {
-        setSelectedGoalies(selectedGoalies.filter((p) => p.id !== player.id));
-        break;
-      }
-    }
-  };
-
-  const moveToStarters = (player: Player) => {
-    switch (player.position as Position) {
-      case Position.F: {
-        setSelectedForwards([...selectedForwards, player]);
-        break;
-      }
-      case Position.D: {
-        setSelectedDefense([...selectedDefense, player]);
-        break;
-      }
-      case Position.G: {
-        setSelectedGoalies([...selectedGoalies, player]);
-        break;
-      }
-    }
-    setSelectedReservists(selectedReservists.filter((p) => p.id !== player.id));
-  };
-
-  const getFormatedSummaryContractInfo = (players: Player[]): string => {
-    return t("TotalPlayersStartingRoster", {
-      playerCount: players.length,
-      totalSalary: salaryFormat(
-        players.reduce(
-          (accumulator, currentValue) =>
-            accumulator + (currentValue.salary_cap ?? 0),
-          0
-        )
-      ),
-      salaryCap: props.teamSalaryCap ? salaryFormat(props.teamSalaryCap) : "",
+  const formatDate = (dateKey: string) =>
+    new Date(`${dateKey}T00:00:00`).toLocaleDateString(locale, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
     });
+
+  const moveToReserves = (player: Player) =>
+    setLineup((current) => ({
+      ...current,
+      [STARTER_GROUP[player.position]]: current[
+        STARTER_GROUP[player.position]
+      ].filter((p) => p.id !== player.id),
+      reservists: [...current.reservists, player],
+    }));
+
+  const moveToLineup = (player: Player) =>
+    setLineup((current) => ({
+      ...current,
+      [STARTER_GROUP[player.position]]: [
+        ...current[STARTER_GROUP[player.position]],
+        player,
+      ],
+      reservists: current.reservists.filter((p) => p.id !== player.id),
+    }));
+
+  const resetLineup = () => setLineup(toLineup(props.userRoster));
+
+  const starters = [...lineup.forwards, ...lineup.defense, ...lineup.goalies];
+  const totalSalary = starters.reduce(
+    (total, player) => total + (player.salary_cap ?? 0),
+    0
+  );
+  const isOverCap =
+    props.teamSalaryCap !== null && totalSalary > props.teamSalaryCap;
+
+  const positionLimits: Record<StarterGroup, number> = {
+    forwards: poolInfo.settings.number_forwards,
+    defense: poolInfo.settings.number_defenders,
+    goalies: poolInfo.settings.number_goalies,
   };
 
-  const SalarySummaryTable = (
-    userRoster: {
-      user: PoolUser;
-      forwards: Player[];
-      defense: Player[];
-      goalies: Player[];
-    },
-    teamSalaryCap: number
-  ) => {
-    const allPlayers = [
-      ...userRoster.forwards,
-      ...userRoster.defense,
-      ...userRoster.goalies,
-    ];
+  const movedPlayerCount = [
+    ...new Set([
+      ...lineup.reservists.map((p) => p.id),
+      ...props.userRoster.reservists.map((p) => p.id),
+    ]),
+  ].filter(
+    (playerId) =>
+      lineup.reservists.some((p) => p.id === playerId) !==
+      props.userRoster.reservists.some((p) => p.id === playerId)
+  ).length;
+  const hasUnsavedChanges = movedPlayerCount > 0;
 
-    const totalPlayers = allPlayers.length;
-    const totalPlayersWithContract = allPlayers.filter(
+  // Same validations as the backend, reported before the request is sent so the
+  // pooler knows what to fix.
+  const getBlockingIssue = (): string | null => {
+    for (const [group, limit] of Object.entries(positionLimits) as [
+      StarterGroup,
+      number,
+    ][]) {
+      if (lineup[group].length > limit) {
+        return t("TooManyPlayersInLineup", {
+          position: t(GROUP_TITLE[group]),
+          count: lineup[group].length,
+          limit,
+        });
+      }
+    }
+
+    if (props.teamSalaryCap === null) {
+      return null;
+    }
+
+    const playerWithoutContract = starters.find(
+      (player) => player.salary_cap === null
+    );
+    if (playerWithoutContract) {
+      return t("PlayerWithoutContractInLineup", {
+        playerName: playerWithoutContract.name,
+      });
+    }
+
+    if (totalSalary > props.teamSalaryCap) {
+      return t("LineupOverSalaryCap", {
+        diff: salaryFormat(totalSalary - props.teamSalaryCap),
+      });
+    }
+
+    return null;
+  };
+  const blockingIssue = getBlockingIssue();
+
+  const PlayerRow = (
+    player: Player,
+    index: number,
+    isStarter: boolean,
+    isTargetFull: boolean
+  ) => {
+    const moveLabel = isStarter
+      ? t("MoveToReserves", { playerName: player.name })
+      : isTargetFull
+        ? t("LineupPositionFull")
+        : t("MoveToLineup", { playerName: player.name });
+
+    return (
+      <li
+        key={player.id}
+        className="flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
+      >
+        <span className="w-4 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+          {index + 1}
+        </span>
+        <TeamLogo teamId={player.team} width={24} height={24} />
+        <div className="min-w-0 flex-1">
+          <PlayerLink
+            name={player.name}
+            id={player.id}
+            textStyle="text-sm font-medium"
+          />
+          <p className="text-xs text-muted-foreground">
+            {isStarter ? null : `${t(player.position)} · `}
+            {player.age !== null ? t("AgeYears", { age: player.age }) : null}
+            {props.teamSalaryCap !== null && player.salary_cap
+              ? ` · ${t("PercentOfCapShare", {
+                  percent: (
+                    (player.salary_cap / props.teamSalaryCap) *
+                    100
+                  ).toFixed(1),
+                })}`
+              : null}
+          </p>
+        </div>
+        {poolInfo.settings.salary_cap !== null ? (
+          <PlayerSalary
+            playerName={player.name}
+            team={player.team}
+            salary={player.salary_cap}
+            contractExpirationSeason={player.contract_expiration_season}
+            teamSalaryCap={props.teamSalaryCap}
+            onBadgeClick={(e: React.MouseEvent) => e.stopPropagation()}
+          />
+        ) : null}
+        {canMovePlayers ? (
+          <Tooltip>
+            {/* The trigger wraps the button instead of being it: a full bench
+                spot disables the button, and a disabled button never reports
+                the hover that explains why. */}
+            <TooltipTrigger render={<span className="inline-flex" />}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                aria-label={moveLabel}
+                disabled={!isStarter && isTargetFull}
+                onClick={() =>
+                  isStarter ? moveToReserves(player) : moveToLineup(player)
+                }
+              >
+                {isStarter ? (
+                  <ArrowDownIcon className="size-4" />
+                ) : (
+                  <ArrowUpIcon className="size-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{moveLabel}</TooltipContent>
+          </Tooltip>
+        ) : null}
+      </li>
+    );
+  };
+
+  // What a group of players weighs on the cap, and the share of the cap it eats.
+  // Reservists are outside of the cap, so their share is not shown.
+  const GroupSalary = (players: Player[], tooltip: string, showShare = true) => {
+    if (props.teamSalaryCap === null) {
+      return null;
+    }
+
+    const groupSalary = players.reduce(
+      (total, player) => total + (player.salary_cap ?? 0),
+      0
+    );
+
+    return (
+      <Tooltip>
+        <TooltipTrigger render={<span className="inline-flex" />}>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {salaryFormat(groupSalary)}
+            {showShare ? (
+              <span className="ml-1 opacity-70">
+                {t("PercentOfCap", {
+                  percent: Math.round((groupSalary / props.teamSalaryCap) * 100),
+                })}
+              </span>
+            ) : null}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+      </Tooltip>
+    );
+  };
+
+  const LineupSection = (group: StarterGroup) => {
+    const players = bySalary(lineup[group]);
+    const limit = positionLimits[group];
+    const emptySlots = Math.max(0, limit - players.length);
+
+    return (
+      <section className="rounded-xl border bg-card">
+        <header className="flex items-center justify-between gap-2 border-b px-3 py-2">
+          <h3 className="text-sm font-semibold">{t(GROUP_TITLE[group])}</h3>
+          <div className="flex items-center gap-2">
+            {GroupSalary(
+              players,
+              t("PositionSalaryTotal", { position: t(GROUP_TITLE[group]) })
+            )}
+            <Badge
+              variant={
+                players.length > limit
+                  ? "destructive"
+                  : players.length === limit
+                    ? "secondary"
+                    : "outline"
+              }
+              className="tabular-nums"
+            >
+              {players.length}/{limit}
+            </Badge>
+          </div>
+        </header>
+        <ul className="p-1.5">
+          {players.map((player, i) => PlayerRow(player, i, true, false))}
+          {Array.from({ length: emptySlots }).map((_, i) => (
+            <li
+              key={`empty-${group}-${i}`}
+              className="m-1 flex items-center gap-2 rounded-md border border-dashed px-2 py-1.5"
+            >
+              <span className="w-4 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                {players.length + i + 1}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t("EmptyLineupSlot")}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+  };
+
+  const ReservesSection = () => {
+    const players = byPositionThenSalary(lineup.reservists);
+
+    return (
+      <section className="rounded-xl border bg-card">
+        <header className="flex items-center justify-between gap-2 border-b px-3 py-2">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold">{t("Reservists")}</h3>
+            <Badge variant="outline" className="tabular-nums">
+              {players.length}
+            </Badge>
+            {GroupSalary(players, t("ReservistsSalaryTotal"), false)}
+          </div>
+          {canAddPlayer ? (
+            <PlayerSearchDialog
+              label={t("AddPlayer")}
+              variant="outline"
+              size="sm"
+              onPlayerSelect={(player) => onPlayerSelect(player)}
+            />
+          ) : null}
+        </header>
+        <ul className="p-1.5">
+          {players.length === 0 ? (
+            <li className="px-2 py-4 text-center text-xs text-muted-foreground">
+              {t("NoReservist")}
+            </li>
+          ) : (
+            players.map((player, i) =>
+              PlayerRow(
+                player,
+                i,
+                false,
+                lineup[STARTER_GROUP[player.position]].length >=
+                  positionLimits[STARTER_GROUP[player.position]]
+              )
+            )
+          )}
+        </ul>
+      </section>
+    );
+  };
+
+  const SalarySummary = (teamSalaryCap: number) => {
+    const contractCount = starters.filter(
       (player) => player.salary_cap !== null
     ).length;
 
-    const totalSalary = allPlayers.reduce(
-      (sum, player) => sum + (player.salary_cap ?? 0),
-      0
-    );
-    const isOverCap = totalSalary > teamSalaryCap;
-
     return (
-      <div className="mb-4 p-4 bg-primary-foreground rounded-md">
-        <h3 className="font-bold mb-2">{t("RosterStatus")}</h3>
-        <p>
-          {t("NumberOfPlayers", {
-            playersCount: totalPlayers,
-            contractCount: totalPlayersWithContract,
-          })}
-        </p>
-        <p>
-          {t("RosterSalary", {
-            playersSalary: salaryFormat(totalSalary),
-            teamSalaryCap: salaryFormat(teamSalaryCap),
-          })}
-        </p>
-        <p
-          className={
-            isOverCap ? "text-destructive font-bold" : "text-success font-bold"
-          }
-        >
-          {isOverCap
-            ? t("OverCap", {
-                diff: salaryFormat(Math.abs(teamSalaryCap - totalSalary)),
-              })
-            : t("UnderCap", {
-                diff: salaryFormat(Math.abs(teamSalaryCap - totalSalary)),
-              })}
-        </p>
+      <div className="rounded-xl border bg-card px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-medium">{t("RosterSalaryUsed")}</span>
+            <InformationIcon text={t("RosterSalaryUsedHint")} />
+          </div>
+          <p className="text-sm tabular-nums">
+            <span
+              className={cn("font-semibold", isOverCap && "text-destructive")}
+            >
+              {salaryFormat(totalSalary)}
+            </span>
+            <span className="text-muted-foreground">
+              {" / "}
+              {salaryFormat(teamSalaryCap)}
+            </span>
+          </p>
+        </div>
+        <Progress
+          value={Math.min(100, (totalSalary / teamSalaryCap) * 100)}
+          className={cn("mt-2 h-1.5", isOverCap && "bg-destructive/20")}
+        />
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+          <span
+            className={cn(
+              "font-medium",
+              isOverCap ? "text-destructive" : "text-success"
+            )}
+          >
+            {isOverCap
+              ? t("OverCap", {
+                  diff: salaryFormat(totalSalary - teamSalaryCap),
+                })
+              : t("UnderCap", {
+                  diff: salaryFormat(teamSalaryCap - totalSalary),
+                })}
+          </span>
+          <span className="text-muted-foreground">
+            {t("LineupPlayersCount", {
+              playersCount: starters.length,
+              contractCount,
+            })}
+          </span>
+        </div>
       </div>
     );
   };
 
-  const RosterTable = (
-    user: PoolUser,
-    players: Player[],
-    playerLimit: number,
-    title: string,
-    isStarter: boolean
-  ) => (
-    <Accordion defaultValue={["all"]}>
-      <AccordionItem value="all">
-        <AccordionTrigger>{`${t(title)} (${
-          players.length
-        }/${playerLimit})`}</AccordionTrigger>
-        <AccordionContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead>{t("Player")}</TableHead>
-                <TableHead>{t("T")}</TableHead>
-                <TableHead>Age</TableHead>
-                {poolInfo.settings.salary_cap !== null ? (
-                  <TableHead>{t("Salary")}</TableHead>
-                ) : null}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {players
-                .sort((p1, p2) => p2.salary_cap! - p1.salary_cap!)
-                .map((player, i) => (
-                  <TableRow key={player.id}>
-                    <TableCell>{i + 1}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <PlayerLink
-                          name={player.name}
-                          id={player.id}
-                          textStyle={null}
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <TeamLogo teamId={player.team} width={30} height={30} />
-                    </TableCell>
-                    <TableCell>{player.age}</TableCell>
-                    {poolInfo.settings.salary_cap !== null ? (
-                      <TableCell>
-                        {player.salary_cap &&
-                        player.contract_expiration_season ? (
-                          <PlayerSalary
-                            playerName={player.name}
-                            team={player.team}
-                            salary={player.salary_cap}
-                            contractExpirationSeason={
-                              player.contract_expiration_season
-                            }
-                            onBadgeClick={(e: React.MouseEvent) => {
-                              e.stopPropagation();
-                            }}
-                          />
-                        ) : null}
-                      </TableCell>
-                    ) : null}
-
-                    {userData.info?.id === user.id ||
-                    userData.info?.id === poolInfo.owner ? (
-                      <TableCell>
-                        <Button
-                          onClick={() =>
-                            isStarter
-                              ? moveToReserves(player)
-                              : moveToStarters(player)
-                          }
-                          variant="outline"
-                          size="sm"
-                        >
-                          {isStarter ? (
-                            <MinusCircleIcon />
-                          ) : (
-                            <PlusCircleIcon />
-                          )}
-                        </Button>
-                      </TableCell>
-                    ) : null}
-                  </TableRow>
-                ))}
-            </TableBody>
-            {poolInfo.settings.salary_cap ? (
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={3}>{t("Total")}</TableCell>
-                  <TableCell colSpan={4}>
-                    {getFormatedSummaryContractInfo(players)}
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            ) : null}
-          </Table>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+  const ModificationWindowBanner = () => (
+    <div
+      className={cn(
+        "flex items-start gap-3 rounded-xl border px-4 py-3",
+        modificationWindow.isOpen
+          ? "border-success/40 bg-success/10"
+          : "bg-muted/40"
+      )}
+    >
+      {modificationWindow.isOpen ? (
+        <UnlockIcon className="mt-0.5 size-4 shrink-0 text-success" />
+      ) : (
+        <CalendarClockIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold leading-tight">
+          {modificationWindow.isOpen
+            ? t("LineupChangesAllowed")
+            : t("LineupLocked")}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {modificationWindow.isOpen
+            ? t("LineupAppliesOn", {
+                date: formatDate(modificationWindow.effectiveDate),
+              })
+            : modificationWindow.nextOpenDate
+              ? t("NextLineupModificationDate", {
+                  date: formatDate(modificationWindow.nextOpenDate),
+                })
+              : t("NoLineupModificationDateLeft")}
+        </p>
+      </div>
+      <InformationIcon
+        className="mt-0.5"
+        text={t("LineupModificationRuleHint")}
+      />
+    </div>
   );
 
   const onModifyRoster = async () => {
-    const res = await fetch("/api-rust/modify-roster", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userSession.info?.jwt}`,
-      },
-      body: JSON.stringify({
-        pool_name: poolInfo.name,
-        roster_modified_user_id: props.userRoster.user.id,
-        forw_list: selectedForwards.map((p) => p.id),
-        def_list: selectedDefense.map((p) => p.id),
-        goal_list: selectedGoalies.map((p) => p.id),
-        reserv_list: selectedReservists.map((p) => p.id),
-      }),
-    });
+    setIsSaving(true);
+    try {
+      const res = await apiPost<Pool>(
+        "/modify-roster",
+        {
+          pool_name: poolInfo.name,
+          roster_modified_user_id: props.userRoster.user.id,
+          forw_list: lineup.forwards.map((p) => p.id),
+          def_list: lineup.defense.map((p) => p.id),
+          goal_list: lineup.goalies.map((p) => p.id),
+          reserv_list: lineup.reservists.map((p) => p.id),
+        },
+        userSession.info?.jwt
+      );
 
-    if (!res.ok) {
-      const error = await res.text();
-      toast.error(t("CouldNotSaveRosterModification", {
+      if (!res.ok) {
+        toast.error(
+          t("CouldNotSaveRosterModification", {
+            userName: dictUsers[props.userRoster.user.id].name,
+            error: res.error,
+          }),
+          { duration: 5000 }
+        );
+        return false;
+      }
+
+      updatePoolInfo(res.data);
+      toast.success(
+        t("SuccessSaveRosterModification", {
           userName: dictUsers[props.userRoster.user.id].name,
-          error: error,
-        }), { duration: 5000 });
-      return false;
+        }),
+        { duration: 2000 }
+      );
+
+      return true;
+    } finally {
+      setIsSaving(false);
     }
-
-    const data = await res.json();
-    updatePoolInfo(data);
-    toast.success(t("SuccessSaveRosterModification", {
-        userName: dictUsers[props.userRoster.user.id].name,
-      }), { duration: 2000 });
-
-    return true;
   };
 
   const onPlayerSelect = async (player: Player) => {
-    const res = await fetch("/api-rust/add-player", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userSession.info?.jwt}`,
-      },
-      body: JSON.stringify({
+    const res = await apiPost<Pool>(
+      "/add-player",
+      {
         pool_name: poolInfo.name,
         added_player_user_id: props.userRoster.user.id,
         player: player,
-      }),
-    });
+      },
+      userSession.info?.jwt
+    );
 
     if (!res.ok) {
-      const error = await res.text();
-      toast.error(t("CouldNotAddPlayerToRoster", {
+      toast.error(
+        t("CouldNotAddPlayerToRoster", {
           playerName: player.name,
           userName: dictUsers[props.userRoster.user.id].name,
-          error: error,
-        }), { duration: 5000 });
+          error: res.error,
+        }),
+        { duration: 5000 }
+      );
       return false;
     }
 
-    const data = await res.json();
-    updatePoolInfo(data);
-    toast.success(t("SuccessAddPlayerToRoster", {
+    updatePoolInfo(res.data);
+    toast.success(
+      t("SuccessAddPlayerToRoster", {
         playerName: player.name,
         userName: dictUsers[props.userRoster.user.id].name,
-      }), { duration: 2000 });
+      }),
+      { duration: 2000 }
+    );
 
     return true;
   };
 
+  const LineupPanel = () => (
+    <div className="space-y-3">
+      {canSaveLineup ? ModificationWindowBanner() : null}
+      {props.teamSalaryCap !== null ? SalarySummary(props.teamSalaryCap) : null}
+
+      <div className="grid items-start gap-3 lg:grid-cols-2">
+        <div className="space-y-3">
+          {poolInfo.settings.number_forwards > 0
+            ? LineupSection("forwards")
+            : null}
+          {poolInfo.settings.number_defenders > 0
+            ? LineupSection("defense")
+            : null}
+          {poolInfo.settings.number_goalies > 0
+            ? LineupSection("goalies")
+            : null}
+        </div>
+        <div className="space-y-3">
+          {hasBench || canAddPlayer ? ReservesSection() : null}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <>
-      {userData.info?.id === poolInfo.owner && (
-        <PlayerSearchDialog
-          label={t("Add player")}
-          onPlayerSelect={(player) => onPlayerSelect(player)}
-        />
+    <div className="space-y-3 text-left">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="min-w-[200px] flex-1">
+          <PoolerUserGlobalSelector entries={props.poolerEntries} />
+        </div>
+        {!canSaveLineup && canMovePlayers ? (
+          <Badge variant="outline" className="mb-2">
+            {t("SimulationMode")}
+          </Badge>
+        ) : null}
+      </div>
+
+      {props.teamSalaryCap !== null ? (
+        <Tabs defaultValue="lineup">
+          <TabsList>
+            <TabsTrigger value="lineup">{t("Lineup")}</TabsTrigger>
+            <TabsTrigger value="analysis">{t("Analysis")}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="lineup">{LineupPanel()}</TabsContent>
+          <TabsContent value="analysis">
+            <LineupAnalysis
+              lineup={lineup}
+              reservists={lineup.reservists}
+              teamSalaryCap={props.teamSalaryCap}
+              selectedParticipant={props.userRoster.user.name}
+              analytics={props.analytics}
+            />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        LineupPanel()
       )}
-      {props.teamSalaryCap
-        ? SalarySummaryTable(
-            {
-              user: props.userRoster.user,
-              forwards: selectedForwards,
-              defense: selectedDefense,
-              goalies: selectedGoalies,
-            },
-            props.teamSalaryCap
-          )
-        : null}
-      {RosterTable(
-        props.userRoster.user,
-        selectedForwards,
-        poolInfo.settings.number_forwards,
-        "Forwards",
-        true
-      )}
-      {RosterTable(
-        props.userRoster.user,
-        selectedDefense,
-        poolInfo.settings.number_defenders,
-        "Defense",
-        true
-      )}
-      {RosterTable(
-        props.userRoster.user,
-        selectedGoalies,
-        poolInfo.settings.number_goalies,
-        "Goalies",
-        true
-      )}
-      {poolInfo.settings.number_reservists > 0
-        ? RosterTable(
-            props.userRoster.user,
-            selectedReservists,
-            poolInfo.settings.number_reservists,
-            "Reservists",
-            false
-          )
-        : null}
-      <Button
-        disabled={
-          userData.info?.id !== poolInfo.owner &&
-          userData.info?.id !== props.userRoster.user.id
-        }
-        onClick={() => onModifyRoster()}
-      >
-        Save
-      </Button>
-    </>
+
+      {canMovePlayers ? (
+        <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-2 border-t bg-background/95 py-3 backdrop-blur">
+          <div className="min-w-0 text-xs">
+            {blockingIssue ? (
+              <p className="flex items-center gap-1.5 font-medium text-destructive">
+                <AlertCircleIcon className="size-3.5 shrink-0" />
+                {blockingIssue}
+              </p>
+            ) : !canSaveLineup ? (
+              <p className="flex items-center gap-2 text-muted-foreground">
+                <InfoIcon className="size-4 shrink-0" />
+                {t("SimulationModeHint")}
+              </p>
+            ) : hasUnsavedChanges ? (
+              <p className="text-muted-foreground">
+                {t("UnsavedLineupChanges", { count: movedPlayerCount })}
+              </p>
+            ) : (
+              <p className="text-muted-foreground">{t("LineupUpToDate")}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!hasUnsavedChanges || isSaving}
+              onClick={resetLineup}
+            >
+              <RotateCcwIcon />
+              {t("Reset")}
+            </Button>
+            {canSaveLineup ? (
+              <Button
+                size="sm"
+                disabled={
+                  !hasUnsavedChanges || blockingIssue !== null || isSaving
+                }
+                onClick={() => onModifyRoster()}
+              >
+                {isSaving ? (
+                  <LoaderCircleIcon className="animate-spin" />
+                ) : null}
+                {t("Save")}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }

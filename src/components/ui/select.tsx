@@ -19,13 +19,15 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 data-disabled:cursor-not-allowed data-disabled:opacity-50 [&>span]:line-clamp-1",
+      "flex h-10 w-full cursor-pointer items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 data-disabled:cursor-not-allowed data-disabled:opacity-50 [&>span]:line-clamp-1",
       className
     )}
     {...props}
   >
     {children}
-    <SelectPrimitive.Icon render={<ChevronDown className="h-4 w-4 opacity-50" />} />
+    <SelectPrimitive.Icon
+      render={<ChevronDown className="h-4 w-4 opacity-50" />}
+    />
   </SelectPrimitive.Trigger>
 ));
 SelectTrigger.displayName = "SelectTrigger";
@@ -87,6 +89,7 @@ const SelectContent = React.forwardRef<
   ) => (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
+        className="isolate z-50"
         align={align}
         alignOffset={alignOffset}
         side={side}
@@ -96,13 +99,15 @@ const SelectContent = React.forwardRef<
         <SelectPrimitive.Popup
           ref={ref}
           className={cn(
-            "relative isolate z-50 max-h-(--available-height) min-w-[8rem] min-w-(--anchor-width) overflow-y-auto overflow-x-hidden rounded-md border bg-popover text-popover-foreground shadow-md origin-(--transform-origin) transition-[opacity,scale] duration-150 data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
+            "relative isolate z-50 max-h-(--available-height) min-w-[8rem] min-w-(--anchor-width) overflow-y-auto overflow-x-hidden rounded-md border bg-popover text-popover-foreground shadow-lg shadow-black/20 origin-(--transform-origin) transition-[opacity,scale] duration-150 data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
             className
           )}
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List className="p-1">{children}</SelectPrimitive.List>
+          <SelectPrimitive.List className="p-1">
+            {children}
+          </SelectPrimitive.List>
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
@@ -125,12 +130,17 @@ SelectLabel.displayName = "SelectLabel";
 
 const SelectItem = React.forwardRef<
   React.ComponentRef<typeof SelectPrimitive.Item>,
-  SelectPrimitive.Item.Props
->(({ className, children, ...props }, ref) => (
+  SelectPrimitive.Item.Props & {
+    // Rendered outside of the item text, so they decorate the list without
+    // leaking into the label shown by the trigger.
+    leading?: React.ReactNode;
+    trailing?: React.ReactNode;
+  }
+>(({ className, children, leading, trailing, ...props }, ref) => (
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     )}
     {...props}
@@ -141,7 +151,9 @@ const SelectItem = React.forwardRef<
       </SelectPrimitive.ItemIndicator>
     </span>
 
+    {leading}
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    {trailing}
   </SelectPrimitive.Item>
 ));
 SelectItem.displayName = "SelectItem";

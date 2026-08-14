@@ -11,7 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import * as React from "react";
-import { DraftType, PoolSettings, PoolState } from "@/data/pool/model";
+import {
+  DraftType,
+  Pool,
+  PoolSettings,
+  PoolState,
+  PoolUser,
+} from "@/data/pool/model";
+import { apiPost } from "@/lib/client-api";
 import { RadioGroupItem, RadioGroup } from "@/components/ui/radio-group";
 import { useTranslations } from "next-intl";
 import { z } from "zod";
@@ -26,11 +33,14 @@ import {
 } from "@/components/ui/form";
 import { useForm, type FieldPath } from "react-hook-form";
 import { Checkbox } from "./ui/checkbox";
+import { Switch } from "./ui/switch";
 import { useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
 import { toast } from "sonner";
 import InformationIcon from "./information-box";
 import { useSearchParams } from "next/navigation";
+import { salaryFormat } from "@/app/utils/formating";
+import { LockIcon, PlusIcon, XIcon } from "lucide-react";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -43,10 +53,42 @@ interface Props {
   poolName: string;
   poolStatus: PoolState | null;
   oldPoolSettings: PoolSettings | null;
+
+  // Owner and participants of the pool, needed to pick the assistants. Both are
+  // unknown while the pool is being created.
+  poolOwner?: string;
+  participants?: PoolUser[];
+
+  // Whether the signed in user may change the settings. Creating a pool always
+  // is, an existing pool only for its owner and its assistants.
+  canEdit?: boolean;
+
+  // A pool still in the `Created` state pushes its settings through the draft
+  // socket so everyone in the room sees the change live. When provided, it
+  // replaces the http call.
+  onUpdate?: (settings: PoolSettings) => void;
+
+  // Receives the pool sent back by the backend after a successful update.
+  onUpdated?: (pool: Pool) => void;
 }
 
 export const POOL_NAME_MIN_LENGTH = 5;
 export const POOL_NAME_MAX_LENGTH = 16;
+
+// The backend stores the points as u8, decimals would be rejected.
+const POINTS_MIN_VALUE = 0;
+const POINTS_MAX_VALUE = 255;
+const DEFAULT_POINTS_VALUE = 1;
+
+const SALARY_CAP_MIN_VALUE = 0;
+const SALARY_CAP_MAX_VALUE = 500_000_000;
+const DEFAULT_SALARY_CAP = 82_500_000;
+
+// An emptied number input holds no value, which the schema reports as a missing
+// field. `Number(value) || null` was used before and mapped a legitimate 0 (no
+// reservist, no worst player ignored) to that same missing value.
+const numberOrNull = (value: string): number | null =>
+  value.trim().length === 0 ? null : Number(value);
 
 export default function PoolSettingsComponent(props: Props) {
   const t = useTranslations();
@@ -55,8 +97,17 @@ export default function PoolSettingsComponent(props: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const DISABLE_OPTIONS =
-    props.poolStatus !== null && props.poolStatus !== PoolState.Created;
+  const isCreationContext = (): boolean => props.oldPoolSettings === null;
+
+  // Who is allowed to save. Creating a pool is always allowed, updating one is
+  // gated by the caller on the owner/assistant rights.
+  const CAN_EDIT = props.canEdit ?? isCreationContext();
+
+  // The roster shape and the dynasty rules are baked into the rosters that are
+  // already drafted, the backend refuses to change them once the draft started.
+  // Everything else (scoring, salary cap, assistants, ...) stays editable.
+  const STRUCTURE_LOCKED =
+    !isCreationContext() && props.poolStatus !== PoolState.Created;
 
   // The validation and default values of the form for the pool settings are listed here.
   // 1) General Settings
@@ -116,9 +167,6 @@ export default function PoolSettingsComponent(props: Props) {
   const NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE = 5;
 
   // 3) Points Settings
-  const POINTS_MIN_VALUE = 0;
-  const POINTS_MAX_VALUE = 100.0;
-  const DEFAULT_POINTS_VALUE = 1.0;
   // Forwards
   const DEFAULT_FORWARDS_POINTS_PER_GOALS =
     props.oldPoolSettings?.forwards_settings.points_per_goals ??
@@ -174,13 +222,38 @@ export default function PoolSettingsComponent(props: Props) {
   const NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE = 5;
   const NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE = 15;
 
+  // 5) Salary cap
+  const DEFAULT_SALARY_CAP_ENABLED =
+    (props.oldPoolSettings?.salary_cap ?? null) !== null;
+
   const [showDynastySettings, setShowDynastySettings] = React.useState(
     DEFAULT_POOL_TYPE === PoolType.DYNASTY
   );
   const [showIgnorePlayers, setShowIgnorePlayers] = React.useState(
     DEFAULT_IGNORE_WORST_PLAYERS
   );
-  const isCreationContext = (): boolean => props.oldPoolSettings === null;
+  const [salaryCapEnabled, setSalaryCapEnabled] = React.useState(
+    DEFAULT_SALARY_CAP_ENABLED
+  );
+
+  // Both are list settings without a matching form control, they are kept
+  // aside and merged back into the payload on submit.
+  const [rosterModificationDates, setRosterModificationDates] = React.useState<
+    string[]
+  >(() => [...(props.oldPoolSettings?.roster_modification_date ?? [])].sort());
+  const [assistants, setAssistants] = React.useState<string[]>(
+    props.oldPoolSettings?.assistants ?? []
+  );
+  const [newModificationDate, setNewModificationDate] = React.useState("");
+
+  // The backend deserializes every points setting as a u8, a decimal or an out
+  // of range value is rejected before it reaches any validation of ours.
+  const pointsSchema = () =>
+    z
+      .number()
+      .int({ error: t("PointsMustBeWholeNumberValidation") })
+      .min(POINTS_MIN_VALUE)
+      .max(POINTS_MAX_VALUE);
 
   // Define the schema
   const formSchema = z.object({
@@ -297,60 +370,21 @@ export default function PoolSettingsComponent(props: Props) {
         }),
       }),
     //Forwards
-    forwardsPointsPerGoals: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
-    forwardsPointsPerAssists: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
-    forwardsPointsPerHatTricks: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
-    forwardsPointsPerShootOutGoals: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
+    forwardsPointsPerGoals: pointsSchema(),
+    forwardsPointsPerAssists: pointsSchema(),
+    forwardsPointsPerHatTricks: pointsSchema(),
+    forwardsPointsPerShootOutGoals: pointsSchema(),
     // Defenders
-    defendersPointsPerGoals: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
-    defendersPointsPerAssists: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
-    defendersPointsPerHatTricks: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
-    defendersPointsPerShootOutGoals: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
+    defendersPointsPerGoals: pointsSchema(),
+    defendersPointsPerAssists: pointsSchema(),
+    defendersPointsPerHatTricks: pointsSchema(),
+    defendersPointsPerShootOutGoals: pointsSchema(),
     // Goalies
-    goaliesPointsPerGoals: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
-    goaliesPointsPerAssists: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
-    goaliesPointsPerWins: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
-    goaliesPointsPerOvertimeLosses: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
-    goaliesPointsPerShutout: z
-      .number()
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE),
+    goaliesPointsPerGoals: pointsSchema(),
+    goaliesPointsPerAssists: pointsSchema(),
+    goaliesPointsPerWins: pointsSchema(),
+    goaliesPointsPerOvertimeLosses: pointsSchema(),
+    goaliesPointsPerShutout: pointsSchema(),
     tradableDraftPicks: z
       .number()
       .min(TRADABLE_DRAFT_PICKS_MIN_VALUE)
@@ -359,6 +393,7 @@ export default function PoolSettingsComponent(props: Props) {
       .number()
       .min(NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE)
       .max(NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE),
+    salaryCap: z.number().min(SALARY_CAP_MIN_VALUE).max(SALARY_CAP_MAX_VALUE),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -393,103 +428,131 @@ export default function PoolSettingsComponent(props: Props) {
       goaliesPointsPerShutout: DEFAULT_GOALIES_POINTS_PER_SHUTOUT,
       tradableDraftPicks: DEFAULT_TRADABLE_DRAFT_PICKS,
       numberOfPlayersToProtect: DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT,
+      salaryCap: props.oldPoolSettings?.salary_cap ?? DEFAULT_SALARY_CAP,
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const poolSettings = {
-      pool_name: values.name ?? DEFAULT_POOL_NAME,
-      settings: {
-        number_poolers: values.numberOfPooler,
-        draft_type: values.draftType,
-        assistants: [],
-        number_forwards: values.numberOfForwards,
-        number_defenders: values.numberOfDefenders,
-        number_goalies: values.numberOfGoalies,
-        number_reservists: values.numberOfReservists,
-        roster_modification_date: [],
-        forwards_settings: {
-          points_per_goals: values.forwardsPointsPerGoals,
-          points_per_assists: values.forwardsPointsPerAssists,
-          points_per_hattricks: values.forwardsPointsPerHatTricks,
-          points_per_shootout_goals: values.forwardsPointsPerShootOutGoals,
-        },
-        defense_settings: {
-          points_per_goals: values.defendersPointsPerGoals,
-          points_per_assists: values.defendersPointsPerAssists,
-          points_per_hattricks: values.defendersPointsPerHatTricks,
-          points_per_shootout_goals: values.defendersPointsPerShootOutGoals,
-        },
-        goalies_settings: {
-          points_per_wins: values.goaliesPointsPerWins,
-          points_per_shutouts: values.goaliesPointsPerShutout,
-          points_per_overtimes: values.goaliesPointsPerOvertimeLosses,
-          points_per_goals: values.goaliesPointsPerGoals,
-          points_per_assists: values.goaliesPointsPerAssists,
-        },
-        ignore_x_worst_players: showIgnorePlayers
-          ? {
-              forwards: values.numberOfWorstForwardsToIgnore,
-              defense: values.numberOfWorstDefendersToIgnore,
-              goalies: values.numberOfWorstGoaliesToIgnore,
-            }
-          : null,
-        dynasty_settings: showDynastySettings
-          ? {
-              next_season_number_players_protected:
-                values.numberOfPlayersToProtect,
-              tradable_picks: values.tradableDraftPicks,
-            }
-          : null,
+    // Every field of PoolSettings has to be sent back: the backend replaces the
+    // whole settings document, anything missing from the payload is dropped.
+    const settings: PoolSettings = {
+      number_poolers: values.numberOfPooler,
+      draft_type: values.draftType,
+      assistants: assistants,
+      number_forwards: values.numberOfForwards,
+      number_defenders: values.numberOfDefenders,
+      number_goalies: values.numberOfGoalies,
+      number_reservists: values.numberOfReservists,
+      salary_cap: salaryCapEnabled ? values.salaryCap : null,
+      roster_modification_date: rosterModificationDates,
+      forwards_settings: {
+        points_per_goals: values.forwardsPointsPerGoals,
+        points_per_assists: values.forwardsPointsPerAssists,
+        points_per_hattricks: values.forwardsPointsPerHatTricks,
+        points_per_shootout_goals: values.forwardsPointsPerShootOutGoals,
       },
+      defense_settings: {
+        points_per_goals: values.defendersPointsPerGoals,
+        points_per_assists: values.defendersPointsPerAssists,
+        points_per_hattricks: values.defendersPointsPerHatTricks,
+        points_per_shootout_goals: values.defendersPointsPerShootOutGoals,
+      },
+      goalies_settings: {
+        points_per_wins: values.goaliesPointsPerWins,
+        points_per_shutouts: values.goaliesPointsPerShutout,
+        points_per_overtimes: values.goaliesPointsPerOvertimeLosses,
+        points_per_goals: values.goaliesPointsPerGoals,
+        points_per_assists: values.goaliesPointsPerAssists,
+      },
+      ignore_x_worst_players: showIgnorePlayers
+        ? {
+            forwards: values.numberOfWorstForwardsToIgnore,
+            defense: values.numberOfWorstDefendersToIgnore,
+            goalies: values.numberOfWorstGoaliesToIgnore,
+          }
+        : null,
+      dynasty_settings: showDynastySettings
+        ? {
+            next_season_number_players_protected:
+              values.numberOfPlayersToProtect,
+            tradable_picks: values.tradableDraftPicks,
+            // Pool lineage is maintained by the backend when the next season is
+            // generated, it is carried over untouched.
+            past_season_pool_name:
+              props.oldPoolSettings?.dynasty_settings?.past_season_pool_name ??
+              [],
+            next_season_pool_name:
+              props.oldPoolSettings?.dynasty_settings?.next_season_pool_name ??
+              null,
+          }
+        : null,
     };
 
+    const poolName = values.name ?? DEFAULT_POOL_NAME;
+
     if (isCreationContext()) {
-      const res = await fetch("/api-rust/create-pool", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userSession.info?.jwt}`,
-        },
-        body: JSON.stringify(poolSettings),
-      });
+      const res = await apiPost(
+        "/create-pool",
+        { pool_name: poolName, settings },
+        userSession.info?.jwt
+      );
 
       if (!res.ok) {
-        const error = await res.text();
-        toast.error(t("CouldNotGeneratePoolError", {
-            name: values.name,
-            error: error,
-          }), { duration: 2000 });
+        toast.error(
+          t("CouldNotGeneratePoolError", { name: poolName, error: res.error }),
+          { duration: 2000 }
+        );
+        // Stay on the form so the settings are not lost: navigating to the
+        // pool page would only 404 since the pool was never created.
+        return;
       }
-      router.push(`/pool/${values.name}?${searchParams.toString()}`);
-    } else {
-      const res = await fetch("/api-rust/update-pool-settings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userSession.info?.jwt}`,
-        },
-        body: JSON.stringify(poolSettings),
-      });
-
-      if (!res.ok) {
-        const error = await res.text();
-        toast.error(t("CouldNotUpdatePoolError", {
-            name: values.name,
-            error: error,
-          }), { duration: 2000 });
-      }
+      router.push(`/pool/${poolName}?${searchParams.toString()}`);
+      return;
     }
+
+    if (props.onUpdate) {
+      props.onUpdate(settings);
+      toast.success(t("SuccessUpdatePoolSettings"), { duration: 2000 });
+      return;
+    }
+
+    const res = await apiPost<Pool>(
+      "/update-pool-settings",
+      { pool_name: poolName, settings },
+      userSession.info?.jwt
+    );
+
+    if (!res.ok) {
+      toast.error(
+        t("CouldNotUpdatePoolError", { name: poolName, error: res.error }),
+        { duration: 5000 }
+      );
+      return;
+    }
+
+    props.onUpdated?.(res.data);
+    toast.success(t("SuccessUpdatePoolSettings"), { duration: 2000 });
   };
 
   type FormValues = z.infer<typeof formSchema>;
+
+  const LockedHint = () =>
+    STRUCTURE_LOCKED ? (
+      <InformationIcon
+        text={t("SettingLockedAfterDraftDescription")}
+        className="text-muted-foreground"
+      />
+    ) : null;
 
   const NumberField = (
     fieldName: FieldPath<FormValues>,
     label: string,
     min: number,
     max: number,
-    info?: string
+    info?: string,
+    // Kept out of react-hook-form's own `disabled`, which would strip the value
+    // from the submitted payload and wipe the setting on the backend.
+    locked?: boolean
   ) => (
     <FormField
       control={form.control}
@@ -499,14 +562,17 @@ export default function PoolSettingsComponent(props: Props) {
           <div className="flex items-center gap-1.5">
             <FormLabel>{label}</FormLabel>
             {info ? <InformationIcon text={info} /> : null}
+            {locked ? LockedHint() : null}
           </div>
           <FormControl>
             <Input
               {...field}
               type="number"
+              step={1}
               min={min}
               max={max}
-              onChange={(e) => field.onChange(Number(e.target.value) || null)}
+              disabled={locked}
+              onChange={(e) => field.onChange(numberOrNull(e.target.value))}
             />
           </FormControl>
           <FormMessage />
@@ -519,16 +585,48 @@ export default function PoolSettingsComponent(props: Props) {
     id: string,
     value: string,
     label: string,
-    info?: string
+    info?: string,
+    locked?: boolean
   ) => (
     <div className="flex items-center gap-2">
-      <RadioGroupItem value={value} id={id} />
+      <RadioGroupItem value={value} id={id} disabled={locked} />
       <Label htmlFor={id} className="font-normal">
         {label}
       </Label>
       {info ? <InformationIcon text={info} /> : null}
     </div>
   );
+
+  const DynastyLineage = () => {
+    const dynastySettings = props.oldPoolSettings?.dynasty_settings;
+    const pastPools = dynastySettings?.past_season_pool_name ?? [];
+    const nextPool = dynastySettings?.next_season_pool_name ?? null;
+
+    if (pastPools.length === 0 && nextPool === null) {
+      return null;
+    }
+
+    return (
+      <div className="space-y-1 text-sm">
+        {pastPools.length > 0 ? (
+          <p>
+            <span className="text-muted-foreground">
+              {t("PastSeasonPools")}:{" "}
+            </span>
+            {pastPools.join(", ")}
+          </p>
+        ) : null}
+        {nextPool ? (
+          <p>
+            <span className="text-muted-foreground">
+              {t("NextSeasonPool")}:{" "}
+            </span>
+            {nextPool}
+          </p>
+        ) : null}
+      </div>
+    );
+  };
 
   const GeneralSettings = () => (
     <Card>
@@ -558,7 +656,9 @@ export default function PoolSettingsComponent(props: Props) {
             "numberOfPooler",
             t("NumberPooler"),
             MIN_POOLER_NUMBER,
-            MAX_POOLER_NUMBER
+            MAX_POOLER_NUMBER,
+            undefined,
+            STRUCTURE_LOCKED
           )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -567,7 +667,10 @@ export default function PoolSettingsComponent(props: Props) {
             name="typeOfPool"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("PoolType")}</FormLabel>
+                <div className="flex items-center gap-1.5">
+                  <FormLabel>{t("PoolType")}</FormLabel>
+                  {STRUCTURE_LOCKED ? LockedHint() : null}
+                </div>
                 <FormControl>
                   <RadioGroup
                     value={field.value}
@@ -580,13 +683,16 @@ export default function PoolSettingsComponent(props: Props) {
                     {RadioOption(
                       "pool-type-standard",
                       PoolType.STANDARD,
-                      "Standard"
+                      "Standard",
+                      undefined,
+                      STRUCTURE_LOCKED
                     )}
                     {RadioOption(
                       "pool-type-dynasty",
                       PoolType.DYNASTY,
                       t("Dynasty"),
-                      t("DynastyPoolTypeDescription")
+                      t("DynastyPoolTypeDescription"),
+                      STRUCTURE_LOCKED
                     )}
                   </RadioGroup>
                 </FormControl>
@@ -623,21 +729,26 @@ export default function PoolSettingsComponent(props: Props) {
           />
         </div>
         {showDynastySettings ? (
-          <div className="grid gap-4 rounded-lg border bg-muted/50 p-4 sm:grid-cols-2">
-            {NumberField(
-              "tradableDraftPicks",
-              t("TradableDraftPicks"),
-              TRADABLE_DRAFT_PICKS_MIN_VALUE,
-              TRADABLE_DRAFT_PICKS_MAX_VALUE,
-              t("TradablePicksDescription")
-            )}
-            {NumberField(
-              "numberOfPlayersToProtect",
-              t("NumberOfProtectedPlayers"),
-              NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE,
-              NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE,
-              t("NumberOfPlayersToProtectDescription")
-            )}
+          <div className="space-y-4 rounded-lg border bg-muted/50 p-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {NumberField(
+                "tradableDraftPicks",
+                t("TradableDraftPicks"),
+                TRADABLE_DRAFT_PICKS_MIN_VALUE,
+                TRADABLE_DRAFT_PICKS_MAX_VALUE,
+                t("TradablePicksDescription"),
+                STRUCTURE_LOCKED
+              )}
+              {NumberField(
+                "numberOfPlayersToProtect",
+                t("NumberOfProtectedPlayers"),
+                NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE,
+                NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE,
+                t("NumberOfPlayersToProtectDescription"),
+                STRUCTURE_LOCKED
+              )}
+            </div>
+            {DynastyLineage()}
           </div>
         ) : null}
       </CardContent>
@@ -658,31 +769,39 @@ export default function PoolSettingsComponent(props: Props) {
             "numberOfForwards",
             t("NumberOfForwards"),
             NUMBER_FORWARDS_MIN_VALUE,
-            NUMBER_FORWARDS_MAX_VALUE
+            NUMBER_FORWARDS_MAX_VALUE,
+            undefined,
+            STRUCTURE_LOCKED
           )}
           {NumberField(
             "numberOfDefenders",
             t("NumberOfDefenders"),
             NUMBER_DEFENDERS_MIN_VALUE,
-            NUMBER_DEFENDERS_MAX_VALUE
+            NUMBER_DEFENDERS_MAX_VALUE,
+            undefined,
+            STRUCTURE_LOCKED
           )}
           {NumberField(
             "numberOfGoalies",
             t("NumberOfGoalies"),
             NUMBER_GOALIES_MIN_VALUE,
-            NUMBER_GOALIES_MAX_VALUE
+            NUMBER_GOALIES_MAX_VALUE,
+            undefined,
+            STRUCTURE_LOCKED
           )}
           {NumberField(
             "numberOfReservists",
             t("NumberOfReservists"),
             NUMBER_RESERVISTS_MIN_VALUE,
-            NUMBER_RESERVISTS_MAX_VALUE
+            NUMBER_RESERVISTS_MAX_VALUE,
+            undefined,
+            STRUCTURE_LOCKED
           )}
         </div>
         <div className="flex items-center gap-2 pt-2">
           <Checkbox
             id="ignore-players"
-            defaultChecked={DEFAULT_IGNORE_WORST_PLAYERS}
+            checked={showIgnorePlayers}
             onCheckedChange={(checkedState) => {
               setShowIgnorePlayers(checkedState as boolean);
             }}
@@ -731,11 +850,11 @@ export default function PoolSettingsComponent(props: Props) {
             <Input
               {...field}
               className="h-8 w-20 text-right"
-              step="any"
+              step={1}
               type="number"
               min={POINTS_MIN_VALUE}
               max={POINTS_MAX_VALUE}
-              onChange={(e) => field.onChange(Number(e.target.value) || null)}
+              onChange={(e) => field.onChange(numberOrNull(e.target.value))}
             />
           </FormControl>
         </FormItem>
@@ -793,23 +912,220 @@ export default function PoolSettingsComponent(props: Props) {
     </Card>
   );
 
+  const addModificationDate = () => {
+    if (newModificationDate.length === 0) {
+      return;
+    }
+    setRosterModificationDates((dates) =>
+      dates.includes(newModificationDate)
+        ? dates
+        : [...dates, newModificationDate].sort()
+    );
+    setNewModificationDate("");
+  };
+
+  const RosterRulesSettings = () => (
+    <Card>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg">{t("RosterRulesSettings")}</CardTitle>
+        {isCreationContext() ? (
+          <CardDescription>
+            {t("RosterRulesSettingsDescription")}
+          </CardDescription>
+        ) : null}
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="salary-cap-enabled"
+              checked={salaryCapEnabled}
+              onCheckedChange={(checked) => setSalaryCapEnabled(checked)}
+            />
+            <Label htmlFor="salary-cap-enabled" className="font-normal">
+              {t("EnableSalaryCap")}
+            </Label>
+            <InformationIcon text={t("SalaryCapSettingDescription")} />
+          </div>
+          {salaryCapEnabled ? (
+            <FormField
+              control={form.control}
+              name="salaryCap"
+              render={({ field }) => (
+                <FormItem className="max-w-xs">
+                  <FormLabel>{t("SalaryCap")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      step={100000}
+                      min={SALARY_CAP_MIN_VALUE}
+                      max={SALARY_CAP_MAX_VALUE}
+                      onChange={(e) =>
+                        field.onChange(numberOrNull(e.target.value))
+                      }
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    {salaryFormat(field.value ?? 0)}
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : null}
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-1.5">
+            <Label className="font-normal">
+              {t("RosterModificationDates")}
+            </Label>
+            <InformationIcon text={t("RosterModificationDatesDescription")} />
+          </div>
+          {rosterModificationDates.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("NoRosterModificationDate")}
+            </p>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {rosterModificationDates.map((date) => (
+                <li
+                  key={date}
+                  className="flex items-center gap-1 rounded-md border bg-muted/50 py-1 pl-3 pr-1 text-sm"
+                >
+                  {date}
+                  {CAN_EDIT ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-6"
+                      aria-label={t("RemoveRosterModificationDate", { date })}
+                      onClick={() =>
+                        setRosterModificationDates((dates) =>
+                          dates.filter((d) => d !== date)
+                        )
+                      }
+                    >
+                      <XIcon className="size-3.5" />
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+          {CAN_EDIT ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                type="date"
+                className="w-auto"
+                aria-label={t("RosterModificationDates")}
+                value={newModificationDate}
+                onChange={(e) => setNewModificationDate(e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addModificationDate}
+                disabled={newModificationDate.length === 0}
+              >
+                <PlusIcon className="size-4" />
+                {t("Add")}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const assistantCandidates = (props.participants ?? []).filter(
+    (participant) =>
+      participant.is_owned && participant.id !== (props.poolOwner ?? "")
+  );
+
+  const ownerName =
+    props.participants?.find(
+      (participant) => participant.id === (props.poolOwner ?? "")
+    )?.name ?? props.poolOwner;
+
+  const PermissionSettings = () => (
+    <Card>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg">{t("PermissionSettings")}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {ownerName ? (
+          <p className="text-sm">
+            <span className="text-muted-foreground">{t("Owner")}: </span>
+            {ownerName}
+          </p>
+        ) : null}
+        <div className="space-y-3">
+          <div className="flex items-center gap-1.5">
+            <Label className="font-normal">{t("Assistants")}</Label>
+            <InformationIcon text={t("AssistantsDescription")} />
+          </div>
+          {assistantCandidates.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("NoAssistantCandidate")}
+            </p>
+          ) : (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {assistantCandidates.map((participant) => (
+                <li key={participant.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`assistant-${participant.id}`}
+                    checked={assistants.includes(participant.id)}
+                    onCheckedChange={(checked) =>
+                      setAssistants((current) =>
+                        checked
+                          ? [...current, participant.id]
+                          : current.filter((id) => id !== participant.id)
+                      )
+                    }
+                  />
+                  <Label
+                    htmlFor={`assistant-${participant.id}`}
+                    className="font-normal"
+                  >
+                    {participant.name}
+                  </Label>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <fieldset
-          disabled={DISABLE_OPTIONS}
-          className="mx-auto min-w-0 max-w-4xl space-y-4 text-left"
-        >
+        <fieldset disabled={!CAN_EDIT} className="min-w-0 space-y-4 text-left">
+          {!CAN_EDIT ? (
+            <div className="flex items-start gap-2 rounded-lg border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+              <LockIcon className="mt-0.5 size-4 shrink-0" />
+              <p>{t("PoolSettingsReadOnlyDescription")}</p>
+            </div>
+          ) : null}
           {GeneralSettings()}
           {PlayerSettings()}
           {PointsSettings()}
-          {DISABLE_OPTIONS ? null : (
+          {RosterRulesSettings()}
+          {isCreationContext() ? null : PermissionSettings()}
+          {CAN_EDIT ? (
             <div className="flex justify-end">
-              <Button type="submit" className="w-full sm:w-auto sm:px-8">
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="w-full sm:w-auto sm:px-8"
+              >
                 {props.oldPoolSettings ? t("Update") : t("Create")}
               </Button>
             </div>
-          )}
+          ) : null}
         </fieldset>
       </form>
     </Form>

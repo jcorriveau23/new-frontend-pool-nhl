@@ -52,6 +52,9 @@ interface Draft {
   // The user that should draft, null if draft done.
   currentDrafter: string | null;
   currentRound: number | null;
+
+  // Total number of picks of the whole draft.
+  totalPicks: number;
 }
 
 interface DraftProps {
@@ -253,12 +256,18 @@ export default function Draft(props: DraftProps) {
 
     return player ? (
       <>
-        <TableCell>
+        <TableCell className="px-2 py-1.5 sm:px-3 sm:py-2">
           <PlayerLink name={player.name} id={player.id} textStyle={null} />
         </TableCell>
-        <TableCell>{player.position}</TableCell>
-        <TableCell>
-          <TeamLogo width={30} height={30} src={teamLogo} />
+        <TableCell className="px-2 py-1.5 text-center sm:px-3 sm:py-2">
+          <span className="inline-flex h-5 min-w-6 items-center justify-center rounded-md border bg-muted/50 px-1.5 text-xs font-medium">
+            {player.position}
+          </span>
+        </TableCell>
+        <TableCell className="px-2 py-1.5 sm:px-3 sm:py-2">
+          <div className="flex justify-center">
+            <TeamLogo width={26} height={26} src={teamLogo} />
+          </div>
         </TableCell>
       </>
     ) : player === null &&
@@ -268,7 +277,7 @@ export default function Draft(props: DraftProps) {
         <Dialog>
           <DialogTrigger
             nativeButton={false}
-            render={<TableCell colSpan={3} />}
+            render={<TableCell colSpan={3} className="px-2 py-1.5 sm:px-3 sm:py-2" />}
           >
             <DraftButton label="Draft Player" />
           </DialogTrigger>
@@ -292,43 +301,77 @@ export default function Draft(props: DraftProps) {
           </DialogContent>
         </Dialog>
       </>
-    ) : null;
+    ) : (
+      // Pick that has not been made yet.
+      <TableCell colSpan={3} className="px-2 py-1.5 text-muted-foreground/60 sm:px-3 sm:py-2">
+        —
+      </TableCell>
+    );
   };
 
   const RoundTable = (round: Round) => (
-    <Table>
+    <Table className="border-t">
       <TableHeader>
-        <TableRow>
-          <TableHead>#</TableHead>
-          <TableHead>Pooler</TableHead>
-          <TableHead>{t("Player")}</TableHead>
-          <TableHead>{t("Position")}</TableHead>
-          <TableHead>{t("T")}</TableHead>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="h-8 w-10 pl-3 pr-1.5 text-right text-[11px] font-normal sm:h-9 sm:w-12 sm:pl-4 sm:pr-2 sm:text-sm">
+            #
+          </TableHead>
+          <TableHead className="h-8 px-2 text-[11px] font-normal sm:h-9 sm:px-3 sm:text-sm">
+            Pooler
+          </TableHead>
+          <TableHead className="h-8 px-2 text-[11px] font-normal sm:h-9 sm:px-3 sm:text-sm">
+            {t("Player")}
+          </TableHead>
+          <TableHead className="h-8 w-14 px-2 text-center text-[11px] font-normal sm:h-9 sm:w-20 sm:px-3 sm:text-sm">
+            {t("Position")}
+          </TableHead>
+          <TableHead className="h-8 w-12 px-2 text-center text-[11px] font-normal sm:h-9 sm:w-16 sm:px-3 sm:text-sm">
+            {t("T")}
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {round.picks.map((pick, i) => {
           const draftIndex = (round.round - 1) * round.picks.length + i;
+          const isCurrentPick =
+            draftIndex === poolInfo.context?.players_name_drafted.length;
 
           return (
-            <TableRow key={draftIndex + 1}>
-              <TableCell>{draftIndex + 1}</TableCell>
-              <TableCell>
-                <div className="flex items-center space-x-2">
-                  <div>{dictUsers[pick.drafter]?.name}</div>
-                  <div>
-                    {pick.from ? (
-                      <Badge>
-                        {t("FromPickTraded", {
-                          poolerName: dictUsers[pick.from]?.name,
-                        })}
-                      </Badge>
-                    ) : null}
-                  </div>
+            <TableRow
+              key={draftIndex + 1}
+              className={
+                isCurrentPick
+                  ? "border-b-0 bg-primary/10 hover:bg-primary/15"
+                  : "border-b-0 odd:bg-muted/30"
+              }
+            >
+              <TableCell className="py-1.5 pl-3 pr-1.5 text-right tabular-nums text-muted-foreground sm:py-2 sm:pl-4 sm:pr-2">
+                {draftIndex + 1}
+              </TableCell>
+              <TableCell className="px-2 py-1.5 sm:px-3 sm:py-2">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-medium">
+                    {dictUsers[pick.drafter]?.name}
+                  </span>
+                  {pick.from ? (
+                    <Badge
+                      variant="outline"
+                      className="border-dashed px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
+                    >
+                      {t("FromPickTraded", {
+                        poolerName: dictUsers[pick.from]?.name,
+                      })}
+                    </Badge>
+                  ) : null}
                 </div>
               </TableCell>
               {pick.done ? (
-                <TableCell colSpan={3}>Done</TableCell>
+                <TableCell
+                  colSpan={3}
+                  className="px-2 py-1.5 text-muted-foreground sm:px-3 sm:py-2"
+                >
+                  {t("RosterComplete")}
+                </TableCell>
               ) : (
                 DraftContent(draftIndex)
               )}
@@ -339,19 +382,40 @@ export default function Draft(props: DraftProps) {
     </Table>
   );
 
-  const RenderRound = (round: Round) => (
-    <Accordion
-      key={round.round}
-      defaultValue={[round.round.toString()]}
-    >
-      <AccordionItem value={round.round.toString()}>
-        <AccordionTrigger>
-          {t("Round")} #{round.round}
+  const RenderRound = (round: Round, currentRound: number | null) => {
+    const firstPick = (round.round - 1) * round.picks.length + 1;
+    const lastPick = firstPick + round.picks.length - 1;
+
+    return (
+      <AccordionItem
+        key={round.round}
+        value={round.round.toString()}
+        className="border-b last:border-b-0"
+      >
+        <AccordionTrigger className="px-4 hover:no-underline">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="font-semibold">
+              {t("Round")} #{round.round}
+            </span>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {firstPick}–{lastPick}
+            </span>
+            {round.round === currentRound ? (
+              <Badge
+                variant="outline"
+                className="border-primary/40 px-2 py-0 text-[10px] font-medium text-primary"
+              >
+                {t("InProgress")}
+              </Badge>
+            ) : null}
+          </div>
         </AccordionTrigger>
-        <AccordionContent>{RoundTable(round)}</AccordionContent>
+        <AccordionContent className="pb-0">
+          {RoundTable(round)}
+        </AccordionContent>
       </AccordionItem>
-    </Accordion>
-  );
+    );
+  };
 
   React.useEffect(() => {
     const rounds = getRounds();
@@ -361,14 +425,22 @@ export default function Draft(props: DraftProps) {
       rounds,
       currentDrafter: getCurrentDrafter(rounds),
       currentRound: roundIndex !== null ? roundIndex + 1 : null,
+      totalPicks: rounds.reduce(
+        (total, round) =>
+          total + round.picks.filter((pick) => !pick.done).length,
+        0
+      ),
     });
+    // The three helpers are re-created on every render; the draft board only
+    // needs recomputing when a pick is made.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poolInfo.context?.players_name_drafted]);
 
   if (draftInfo === null) {
     return <h1>Loading draft info...</h1>;
   }
   return (
-    <div>
+    <div className="space-y-4 py-2">
       <DraftStatus
         round={draftInfo.currentRound}
         pickNumber={(poolInfo.context?.players_name_drafted.length ?? 0) + 1}
@@ -378,8 +450,17 @@ export default function Draft(props: DraftProps) {
             : null
         }
         isUserTurn={draftInfo.currentDrafter === userData.info?.id}
+        completedPicks={poolInfo.context?.players_name_drafted.length ?? 0}
+        totalPicks={draftInfo.totalPicks}
       />
-      {draftInfo.rounds.map((round) => RenderRound(round))}
+      <Accordion
+        defaultValue={draftInfo.rounds.map((round) => round.round.toString())}
+        className="overflow-hidden rounded-xl border bg-card"
+      >
+        {draftInfo.rounds.map((round) =>
+          RenderRound(round, draftInfo.currentRound)
+        )}
+      </Accordion>
     </div>
   );
 }

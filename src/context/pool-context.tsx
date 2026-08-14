@@ -2,7 +2,8 @@
 Module that share context related to the selected pool.
 */
 "use client";
-import { Pool, PoolUser } from "@/data/pool/model";
+import { DailyRosterPoints, Pool, PoolUser } from "@/data/pool/model";
+import { apiGet } from "@/lib/client-api";
 import React, { createContext, useContext, ReactNode, useState } from "react";
 import { useRouter } from "@/i18n/routing";
 import { db } from "@/db";
@@ -35,6 +36,10 @@ export interface PoolContextProps {
 
   // The last pool date stored into the pool.
   lastFormatDate: string | null;
+
+  // The day (yyyy-MM-dd) the pool information is being displayed for. This is
+  // the selected date, or the last day of the pool when none is selected.
+  dateOfInterest: string;
 
   // The start Date and selected of the pool (This must be in the pool season time range!)
   poolStartDate: Date;
@@ -150,13 +155,21 @@ const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
   };
 };
 
+/*
+`name` comes from the [name] route segment and reaches this function still
+percent-encoded ("Raph%20gagne"), because the next-intl rewrite in proxy.ts
+does not decode the dynamic segments of the pages it rewrites. It is therefore
+interpolated into the path as-is: running it through encodeURIComponent would
+double-encode it and the backend would look up a pool literally named
+"Raph%20gagne".
+*/
 export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
   // Pool metadata (participants, settings, roster, lineup events).
-  const res = await fetch(`/api-rust/pool/${name}`);
+  const res = await apiGet<Pool>(`/pool/${name}`);
   if (!res.ok) {
-    return await res.text();
+    return res.error;
   }
-  const data: Pool = await res.json();
+  const data = res.data;
 
   // The locally cached copy of the pool (Dexie), used both to fetch only the
   // missing score days and to preserve the row id so the put() updates in place.
@@ -183,8 +196,10 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
     const lastCachedDate = cachedDates[cachedDates.length - 1];
     const rangeStart = lastCachedDate ?? data.season_start;
 
-    const scoresRes = await fetch(
-      `/api-rust/pool-scores/${name}/cumulative/${rangeStart}/${rangeEnd}`
+    const scoresRes = await apiGet<
+      Record<string, Record<string, DailyRosterPoints>>
+    >(
+      `/pool-scores/${name}/cumulative/${rangeStart}/${rangeEnd}`
     );
     const cachedByDay = Object.fromEntries(
       cachedDates.map((date) => [date, cachedScores![date]])
@@ -193,12 +208,12 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
       // Freshly derived days override the cached ones.
       data.context.score_by_day = {
         ...cachedByDay,
-        ...(await scoresRes.json()),
+        ...scoresRes.data,
       };
     } else {
       // Keep whatever we had locally so the UI can still render history.
       data.context.score_by_day = cachedByDay;
-      console.error(`could not fetch derived scores: ${await scoresRes.text()}`);
+      console.error(`could not fetch derived scores: ${scoresRes.error}`);
     }
   }
 
@@ -286,21 +301,27 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     string
   > | null>(getProtectedPlayers(poolInfo, dictUsers));
 
-  const updateSelectedParticipant = (participant: string) => {
-    setSelectedParticipant(participant);
-    setSelectedPoolUser(
-      poolInfo.participants.find((user) => user.name === participant) ??
-        poolInfo.participants[0]
-    );
-    const queryParams = new URLSearchParams(searchParams.toString());
-    queryParams.set("selectedParticipant", participant);
-    // Keep the URL query in sync without scrolling back to the top. The UI is
-    // already driven by the local state set above, so this is only for
-    // shareable/reloadable URLs — use replace + scroll:false to avoid the jump.
-    router.replace(`/pool/${poolInfo.name}/?${queryParams.toString()}`, {
-      scroll: false,
-    });
-  };
+  // Memoised so consumers can safely use it as an effect dependency (the
+  // popstate listeners in the pool pages do) without re-subscribing on every
+  // render of the provider.
+  const updateSelectedParticipant = React.useCallback(
+    (participant: string) => {
+      setSelectedParticipant(participant);
+      setSelectedPoolUser(
+        poolInfo.participants.find((user) => user.name === participant) ??
+          poolInfo.participants[0]
+      );
+      const queryParams = new URLSearchParams(searchParams.toString());
+      queryParams.set("selectedParticipant", participant);
+      // Keep the URL query in sync without scrolling back to the top. The UI is
+      // already driven by the local state set above, so this is only for
+      // shareable/reloadable URLs — use replace + scroll:false to avoid the jump.
+      router.replace(`/pool/${poolInfo.name}/?${queryParams.toString()}`, {
+        scroll: false,
+      });
+    },
+    [poolInfo.participants, poolInfo.name, searchParams, router]
+  );
 
   React.useEffect(() => {
     const dayInfo = poolInfo.context?.score_by_day?.[dateOfInterest];
@@ -380,6 +401,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     selectedPoolUser,
     updateSelectedParticipant,
     lastFormatDate,
+    dateOfInterest,
     poolStartDate,
     poolSelectedEndDate,
     playersOwner,

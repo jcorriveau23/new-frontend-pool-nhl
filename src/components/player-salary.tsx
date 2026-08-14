@@ -9,13 +9,19 @@ import {
 } from "@/components/ui/popover";
 import { TeamLogo } from "./team-logo";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
 interface PlayerSalary {
   playerName: string | undefined;
   team: number | null | undefined;
   salary: number | null | undefined; // salary in $.
   contractExpirationSeason: number | null | undefined; // in the following format 20232024.
+  // Cap of the team owning the player, when the caller knows it. It turns the
+  // amount into a share, which is what actually says whether a contract is big.
+  teamSalaryCap?: number | null;
   onBadgeClick?: (e: React.MouseEvent) => void;
+  // Lets a dense table shrink the badge without touching the popover.
+  badgeClassName?: string;
 }
 
 export default function PlayerSalary({
@@ -23,64 +29,67 @@ export default function PlayerSalary({
   team,
   salary,
   contractExpirationSeason,
+  teamSalaryCap,
   onBadgeClick,
+  badgeClassName,
 }: PlayerSalary) {
-  const formatedSalary = salary ? salaryFormat(salary) : "";
-
-  const [isOpen, setIsOpen] = React.useState(false);
   const t = useTranslations();
 
-  const handleBadgeClick = (e: React.MouseEvent) => {
-    setIsOpen(!isOpen);
-    if (onBadgeClick) {
-      onBadgeClick(e);
-    }
-  };
+  // A player with neither a cap hit nor an expiration season is simply not
+  // under contract, which matters as much as the amount itself when building
+  // a trade or a dynasty roster.
+  const hasContract = salary != null || contractExpirationSeason != null;
+  const formatedSalary = salary != null ? salaryFormat(salary) : null;
+
   return (
-    <>
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger>
-          <Badge
-            variant="outline"
-            onClick={handleBadgeClick}
-            className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-          >
-            {formatedSalary}
-          </Badge>
-        </PopoverTrigger>
-        <PopoverContent>
-          <div className="grid gap-4">
-            <div className="flex flex-col gap-2">
-              <h4 className="font-medium leading-none">
-                {t("SalaryDetails", { playerName: playerName ?? "" })}
-              </h4>
-            </div>
-            <div className="grid gap-2">
-              <div className="grid grid-cols-3 items-center gap-4">
-                <span className="text-sm font-medium">{t("Team")}:</span>
-                <span className="col-span-2 text-sm">
-                  {team && <TeamLogo teamId={team} width={30} height={30} />}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 items-center gap-4">
-                <span className="text-sm font-medium">
-                  {t("ContractExpiration")}
-                </span>
-                <span className="col-span-2 text-sm">
-                  {contractExpirationSeason &&
-                    t("ContractExpirationValue", {
-                      season: seasonFormat(contractExpirationSeason, 0),
-                    })}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 items-center gap-4">
-                <span className="text-sm font-medium">{t("Salary")}:</span>
-                <span className="col-span-2 text-sm">{formatedSalary}</span>
-              </div>
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
-    </>
+    <Popover>
+      <PopoverTrigger
+        openOnHover
+        delay={200}
+        onClick={onBadgeClick}
+        aria-label={t("SalaryDetails", { playerName: playerName ?? "" })}
+        className="outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 rounded-full"
+      >
+        <Badge
+          variant="outline"
+          className={cn(
+            "cursor-pointer whitespace-nowrap tabular-nums transition-colors hover:bg-accent hover:text-accent-foreground",
+            hasContract
+              ? "font-semibold"
+              : "border-dashed font-normal text-muted-foreground",
+            badgeClassName,
+          )}
+        >
+          {formatedSalary ?? t("NoContract")}
+        </Badge>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto min-w-48 max-w-64 p-3">
+        <div className="flex items-center gap-2">
+          {team ? <TeamLogo teamId={team} width={24} height={24} /> : null}
+          <span className="truncate text-sm font-medium">{playerName}</span>
+        </div>
+        <div className="mt-2 text-2xl font-semibold tabular-nums">
+          {formatedSalary ?? (
+            <span className="text-base font-normal text-muted-foreground">
+              {t("NoContract")}
+            </span>
+          )}
+        </div>
+        {salary != null && teamSalaryCap ? (
+          <p className="mt-0.5 text-xs tabular-nums text-muted-foreground">
+            {t("PercentOfCapShare", {
+              percent: ((salary / teamSalaryCap) * 100).toFixed(1),
+            })}
+          </p>
+        ) : null}
+        <p className="mt-1 text-xs text-muted-foreground">
+          {contractExpirationSeason
+            ? t("ContractUntil", {
+                season: seasonFormat(contractExpirationSeason, 0),
+              })
+            : t("NoContractHint")}
+        </p>
+      </PopoverContent>
+    </Popover>
   );
 }

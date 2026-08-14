@@ -7,7 +7,8 @@ room.
 
 import { toast } from "sonner";
 
-import { usePoolContext } from "@/context/pool-context";
+import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
+import { PoolSettings } from "@/data/pool/model";
 import * as React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -212,6 +213,14 @@ export default function CreatedPool() {
     return spots;
   };
 
+  // A pool still in its room goes through the socket rather than the http
+  // endpoint, so every participant of the room sees the new settings at once.
+  const onPoolSettingsChanges = (settings: PoolSettings) =>
+    sendSocketCommand(
+      Command.OnPoolSettingChanges,
+      JSON.stringify({ pool_settings: settings })
+    );
+
   const PoolSettingsDialog = () => (
     <Dialog modal={true}>
       <DialogTrigger render={<Button variant="outline" size="icon" />}>
@@ -227,6 +236,10 @@ export default function CreatedPool() {
               poolName={poolInfo.name}
               poolStatus={poolInfo.status}
               oldPoolSettings={poolInfo.settings}
+              poolOwner={poolInfo.owner}
+              participants={poolInfo.participants}
+              canEdit={hasPoolPrivilege(userData.info?.id, poolInfo)}
+              onUpdate={onPoolSettingsChanges}
             />
           </div>
         </div>

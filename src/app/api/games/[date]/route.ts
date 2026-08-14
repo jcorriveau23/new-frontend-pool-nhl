@@ -1,12 +1,9 @@
-"use server";
-
 import { NextResponse } from "next/server";
 
-// pages/api/games/[date].ts
 import { getServerSideDailyGames } from "@/actions/daily-games";
 
 export async function GET(
-  request: Request, 
+  request: Request,
   props: { params: Promise<{ date: string }> }
 ) {
   const params = await props.params;

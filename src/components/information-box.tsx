@@ -32,7 +32,7 @@ const InformationIcon: React.FC<InformationIconProps> = ({
           className
         )}
       >
-        <InfoIcon aria-hidden="true" className="size-4" />
+        <InfoIcon aria-hidden="true" className="size-3.5" />
       </PopoverTrigger>
       <PopoverContent side="top" className="w-auto max-w-72 px-3 py-2 text-sm">
         {text}

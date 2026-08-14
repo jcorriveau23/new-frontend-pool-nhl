@@ -23,7 +23,7 @@ export function GameStatePopover({ state }: StatePopoverProps) {
     switch (state) {
       case GamesNightStatus.LIVE:
         return {
-          icon: <Radio className="text-destructive size-4 animate-pulse" />,
+          icon: <Radio className="text-destructive size-3.5 animate-pulse" />,
           label: "Live",
           description:
             querySelectedDate === "now"
@@ -35,7 +35,7 @@ export function GameStatePopover({ state }: StatePopoverProps) {
         };
       case GamesNightStatus.COMPLETED:
         return {
-          icon: <Lock className="text-primary size-4" />,
+          icon: <Lock className="text-primary size-3.5" />,
           label: "Completed",
           description:
             querySelectedDate === "now"
@@ -47,7 +47,7 @@ export function GameStatePopover({ state }: StatePopoverProps) {
         };
       case GamesNightStatus.NOT_STARTED:
         return {
-          icon: <AlertCircle className="text-chart-4 size-4" />,
+          icon: <AlertCircle className="text-chart-4 size-3.5" />,
           label: "Not Started",
           description:
             querySelectedDate === "now"
@@ -59,7 +59,7 @@ export function GameStatePopover({ state }: StatePopoverProps) {
         };
       case GamesNightStatus.NO_GAMES:
         return {
-          icon: <CalendarX className="text-muted-foreground size-4" />,
+          icon: <CalendarX className="text-muted-foreground size-3.5" />,
           label: "No Games",
           description:
             querySelectedDate === "now"
@@ -87,7 +87,7 @@ export function GameStatePopover({ state }: StatePopoverProps) {
       >
         {stateDetails.icon}
         <span
-          className={`absolute -top-1 -right-1 block size-2 rounded-full ${stateDetails.color} ring-background ring-2`}
+          className={`absolute -top-0.5 -right-0.5 block size-1.5 rounded-full ${stateDetails.color} ring-background ring-2`}
         />
       </PopoverTrigger>
       <PopoverContent className="w-60">

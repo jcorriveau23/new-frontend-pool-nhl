@@ -161,7 +161,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
         toast.error(`WebSocket error`, { duration: 2000 });
       };
     },
-    [updatePoolInfo, poolInfo.name, t]
+    [updatePoolInfo, poolInfo.name, poolInfo.settings.number_poolers, t]
   );
 
   useEffect(() => {
@@ -181,6 +181,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
         socketRef.current = null;
       }
     };
+    // Connect once per mount. `setupWebSocket` and `socketUrl` change whenever
+    // the pool object does, and listing them would tear down and re-open the
+    // socket on every pool update — including the ones the socket delivers.
+    // Reconnecting is done explicitly through `onSocketReconnect`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onSocketReconnect = () => {

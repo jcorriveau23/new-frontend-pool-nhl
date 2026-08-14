@@ -10,7 +10,12 @@ import {
 } from "@/lib/season-info";
 
 export const metadata: Metadata = {
-  title: "NHL pool",
+  // Pages that set their own title (the pool page uses the pool name) get it
+  // suffixed by the template, every other page falls back to the default.
+  title: {
+    default: "NHL pool",
+    template: "%s | NHL pool",
+  },
   description: "Fully free nhl hockey pool",
 };
 

@@ -6,6 +6,7 @@ import * as React from "react";
 import { AlertCircle } from "lucide-react";
 import { Pool } from "@/data/pool/model";
 import { PoolContextProvider, fetchPoolInfo } from "@/context/pool-context";
+import { TradeBuilderProvider } from "@/context/trade-builder-context";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import PoolStatus from "./pool";
@@ -42,9 +43,11 @@ export default function PoolPage(props: { params: Promise<{ name: string }> }) {
 
   if (poolInfo) {
     return (
-      <div className="item-center text-center">
+      <div className="text-center">
         <PoolContextProvider pool={poolInfo}>
-          <PoolStatus />
+          <TradeBuilderProvider>
+            <PoolStatus />
+          </TradeBuilderProvider>
         </PoolContextProvider>
       </div>
     );
@@ -68,7 +71,7 @@ export default function PoolPage(props: { params: Promise<{ name: string }> }) {
   }
 
   return (
-    <div className="item-center text-center">
+    <div className="text-center">
       <TableSkeleton />
     </div>
   );

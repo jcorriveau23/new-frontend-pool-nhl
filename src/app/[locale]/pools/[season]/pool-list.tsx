@@ -19,6 +19,10 @@ const POOL_STATUS_ORDER: PoolState[] = [
   PoolState.Final,
 ];
 
+// First tab, listing every pool whatever its status.
+const ALL_TAB = "all";
+type TabValue = PoolState | typeof ALL_TAB;
+
 // Color of the small status dot shown on each pool card.
 const STATUS_DOT_COLOR: Record<PoolState, string> = {
   [PoolState.InProgress]: "bg-emerald-500",
@@ -41,11 +45,17 @@ const countByStatus = (
 interface Props {
   pools: ProjectedPoolShort[];
   queryString: string;
+  seasonSelector: React.ReactNode;
 }
 
-export default function PoolList({ pools, queryString }: Props) {
+export default function PoolList({
+  pools,
+  queryString,
+  seasonSelector,
+}: Props) {
   const t = useTranslations();
   const [search, setSearch] = React.useState("");
+  const [selectedTab, setSelectedTab] = React.useState<TabValue | null>(null);
 
   // The tab set is derived from every pool so tabs stay stable while searching.
   const totalCountPerStatus = React.useMemo(
@@ -55,17 +65,21 @@ export default function PoolList({ pools, queryString }: Props) {
   const visibleStatuses = POOL_STATUS_ORDER.filter(
     (status) => totalCountPerStatus[status] > 0,
   );
+  // A single status makes the "all" tab a duplicate of it.
+  const tabs: TabValue[] =
+    visibleStatuses.length > 1
+      ? [ALL_TAB, ...visibleStatuses]
+      : visibleStatuses;
 
   const filteredPools = React.useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) {
-      return pools;
-    }
-    return pools.filter(
-      (pool) =>
-        pool.name.toLowerCase().includes(query) ||
-        pool.owner.toLowerCase().includes(query),
-    );
+    const matching = query
+      ? pools.filter((pool) => pool.name.toLowerCase().includes(query))
+      : pools;
+
+    // Sorted by name so the list does not depend on the order the backend
+    // happens to return.
+    return [...matching].sort((a, b) => a.name.localeCompare(b.name));
   }, [pools, search]);
 
   const filteredCountPerStatus = React.useMemo(
@@ -73,12 +87,29 @@ export default function PoolList({ pools, queryString }: Props) {
     [filteredPools],
   );
 
-  const defaultStatus = visibleStatuses[0];
+  const countForTab = (tab: TabValue) =>
+    tab === ALL_TAB ? filteredPools.length : filteredCountPerStatus[tab];
+  const poolsForTab = (tab: TabValue) =>
+    tab === ALL_TAB
+      ? filteredPools
+      : filteredPools.filter((pool) => pool.status === tab);
 
-  const PoolCard = (pool: ProjectedPoolShort) => {
+  // Searching moves to the first tab that still has results, otherwise typing a
+  // name owned by another tab would look like the search found nothing.
+  const fallbackTab = tabs.find((tab) => countForTab(tab) > 0) ?? tabs[0];
+  const activeTab =
+    selectedTab !== null && countForTab(selectedTab) > 0
+      ? selectedTab
+      : fallbackTab;
+
+  const PoolCard = (pool: ProjectedPoolShort, showStatus: boolean) => {
     return (
-      <Link href={`/pool/${pool.name}?${queryString}`} key={pool.name}>
-        <Card className="flex h-full items-center gap-3 p-4 text-left transition-colors hover:border-primary hover:bg-muted/50">
+      <Link
+        href={`/pool/${pool.name}?${queryString}`}
+        key={pool.name}
+        className="focus-visible:ring-ring rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+      >
+        <Card className="hover:border-primary hover:bg-muted/50 flex h-full items-center gap-3 p-4 text-left transition-colors">
           <span
             className={cn(
               "size-2.5 shrink-0 rounded-full",
@@ -86,54 +117,60 @@ export default function PoolList({ pools, queryString }: Props) {
             )}
             aria-hidden
           />
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-medium leading-tight">{pool.name}</p>
-          </div>
-          <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
-            {t(pool.status)}
-          </span>
+          <p className="min-w-0 flex-1 truncate font-medium leading-tight">
+            {pool.name}
+          </p>
+          {showStatus ? (
+            <span className="text-muted-foreground shrink-0 whitespace-nowrap text-xs">
+              {t(pool.status)}
+            </span>
+          ) : null}
         </Card>
       </Link>
     );
   };
 
   return (
-    <div className="w-full max-w-2xl space-y-4">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t("SearchPools")}
-          className="pl-9"
-        />
+    <div className="w-full space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-sm">
+          <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+          <Input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t("SearchPools")}
+            className="pl-9"
+          />
+        </div>
+        {seasonSelector}
       </div>
 
-      <Tabs defaultValue={defaultStatus}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setSelectedTab(value as TabValue)}
+      >
         <div className="overflow-auto">
           <TabsList>
-            {visibleStatuses.map((status) => (
-              <TabsTrigger key={status} value={status}>
-                {`${t(status)} (${filteredCountPerStatus[status]})`}
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab} value={tab}>
+                {`${tab === ALL_TAB ? t("All") : t(tab)} (${countForTab(tab)})`}
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
 
-        {visibleStatuses.map((status) => {
-          const statusPools = filteredPools.filter(
-            (pool) => pool.status === status,
-          );
+        {tabs.map((tab) => {
+          const tabPools = poolsForTab(tab);
 
           return (
-            <TabsContent key={status} value={status}>
-              {statusPools.length > 0 ? (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {statusPools.map((pool) => PoolCard(pool))}
+            <TabsContent key={tab} value={tab}>
+              {tabPools.length > 0 ? (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {tabPools.map((pool) => PoolCard(pool, tab === ALL_TAB))}
                 </div>
               ) : (
-                <p className="py-8 text-center text-sm text-muted-foreground">
+                <p className="text-muted-foreground py-8 text-center text-sm">
                   {t("NoPoolMatchSearch")}
                 </p>
               )}

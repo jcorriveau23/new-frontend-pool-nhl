@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useState,
   useEffect,
@@ -32,7 +33,9 @@ const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [userState, setUserState] = useState<HankoUser | null>(null);
   const [hanko, setHanko] = useState<Hanko>();
 
-  const refreshUser = () => {
+  // Memoised on `hanko` so the subscription effect below can depend on it
+  // without re-subscribing on every render.
+  const refreshUser = useCallback(() => {
     // validateSession() is used instead of getUser() because getUser() relies
     // on the GET /users/{id} endpoint which no longer exists on the Hanko API,
     // making it fail even with a valid session. The session claims contain the
@@ -54,7 +57,7 @@ const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         console.error(`An error occured during refresh user: ${error}`);
         setUserState({ id: "", email: "", isValid: false });
       });
-  };
+  }, [hanko]);
 
   useEffect(() => setHanko(new Hanko(hankoApi)), []);
 
@@ -78,7 +81,7 @@ const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [hanko]);
+  }, [hanko, refreshUser]);
 
   return (
     <UserContext.Provider value={{ info: userState, refreshUser }}>

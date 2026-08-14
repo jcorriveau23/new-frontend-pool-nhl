@@ -60,7 +60,7 @@ export default function DailyStatsContent() {
             desc: true,
           },
         ],
-        columnPinning: { left: ["player"] },
+        columnPinning: { left: ["player"], right: ["poolPoints"] },
       }}
       meta={{
         props: poolInfo,
@@ -84,7 +84,7 @@ export default function DailyStatsContent() {
             desc: true,
           },
         ],
-        columnPinning: { left: ["player"] },
+        columnPinning: { left: ["player"], right: ["poolPoints"] },
       }}
       meta={{
         props: poolInfo,
@@ -118,7 +118,7 @@ export default function DailyStatsContent() {
         props: {},
         getRowStyles: (row: Row<TotalDailyPoints>) => {
           if (row.original.participant === selectedParticipant) {
-            return "bg-selection hover:bg-selection";
+            return "bg-selection hover:bg-selection group-hover:bg-selection font-semibold border-l-4 border-l-primary";
           }
         },
         onRowClick: (row: Row<TotalDailyPoints>) => {
@@ -126,6 +126,7 @@ export default function DailyStatsContent() {
         },
         t: t,
       }}
+      rowClickable
       title={title}
       tableFooter={null}
     />
@@ -186,21 +187,19 @@ export default function DailyStatsContent() {
     `${t(title)} ${participant} (${dailyPointsMade?.dateOfInterest})`;
 
   return (
-    <div>
-      <div className="py-5 px-0 sm:px-5">
+    <div className="space-y-6 py-4">
+      <div>
         {dailyPointsMade ? (
           <Tabs defaultValue="totalRanking">
-            <div className="overflow-auto">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <GameStatePopover
+                state={
+                  dailyPointsMade.cumulated
+                    ? GamesNightStatus.COMPLETED
+                    : GamesNightStatus.LIVE
+                }
+              />
               <TabsList>
-                <div className="mr-2">
-                  <GameStatePopover
-                    state={
-                      dailyPointsMade.cumulated
-                        ? GamesNightStatus.COMPLETED
-                        : GamesNightStatus.LIVE
-                    }
-                  />
-                </div>
                 <TabsTrigger value="totalRanking">{t("Total")}</TabsTrigger>
                 <TabsTrigger value="forwardRanking">
                   {t("Forwards")}
@@ -242,63 +241,58 @@ export default function DailyStatsContent() {
           <TableSkeleton />
         )}
       </div>
-      <div className="py-5 px-0 sm:px-5">
+      <div>
         {dailyPointsMade ? (
-          <>
-            <Accordion
-              key={`${selectedPoolUser.id}-forwards`}
-              defaultValue={["forwards"]}
-            >
-              <AccordionItem value="forwards">
-                <AccordionTrigger>{t("Forwards")}</AccordionTrigger>
-                <AccordionContent>
-                  {SkatersTable(
-                    dailyPointsMade.forwardsDailyStats[selectedPoolUser.id],
-                    SkaterDailyColumn,
-                    getFormatedDateTitle(
-                      selectedPoolUser.name,
-                      "DailyPointsMadeByForwardsFor",
-                    ),
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            <Accordion
-              key={`${selectedPoolUser.id}-defense`}
-              defaultValue={["defense"]}
-            >
-              <AccordionItem value="defense">
-                <AccordionTrigger>{t("Defense")}</AccordionTrigger>
-                <AccordionContent>
-                  {SkatersTable(
-                    dailyPointsMade.defendersDailyStats[selectedPoolUser.id],
-                    SkaterDailyColumn,
-                    getFormatedDateTitle(
-                      selectedPoolUser.name,
-                      "DailyPointsMadeByDefenseFor",
-                    ),
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            <Accordion
-              key={`${selectedPoolUser.id}-goalies`}
-              defaultValue={["goalies"]}
-            >
-              <AccordionItem value="goalies">
-                <AccordionTrigger>{t("Goalies")}</AccordionTrigger>
-                <AccordionContent>
-                  {GoaliesTable(
-                    dailyPointsMade.goaliesDailyStats[selectedPoolUser.id],
-                    getFormatedDateTitle(
-                      selectedPoolUser.name,
-                      "DailyPointsMadeByGoaliesFor",
-                    ),
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </>
+          <Accordion
+            key={selectedPoolUser.id}
+            defaultValue={["forwards", "defense", "goalies"]}
+            className="space-y-2"
+          >
+            <AccordionItem value="forwards" className="border-b-0">
+              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
+                {t("Forwards")}
+              </AccordionTrigger>
+              <AccordionContent className="pb-2">
+                {SkatersTable(
+                  dailyPointsMade.forwardsDailyStats[selectedPoolUser.id],
+                  SkaterDailyColumn,
+                  getFormatedDateTitle(
+                    selectedPoolUser.name,
+                    "DailyPointsMadeByForwardsFor",
+                  ),
+                )}
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="defense" className="border-b-0">
+              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
+                {t("Defense")}
+              </AccordionTrigger>
+              <AccordionContent className="pb-2">
+                {SkatersTable(
+                  dailyPointsMade.defendersDailyStats[selectedPoolUser.id],
+                  SkaterDailyColumn,
+                  getFormatedDateTitle(
+                    selectedPoolUser.name,
+                    "DailyPointsMadeByDefenseFor",
+                  ),
+                )}
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="goalies" className="border-b-0">
+              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
+                {t("Goalies")}
+              </AccordionTrigger>
+              <AccordionContent className="pb-2">
+                {GoaliesTable(
+                  dailyPointsMade.goaliesDailyStats[selectedPoolUser.id],
+                  getFormatedDateTitle(
+                    selectedPoolUser.name,
+                    "DailyPointsMadeByGoaliesFor",
+                  ),
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         ) : (
           <TableSkeleton />
         )}

@@ -51,6 +51,19 @@ export function DatePicker(props: DatePickerProps) {
   const dateLocale = localeMap[locale as "en" | "fr"];
   const dateFormat = dateFormatMap[locale as "en" | "fr"];
 
+  // The calendar opens on the month of the date being displayed instead of the
+  // current month, and follows along when the date is changed from the outside
+  // (prev/next buttons, url query).
+  const [month, setMonth] = React.useState<Date>(
+    displayedDate ?? props.currentDate
+  );
+  const displayedTime = displayedDate?.getTime();
+  React.useEffect(() => {
+    if (displayedTime !== undefined) {
+      setMonth(new Date(displayedTime));
+    }
+  }, [displayedTime]);
+
   const isOffCurrentDate =
     props.selectedDate !== null &&
     props.selectedDate.toDateString() !== props.currentDate.toDateString();
@@ -118,6 +131,8 @@ export function DatePicker(props: DatePickerProps) {
         <Calendar
           mode="single"
           selected={displayedDate ?? props.currentDate}
+          month={month}
+          onMonthChange={setMonth}
           onSelect={props.updateDate}
           className="rounded-md border shadow-sm"
           required
