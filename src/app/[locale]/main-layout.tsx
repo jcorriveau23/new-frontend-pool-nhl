@@ -15,6 +15,7 @@ import { DailyLeadersProvider } from "@/context/daily-leaders-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import LanguageSelector from "@/components/language-selector";
 import { Link } from "@/i18n/routing";
+import InstallAppPrompt from "@/components/install-app-prompt";
 
 export default function MainLayout({
   children,
@@ -57,6 +58,7 @@ export default function MainLayout({
               </div>
               <Separator />
               <Footer />
+              <InstallAppPrompt />
             </SidebarInset>
           </SidebarProvider>
         </GamesNightProvider>

@@ -7,6 +7,8 @@ import { Link } from "@/i18n/routing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import FavoritePoolButton from "@/components/favorite-pool-button";
+import { useFavoritePools } from "@/hooks/use-favorite-pools";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
@@ -21,7 +23,9 @@ const POOL_STATUS_ORDER: PoolState[] = [
 
 // First tab, listing every pool whatever its status.
 const ALL_TAB = "all";
-type TabValue = PoolState | typeof ALL_TAB;
+// Shown before every other tab, and only when the season has favorites.
+const FAVORITES_TAB = "favorites";
+type TabValue = PoolState | typeof ALL_TAB | typeof FAVORITES_TAB;
 
 // Color of the small status dot shown on each pool card.
 const STATUS_DOT_COLOR: Record<PoolState, string> = {
@@ -54,6 +58,7 @@ export default function PoolList({
   seasonSelector,
 }: Props) {
   const t = useTranslations();
+  const { isFavorite } = useFavoritePools();
   const [search, setSearch] = React.useState("");
   const [selectedTab, setSelectedTab] = React.useState<TabValue | null>(null);
 
@@ -65,11 +70,13 @@ export default function PoolList({
   const visibleStatuses = POOL_STATUS_ORDER.filter(
     (status) => totalCountPerStatus[status] > 0,
   );
+  const hasFavorites = pools.some((pool) => isFavorite(pool.name));
   // A single status makes the "all" tab a duplicate of it.
-  const tabs: TabValue[] =
-    visibleStatuses.length > 1
-      ? [ALL_TAB, ...visibleStatuses]
-      : visibleStatuses;
+  const tabs: TabValue[] = [
+    ...(hasFavorites ? ([FAVORITES_TAB] as const) : []),
+    ...(visibleStatuses.length > 1 ? ([ALL_TAB] as const) : []),
+    ...visibleStatuses,
+  ];
 
   const filteredPools = React.useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -77,22 +84,52 @@ export default function PoolList({
       ? pools.filter((pool) => pool.name.toLowerCase().includes(query))
       : pools;
 
-    // Sorted by name so the list does not depend on the order the backend
-    // happens to return.
-    return [...matching].sort((a, b) => a.name.localeCompare(b.name));
-  }, [pools, search]);
+    // Favorites first, then by name so the list does not depend on the order
+    // the backend happens to return.
+    return [...matching].sort((a, b) => {
+      const favoriteDelta =
+        Number(isFavorite(b.name)) - Number(isFavorite(a.name));
+      return favoriteDelta !== 0 ? favoriteDelta : a.name.localeCompare(b.name);
+    });
+  }, [pools, search, isFavorite]);
 
   const filteredCountPerStatus = React.useMemo(
     () => countByStatus(filteredPools),
     [filteredPools],
   );
 
-  const countForTab = (tab: TabValue) =>
-    tab === ALL_TAB ? filteredPools.length : filteredCountPerStatus[tab];
-  const poolsForTab = (tab: TabValue) =>
-    tab === ALL_TAB
-      ? filteredPools
-      : filteredPools.filter((pool) => pool.status === tab);
+  const poolsForTab = (tab: TabValue) => {
+    switch (tab) {
+      case FAVORITES_TAB:
+        return filteredPools.filter((pool) => isFavorite(pool.name));
+      case ALL_TAB:
+        return filteredPools;
+      default:
+        return filteredPools.filter((pool) => pool.status === tab);
+    }
+  };
+
+  const tabLabel = (tab: TabValue) => {
+    switch (tab) {
+      case FAVORITES_TAB:
+        return t("Favorites");
+      case ALL_TAB:
+        return t("All");
+      default:
+        return t(tab);
+    }
+  };
+
+  const countForTab = (tab: TabValue) => {
+    switch (tab) {
+      case FAVORITES_TAB:
+        return poolsForTab(FAVORITES_TAB).length;
+      case ALL_TAB:
+        return filteredPools.length;
+      default:
+        return filteredCountPerStatus[tab];
+    }
+  };
 
   // Searching moves to the first tab that still has results, otherwise typing a
   // name owned by another tab would look like the search found nothing.
@@ -104,29 +141,32 @@ export default function PoolList({
 
   const PoolCard = (pool: ProjectedPoolShort, showStatus: boolean) => {
     return (
-      <Link
-        href={`/pool/${pool.name}?${queryString}`}
+      // The link is stretched over the whole card instead of wrapping it, so
+      // the favorite button stays a sibling rather than a button inside a link.
+      <Card
         key={pool.name}
-        className="focus-visible:ring-ring rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+        className="hover:border-primary hover:bg-muted/50 focus-within:ring-ring relative flex h-full items-center gap-3 p-4 text-left transition-colors focus-within:ring-2 focus-within:ring-offset-2"
       >
-        <Card className="hover:border-primary hover:bg-muted/50 flex h-full items-center gap-3 p-4 text-left transition-colors">
-          <span
-            className={cn(
-              "size-2.5 shrink-0 rounded-full",
-              STATUS_DOT_COLOR[pool.status],
-            )}
-            aria-hidden
-          />
-          <p className="min-w-0 flex-1 truncate font-medium leading-tight">
-            {pool.name}
-          </p>
-          {showStatus ? (
-            <span className="text-muted-foreground shrink-0 whitespace-nowrap text-xs">
-              {t(pool.status)}
-            </span>
-          ) : null}
-        </Card>
-      </Link>
+        <span
+          className={cn(
+            "size-2.5 shrink-0 rounded-full",
+            STATUS_DOT_COLOR[pool.status],
+          )}
+          aria-hidden
+        />
+        <Link
+          href={`/pool/${pool.name}?${queryString}`}
+          className="min-w-0 flex-1 truncate font-medium leading-tight after:absolute after:inset-0 focus-visible:outline-none"
+        >
+          {pool.name}
+        </Link>
+        {showStatus ? (
+          <span className="text-muted-foreground shrink-0 whitespace-nowrap text-xs">
+            {t(pool.status)}
+          </span>
+        ) : null}
+        <FavoritePoolButton poolName={pool.name} className="relative -mr-2" />
+      </Card>
     );
   };
 
@@ -154,7 +194,7 @@ export default function PoolList({
           <TabsList>
             {tabs.map((tab) => (
               <TabsTrigger key={tab} value={tab}>
-                {`${tab === ALL_TAB ? t("All") : t(tab)} (${countForTab(tab)})`}
+                {`${tabLabel(tab)} (${countForTab(tab)})`}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -167,7 +207,9 @@ export default function PoolList({
             <TabsContent key={tab} value={tab}>
               {tabPools.length > 0 ? (
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {tabPools.map((pool) => PoolCard(pool, tab === ALL_TAB))}
+                  {tabPools.map((pool) =>
+                    PoolCard(pool, tab === ALL_TAB || tab === FAVORITES_TAB),
+                  )}
                 </div>
               ) : (
                 <p className="text-muted-foreground py-8 text-center text-sm">

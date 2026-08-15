@@ -7,9 +7,14 @@ import { routing } from "./i18n/routing";
 export default createMiddleware(routing);
 
 export const config = {
-  // Match only internationalized pathnames
+  // Match only internationalized pathnames.
+  //
+  // The asset extensions are excluded so they are served as-is instead of being
+  // redirected to a locale prefix. `.webmanifest` matters in particular: the
+  // PWA manifest is a single origin-wide document, and a browser that follows a
+  // redirect to /en/manifest.webmanifest treats the app as not installable.
   matcher: [
-    "/((?!api|_next/static|_next/image|.*\\.json$|.*\\.png$).*)", // exclude api, json, png and other route to avoid warning in console.
+    "/((?!api|_next/static|_next/image|.*\\.(?:json|png|ico|svg|webmanifest)$).*)",
     "/(en|fr)/:path*",
   ],
 };

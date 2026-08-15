@@ -11,6 +11,7 @@ import { SocketProvider } from "@/context/socket-context";
 import { usePoolContext } from "@/context/pool-context";
 import { useTranslations } from "next-intl";
 import PageTitle from "@/components/page-title";
+import FavoritePoolButton from "@/components/favorite-pool-button";
 import { useSession } from "@/context/useSessionData";
 import {
   Tooltip,
@@ -62,16 +63,20 @@ export default function PoolStatus() {
 
   const userSession = useSession();
 
+  const titleAdornment = (
+    <>
+      <PoolStateIcon status={poolInfo.status} />
+      <FavoritePoolButton poolName={poolInfo.name} className="-my-1" />
+    </>
+  );
+
   if (
     poolInfo.status === PoolState.Created ||
     poolInfo.status === PoolState.Draft
   ) {
     return (
       <SocketProvider jwt={userSession.info?.jwt}>
-        <PageTitle
-          title={poolInfo.name}
-          titleAdornment={<PoolStateIcon status={poolInfo.status} />}
-        />
+        <PageTitle title={poolInfo.name} titleAdornment={titleAdornment} />
         {poolInfo.status === PoolState.Created ? <CreatedPool /> : <DraftPool />}
       </SocketProvider>
     );
@@ -82,20 +87,14 @@ export default function PoolStatus() {
     case PoolState.Final:
       return (
         <>
-          <PageTitle
-            title={poolInfo.name}
-            titleAdornment={<PoolStateIcon status={poolInfo.status} />}
-          />
+          <PageTitle title={poolInfo.name} titleAdornment={titleAdornment} />
           <InProgressPool />
         </>
       );
     case PoolState.Dynasty:
       return (
         <>
-          <PageTitle
-            title={poolInfo.name}
-            titleAdornment={<PoolStateIcon status={poolInfo.status} />}
-          />
+          <PageTitle title={poolInfo.name} titleAdornment={titleAdornment} />
           <DynastyPool />
         </>
       );
