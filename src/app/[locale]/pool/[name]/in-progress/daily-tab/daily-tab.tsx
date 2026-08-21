@@ -22,7 +22,20 @@ export default function DailyTab() {
 
   const dateOfInterest = dailyPointsMade
     ? new Date(dailyPointsMade.dateOfInterest + "T00:00:00")
-    : selectedDate ?? currentDate;
+    : (selectedDate ?? currentDate);
+
+  // List the poolers in the order of the daily ranking shown below, so the
+  // selector matches the table on this tab.
+  const poolerEntries = dailyPointsMade
+    ? [...dailyPointsMade.totalDailyPoints]
+        .sort((a, b) => b.totalPoolPoints - a.totalPoolPoints)
+        .map((entry, index) => ({
+          id: entry.participant,
+          name: entry.participant,
+          rank: index + 1,
+          points: entry.totalPoolPoints,
+        }))
+    : undefined;
 
   if (dateOfInterest > seasonEndDate) {
     return (
@@ -55,7 +68,7 @@ export default function DailyTab() {
     case GamesNightStatus.LIVE: {
       return (
         <>
-          <PoolerUserGlobalSelector />
+          <PoolerUserGlobalSelector entries={poolerEntries} />
           {poolInfo.context?.score_by_day?.[
             dailyPointsMade?.dateOfInterest ?? ""
           ] ? (

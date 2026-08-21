@@ -1,13 +1,17 @@
+"use client";
+
 import * as React from "react";
 import {
   DraftPick,
   Player,
+  Pool,
   PoolUser,
   Position,
   Trade,
   TradeStatus,
   getPoolerAllPlayers,
 } from "@/data/pool/model";
+import { apiPost } from "@/lib/client-api";
 import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
 import { useUser } from "@/context/useUserData";
 import { useSession } from "@/context/useSessionData";
@@ -20,7 +24,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -34,10 +37,20 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeftRight, Plus } from "lucide-react";
-import { ordinal, salaryFormat } from "@/app/utils/formating";
+import PlayerSalary from "@/components/player-salary";
+import { ArrowLeftRight, Info } from "lucide-react";
+import { ordinal } from "@/app/utils/formating";
 
-const pickKey = (pick: DraftPick) => `${pick.round}-${pick.from}`;
+export const pickKey = (pick: DraftPick) => `${pick.round}-${pick.from}`;
+
+// An asset the dialog can be opened on, so the trade starts pre-filled with
+// the player or the pick the user clicked somewhere else in the pool.
+export interface TradeAsset {
+  // Pooler currently owning the asset.
+  poolerId: string;
+  playerId?: number;
+  pick?: DraftPick;
+}
 
 interface TradeSideSelectorProps {
   pooler: PoolUser;
@@ -47,36 +60,47 @@ interface TradeSideSelectorProps {
   togglePick: (pick: DraftPick) => void;
 }
 
-// One line summary of a player's key stats, adapted to skaters vs goalies.
+// Two headline stats only: a trade is built on the players you already know,
+// the full stat sheet lives in the pool tables.
 const PlayerStatLine = ({ player }: { player: Player }) => {
   const t = useTranslations();
 
   const stats =
     player.position === Position.G
       ? [
-          `${player.game_played ?? 0} ${t("GP")}`,
           `${player.wins ?? 0} ${t("W")}`,
-          player.goal_against_average != null
-            ? `${player.goal_against_average.toFixed(2)} ${t("Gaa")}`
-            : null,
           player.save_percentage != null
             ? `${player.save_percentage.toFixed(3)} ${t("SvPct")}`
-            : null,
+            : `${player.game_played ?? 0} ${t("GP")}`,
         ]
       : [
           `${player.points ?? 0} ${t("Pts")}`,
-          `${player.goals ?? 0} ${t("G")}`,
-          `${player.assists ?? 0} ${t("A")}`,
           `${player.game_played ?? 0} ${t("GP")}`,
-          player.age != null ? `${player.age} ${t("Age")}` : null,
         ];
 
   return (
-    <span className="text-xs text-muted-foreground">
-      {stats.filter(Boolean).join(" · ")}
-    </span>
+    <span className="text-xs text-muted-foreground">{stats.join(" · ")}</span>
   );
 };
+
+// Cap hit of a player, using the same badge as the pool tables: the contract
+// expiration stays out of the line and is one click away in the popover.
+const PlayerCapHit = ({ player }: { player: Player }) => (
+  <div className="shrink-0">
+    <PlayerSalary
+      playerName={player.name}
+      team={player.team}
+      salary={player.salary_cap}
+      contractExpirationSeason={player.contract_expiration_season}
+      // The row is a <label> driving the checkbox: opening the salary details
+      // must not select the player.
+      onBadgeClick={(e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+      }}
+    />
+  </div>
+);
 
 function TradeSideSelector(props: TradeSideSelectorProps) {
   const { poolInfo, dictUsers } = usePoolContext();
@@ -88,7 +112,10 @@ function TradeSideSelector(props: TradeSideSelectorProps) {
 
   const salaryCapEnabled = poolInfo.settings.salary_cap != null;
   const roster = getPoolerAllPlayers(poolInfo.context, props.pooler);
-  const picks = getPoolerPicks(poolInfo.context.tradable_picks, props.pooler.id);
+  const picks = getPoolerPicks(
+    poolInfo.context.tradable_picks,
+    props.pooler.id,
+  );
 
   const PlayerGroup = (label: string, players: Player[]) =>
     players.length > 0 ? (
@@ -113,16 +140,7 @@ function TradeSideSelector(props: TradeSideSelectorProps) {
                   <span className="truncate text-sm font-medium">
                     {player.name}
                   </span>
-                  {salaryCapEnabled && player.salary_cap ? (
-                    <span className="shrink-0 text-xs font-semibold text-primary">
-                      {salaryFormat(player.salary_cap)}
-                      {player.contract_expiration_season
-                        ? ` · '${player.contract_expiration_season
-                            .toString()
-                            .slice(-2)}`
-                        : ""}
-                    </span>
-                  ) : null}
+                  {salaryCapEnabled ? <PlayerCapHit player={player} /> : null}
                 </div>
                 <PlayerStatLine player={player} />
               </div>
@@ -178,7 +196,7 @@ function TradeSideSelector(props: TradeSideSelectorProps) {
 // owner).
 export const getPoolerPicks = (
   tradablePicks: Record<string, string>[] | null | undefined,
-  poolerId: string
+  poolerId: string,
 ): DraftPick[] => {
   const picks: DraftPick[] = [];
   tradablePicks?.forEach((roundPicksOwner, round) => {
@@ -191,13 +209,19 @@ export const getPoolerPicks = (
   return picks;
 };
 
-export default function CreateTradeDialog() {
+interface CreateTradeDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  // Asset the dialog opens on, pre-selected on the right side of the trade.
+  initialAsset?: TradeAsset | null;
+}
+
+export default function CreateTradeDialog(props: CreateTradeDialogProps) {
   const { poolInfo, updatePoolInfo, dictUsers } = usePoolContext();
   const userData = useUser();
   const userSession = useSession();
   const t = useTranslations();
 
-  const [open, setOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Poolers the current user is allowed to propose a trade on behalf of. A
@@ -207,10 +231,19 @@ export default function CreateTradeDialog() {
       poolInfo.participants.filter(
         (p) =>
           userData.info?.id === p.id ||
-          hasPoolPrivilege(userData.info?.id, poolInfo)
+          hasPoolPrivilege(userData.info?.id, poolInfo),
       ),
-    [poolInfo, userData.info?.id]
+    [poolInfo, userData.info?.id],
   );
+
+  // A visitor that manages no team can still build a trade to see what it
+  // would look like, he simply cannot send it.
+  const canSubmit =
+    Boolean(userSession.info?.jwt) && manageableParticipants.length > 0;
+  const fromParticipants =
+    manageableParticipants.length > 0
+      ? manageableParticipants
+      : poolInfo.participants;
 
   const [fromPoolerId, setFromPoolerId] = React.useState<string>("");
   const [toPoolerId, setToPoolerId] = React.useState<string>("");
@@ -227,22 +260,51 @@ export default function CreateTradeDialog() {
   };
 
   React.useEffect(() => {
-    if (open) {
-      const defaultFrom =
-        manageableParticipants.find((p) => p.id === userData.info?.id)?.id ??
-        manageableParticipants[0]?.id ??
-        "";
-      setFromPoolerId(defaultFrom);
-      setToPoolerId(
-        poolInfo.participants.find((p) => p.id !== defaultFrom)?.id ?? ""
-      );
-      resetSelection();
+    if (!props.open) {
+      return;
     }
-  }, [open]);
+
+    const asset = props.initialAsset;
+    const defaultFrom =
+      fromParticipants.find((p) => p.id === userData.info?.id)?.id ??
+      fromParticipants[0]?.id ??
+      "";
+
+    // The asset lands on the side of the pooler owning it: on the user's own
+    // side when he manages that team, on the partner side otherwise.
+    const assetOnFromSide =
+      asset != null &&
+      (asset.poolerId === defaultFrom ||
+        fromParticipants.some((p) => p.id === asset.poolerId));
+
+    const from = assetOnFromSide ? asset!.poolerId : defaultFrom;
+    const to =
+      asset != null && !assetOnFromSide
+        ? asset.poolerId
+        : (poolInfo.participants.find((p) => p.id !== from)?.id ?? "");
+
+    setFromPoolerId(from);
+    setToPoolerId(to);
+
+    resetSelection();
+    if (asset?.playerId != null) {
+      const selection = new Set([asset.playerId]);
+      if (assetOnFromSide) setFromPlayers(selection);
+      else setToPlayers(selection);
+    }
+    if (asset?.pick) {
+      const selection = new Set([pickKey(asset.pick)]);
+      if (assetOnFromSide) setFromPicks(selection);
+      else setToPicks(selection);
+    }
+    // Only re-initialise when the dialog opens on a new asset, so the user
+    // selection is never wiped while they are building the trade.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.open, props.initialAsset]);
 
   const toggle = <T,>(
     setter: React.Dispatch<React.SetStateAction<Set<T>>>,
-    value: T
+    value: T,
   ) =>
     setter((prev) => {
       const next = new Set(prev);
@@ -262,10 +324,10 @@ export default function CreateTradeDialog() {
 
   const selectedPicksFor = (
     poolerId: string,
-    selected: Set<string>
+    selected: Set<string>,
   ): DraftPick[] =>
     getPoolerPicks(poolInfo.context?.tradable_picks, poolerId).filter((pick) =>
-      selected.has(pickKey(pick))
+      selected.has(pickKey(pick)),
     );
 
   const onSubmit = async () => {
@@ -304,63 +366,48 @@ export default function CreateTradeDialog() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api-rust/create-trade", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userSession.info.jwt}`,
-        },
-        body: JSON.stringify({ pool_name: poolInfo.name, trade }),
-      });
+      const res = await apiPost<Pool>(
+        "/create-trade",
+        { pool_name: poolInfo.name, trade },
+        userSession.info.jwt,
+      );
 
       if (!res.ok) {
-        const error = await res.text();
         toast.error(
-          t("CouldNotCreateTrade", { name: poolInfo.name, error }),
-          { duration: 5000 }
+          t("CouldNotCreateTrade", { name: poolInfo.name, error: res.error }),
+          { duration: 5000 },
         );
         return;
       }
 
-      const data = await res.json();
-      updatePoolInfo(data);
+      updatePoolInfo(res.data);
       toast.success(t("TradeProposalCreated"), { duration: 2000 });
-      setOpen(false);
+      props.onOpenChange(false);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button disabled={!userSession.info?.jwt}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t("ProposeTrade")}
-          </Button>
-        }
-      />
+    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-3xl">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle className="flex items-center gap-2">
             <ArrowLeftRight className="h-5 w-5" />
             {t("ProposeTrade")}
           </DialogTitle>
-          <DialogDescription>
-            {t("SelectPoolerToTradeWith")}
-          </DialogDescription>
+          <DialogDescription>{t("SelectPoolerToTradeWith")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="grid gap-6 sm:grid-cols-2">
             {/* From side */}
             <div className="space-y-2">
-              <Label>{t("YourTeam")}</Label>
-              {manageableParticipants.length > 1 ? (
+              <Label>{canSubmit ? t("YourTeam") : t("FirstTeam")}</Label>
+              {fromParticipants.length > 1 ? (
                 <Select
                   value={fromPoolerId}
-                  items={manageableParticipants.map((p) => ({
+                  items={fromParticipants.map((p) => ({
                     value: p.id,
                     label: p.name,
                   }))}
@@ -370,7 +417,7 @@ export default function CreateTradeDialog() {
                     if (value === toPoolerId) {
                       setToPoolerId(
                         poolInfo.participants.find((p) => p.id !== value)?.id ??
-                          ""
+                          "",
                       );
                     }
                     resetSelection();
@@ -380,7 +427,7 @@ export default function CreateTradeDialog() {
                     <SelectValue placeholder={t("YourTeam")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {manageableParticipants.map((p) => (
+                    {fromParticipants.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}
                       </SelectItem>
@@ -491,22 +538,33 @@ export default function CreateTradeDialog() {
           ) : null}
         </div>
 
-        <DialogFooter className="border-t px-6 py-4">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            {t("Cancel")}
-          </Button>
-          <Button
-            onClick={onSubmit}
-            disabled={
-              isSubmitting ||
-              nbSelected === 0 ||
-              !fromPooler ||
-              !toPooler ||
-              fromPooler.id === toPooler.id
-            }
-          >
-            {t("ProposeTrade")}
-          </Button>
+        <DialogFooter className="flex-col items-stretch gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          {canSubmit ? (
+            <span />
+          ) : (
+            <span className="flex items-center gap-2 text-left text-xs text-muted-foreground">
+              <Info className="size-4 shrink-0" />
+              {t("TradeSimulationOnly")}
+            </span>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => props.onOpenChange(false)}>
+              {t("Cancel")}
+            </Button>
+            <Button
+              onClick={onSubmit}
+              disabled={
+                !canSubmit ||
+                isSubmitting ||
+                nbSelected === 0 ||
+                !fromPooler ||
+                !toPooler ||
+                fromPooler.id === toPooler.id
+              }
+            >
+              {t("ProposeTrade")}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

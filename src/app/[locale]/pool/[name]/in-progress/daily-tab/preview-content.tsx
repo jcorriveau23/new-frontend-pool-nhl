@@ -34,7 +34,7 @@ export class PreviewTotal {
     participant: string,
     forwards: PreviewPlayer[],
     defense: PreviewPlayer[],
-    goalies: PreviewPlayer[]
+    goalies: PreviewPlayer[],
   ) {
     this.participant = participant;
     this.forwardsPlaying = forwards.filter((p) => p.playingAgainst).length;
@@ -70,7 +70,7 @@ export default function DailyPreviewContent() {
     PreviewPlayer[]
   > | null>(null);
   const [totalPreview, setTotalPreview] = React.useState<PreviewTotal[] | null>(
-    null
+    null,
   );
 
   const getPreviewInfo = () => {
@@ -115,8 +115,8 @@ export default function DailyPreviewContent() {
           user.name,
           forwardsPreviewTemp[user.id],
           defensePreviewTemp[user.id],
-          goaliesPreviewTemp[user.id]
-        )
+          goaliesPreviewTemp[user.id],
+        ),
       );
 
       setForwardsPreview(forwardsPreviewTemp);
@@ -143,7 +143,7 @@ export default function DailyPreviewContent() {
         props: {},
         getRowStyles: (row: Row<PreviewTotal>) => {
           if (row.original.participant === selectedParticipant) {
-            return "bg-selection hover:bg-selection";
+            return "bg-selection hover:bg-selection group-hover:bg-selection font-semibold border-l-4 border-l-primary";
           }
         },
         onRowClick: (row: Row<PreviewTotal>) => {
@@ -151,6 +151,7 @@ export default function DailyPreviewContent() {
         },
         t: t,
       }}
+      rowClickable
       title={title}
       tableFooter={null}
     />
@@ -186,90 +187,93 @@ export default function DailyPreviewContent() {
   const getFormatedDateTitle = (participant: string, title: string) =>
     `${t(title)} ${participant} (${format(
       selectedDate ?? currentDate,
-      "yyyy-MM-dd"
+      "yyyy-MM-dd",
     )})`;
 
   React.useEffect(() => {
     getPreviewInfo();
   }, [playingAgainst]);
 
+  const PreviewSection = (
+    value: string,
+    label: string,
+    playing: number,
+    total: number,
+    table: React.ReactElement,
+  ) => (
+    <AccordionItem value={value} className="border-b-0">
+      <AccordionTrigger className="py-2 font-semibold hover:no-underline">
+        <span className="flex items-center gap-2">
+          {label}
+          <span className="text-xs font-normal tabular-nums text-muted-foreground">
+            {playing}/{total}
+          </span>
+        </span>
+      </AccordionTrigger>
+      <AccordionContent className="pb-2">{table}</AccordionContent>
+    </AccordionItem>
+  );
+
+  const countPlaying = (players: PreviewPlayer[]) =>
+    players.filter((p) => p.playingAgainst !== null).length;
+
   return (
-    <div>
-      <div className="py-5 px-0 sm:px-5">
+    <div className="space-y-6 py-4">
+      <div>
         {totalPreview
           ? PreviewTotalTable(
               totalPreview,
-              getFormatedRankingTableTitle("PreviewPlayersPlaying")
+              getFormatedRankingTableTitle("PreviewPlayersPlaying"),
             )
           : null}
       </div>
-      <div className="py-5 px-0 sm:px-5">
+      <div>
         {forwardsPreview && defensePreview && goaliesPreview ? (
-          <>
-            <Accordion
-              key={`${selectedPoolUser.id}-forwards`}
-              defaultValue={["forwards"]}
-            >
-              <AccordionItem value="forwards">
-                <AccordionTrigger>{`${t("Forwards")} (${
-                  forwardsPreview[selectedPoolUser.id].filter(
-                    (p) => p.playingAgainst !== null
-                  ).length
-                }/${poolInfo.settings.number_forwards})`}</AccordionTrigger>
-                <AccordionContent>
-                  {PreviewPlayersTable(
-                    forwardsPreview[selectedPoolUser.id],
-                    getFormatedDateTitle(
-                      selectedPoolUser.name,
-                      "ListOfForwardsPlayingFor"
-                    )
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            <Accordion
-              key={`${selectedPoolUser.id}-defense`}
-              defaultValue={["defense"]}
-            >
-              <AccordionItem value="defense">
-                <AccordionTrigger>{`${t("Defense")} (${
-                  defensePreview[selectedPoolUser.id].filter(
-                    (p) => p.playingAgainst !== null
-                  ).length
-                }/${poolInfo.settings.number_defenders})`}</AccordionTrigger>
-                <AccordionContent>
-                  {PreviewPlayersTable(
-                    defensePreview[selectedPoolUser.id],
-                    getFormatedDateTitle(
-                      selectedPoolUser.name,
-                      "ListOfDefensemanPlayingFor"
-                    )
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            <Accordion
-              key={`${selectedPoolUser.id}-goalies`}
-              defaultValue={["goalies"]}
-            >
-              <AccordionItem value="goalies">
-                <AccordionTrigger>{`${t("Goalies")} (${
-                  goaliesPreview[selectedPoolUser.id].filter(
-                    (p) => p.playingAgainst !== null
-                  ).length
-                }/${poolInfo.settings.number_goalies})`}</AccordionTrigger>
-                <AccordionContent>
-                  {PreviewPlayersTable(
-                    goaliesPreview[selectedPoolUser.id],
-                    getFormatedDateTitle(
-                      selectedPoolUser.name,
-                      "ListOfGoaliesPlayingFor"
-                    )
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </>
+          <Accordion
+            key={selectedPoolUser.id}
+            defaultValue={["forwards", "defense", "goalies"]}
+            className="space-y-2"
+          >
+            {PreviewSection(
+              "forwards",
+              t("Forwards"),
+              countPlaying(forwardsPreview[selectedPoolUser.id]),
+              poolInfo.settings.number_forwards,
+              PreviewPlayersTable(
+                forwardsPreview[selectedPoolUser.id],
+                getFormatedDateTitle(
+                  selectedPoolUser.name,
+                  "ListOfForwardsPlayingFor",
+                ),
+              ),
+            )}
+            {PreviewSection(
+              "defense",
+              t("Defense"),
+              countPlaying(defensePreview[selectedPoolUser.id]),
+              poolInfo.settings.number_defenders,
+              PreviewPlayersTable(
+                defensePreview[selectedPoolUser.id],
+                getFormatedDateTitle(
+                  selectedPoolUser.name,
+                  "ListOfDefensemanPlayingFor",
+                ),
+              ),
+            )}
+            {PreviewSection(
+              "goalies",
+              t("Goalies"),
+              countPlaying(goaliesPreview[selectedPoolUser.id]),
+              poolInfo.settings.number_goalies,
+              PreviewPlayersTable(
+                goaliesPreview[selectedPoolUser.id],
+                getFormatedDateTitle(
+                  selectedPoolUser.name,
+                  "ListOfGoaliesPlayingFor",
+                ),
+              ),
+            )}
+          </Accordion>
         ) : null}
       </div>
     </div>

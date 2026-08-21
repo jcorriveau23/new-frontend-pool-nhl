@@ -2,8 +2,28 @@
 Module that share context related to the selected pool.
 */
 "use client";
-import { Pool, PoolUser } from "@/data/pool/model";
-import React, { createContext, useContext, ReactNode, useState } from "react";
+import {
+  DailyRosterPoints,
+  DraftPickUndoneResponse,
+  PlayerDraftedResponse,
+  Pool,
+  PoolUser,
+  RosterModifiedResponse,
+} from "@/data/pool/model";
+import { apiGet } from "@/lib/client-api";
+import {
+  applyDraftPickUndone,
+  applyPlayerDrafted,
+  applyRosterModified,
+} from "@/lib/draft-delta";
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
 import { useRouter } from "@/i18n/routing";
 import { db } from "@/db";
 import { format } from "date-fns";
@@ -36,6 +56,10 @@ export interface PoolContextProps {
   // The last pool date stored into the pool.
   lastFormatDate: string | null;
 
+  // The day (yyyy-MM-dd) the pool information is being displayed for. This is
+  // the selected date, or the last day of the pool when none is selected.
+  dateOfInterest: string;
+
   // The start Date and selected of the pool (This must be in the pool season time range!)
   poolStartDate: Date;
   poolSelectedEndDate: Date;
@@ -46,6 +70,16 @@ export interface PoolContextProps {
 
   poolInfo: Pool;
   updatePoolInfo: (newPoolInfo: Pool) => void;
+
+  // Applies a draft socket delta (a single pick, or its undo) to the pool.
+  // Falls back to refetching the pool when the delta cannot be applied, which
+  // means this client missed an earlier update.
+  applyDraftDelta: (
+    delta:
+      | { PlayerDrafted: PlayerDraftedResponse }
+      | { DraftPickUndone: DraftPickUndoneResponse }
+      | { RosterModified: RosterModifiedResponse }
+  ) => void;
 
   dictUsers: Record<string, PoolUser>;
 
@@ -66,6 +100,12 @@ interface PoolContextProviderProps {
   children: ReactNode;
   pool: Pool;
 }
+
+const getPoolDictUsers = (pool: Pool) =>
+  pool.participants.reduce((acc: Record<string, PoolUser>, user) => {
+    acc[user.id] = user;
+    return acc;
+  }, {});
 
 const getPlayersOwner = (poolInfo: Pool) => {
   if (poolInfo.participants === null) {
@@ -150,13 +190,21 @@ const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
   };
 };
 
+/*
+`name` comes from the [name] route segment and reaches this function still
+percent-encoded ("Raph%20gagne"), because the next-intl rewrite in proxy.ts
+does not decode the dynamic segments of the pages it rewrites. It is therefore
+interpolated into the path as-is: running it through encodeURIComponent would
+double-encode it and the backend would look up a pool literally named
+"Raph%20gagne".
+*/
 export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
   // Pool metadata (participants, settings, roster, lineup events).
-  const res = await fetch(`/api-rust/pool/${name}`);
+  const res = await apiGet<Pool>(`/pool/${name}`);
   if (!res.ok) {
-    return await res.text();
+    return res.error;
   }
-  const data: Pool = await res.json();
+  const data = res.data;
 
   // The locally cached copy of the pool (Dexie), used both to fetch only the
   // missing score days and to preserve the row id so the put() updates in place.
@@ -183,8 +231,10 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
     const lastCachedDate = cachedDates[cachedDates.length - 1];
     const rangeStart = lastCachedDate ?? data.season_start;
 
-    const scoresRes = await fetch(
-      `/api-rust/pool-scores/${name}/cumulative/${rangeStart}/${rangeEnd}`
+    const scoresRes = await apiGet<
+      Record<string, Record<string, DailyRosterPoints>>
+    >(
+      `/pool-scores/${name}/cumulative/${rangeStart}/${rangeEnd}`
     );
     const cachedByDay = Object.fromEntries(
       cachedDates.map((date) => [date, cachedScores![date]])
@@ -193,12 +243,12 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
       // Freshly derived days override the cached ones.
       data.context.score_by_day = {
         ...cachedByDay,
-        ...(await scoresRes.json()),
+        ...scoresRes.data,
       };
     } else {
       // Keep whatever we had locally so the UI can still render history.
       data.context.score_by_day = cachedByDay;
-      console.error(`could not fetch derived scores: ${await scoresRes.text()}`);
+      console.error(`could not fetch derived scores: ${scoresRes.error}`);
     }
   }
 
@@ -242,12 +292,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       ? new Date(poolInfo.season_end + "T00:00:00")
       : endDate;
 
-  const getPoolDictUsers = (pool: Pool) =>
-    pool.participants.reduce((acc: Record<string, PoolUser>, user) => {
-      acc[user.id] = user;
-      return acc;
-    }, {});
-
   const [dictUsers, setDictUsers] = useState<Record<string, PoolUser>>(
     getPoolDictUsers(pool)
   );
@@ -286,21 +330,27 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     string
   > | null>(getProtectedPlayers(poolInfo, dictUsers));
 
-  const updateSelectedParticipant = (participant: string) => {
-    setSelectedParticipant(participant);
-    setSelectedPoolUser(
-      poolInfo.participants.find((user) => user.name === participant) ??
-        poolInfo.participants[0]
-    );
-    const queryParams = new URLSearchParams(searchParams.toString());
-    queryParams.set("selectedParticipant", participant);
-    // Keep the URL query in sync without scrolling back to the top. The UI is
-    // already driven by the local state set above, so this is only for
-    // shareable/reloadable URLs — use replace + scroll:false to avoid the jump.
-    router.replace(`/pool/${poolInfo.name}/?${queryParams.toString()}`, {
-      scroll: false,
-    });
-  };
+  // Memoised so consumers can safely use it as an effect dependency (the
+  // popstate listeners in the pool pages do) without re-subscribing on every
+  // render of the provider.
+  const updateSelectedParticipant = React.useCallback(
+    (participant: string) => {
+      setSelectedParticipant(participant);
+      setSelectedPoolUser(
+        poolInfo.participants.find((user) => user.name === participant) ??
+          poolInfo.participants[0]
+      );
+      const queryParams = new URLSearchParams(searchParams.toString());
+      queryParams.set("selectedParticipant", participant);
+      // Keep the URL query in sync without scrolling back to the top. The UI is
+      // already driven by the local state set above, so this is only for
+      // shareable/reloadable URLs — use replace + scroll:false to avoid the jump.
+      router.replace(`/pool/${poolInfo.name}/?${queryParams.toString()}`, {
+        scroll: false,
+      });
+    },
+    [poolInfo.participants, poolInfo.name, searchParams, router]
+  );
 
   React.useEffect(() => {
     const dayInfo = poolInfo.context?.score_by_day?.[dateOfInterest];
@@ -360,32 +410,107 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     });
   }, [dateOfInterest, poolInfo]);
 
-  const updatePoolInfo = (newPoolInfo: Pool) => {
+  // The always-current pool, and the reason it exists twice.
+  //
+  // `poolInfo` reaches React state only after the Dexie read below resolves, so
+  // it lags. The draft socket cannot read it from a render closure either: the
+  // message handler is installed once at mount and would forever see the pool
+  // as it was on the first render. `updatePoolInfo` is the only writer of the
+  // pool, so this ref — which it updates synchronously — is authoritative, and
+  // the draft deltas are applied on top of it.
+  const poolInfoRef = useRef(poolInfo);
+
+  // Only ever calls state setters and the pure helpers above, so it is stable
+  // for the lifetime of the provider. That matters: the draft socket installs
+  // its message handler once, and the handler reaches the pool through here.
+  const updatePoolInfo = useCallback((newPoolInfo: Pool) => {
+    poolInfoRef.current = newPoolInfo;
     // @ts-expect-error, dexie is not typed.
     db.pools.get({ name: newPoolInfo.name }).then((poolDb) => {
       mergeScoreByDay(newPoolInfo, poolDb);
-      setPoolInfo(newPoolInfo);
       newPoolInfo.id = poolDb.id;
       // @ts-expect-error, dexie is not typed.
       db.pools.put(newPoolInfo, "name");
+      // Two picks landing back to back both reach this callback. Only the
+      // newest may reach the state, otherwise the draft board flickers back to
+      // the superseded pool — or stays on it, if the reads resolve out of order.
+      if (poolInfoRef.current !== newPoolInfo) {
+        return;
+      }
+      setPoolInfo(newPoolInfo);
     });
     const newDictUsers = getPoolDictUsers(newPoolInfo);
     setPlayersOwner(getPlayersOwner(newPoolInfo));
     setProtectedPlayers(getProtectedPlayers(newPoolInfo, newDictUsers));
     setDictUsers(newDictUsers);
-  };
+  }, []);
+
+  const resyncInFlight = useRef(false);
+
+  // Drop the local copy of the pool and take the server's. Used when a draft
+  // delta does not fit the pool we hold, which means we missed an update.
+  const resyncPoolInfo = useCallback(
+    async (poolName: string) => {
+      // A burst of unusable deltas should trigger one refetch, not one each.
+      if (resyncInFlight.current) {
+        return;
+      }
+      resyncInFlight.current = true;
+      try {
+        const refreshedPool = await fetchPoolInfo(poolName);
+        if (typeof refreshedPool === "string") {
+          console.error(`could not resynchronize the pool: ${refreshedPool}`);
+          return;
+        }
+        updatePoolInfo(refreshedPool);
+      } finally {
+        resyncInFlight.current = false;
+      }
+    },
+    [updatePoolInfo]
+  );
+
+  const applyDraftDelta = useCallback(
+    (
+      delta:
+        | { PlayerDrafted: PlayerDraftedResponse }
+        | { DraftPickUndone: DraftPickUndoneResponse }
+        | { RosterModified: RosterModifiedResponse }
+    ) => {
+      const currentPool = poolInfoRef.current;
+      let newPoolInfo: Pool | null;
+      if ("PlayerDrafted" in delta) {
+        newPoolInfo = applyPlayerDrafted(currentPool, delta.PlayerDrafted);
+      } else if ("DraftPickUndone" in delta) {
+        newPoolInfo = applyDraftPickUndone(currentPool, delta.DraftPickUndone);
+      } else {
+        newPoolInfo = applyRosterModified(currentPool, delta.RosterModified);
+      }
+
+      if (newPoolInfo === null) {
+        console.warn("a draft update was missed, refetching the pool.");
+        void resyncPoolInfo(currentPool.name);
+        return;
+      }
+
+      updatePoolInfo(newPoolInfo);
+    },
+    [resyncPoolInfo, updatePoolInfo]
+  );
 
   const contextValue: PoolContextProps = {
     selectedParticipant,
     selectedPoolUser,
     updateSelectedParticipant,
     lastFormatDate,
+    dateOfInterest,
     poolStartDate,
     poolSelectedEndDate,
     playersOwner,
     protectedPlayers,
     poolInfo,
     updatePoolInfo,
+    applyDraftDelta,
     dictUsers,
     dailyPointsMade,
   };

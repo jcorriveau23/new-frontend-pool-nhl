@@ -44,7 +44,10 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
   // The default selected date is the one returned by the /now endpoint of the nhl api.
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
 
-  // Update the selected date based on the query parameter.
+  // Update the selected date based on the query parameter. Re-runs when the
+  // parameter changes so browser back/forward restores the right date; the
+  // sentinel "now" parses to an invalid date and is ignored, which leaves the
+  // state untouched.
   useEffect(() => {
     if (querySelectedDate) {
       const parsedDate = new Date(querySelectedDate + "T00:00:00");
@@ -52,7 +55,7 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
         setSelectedDate(parsedDate);
       }
     }
-  }, []);
+  }, [querySelectedDate]);
 
   const query = useQuery({
     queryKey: ["daily_games", querySelectedDate],

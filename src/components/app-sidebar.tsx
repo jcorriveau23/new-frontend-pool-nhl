@@ -11,6 +11,8 @@ import {
   UserCog,
   ChevronUp,
   LogInIcon,
+  Star,
+  X,
 } from "lucide-react";
 
 import {
@@ -22,6 +24,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
@@ -37,6 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import LogoutMenuItem from "./hanko/logout-button";
+import { useFavoritePools } from "@/hooks/use-favorite-pools";
 
 export function AppSidebar({
   currentSeason,
@@ -91,6 +95,7 @@ export function AppSidebar({
   ];
 
   const user = useUser();
+  const { favorites, toggleFavorite } = useFavoritePools();
   const router = useRouter();
   const pathname = usePathname();
   const { setOpenMobile, isMobile } = useSidebar();
@@ -195,6 +200,42 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        {favorites.length > 0 ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("Favorites")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {[...favorites]
+                  .sort((a, b) => a.localeCompare(b))
+                  .map((poolName) => (
+                    <SidebarMenuItem key={poolName}>
+                      <SidebarMenuButton
+                        isActive={isActive(`/pool/${poolName}`)}
+                        render={
+                          <Link
+                            href={`/pool/${poolName}`}
+                            onClick={closeOnMobile}
+                          />
+                        }
+                      >
+                        <Star />
+                        <span className="truncate">{poolName}</span>
+                      </SidebarMenuButton>
+                      <SidebarMenuAction
+                        showOnHover
+                        aria-label={t("RemoveFromFavorites", {
+                          pool: poolName,
+                        })}
+                        onClick={() => toggleFavorite(poolName)}
+                      >
+                        <X />
+                      </SidebarMenuAction>
+                    </SidebarMenuItem>
+                  ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
         <SidebarGroup>
           <SidebarGroupLabel>{t("MainPages")}</SidebarGroupLabel>
           <SidebarGroupContent>{renderMenuItems(hockeyPoolItems)}</SidebarGroupContent>

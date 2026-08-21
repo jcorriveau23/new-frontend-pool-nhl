@@ -114,6 +114,50 @@ export interface PoolerRoster {
   chosen_reservists: number[];
 }
 
+/*
+Draft socket deltas.
+
+The draft used to rebroadcast the whole pool on every pick, which grows with
+each drafted player and is sent to every socket of the room. These carry only
+what a pick changes, and the client applies them to the pool it already holds.
+
+`pick_count` is the desync guard: it is the length `players_name_drafted` must
+have once the delta is applied. Any other length means an update was missed
+(dropped frame, reconnect) and the pool has to be refetched instead.
+*/
+export interface PlayerDraftedResponse {
+  player: Player;
+  // The participant the player was drafted for, which is not necessarily the
+  // user who sent the command (the pool owner drafts on behalf of others).
+  participant_id: string;
+  // That participant's roster after the pick, authoritative: the backend owns
+  // the slot/reservist placement rules.
+  roster: PoolerRoster;
+  // What was appended to `players_name_drafted`: the player id, then a 0 for
+  // each drafter skipped because its roster is already full.
+  appended_picks: number[];
+  pick_count: number;
+  status: PoolState;
+  date_updated: number;
+}
+
+// A participant rearranged the players it already holds. No pick is consumed,
+// so there is no counter to check against — the roster simply replaces the one
+// held for that participant.
+export interface RosterModifiedResponse {
+  participant_id: string;
+  roster: PoolerRoster;
+  date_updated: number;
+}
+
+export interface DraftPickUndoneResponse {
+  player_id: number;
+  participant_id: string;
+  roster: PoolerRoster;
+  pick_count: number;
+  date_updated: number;
+}
+
 export interface DailyRosterPoints {
   roster: Roster;
   is_cumulated: boolean;

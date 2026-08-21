@@ -32,7 +32,6 @@ import {
 import React from "react";
 import UndoButton from "@/components/undo-button";
 import StartingRoster from "@/components/starting-roster";
-import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
 import { useUser } from "@/context/useUserData";
 
 export default function DraftPage() {
@@ -132,14 +131,12 @@ export default function DraftPage() {
           <DialogTrigger render={<Button variant="outline" />}>
             {t("PoolersRoster")}
           </DialogTrigger>
-          <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
+          <DialogContent className="flex h-full max-h-[92%] w-full max-w-5xl flex-col gap-3 p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>{t("PoolersRoster")}</DialogTitle>
             </DialogHeader>
-            <ScrollArea className="p-0">
-              <PoolerUserGlobalSelector />
+            <ScrollArea className="min-h-0 flex-1">
               <StartingRoster
-                key={selectedParticipant}
                 userRoster={getPoolerActivePlayers(
                   poolInfo.context!,
                   poolInfo.participants.find(
@@ -148,7 +145,6 @@ export default function DraftPage() {
                 )}
                 teamSalaryCap={poolInfo.settings.salary_cap}
               />
-              <ScrollBar orientation="horizontal" />
             </ScrollArea>
           </DialogContent>
         </Dialog>

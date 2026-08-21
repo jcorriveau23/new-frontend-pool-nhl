@@ -29,3 +29,17 @@ export async function getServerSidePlayers(
     { next: { revalidate: 60 } }
   );
 }
+
+export async function searchPlayersByName(
+  name: string
+): Promise<Player[] | null> {
+  /*
+  Search players by (partial) name. The backend matches on the name only, so
+  position filtering and sorting are applied by the caller on the result set.
+  */
+
+  return fetchJson<Player[]>(
+    backendUrl(`/get-players/${encodeURIComponent(name)}`),
+    { next: { revalidate: 60 } }
+  );
+}

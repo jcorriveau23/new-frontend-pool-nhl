@@ -2,10 +2,17 @@
 
 "use client";
 import * as React from "react";
-import { getPoolerActivePlayers, PoolState, PoolUser } from "@/data/pool/model";
+import {
+  getPoolerActivePlayers,
+  Pool,
+  PoolState,
+  PoolUser,
+} from "@/data/pool/model";
+import { apiPost } from "@/lib/client-api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   TotalPointsColumn,
+  TotalPointsColumnWithoutDaily,
   ForwardsTotalColumn,
   DefensesTotalColumn,
   GoaliesTotalColumn,
@@ -16,6 +23,7 @@ import {
   ForwardColumn,
   GoalieColumn,
   ReservistColumn,
+  getPlayerStatusRowStyle,
 } from "./players-points-columns";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
@@ -29,6 +37,7 @@ import { Row } from "@tanstack/react-table";
 
 import { useTranslations } from "next-intl";
 import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
+import { useTradeBuilder } from "@/context/trade-builder-context";
 import PickList from "@/components/pick-list";
 import { useDateContext } from "@/context/date-context";
 import { Button } from "@/components/ui/button";
@@ -50,6 +59,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -63,8 +73,8 @@ import { toast } from "sonner";
 import InformationIcon from "@/components/information-box";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import StartingRoster from "@/components/starting-roster";
+import { getPoolerCapUsage } from "@/lib/lineup-analytics";
 import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
-import { TableCell, TableRow } from "@/components/ui/table";
 import {
   GamesNightStatus,
   useGamesNightContext,
@@ -79,18 +89,18 @@ import {
   SkaterTotal,
   TotalRanking,
 } from "./cumulative-calculation";
-import { LineChart } from "lucide-react";
+import { LineChart, PencilLine } from "lucide-react";
 import { TimeRangeSkaterChart } from "@/components/chart/time-range-skater-chart";
 import { TimeRangePoolChart } from "@/components/chart/time-range-pool-chart";
 import { TimeRangeGoalieChart } from "@/components/chart/time-range-goalie-chart";
 import { useUser } from "@/context/useUserData";
 import PlayersTable from "@/components/player-table";
 import { Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export default function CumulativeTab() {
   const t = useTranslations();
-  const { currentDate, querySelectedDate } = useDateContext();
+  const { currentDate, querySelectedDate, score } = useDateContext();
   const { gamesNightStatus } = useGamesNightContext();
   const [selectedPlayerId, setSelectedPlayerId] = React.useState<string | null>(
     null,
@@ -98,6 +108,7 @@ export default function CumulativeTab() {
   const [isForwardChartOpen, setIsForwardChartOpen] = React.useState(false);
   const [isDefenderChartOpen, setIsDefenderChartOpen] = React.useState(false);
   const [isGoalieChartOpen, setIsGoalieChartOpen] = React.useState(false);
+  const [isPoolChartOpen, setIsPoolChartOpen] = React.useState(false);
   const [playerStats, setPlayerStats] = React.useState<Record<
     string,
     ParticipantsRoster
@@ -106,6 +117,7 @@ export default function CumulativeTab() {
   const {
     poolInfo,
     updatePoolInfo,
+    dateOfInterest,
     poolStartDate,
     poolSelectedEndDate,
     selectedParticipant,
@@ -114,6 +126,7 @@ export default function CumulativeTab() {
     dailyPointsMade,
     updateSelectedParticipant,
   } = usePoolContext();
+  const { openTradeForPlayer } = useTradeBuilder();
 
   const userSession = useSession();
   const userData = useUser();
@@ -141,58 +154,43 @@ export default function CumulativeTab() {
   });
 
   const markAsFinal = async () => {
-    const res = await fetch("/api-rust/mark-as-final", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userSession.info?.jwt}`,
-      },
-      body: JSON.stringify({
-        pool_name: poolInfo.name,
-      }),
-    });
+    const res = await apiPost<Pool>(
+      "/mark-as-final",
+      { pool_name: poolInfo.name },
+      userSession.info?.jwt,
+    );
 
     if (!res.ok) {
-      const error = await res.text();
       toast.error(
         t("CouldNotMarkAsFinalPoolError", {
           name: poolInfo.name,
-          error: error,
+          error: res.error,
         }),
         { duration: 2000 },
       );
       return;
     }
-    const data = await res.json();
-    updatePoolInfo(data);
+    updatePoolInfo(res.data);
   };
 
   const generateDynasty = async (newPoolName: string) => {
-    const res = await fetch("/api-rust/generate-dynasty", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userSession.info?.jwt}`,
-      },
-      body: JSON.stringify({
-        pool_name: poolInfo.name,
-        new_pool_name: newPoolName,
-      }),
-    });
+    const res = await apiPost<Pool>(
+      "/generate-dynasty",
+      { pool_name: poolInfo.name, new_pool_name: newPoolName },
+      userSession.info?.jwt,
+    );
 
     if (!res.ok) {
-      const error = await res.text();
       toast.error(
         t("CouldNotGeneratePoolError", {
           name: newPoolName,
-          error: error,
+          error: res.error,
         }),
         { duration: 2000 },
       );
       return;
     }
-    const data = await res.json();
-    updatePoolInfo(data);
+    updatePoolInfo(res.data);
   };
 
   React.useEffect(() => {
@@ -205,7 +203,7 @@ export default function CumulativeTab() {
 
     setPlayerStats(stats);
     setRanking(rank);
-  }, [dailyPointsMade, poolStartDate, poolSelectedEndDate]);
+  }, [poolInfo, dailyPointsMade, poolStartDate, poolSelectedEndDate]);
 
   if (ranking === null || playerStats === null) {
     return <h1>Loading ranking and player stats...</h1>;
@@ -219,6 +217,58 @@ export default function CumulativeTab() {
   );
   const selectedRankingEntry =
     selectedRankIndex >= 0 ? rankedByPoints[selectedRankIndex] : null;
+
+  // The pooler selector lists everybody in standing order, with their rank and
+  // total so the list doubles as a quick leaderboard.
+  const poolerEntries = rankedByPoints.map((rank, index) => ({
+    id:
+      poolInfo.participants?.find((user) => user.name === rank.participant)
+        ?.id ?? rank.participant,
+    name: rank.participant,
+    rank: index + 1,
+    points: rank.getTotalPoolPoints(),
+  }));
+
+  // Feeds the analysis charts of the lineup dialog. Everything here is derived
+  // from the stats already computed above, never from a second
+  // `calculatePoolStats` pass.
+  const lineupAnalytics = {
+    playerPoolPoints: Object.values(playerStats).reduce(
+      (points: Record<number, number>, roster) => {
+        for (const player of [
+          ...roster.forwards,
+          ...roster.defense,
+          ...roster.goalies,
+        ]) {
+          points[player.id] = player.poolPoints;
+        }
+        return points;
+      },
+      {},
+    ),
+    poolers: getPoolerCapUsage(poolInfo).map((usage) => ({
+      ...usage,
+      poolPoints:
+        ranking
+          .find((rank) => rank.participant === usage.name)
+          ?.getTotalPoolPoints() ?? 0,
+    })),
+  };
+
+  // The daily points columns only make sense for a day that belongs to the
+  // pool. With no date selected the day being looked at is the one the nhl api
+  // reports as "now" (what the date picker shows), which lands outside of the
+  // season during the off-season — the pool context falls back to the last day
+  // of the pool instead, so it cannot be used to answer that question. All
+  // three values are yyyy-MM-dd strings, which compare exactly without any
+  // timezone question.
+  const displayedDate =
+    querySelectedDate === "now"
+      ? (score?.currentDate ?? format(currentDate, "yyyy-MM-dd"))
+      : dateOfInterest;
+  const isDateInPoolRange =
+    displayedDate >= poolInfo.season_start &&
+    displayedDate <= poolInfo.season_end;
 
   const getDailyGameState = (cumulated: boolean | undefined) => {
     if (cumulated) {
@@ -254,7 +304,7 @@ export default function CumulativeTab() {
         },
         getRowStyles: (row: Row<TotalRanking>) => {
           if (row.original.participant === selectedParticipant) {
-            return "bg-selection hover:bg-selection font-semibold border-l-4 border-l-primary";
+            return "bg-selection hover:bg-selection group-hover:bg-selection font-semibold border-l-4 border-l-primary";
           }
         },
         onRowClick: (row: Row<TotalRanking>) => {
@@ -262,10 +312,48 @@ export default function CumulativeTab() {
         },
         t,
       }}
+      rowClickable
       title={title}
       tableFooter={null}
     />
   );
+
+  // Legend for the row colours used by players that are not counted in the
+  // alignment. Only the statuses actually present in the table are listed.
+  const RosterStatusLegend = (rows: { status: PlayerStatus }[]) => {
+    const legendItems = [
+      {
+        status: PlayerStatus.IsReservists,
+        color: "bg-chart-4",
+        label: t("StatusReservist"),
+      },
+      {
+        status: PlayerStatus.Traded,
+        color: "bg-destructive",
+        label: t("StatusTraded"),
+      },
+      {
+        status: PlayerStatus.PointsIgnored,
+        color: "bg-muted-foreground",
+        label: t("StatusPointsIgnored"),
+      },
+    ].filter((item) => rows.some((row) => row.status === item.status));
+
+    if (legendItems.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-muted-foreground sm:text-xs">
+        {legendItems.map((item) => (
+          <span key={item.status} className="flex items-center gap-1.5">
+            <span className={`h-3 w-1 rounded-full ${item.color}`} />
+            {item.label}
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   const SkaterTable = (
     rows: SkaterInfo[],
@@ -273,50 +361,55 @@ export default function CumulativeTab() {
     title: string,
     total: SkaterTotal,
   ) => (
-    <DataTable
-      data={rows}
-      columns={columns}
-      initialState={{
-        sorting: [
-          {
-            id: "poolPoints",
-            desc: true,
+    <div className="space-y-2">
+      <DataTable
+        data={rows}
+        columns={columns}
+        initialState={{
+          sorting: [
+            {
+              id: "poolPoints",
+              desc: true,
+            },
+          ],
+          columnPinning: {
+            left: ["number", "player"],
+            right: ["poolPoints", "actions"],
           },
-        ],
-        columnPinning: {
-          left: ["number", "status", "player"],
-          right: ["actions"],
-        },
-      }}
-      meta={{
-        props: {
-          poolInfo,
-          setSelectedPlayerId,
-          setIsForwardChartOpen,
-          setIsDefenderChartOpen,
-        },
-        getRowStyles: () => null,
-        onRowClick: () => null,
-        t: t,
-      }}
-      title={title}
-      tableFooter={
-        <TableRow>
-          <TableCell colSpan={4}>{t("Total")}</TableCell>
-          <TableCell>{total.numberOfGame}</TableCell>
-          <TableCell>{total.goals}</TableCell>
-          <TableCell>{total.assists}</TableCell>
-          <TableCell>{total.hattricks}</TableCell>
-          <TableCell>{total.shootoutGoals}</TableCell>
-          <TableCell>{total.totalPoolPoints}</TableCell>
-          <TableCell>
-            {total.numberOfGame > 0
+        }}
+        meta={{
+          props: {
+            poolInfo,
+            setSelectedPlayerId,
+            setIsForwardChartOpen,
+            setIsDefenderChartOpen,
+            openTradeForPlayer,
+          },
+          getRowStyles: (row: Row<SkaterInfo>) =>
+            getPlayerStatusRowStyle(row.original.status),
+          onRowClick: () => null,
+          t: t,
+        }}
+        title={title}
+        tableFooter={null}
+        footerCells={{
+          player: <span className="font-semibold">{t("Total")}</span>,
+          numberOfGame: total.numberOfGame,
+          goals: total.goals,
+          assists: total.assists,
+          hattricks: total.hattricks,
+          shootoutGoals: total.shootoutGoals,
+          poolPoints: (
+            <span className="font-semibold">{total.totalPoolPoints}</span>
+          ),
+          totalPoolPtsPerGame:
+            total.numberOfGame > 0
               ? (total.totalPoolPoints / total.numberOfGame).toFixed(3)
-              : null}
-          </TableCell>
-        </TableRow>
-      }
-    />
+              : null,
+        }}
+      />
+      {RosterStatusLegend(rows)}
+    </div>
   );
 
   const GoalieTable = (
@@ -325,50 +418,55 @@ export default function CumulativeTab() {
     title: string,
     total: GoalieTotal,
   ) => (
-    <DataTable
-      data={rows}
-      columns={columns}
-      initialState={{
-        sorting: [
-          {
-            id: "poolPoints",
-            desc: true,
+    <div className="space-y-2">
+      <DataTable
+        data={rows}
+        columns={columns}
+        initialState={{
+          sorting: [
+            {
+              id: "poolPoints",
+              desc: true,
+            },
+          ],
+          columnPinning: {
+            left: ["number", "player"],
+            right: ["poolPoints", "actions"],
           },
-        ],
-        columnPinning: {
-          left: ["number", "status", "player"],
-          right: ["actions"],
-        },
-      }}
-      meta={{
-        props: {
-          poolInfo,
-          setSelectedPlayerId,
-          setIsGoalieChartOpen,
-        },
-        getRowStyles: () => null,
-        onRowClick: () => null,
-        t: t,
-      }}
-      title={title}
-      tableFooter={
-        <TableRow>
-          <TableCell colSpan={4}>{t("Total")}</TableCell>
-          <TableCell>{total.numberOfGame}</TableCell>
-          <TableCell>{total.wins}</TableCell>
-          <TableCell>{total.shutouts}</TableCell>
-          <TableCell>{total.overtimeLosses}</TableCell>
-          <TableCell>{total.goals}</TableCell>
-          <TableCell>{total.assists}</TableCell>
-          <TableCell>{total.totalPoolPoints}</TableCell>
-          <TableCell>
-            {total.numberOfGame > 0
+        }}
+        meta={{
+          props: {
+            poolInfo,
+            setSelectedPlayerId,
+            setIsGoalieChartOpen,
+            openTradeForPlayer,
+          },
+          getRowStyles: (row: Row<GoalieInfo>) =>
+            getPlayerStatusRowStyle(row.original.status),
+          onRowClick: () => null,
+          t: t,
+        }}
+        title={title}
+        tableFooter={null}
+        footerCells={{
+          player: <span className="font-semibold">{t("Total")}</span>,
+          numberOfGame: total.numberOfGame,
+          wins: total.wins,
+          shutouts: total.shutouts,
+          overtimeLosses: total.overtimeLosses,
+          goals: total.goals,
+          assists: total.assists,
+          poolPoints: (
+            <span className="font-semibold">{total.totalPoolPoints}</span>
+          ),
+          totalPoolPtsPerGame:
+            total.numberOfGame > 0
               ? (total.totalPoolPoints / total.numberOfGame).toFixed(3)
-              : null}
-          </TableCell>
-        </TableRow>
-      }
-    />
+              : null,
+        }}
+      />
+      {RosterStatusLegend(rows)}
+    </div>
   );
 
   const ReservistTable = (rows: number[], columns: ColumnDef<number>[]) => (
@@ -389,29 +487,49 @@ export default function CumulativeTab() {
     />
   );
 
+  // Mirrors what the backend accepts for a roster modification.
+  const canSaveLineupOf = (participant: PoolUser) =>
+    poolInfo.status === PoolState.InProgress &&
+    (userData.info?.id === participant.id ||
+      hasPoolPrivilege(userData.info?.id, poolInfo));
+
   const ParticipantRoster = (participant: PoolUser) => (
     <>
+      {/* Anybody can open the lineup to try combinations, saving it is what
+          needs the rights. */}
       {poolInfo.settings.number_reservists > 0 ? (
-        <Dialog key={participant.id}>
-          <DialogTrigger render={<Button variant="outline" />}>
-            {t("ModifyRoster")}
-          </DialogTrigger>
-          <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
-            <DialogHeader>
-              <DialogTitle>{t("ModifyRoster")}</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="p-0">
-              <StartingRoster
-                userRoster={getPoolerActivePlayers(
-                  poolInfo.context!,
-                  selectedPoolUser,
-                )}
-                teamSalaryCap={poolInfo.settings.salary_cap}
-              />
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
+        <div className="mb-2 flex justify-end">
+          {/* No key on the dialog: the pooler selector inside it changes the
+              participant, and remounting would close the dialog. */}
+          <Dialog>
+            <DialogTrigger render={<Button variant="outline" size="sm" />}>
+              <PencilLine className="size-4" />
+              {canSaveLineupOf(participant)
+                ? t("EditLineup")
+                : t("SimulateLineup")}
+            </DialogTrigger>
+            <DialogContent className="flex h-full max-h-[92%] w-full max-w-5xl flex-col gap-3 p-4 sm:p-6">
+              <DialogHeader>
+                <DialogTitle>
+                  {canSaveLineupOf(participant)
+                    ? t("EditLineup")
+                    : t("SimulateLineup")}
+                </DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="min-h-0 flex-1">
+                <StartingRoster
+                  userRoster={getPoolerActivePlayers(
+                    poolInfo.context!,
+                    participant,
+                  )}
+                  teamSalaryCap={poolInfo.settings.salary_cap}
+                  poolerEntries={poolerEntries}
+                  analytics={lineupAnalytics}
+                />
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+        </div>
       ) : null}
       {poolInfo.settings.number_forwards > 0 ? (
         <Accordion defaultValue={["forwards"]}>
@@ -642,37 +760,40 @@ export default function CumulativeTab() {
     </Dialog>
   );
 
-  const chartCollapsible = (positionFilter: "F" | "D" | "G" | null) => (
-    <Accordion>
-      <AccordionItem value={positionFilter ?? "All"}>
-        <AccordionTrigger>
-          <span className="inline-flex items-center space-x-2">
-            <div>Chart</div>
-            <LineChart />
-          </span>
-        </AccordionTrigger>
-        <AccordionContent>
-          <TimeRangePoolChart positionFilter={positionFilter} />
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  );
+  // The chart is toggled from the tab bar (see the button next to the tabs) and
+  // rendered above the ranking table of the active tab.
+  const chartPanel = (positionFilter: "F" | "D" | "G" | null) =>
+    isPoolChartOpen ? (
+      <div className="mb-4 rounded-lg border bg-card p-3 sm:p-4">
+        <TimeRangePoolChart positionFilter={positionFilter} />
+      </div>
+    ) : null;
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-end gap-3 flex-wrap">
         <div className="flex-1 min-w-[200px]">
-          <PoolerUserGlobalSelector />
+          <PoolerUserGlobalSelector entries={poolerEntries} />
         </div>
         {selectedRankingEntry ? (
-          <Badge
-            variant="secondary"
-            className="h-9 gap-2 px-3 text-sm whitespace-nowrap"
-          >
-            <span>#{selectedRankIndex + 1}</span>
-            <span className="text-muted-foreground">·</span>
-            <span>{selectedRankingEntry.getTotalPoolPoints()} PTS</span>
-          </Badge>
+          <div className="flex h-10 items-center gap-2.5 rounded-lg border bg-card pl-1.5 pr-3">
+            <span
+              className={cn(
+                "flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-sm font-bold tabular-nums",
+                selectedRankIndex === 0
+                  ? "bg-chart-4/20 text-chart-4"
+                  : "bg-primary/15 text-primary",
+              )}
+            >
+              {selectedRankIndex + 1}
+            </span>
+            <span className="flex items-baseline gap-1">
+              <span className="text-base font-semibold tabular-nums leading-none">
+                {selectedRankingEntry.getTotalPoolPoints()}
+              </span>
+              <span className="text-xs text-muted-foreground">PTS</span>
+            </span>
+          </div>
         ) : null}
       </div>
       <Tabs defaultValue="totalRanking" className="flex flex-col gap-4">
@@ -687,55 +808,85 @@ export default function CumulativeTab() {
         hasPoolPrivilege(userData.info?.id, poolInfo)
           ? GenerateDynastyDialog()
           : null}
-        <div className="overflow-auto">
-          <TabsList>
-            <TabsTrigger value="totalRanking">{t("Total")}</TabsTrigger>
-            <TabsTrigger value="forwardRanking">{t("Forwards")}</TabsTrigger>
-            <TabsTrigger value="defenseRanking">{t("Defense")}</TabsTrigger>
-            <TabsTrigger value="goaliesRanking">{t("Goalies")}</TabsTrigger>
-            {poolInfo.status === PoolState.Final ? (
-              <InformationIcon text={t("FinalPoolResult")} />
-            ) : null}
-            <Dialog>
-              <DialogTrigger render={<Button />}>
-                <Search />
-              </DialogTrigger>
-              <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
-                <DialogHeader>
-                  <DialogTitle>{t("DraftAPlayer")}</DialogTitle>
-                </DialogHeader>
-                <ScrollArea className="p-0">
-                  <PlayersTable
-                    sortField={"points"}
-                    skip={null}
-                    limit={51}
-                    considerOnlyProtected={false}
-                    pushUrl={`/pool/${poolInfo.name}`}
-                    playersOwner={playersOwner}
-                    protectedPlayers={null}
-                    onPlayerSelect={null}
-                  />
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-              </DialogContent>
-            </Dialog>
-          </TabsList>
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 overflow-x-auto">
+            <TabsList>
+              <TabsTrigger value="totalRanking">{t("Total")}</TabsTrigger>
+              <TabsTrigger value="forwardRanking">{t("Forwards")}</TabsTrigger>
+              <TabsTrigger value="defenseRanking">{t("Defense")}</TabsTrigger>
+              <TabsTrigger value="goaliesRanking">{t("Goalies")}</TabsTrigger>
+            </TabsList>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className={cn(
+              "size-10 shrink-0",
+              isPoolChartOpen && "bg-accent text-accent-foreground",
+            )}
+            aria-pressed={isPoolChartOpen}
+            aria-label={t("Chart")}
+            onClick={() => setIsPoolChartOpen((isOpen) => !isOpen)}
+          >
+            <LineChart className="size-4" />
+          </Button>
+          {poolInfo.status === PoolState.Final ? (
+            <InformationIcon text={t("FinalPoolResult")} />
+          ) : null}
+          <Dialog>
+            <DialogTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="ml-auto size-10 shrink-0"
+                  aria-label={t("PlayerSearch")}
+                />
+              }
+            >
+              <Search className="size-4" />
+            </DialogTrigger>
+            <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
+              <DialogHeader>
+                <DialogTitle>{t("PlayerSearch")}</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="p-0">
+                <PlayersTable
+                  sortField={"points"}
+                  skip={null}
+                  limit={51}
+                  considerOnlyProtected={false}
+                  pushUrl={`/pool/${poolInfo.name}`}
+                  playersOwner={playersOwner}
+                  protectedPlayers={null}
+                  onPlayerSelect={null}
+                />
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <TabsContent value="totalRanking">
-          {chartCollapsible(null)}
-          {TotalTable(ranking, TotalPointsColumn, t("TotalRanking"))}
+          {chartPanel(null)}
+          {TotalTable(
+            ranking,
+            isDateInPoolRange
+              ? TotalPointsColumn
+              : TotalPointsColumnWithoutDaily,
+            t("TotalRanking"),
+          )}
         </TabsContent>
         <TabsContent value="forwardRanking">
-          {chartCollapsible("F")}
+          {chartPanel("F")}
           {TotalTable(ranking, ForwardsTotalColumn, t("ForwardRanking"))}
         </TabsContent>
         <TabsContent value="defenseRanking">
-          {chartCollapsible("D")}
+          {chartPanel("D")}
           {TotalTable(ranking, DefensesTotalColumn, t("DefenseRanking"))}
         </TabsContent>
         <TabsContent value="goaliesRanking">
-          {chartCollapsible("G")}
+          {chartPanel("G")}
           {TotalTable(ranking, GoaliesTotalColumn, t("GoaliesRanking"))}
         </TabsContent>
       </Tabs>

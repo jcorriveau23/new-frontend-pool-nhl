@@ -61,11 +61,13 @@ export const PlayerPreviewColumn: ColumnDef<PreviewPlayer>[] = [
     header: ({ table }) => table.options.meta?.t("Player"),
     cell: ({ row }) => {
       return (
-        <PlayerLink
-          name={row.original.name}
-          id={row.original.id}
-          textStyle={null}
-        />
+        <div className="w-[105px] sm:w-auto">
+          <PlayerLink
+            name={row.original.name}
+            id={row.original.id}
+            textStyle={null}
+          />
+        </div>
       );
     },
   },
@@ -73,7 +75,7 @@ export const PlayerPreviewColumn: ColumnDef<PreviewPlayer>[] = [
     accessorKey: "team",
     header: ({ table }) => table.options.meta?.t("T"),
     cell: ({ row }) => {
-      return <TeamLogo teamId={row.original.team} width={30} height={30} />;
+      return <TeamLogo teamId={row.original.team} width={22} height={22} />;
     },
   },
   {
@@ -81,7 +83,7 @@ export const PlayerPreviewColumn: ColumnDef<PreviewPlayer>[] = [
     header: "VS",
     cell: ({ row }) => {
       return row.original.playingAgainst ? (
-        <TeamLogo teamId={row.original.playingAgainst} width={30} height={30} />
+        <TeamLogo teamId={row.original.playingAgainst} width={22} height={22} />
       ) : null;
     },
   },

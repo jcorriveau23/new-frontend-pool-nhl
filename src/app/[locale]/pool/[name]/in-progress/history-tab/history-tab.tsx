@@ -55,7 +55,7 @@ export default function HistoryTab() {
   const getDailyMovement = (
     participant: string,
     oldRoster: string[],
-    newRoster: string[]
+    newRoster: string[],
   ): DailyMovements | null => {
     // Return the roster movement for a specific date comparing between the roster of 2 dates.
     const added = newRoster.filter((value) => !oldRoster.includes(value));
@@ -75,13 +75,13 @@ export default function HistoryTab() {
     }
 
     const forwards = Object.keys(
-      poolInfo.context.score_by_day[jDate][participant].roster.F
+      poolInfo.context.score_by_day[jDate][participant].roster.F,
     );
     const defenders = Object.keys(
-      poolInfo.context.score_by_day[jDate][participant].roster.D
+      poolInfo.context.score_by_day[jDate][participant].roster.D,
     );
     const goalies = Object.keys(
-      poolInfo.context.score_by_day[jDate][participant].roster.G
+      poolInfo.context.score_by_day[jDate][participant].roster.G,
     );
     return forwards.concat(defenders, goalies);
   };
@@ -128,7 +128,7 @@ export default function HistoryTab() {
             trade.status === "ACCEPTED" &&
             new Date(trade.date_accepted + 3600000)
               .toISOString()
-              .slice(0, 10) === jDate
+              .slice(0, 10) === jDate,
         ) ?? [];
 
       if (
@@ -221,7 +221,7 @@ export default function HistoryTab() {
     <PlayerLink
       key={playerId}
       name={`${poolInfo.context?.players[playerId].name} (${t(
-        poolInfo.context?.players[playerId].position ?? ""
+        poolInfo.context?.players[playerId].position ?? "",
       )})`}
       id={Number(playerId)}
       textStyle="text-sm"
@@ -289,7 +289,7 @@ export default function HistoryTab() {
                 <AccordionContent className="px-4">
                   <div className="flex flex-col gap-3">
                     {dailyHistory.dailyMovements.map((movements) =>
-                      Movements(movements)
+                      Movements(movements),
                     )}
                     {dailyHistory.dailyTrades.length > 0 &&
                       dailyHistory.dailyMovements.length > 0 && <Separator />}
