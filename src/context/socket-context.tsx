@@ -50,6 +50,7 @@ export enum Command {
   StartDraft = "StartDraft",
   DraftPlayer = "DraftPlayer",
   UndoDraftPlayer = "UndoDraftPlayer",
+  ModifyRoster = "ModifyRoster",
 }
 
 enum SocketStatus {
@@ -76,6 +77,15 @@ export const useSocketContext = (): SocketContextProps => {
   return context;
 };
 
+/*
+`StartingRoster` renders both on the draft page, inside this provider, and on
+the in-progress tab, where there is no room and no socket. It uses this to tell
+the two apart: a roster change during the draft goes to the room over the
+socket, everywhere else it goes to the REST endpoint.
+*/
+export const useOptionalSocketContext = (): SocketContextProps | undefined =>
+  useContext(SocketContext);
+
 interface SocketProviderProps {
   children: ReactNode;
   jwt: string | null | undefined;
@@ -93,7 +103,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   );
   const session = useSession();
 
-  const { poolInfo, updatePoolInfo } = usePoolContext();
+  const { poolInfo, updatePoolInfo, applyDraftDelta } = usePoolContext();
   const t = useTranslations();
   const socketProtocol =
     window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -130,6 +140,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
           if (response.Pool) {
             // This is a pool update
             updatePoolInfo(response.Pool.pool);
+          } else if (
+            response.PlayerDrafted ||
+            response.DraftPickUndone ||
+            response.RosterModified
+          ) {
+            // Draft picks send only what they changed instead of the whole
+            // pool, which would be tens of kilobytes per pick per socket.
+            applyDraftDelta(response);
           } else if (response.Users) {
             setRoomUsers(response.Users.room_users);
           }
@@ -161,7 +179,13 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
         toast.error(`WebSocket error`, { duration: 2000 });
       };
     },
-    [updatePoolInfo, poolInfo.name, poolInfo.settings.number_poolers, t]
+    [
+      updatePoolInfo,
+      applyDraftDelta,
+      poolInfo.name,
+      poolInfo.settings.number_poolers,
+      t,
+    ]
   );
 
   useEffect(() => {

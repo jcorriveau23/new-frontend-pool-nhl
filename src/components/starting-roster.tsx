@@ -35,6 +35,7 @@ import {
 import PlayerSearchDialog from "./search-players";
 import { useUser } from "@/context/useUserData";
 import { getRosterModificationWindow } from "@/lib/roster-modification";
+import { Command, useOptionalSocketContext } from "@/context/socket-context";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
@@ -112,6 +113,8 @@ const lineupSignature = (lineup: Lineup): string =>
 
 export default function StartingRoster(props: Props) {
   const { poolInfo, updatePoolInfo, dictUsers } = usePoolContext();
+  // Present on the draft page only; undefined on the in-progress tab.
+  const socketContext = useOptionalSocketContext();
   const userSession = useSession();
   const userData = useUser();
   const t = useTranslations();
@@ -135,10 +138,12 @@ export default function StartingRoster(props: Props) {
 
   const isOwnRoster = userData.info?.id === props.userRoster.user.id;
   const isPoolInProgress = poolInfo.status === PoolState.InProgress;
+  const isPoolDrafting = poolInfo.status === PoolState.Draft;
   // The backend only accepts a roster modification from the pooler itself, the
-  // owner or an assistant, and only while the pool is running.
+  // owner or an assistant. Both a running pool and a draft in progress qualify:
+  // during the draft, participants arrange the players they have picked so far.
   const canSaveLineup =
-    isPoolInProgress &&
+    (isPoolInProgress || isPoolDrafting) &&
     (isOwnRoster || hasPoolPrivilege(userData.info?.id, poolInfo));
   const canAddPlayer =
     isPoolInProgress && hasPoolPrivilege(userData.info?.id, poolInfo);
@@ -545,16 +550,29 @@ export default function StartingRoster(props: Props) {
   const onModifyRoster = async () => {
     setIsSaving(true);
     try {
+      const modification = {
+        roster_modified_user_id: props.userRoster.user.id,
+        forw_list: lineup.forwards.map((p) => p.id),
+        def_list: lineup.defense.map((p) => p.id),
+        goal_list: lineup.goalies.map((p) => p.id),
+        reserv_list: lineup.reservists.map((p) => p.id),
+      };
+
+      // During the draft the change has to reach everyone in the room, so it
+      // goes through the socket and comes back as a broadcast that updates the
+      // pool. Outside the draft there is no room, and the REST call returns the
+      // updated pool directly.
+      if (socketContext) {
+        socketContext.sendSocketCommand(
+          Command.ModifyRoster,
+          JSON.stringify(modification)
+        );
+        return true;
+      }
+
       const res = await apiPost<Pool>(
         "/modify-roster",
-        {
-          pool_name: poolInfo.name,
-          roster_modified_user_id: props.userRoster.user.id,
-          forw_list: lineup.forwards.map((p) => p.id),
-          def_list: lineup.defense.map((p) => p.id),
-          goal_list: lineup.goalies.map((p) => p.id),
-          reserv_list: lineup.reservists.map((p) => p.id),
-        },
+        { pool_name: poolInfo.name, ...modification },
         userSession.info?.jwt
       );
 

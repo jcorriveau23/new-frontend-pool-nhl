@@ -2,9 +2,28 @@
 Module that share context related to the selected pool.
 */
 "use client";
-import { DailyRosterPoints, Pool, PoolUser } from "@/data/pool/model";
+import {
+  DailyRosterPoints,
+  DraftPickUndoneResponse,
+  PlayerDraftedResponse,
+  Pool,
+  PoolUser,
+  RosterModifiedResponse,
+} from "@/data/pool/model";
 import { apiGet } from "@/lib/client-api";
-import React, { createContext, useContext, ReactNode, useState } from "react";
+import {
+  applyDraftPickUndone,
+  applyPlayerDrafted,
+  applyRosterModified,
+} from "@/lib/draft-delta";
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
 import { useRouter } from "@/i18n/routing";
 import { db } from "@/db";
 import { format } from "date-fns";
@@ -52,6 +71,16 @@ export interface PoolContextProps {
   poolInfo: Pool;
   updatePoolInfo: (newPoolInfo: Pool) => void;
 
+  // Applies a draft socket delta (a single pick, or its undo) to the pool.
+  // Falls back to refetching the pool when the delta cannot be applied, which
+  // means this client missed an earlier update.
+  applyDraftDelta: (
+    delta:
+      | { PlayerDrafted: PlayerDraftedResponse }
+      | { DraftPickUndone: DraftPickUndoneResponse }
+      | { RosterModified: RosterModifiedResponse }
+  ) => void;
+
   dictUsers: Record<string, PoolUser>;
 
   dailyPointsMade: DailyPoolPointsMade | null;
@@ -71,6 +100,12 @@ interface PoolContextProviderProps {
   children: ReactNode;
   pool: Pool;
 }
+
+const getPoolDictUsers = (pool: Pool) =>
+  pool.participants.reduce((acc: Record<string, PoolUser>, user) => {
+    acc[user.id] = user;
+    return acc;
+  }, {});
 
 const getPlayersOwner = (poolInfo: Pool) => {
   if (poolInfo.participants === null) {
@@ -257,12 +292,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       ? new Date(poolInfo.season_end + "T00:00:00")
       : endDate;
 
-  const getPoolDictUsers = (pool: Pool) =>
-    pool.participants.reduce((acc: Record<string, PoolUser>, user) => {
-      acc[user.id] = user;
-      return acc;
-    }, {});
-
   const [dictUsers, setDictUsers] = useState<Record<string, PoolUser>>(
     getPoolDictUsers(pool)
   );
@@ -381,20 +410,93 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     });
   }, [dateOfInterest, poolInfo]);
 
-  const updatePoolInfo = (newPoolInfo: Pool) => {
+  // The always-current pool, and the reason it exists twice.
+  //
+  // `poolInfo` reaches React state only after the Dexie read below resolves, so
+  // it lags. The draft socket cannot read it from a render closure either: the
+  // message handler is installed once at mount and would forever see the pool
+  // as it was on the first render. `updatePoolInfo` is the only writer of the
+  // pool, so this ref — which it updates synchronously — is authoritative, and
+  // the draft deltas are applied on top of it.
+  const poolInfoRef = useRef(poolInfo);
+
+  // Only ever calls state setters and the pure helpers above, so it is stable
+  // for the lifetime of the provider. That matters: the draft socket installs
+  // its message handler once, and the handler reaches the pool through here.
+  const updatePoolInfo = useCallback((newPoolInfo: Pool) => {
+    poolInfoRef.current = newPoolInfo;
     // @ts-expect-error, dexie is not typed.
     db.pools.get({ name: newPoolInfo.name }).then((poolDb) => {
       mergeScoreByDay(newPoolInfo, poolDb);
-      setPoolInfo(newPoolInfo);
       newPoolInfo.id = poolDb.id;
       // @ts-expect-error, dexie is not typed.
       db.pools.put(newPoolInfo, "name");
+      // Two picks landing back to back both reach this callback. Only the
+      // newest may reach the state, otherwise the draft board flickers back to
+      // the superseded pool — or stays on it, if the reads resolve out of order.
+      if (poolInfoRef.current !== newPoolInfo) {
+        return;
+      }
+      setPoolInfo(newPoolInfo);
     });
     const newDictUsers = getPoolDictUsers(newPoolInfo);
     setPlayersOwner(getPlayersOwner(newPoolInfo));
     setProtectedPlayers(getProtectedPlayers(newPoolInfo, newDictUsers));
     setDictUsers(newDictUsers);
-  };
+  }, []);
+
+  const resyncInFlight = useRef(false);
+
+  // Drop the local copy of the pool and take the server's. Used when a draft
+  // delta does not fit the pool we hold, which means we missed an update.
+  const resyncPoolInfo = useCallback(
+    async (poolName: string) => {
+      // A burst of unusable deltas should trigger one refetch, not one each.
+      if (resyncInFlight.current) {
+        return;
+      }
+      resyncInFlight.current = true;
+      try {
+        const refreshedPool = await fetchPoolInfo(poolName);
+        if (typeof refreshedPool === "string") {
+          console.error(`could not resynchronize the pool: ${refreshedPool}`);
+          return;
+        }
+        updatePoolInfo(refreshedPool);
+      } finally {
+        resyncInFlight.current = false;
+      }
+    },
+    [updatePoolInfo]
+  );
+
+  const applyDraftDelta = useCallback(
+    (
+      delta:
+        | { PlayerDrafted: PlayerDraftedResponse }
+        | { DraftPickUndone: DraftPickUndoneResponse }
+        | { RosterModified: RosterModifiedResponse }
+    ) => {
+      const currentPool = poolInfoRef.current;
+      let newPoolInfo: Pool | null;
+      if ("PlayerDrafted" in delta) {
+        newPoolInfo = applyPlayerDrafted(currentPool, delta.PlayerDrafted);
+      } else if ("DraftPickUndone" in delta) {
+        newPoolInfo = applyDraftPickUndone(currentPool, delta.DraftPickUndone);
+      } else {
+        newPoolInfo = applyRosterModified(currentPool, delta.RosterModified);
+      }
+
+      if (newPoolInfo === null) {
+        console.warn("a draft update was missed, refetching the pool.");
+        void resyncPoolInfo(currentPool.name);
+        return;
+      }
+
+      updatePoolInfo(newPoolInfo);
+    },
+    [resyncPoolInfo, updatePoolInfo]
+  );
 
   const contextValue: PoolContextProps = {
     selectedParticipant,
@@ -408,6 +510,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     protectedPlayers,
     poolInfo,
     updatePoolInfo,
+    applyDraftDelta,
     dictUsers,
     dailyPointsMade,
   };

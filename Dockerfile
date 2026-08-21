@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -18,31 +18,31 @@ ENV NEXT_PUBLIC_HANKO_API_URL=${NEXT_PUBLIC_HANKO_API_URL}
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
 # Install dumb-init to handle signals properly
 RUN apk add --no-cache dumb-init
 
-# Copy package files
-COPY package*.json ./
-
-# Install only production dependencies
-RUN npm ci --only=production
-
-# Copy built application from builder stage
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-
-# Expose port 3000
-EXPOSE 3000
-
-# Set environment to production
 ENV NODE_ENV=production
+
+# `output: "standalone"` traces the modules the server actually needs into
+# .next/standalone, so the runtime stage needs no npm install at all. The
+# static assets and public/ are not included by the trace and are copied
+# alongside, where the generated server.js picks them up.
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/public ./public
+
+# Drop root: the server only ever reads its own bundle.
+USER node
+
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
 # Use dumb-init to handle signals
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the application
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
