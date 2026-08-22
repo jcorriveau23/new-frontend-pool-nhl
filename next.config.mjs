@@ -20,17 +20,6 @@ const nextConfig = {
   // need a second `npm ci` or the full node_modules tree.
   output: "standalone",
   images: {
-    // Not required by anything rendered today: every NHL logo URL ends in
-    // `.svg`, and next/image serves `.svg` straight from the CDN rather than
-    // proxying it through the optimizer, so those never consult this list.
-    // The headshots are the ones that would — and they currently render
-    // through `<AvatarImage>`, a plain <img>, which also bypasses it.
-    //
-    // It is here so that the day a headshot (or any other .png/.jpg on this
-    // CDN) is moved to next/image, it works instead of returning
-    // `400 "url" parameter is not allowed`. The optimizer is a proxy and
-    // refuses any host absent from this list, so the entry is what keeps that
-    // refactor from silently breaking images.
     remotePatterns: [
       {
         protocol: "https",
