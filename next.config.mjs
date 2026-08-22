@@ -38,52 +38,14 @@ const nextConfig = {
       },
     ],
   },
-  // The server should not volunteer its framework and version to a scanner.
+  // Next advertises `X-Powered-By: Next.js` unless this is off. Kept here
+  // rather than stripped in Caddy because it is Next's own header and this is
+  // the switch that stops it being sent at all.
+  //
+  // The security headers that used to live here now sit in the Caddyfile of
+  // the deploy repo, where one copy covers the frontend, the backend and the
+  // injury file, and changing them does not need an image rebuild.
   poweredByHeader: false,
-  async headers() {
-    /*
-    Deliberately not a Content-Security-Policy. A useful one here has to allow
-    the Hanko element scripts, the NHL image CDN and the draft WebSocket, and
-    Next needs a per-request nonce through `proxy.ts` for its inline bootstrap
-    scripts — that is a change with its own testing story, not a line to slip
-    into a release week. These five are the ones that carry no such risk.
-
-    If the reverse proxy in front of this already adds any of them, drop it
-    here rather than serving the header twice.
-    */
-    return [
-      {
-        source: "/:path*",
-        headers: [
-          // Stop the browser from second-guessing a declared Content-Type,
-          // which is what turns an uploaded file into a script.
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          // Same-origin navigations keep the full referrer, cross-origin ones
-          // send the bare origin, and an HTTPS->HTTP downgrade sends nothing.
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          // Nothing here is meant to be framed, and a pool page inside someone
-          // else's frame is a clickjacking target for the draft controls.
-          { key: "X-Frame-Options", value: "DENY" },
-          // The app asks for none of these, so the grants start empty.
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
-          // Two years, subdomains included. Deliberately without `preload`:
-          // that ships the domain in a browser-baked list and is slow and
-          // painful to reverse, which is not a commitment to make days before
-          // a first launch.
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains",
-          },
-        ],
-      },
-    ];
-  },
   async rewrites() {
     // Proxy client-side /api-rust calls to the backend so the app works
     // without the host reverse proxy (e.g. next dev on localhost:3000).
