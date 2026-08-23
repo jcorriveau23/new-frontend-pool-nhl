@@ -27,6 +27,21 @@
   --ring: oklch(0.6 0.1 250);
   --selection: oklch(0.9 0.05 235);
   --selection-foreground: oklch(0.2 0.05 250);
+  /* Toasts are read at a glance, so the type carries a tinted surface of its
+     own rather than the neutral popover one. Text stays around L 0.45 on an
+     L 0.97 surface, which clears 4.5:1 against the tint. */
+  --toast-error-bg: oklch(0.97 0.025 25);
+  --toast-error-border: oklch(0.88 0.075 25);
+  --toast-error-text: oklch(0.45 0.17 27);
+  --toast-success-bg: oklch(0.97 0.03 152);
+  --toast-success-border: oklch(0.88 0.08 152);
+  --toast-success-text: oklch(0.42 0.12 152);
+  --toast-warning-bg: oklch(0.97 0.04 85);
+  --toast-warning-border: oklch(0.88 0.09 85);
+  --toast-warning-text: oklch(0.47 0.12 70);
+  --toast-info-bg: oklch(0.96 0.03 250);
+  --toast-info-border: oklch(0.88 0.06 250);
+  --toast-info-text: oklch(0.45 0.15 252);
   --chart-1: oklch(0.55 0.16 252);
   --chart-2: oklch(0.65 0.12 210);
   --chart-3: oklch(0.7 0.13 165);
@@ -70,6 +85,18 @@
   --ring: oklch(0.6 0.1 240);
   --selection: oklch(0.35 0.07 245);
   --selection-foreground: oklch(0.95 0.01 235);
+  --toast-error-bg: oklch(0.24 0.07 25);
+  --toast-error-border: oklch(0.35 0.11 25);
+  --toast-error-text: oklch(0.83 0.11 22);
+  --toast-success-bg: oklch(0.24 0.05 152);
+  --toast-success-border: oklch(0.33 0.08 152);
+  --toast-success-text: oklch(0.85 0.14 155);
+  --toast-warning-bg: oklch(0.24 0.05 85);
+  --toast-warning-border: oklch(0.34 0.08 85);
+  --toast-warning-text: oklch(0.85 0.13 90);
+  --toast-info-bg: oklch(0.24 0.05 250);
+  --toast-info-border: oklch(0.34 0.07 250);
+  --toast-info-text: oklch(0.8 0.1 235);
   --chart-1: oklch(0.65 0.15 252);
   --chart-2: oklch(0.7 0.12 210);
   --chart-3: oklch(0.75 0.13 165);

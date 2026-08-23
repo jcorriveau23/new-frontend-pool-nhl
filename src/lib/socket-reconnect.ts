@@ -2,9 +2,12 @@
 Backoff schedule for the draft room WebSocket.
 
 A draft runs for hours, so a dropped connection has to come back on its own.
-The browser WebSocket API exposes no protocol-level ping, which means an idle
-proxy timeout is indistinguishable from any other close and reconnecting is the
-only recovery the client can drive by itself.
+The server pings the socket every 20 seconds, which both keeps it under any
+sane proxy idle timeout and closes it once the client stops answering — so the
+drops this schedule recovers from are real ones (network change, backend
+restart) rather than idle sockets being reaped. The browser exposes no
+protocol-level ping of its own, so reconnecting stays the only recovery the
+client can drive by itself.
 
 Kept apart from the provider so the schedule can be tested without a DOM.
 */

@@ -3,24 +3,106 @@ name: Release
 on:
   release:
     types: [published]
-  push:
-    tags:
-      - "v*.*.*"
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  docker:
+  # Each architecture builds on a runner of its own architecture rather than
+  # emulating arm64 with QEMU, which roughly triples a Next.js production
+  # build. arm64 is what the production host needs (Ampere A1); amd64 is kept
+  # so the stack can still move back to an x86 host without touching CI.
+  build:
     name: Build and Push Docker Image
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
       packages: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
+
+      - name: Prepare platform slug
+        run: echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+        env:
+          platform: ${{ matrix.platform }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tags are applied by the merge job, not here. This is only for labels.
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      # push-by-digest: each architecture is pushed as an unnamed manifest.
+      # Neither is usable on its own; the merge job ties them together under
+      # the real tags.
+      - name: Build and Push Docker Image by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          # NEXT_PUBLIC_* is inlined into the client bundle at build time, so
+          # this has to be passed on every architecture's build, not just once.
+          build-args: |
+            NEXT_PUBLIC_HANKO_API_URL=${{ secrets.NEXT_PUBLIC_HANKO_API_URL }}
+          # Scoped per platform. Sharing one scope makes the two legs evict
+          # each other's node_modules and .next layers on every run.
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Collects the per-architecture digests into one multi-arch manifest list and
+  # publishes it under the release tags.
+  merge:
+    name: Merge manifests
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -40,16 +122,94 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            # Unconditional on purpose. This workflow only runs on
+            # `release: published`, where the ref is the release tag and never
+            # the default branch — so `enable={{is_default_branch}}` never
+            # fired and `latest` was never moved, while docker-compose.yml on
+            # the server pulls exactly that tag. Publishing a release has to
+            # move `latest` or the deploy below pulls the image it already has.
+            #
+            # `latest` now only moves here, once both architectures have been
+            # pushed, so a failed architecture leaves the previous image in
+            # place rather than publishing a half-updated tag.
+            type=raw,value=latest
 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v6
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+
+      - name: Inspect
+        run: docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  deploy:
+    name: Deploy to server
+    needs: merge
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Lets the job's own GITHUB_TOKEN pull the image it just pushed.
+      packages: read
+    steps:
+      - name: Pull the new image and restart the service
+        uses: appleboy/ssh-action@v1
         with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            NEXT_PUBLIC_HANKO_API_URL=${{ secrets.NEXT_PUBLIC_HANKO_API_URL }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          # The registry login is a no-op while the package is public, and is
+          # what keeps this working the day it is made private — no change on
+          # the server. The token is scoped to this run and expires with it.
+          script: |
+            set -eu
+            echo "${{ secrets.GITHUB_TOKEN }}" \
+              | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            cd /srv/slapshot
+
+            # Read both from compose rather than hardcoding, so this keeps
+            # working if the image reference in docker-compose.yml changes.
+            IMAGE_REF=$(docker compose config --images frontend | head -1)
+            PREVIOUS=$(docker compose images -q frontend || true)
+
+            docker compose pull frontend
+            docker compose up -d frontend
+
+            # `up -d` returns as soon as the container is started, which says
+            # nothing about whether it serves. Wait on the HEALTHCHECK baked
+            # into the image instead: without this a container that crash-loops
+            # on boot still leaves this job green.
+            status=starting
+            for _ in $(seq 1 40); do
+              cid=$(docker compose ps -q frontend)
+              if [ -n "$cid" ]; then
+                status=$(docker inspect \
+                  -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' \
+                  "$cid")
+                if [ "$status" = healthy ] || [ "$status" = none ]; then
+                  break
+                fi
+              fi
+              sleep 5
+            done
+
+            if [ "$status" = none ]; then
+              echo "WARNING: image defines no HEALTHCHECK, deploy not verified"
+            elif [ "$status" != healthy ]; then
+              echo "frontend is '$status' after ~200s, rolling back"
+              docker compose logs --tail=80 frontend || true
+              if [ -n "$PREVIOUS" ]; then
+                docker tag "$PREVIOUS" "$IMAGE_REF"
+                docker compose up -d frontend
+                echo "rolled back to $PREVIOUS"
+              else
+                echo "no previous image recorded, leaving the container up for inspection"
+              fi
+              exit 1
+            fi
+
+            # Only once the new image is known good: the previous one is
+            # dangling by now and this is what reclaims it, so pruning before
+            # the verification would throw away the rollback target.
+            docker image prune -f

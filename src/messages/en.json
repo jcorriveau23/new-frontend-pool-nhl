@@ -115,6 +115,8 @@
   "Reservists": "Reservists",
   "AvailableReservists": "Available reservists",
   "Player": "Player",
+  "TakenBy": "Taken by {poolerName}",
+  "ProtectedBy": "Protected by {poolerName}",
   "T": "Éq",
   "GP": "GP",
   "G": "G",

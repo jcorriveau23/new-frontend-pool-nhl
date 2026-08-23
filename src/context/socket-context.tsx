@@ -103,7 +103,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   );
   const session = useSession();
 
-  const { poolInfo, updatePoolInfo, applyDraftDelta } = usePoolContext();
+  const { poolInfo, updatePoolInfo, applyDraftDelta, resyncPoolInfo } =
+    usePoolContext();
   const t = useTranslations();
   const socketProtocol =
     window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -116,6 +117,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   // Set on unmount so an in-flight close does not schedule a reconnect for a
   // provider that is already gone.
   const teardownRef = useRef(false);
+  // Whether a socket of this provider has already been open once, which is what
+  // tells a reconnect from the first connection. `reconnectAttemptRef` cannot:
+  // the paths that reconnect immediately (back online, tab visible again, the
+  // manual button) reset it to zero before connecting, and those are exactly
+  // the drops long enough to have missed something.
+  const hasConnectedRef = useRef(false);
   // `connect` and `setupWebSocket` reference each other (a close schedules a
   // reconnect, which reconnects and re-attaches the handlers). Going through
   // refs breaks the cycle and keeps both out of each other's dependency lists.
@@ -230,6 +237,16 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
             `{"pool_name": "${poolInfo.name}", "number_poolers": ${poolInfo.settings.number_poolers}}`
           )
         );
+
+        // Whatever the room did while this socket was down was broadcast to
+        // the sockets that were connected, and JoinRoom replays none of it —
+        // it only republishes the user list. Without this the board keeps
+        // rendering the pool as it was before the drop until a later pick
+        // happens not to fit and trips the delta resync.
+        if (hasConnectedRef.current) {
+          resyncPoolInfo();
+        }
+        hasConnectedRef.current = true;
         toast(t("RoomJoined", { poolName: poolInfo.name }), { duration: 2000 });
         setSocketStatus(SocketStatus.Opened);
       };
@@ -264,6 +281,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       poolInfo.name,
       poolInfo.settings.number_poolers,
       scheduleReconnect,
+      resyncPoolInfo,
       t,
     ]
   );
