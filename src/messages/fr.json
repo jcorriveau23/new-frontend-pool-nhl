@@ -115,6 +115,8 @@
   "Reservists": "Réservistes",
   "AvailableReservists": "Réservistes disponibles",
   "Player": "Joueur",
+  "TakenBy": "Repêché par {poolerName}",
+  "ProtectedBy": "Protégé par {poolerName}",
   "T": "Éq",
   "GP": "PJ",
   "G": "B",

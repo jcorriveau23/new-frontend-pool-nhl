@@ -1,14 +1,15 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 /*
-Catch-all for unmatched paths under a locale.
+ * This page can be rendered after a route has already matched, so the
+ * response may still have a 200 status when streamed. Explicitly adding
+ * noindex prevents these soft 404 pages from being indexed.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
-Without it, /en/does-not-exist is resolved as a 404 above the locale segment
-and falls back to the built-in Next.js error page, which is untranslated and
-loses the app chrome. Calling notFound() here routes it to
-`[locale]/not-found.tsx` instead. Concrete routes take precedence over a
-catch-all, so this never shadows a real page.
-*/
 export default function CatchAllNotFound() {
   notFound();
 }

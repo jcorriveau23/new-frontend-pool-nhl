@@ -1,5 +1,3 @@
-"use server";
-
 import { NextResponse } from "next/server";
 
 import { getServerSideBoxScore } from "@/actions/game-boxscore";

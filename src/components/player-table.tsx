@@ -45,6 +45,16 @@ const DEFAULT_PAGE_SIZE = 100;
 const RANK_CELL = "w-8 sm:w-12 sm:sticky sm:left-0 sm:z-[1]";
 const NAME_CELL = "sticky left-0 z-[1] max-w-[36vw] sm:left-12 sm:max-w-xs";
 const STICKY_BG = "bg-background group-hover:bg-muted/50";
+// A player a pooler already holds stays in the list -- you still want to look
+// them up -- but the whole row is greyed out so the eye skips it while scanning
+// for who is left. These backgrounds have to be opaque: the rank and name cells
+// paint their own to scroll under, and a translucent one would stack on top of
+// the row's and come out a shade darker than the rest of the row.
+const TAKEN_ROW = "bg-muted text-muted-foreground hover:bg-accent";
+const TAKEN_STICKY_BG = "bg-muted group-hover:bg-accent";
+// In light mode `muted` sits only a few percent off the page background, which
+// is easy to miss on a row of numbers, so the state also gets an edge marker.
+const TAKEN_MARKER = "border-l-2 border-l-muted-foreground/40";
 // A phone has to fit a dozen stat columns, so they run tighter and smaller
 // there and only relax at sm. Anything wider than this and the columns the
 // user came for are pushed off screen.
@@ -398,11 +408,24 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
 
   const columns = showGoalieColumns ? goalieColumns : skaterColumns;
 
-  const PlayerNameCell = (player: Player) => {
+  // A player is unavailable once a pooler holds them, either by protecting them
+  // for next season or by drafting them. Protection wins over ownership: on the
+  // dynasty tab that is the only thing the table is about.
+  const getOwnership = (player: Player) => {
+    const protectedBy = protectedPlayers?.[player.id];
     const owner =
-      protectedPlayers?.[player.id] ??
+      protectedBy ??
       (considerOnlyProtected ? undefined : playersOwner?.[player.id]);
 
+    return owner
+      ? { owner, isProtected: protectedBy !== undefined }
+      : null;
+  };
+
+  const PlayerNameCell = (
+    player: Player,
+    ownership: ReturnType<typeof getOwnership>,
+  ) => {
     return (
       // The owner sits under the name rather than beside it: as a badge on the
       // same line it was both loud and, being wider than most player names,
@@ -416,9 +439,11 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
             e.stopPropagation();
           }}
         />
-        {owner ? (
-          <span className="truncate text-[10px] leading-none text-muted-foreground/70">
-            {owner}
+        {ownership ? (
+          <span className="truncate text-[10px] font-medium leading-tight text-muted-foreground">
+            {ownership.isProtected
+              ? t("ProtectedBy", { poolerName: ownership.owner })
+              : t("TakenBy", { poolerName: ownership.owner })}
           </span>
         ) : null}
       </div>
@@ -463,50 +488,60 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {players.map((player, i) => (
-          <TableRow
-            key={player.id}
-            className={cn("group", onPlayerSelect && "cursor-pointer")}
-            tabIndex={onPlayerSelect ? 0 : undefined}
-            onClick={() => onPlayerSelect?.(player)}
-            onKeyDown={(e) => {
-              if (onPlayerSelect && (e.key === "Enter" || e.key === " ")) {
-                e.preventDefault();
-                onPlayerSelect(player);
-              }
-            }}
-          >
-            <TableCell
+        {players.map((player, i) => {
+          const ownership = getOwnership(player);
+          const stickyBg = ownership ? TAKEN_STICKY_BG : STICKY_BG;
+
+          return (
+            <TableRow
+              key={player.id}
               className={cn(
-                RANK_CELL,
-                STICKY_BG,
-                STAT_CELL,
-                "py-1.5 tabular-nums text-muted-foreground",
+                "group",
+                onPlayerSelect && "cursor-pointer",
+                ownership && TAKEN_ROW,
               )}
+              tabIndex={onPlayerSelect ? 0 : undefined}
+              onClick={() => onPlayerSelect?.(player)}
+              onKeyDown={(e) => {
+                if (onPlayerSelect && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  onPlayerSelect(player);
+                }
+              }}
             >
-              {(isSearchActive ? 0 : skip) + i + 1}
-            </TableCell>
-            {/* The name keeps the default text size: it is what the row is
-                about, and the stats shrinking around it gives the hierarchy. */}
-            <TableCell
-              className={cn(NAME_CELL, STICKY_BG, "px-1 py-1.5 sm:px-2")}
-            >
-              {PlayerNameCell(player)}
-            </TableCell>
-            {columns.map((column) => (
               <TableCell
-                key={column.key}
                 className={cn(
+                  RANK_CELL,
+                  stickyBg,
                   STAT_CELL,
-                  "whitespace-nowrap py-1.5 tabular-nums",
-                  column.align === "right" && "text-right",
+                  "py-1.5 tabular-nums text-muted-foreground",
+                  ownership && TAKEN_MARKER,
                 )}
               >
-                {column.render(player)}
+                {(isSearchActive ? 0 : skip) + i + 1}
               </TableCell>
-            ))}
-          </TableRow>
-        ))}
+              {/* The name keeps the default text size: it is what the row is
+                  about, and the stats shrinking around it gives the hierarchy. */}
+              <TableCell
+                className={cn(NAME_CELL, stickyBg, "px-1 py-1.5 sm:px-2")}
+              >
+                {PlayerNameCell(player, ownership)}
+              </TableCell>
+              {columns.map((column) => (
+                <TableCell
+                  key={column.key}
+                  className={cn(
+                    STAT_CELL,
+                    "whitespace-nowrap py-1.5 tabular-nums",
+                    column.align === "right" && "text-right",
+                  )}
+                >
+                  {column.render(player)}
+                </TableCell>
+              ))}
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

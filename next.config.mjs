@@ -5,7 +5,8 @@ const withNextIntl = createNextIntlPlugin();
 // The production domains the app is served from. Extra origins (a LAN address
 // used to test on a phone, a staging host) are added through
 // EXTRA_ALLOWED_ORIGINS as a comma-separated list, so a developer's local
-// network address never has to be committed.
+// network address never has to be committed — and, with no default, never
+// ships in a production build either.
 const productionOrigins = ["slapshot.xyz", "www.slapshot.xyz"];
 const extraOrigins = (process.env.EXTRA_ALLOWED_ORIGINS ?? "")
   .split(",")
@@ -18,6 +19,22 @@ const nextConfig = {
   // Emit a self-contained server bundle so the Docker runtime stage does not
   // need a second `npm ci` or the full node_modules tree.
   output: "standalone",
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "assets.nhle.com",
+      },
+    ],
+  },
+  // Next advertises `X-Powered-By: Next.js` unless this is off. Kept here
+  // rather than stripped in Caddy because it is Next's own header and this is
+  // the switch that stops it being sent at all.
+  //
+  // The security headers that used to live here now sit in the Caddyfile of
+  // the deploy repo, where one copy covers the frontend, the backend and the
+  // injury file, and changing them does not need an image rebuild.
+  poweredByHeader: false,
   async rewrites() {
     // Proxy client-side /api-rust calls to the backend so the app works
     // without the host reverse proxy (e.g. next dev on localhost:3000).

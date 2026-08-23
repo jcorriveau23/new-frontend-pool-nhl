@@ -81,6 +81,11 @@ export interface PoolContextProps {
       | { RosterModified: RosterModifiedResponse }
   ) => void;
 
+  // Drop the local copy of the pool and take the server's. Needed on every
+  // socket reconnect: the room only republishes its user list on JoinRoom, so
+  // anything that happened while the socket was down is not replayed.
+  resyncPoolInfo: () => void;
+
   dictUsers: Record<string, PoolUser>;
 
   dailyPointsMade: DailyPoolPointsMade | null;
@@ -450,14 +455,14 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   // Drop the local copy of the pool and take the server's. Used when a draft
   // delta does not fit the pool we hold, which means we missed an update.
   const resyncPoolInfo = useCallback(
-    async (poolName: string) => {
+    async () => {
       // A burst of unusable deltas should trigger one refetch, not one each.
       if (resyncInFlight.current) {
         return;
       }
       resyncInFlight.current = true;
       try {
-        const refreshedPool = await fetchPoolInfo(poolName);
+        const refreshedPool = await fetchPoolInfo(poolInfoRef.current.name);
         if (typeof refreshedPool === "string") {
           console.error(`could not resynchronize the pool: ${refreshedPool}`);
           return;
@@ -489,7 +494,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
 
       if (newPoolInfo === null) {
         console.warn("a draft update was missed, refetching the pool.");
-        void resyncPoolInfo(currentPool.name);
+        void resyncPoolInfo();
         return;
       }
 
@@ -511,6 +516,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     poolInfo,
     updatePoolInfo,
     applyDraftDelta,
+    resyncPoolInfo,
     dictUsers,
     dailyPointsMade,
   };

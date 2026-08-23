@@ -45,8 +45,8 @@ export default function RootLayout({
               </PersistedProvider>
             </UserSessionProvider>
           </UserProvider>
+          <Toaster />
         </ThemeProvider>
-        <Toaster />
       </body>
     </html>
   );

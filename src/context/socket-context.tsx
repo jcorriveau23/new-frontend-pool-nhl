@@ -22,6 +22,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useSession } from "./useSessionData";
+import { reconnectDelay } from "@/lib/socket-reconnect";
 
 export interface RoomUser {
   id: string;
@@ -31,7 +32,6 @@ export interface RoomUser {
 }
 
 export interface SocketContextProps {
-  socket: WebSocket;
   roomUsers: Record<string, RoomUser> | null;
   sendSocketCommand: (command: string, arg: string | null) => void;
 }
@@ -103,7 +103,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   );
   const session = useSession();
 
-  const { poolInfo, updatePoolInfo, applyDraftDelta } = usePoolContext();
+  const { poolInfo, updatePoolInfo, applyDraftDelta, resyncPoolInfo } =
+    usePoolContext();
   const t = useTranslations();
   const socketProtocol =
     window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -111,10 +112,79 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
     typeof jwt === "string" && jwt !== "" ? jwt : "unauthenticated"
   }`;
   const socketRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptRef = useRef(0);
+  // Set on unmount so an in-flight close does not schedule a reconnect for a
+  // provider that is already gone.
+  const teardownRef = useRef(false);
+  // Whether a socket of this provider has already been open once, which is what
+  // tells a reconnect from the first connection. `reconnectAttemptRef` cannot:
+  // the paths that reconnect immediately (back online, tab visible again, the
+  // manual button) reset it to zero before connecting, and those are exactly
+  // the drops long enough to have missed something.
+  const hasConnectedRef = useRef(false);
+  // `connect` and `setupWebSocket` reference each other (a close schedules a
+  // reconnect, which reconnects and re-attaches the handlers). Going through
+  // refs breaks the cycle and keeps both out of each other's dependency lists.
+  const connectRef = useRef<() => void>(() => {});
+  const setupWebSocketRef = useRef<(socket: WebSocket) => void>(() => {});
+  const socketUrlRef = useRef(socketUrl);
+
+  const clearReconnectTimer = useCallback(() => {
+    if (reconnectTimerRef.current !== null) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleReconnect = useCallback(() => {
+    if (teardownRef.current || reconnectTimerRef.current !== null) {
+      return;
+    }
+    // Nothing is being watched in a hidden tab, and the visibilitychange
+    // listener below reconnects the moment it comes back — so a backgrounded
+    // phone stops retrying instead of waking the radio every 30 seconds.
+    if (document.visibilityState === "hidden") {
+      return;
+    }
+
+    const delay = reconnectDelay(reconnectAttemptRef.current);
+    reconnectAttemptRef.current += 1;
+    reconnectTimerRef.current = setTimeout(() => {
+      reconnectTimerRef.current = null;
+      connectRef.current();
+    }, delay);
+  }, []);
+
+  const detachHandlers = (socket: WebSocket) => {
+    socket.onopen = null;
+    socket.onmessage = null;
+    socket.onclose = null;
+    socket.onerror = null;
+  };
+
+  const connect = useCallback(() => {
+    clearReconnectTimer();
+
+    const existing = socketRef.current;
+    if (existing) {
+      // Detach before closing: this close is deliberate, and left attached it
+      // would count as a failure and schedule a second, competing reconnect.
+      detachHandlers(existing);
+      existing.close();
+    }
+
+    setSocketStatus(SocketStatus.Connecting);
+    const socket = new WebSocket(socketUrlRef.current);
+    socketRef.current = socket;
+    setupWebSocketRef.current(socket);
+  }, [clearReconnectTimer]);
 
   const sendSocketCommand = (command: string, arg: string | null) => {
-    console.info(`send command ${command}`);
-    if (!socketRef.current) {
+    // `send()` throws on a socket that is still CONNECTING or already CLOSED,
+    // which is exactly the window a reconnect runs in — so the readyState is
+    // what decides, not the mere presence of a ref.
+    if (socketRef.current?.readyState !== WebSocket.OPEN) {
       toast.error(t("SocketNotConnected"), { duration: 5000 });
       return;
     }
@@ -158,12 +228,25 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       };
 
       socket.onopen = () => {
+        // Reaching OPEN ends the streak, so the next unexpected drop starts
+        // its backoff from one second again rather than from the cap.
+        reconnectAttemptRef.current = 0;
         socket.send(
           createSocketCommand(
             Command.JoinRoom,
             `{"pool_name": "${poolInfo.name}", "number_poolers": ${poolInfo.settings.number_poolers}}`
           )
         );
+
+        // Whatever the room did while this socket was down was broadcast to
+        // the sockets that were connected, and JoinRoom replays none of it —
+        // it only republishes the user list. Without this the board keeps
+        // rendering the pool as it was before the drop until a later pick
+        // happens not to fit and trips the delta resync.
+        if (hasConnectedRef.current) {
+          resyncPoolInfo();
+        }
+        hasConnectedRef.current = true;
         toast(t("RoomJoined", { poolName: poolInfo.name }), { duration: 2000 });
         setSocketStatus(SocketStatus.Opened);
       };
@@ -171,12 +254,25 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       socket.onclose = () => {
         setSocketStatus(SocketStatus.Closed);
 
-        toast(t("ConnectionClosed", { poolName: poolInfo.name }), { duration: 2000 });
+        // Only the first drop of a streak is announced. The retries are silent,
+        // so a flapping connection reports itself through the status indicator
+        // instead of burying the draft in toasts.
+        if (reconnectAttemptRef.current === 0) {
+          toast(t("ConnectionClosed", { poolName: poolInfo.name }), {
+            duration: 2000,
+          });
+        }
+
+        scheduleReconnect();
       };
 
+      // An error is always followed by a close, which is where the reconnect
+      // is scheduled — so this only has to report, and only for the first
+      // failure of a streak.
       socket.onerror = (error) => {
-        console.error("WebSocket error", error);
-        toast.error(`WebSocket error`, { duration: 2000 });
+        if (reconnectAttemptRef.current === 0) {
+          console.error("WebSocket error", error);
+        }
       };
     },
     [
@@ -184,42 +280,76 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       applyDraftDelta,
       poolInfo.name,
       poolInfo.settings.number_poolers,
+      scheduleReconnect,
+      resyncPoolInfo,
       t,
     ]
   );
 
+  // `connect` reaches the current handlers through these, so a reconnect that
+  // fires minutes into a draft re-joins with the pool name and pooler count as
+  // they are now, not as they were when the socket first opened.
+  //
+  // Declared above the connecting effect on purpose: effects run in source
+  // order, so these are populated before the first connect() reads them, and
+  // refreshed after every later render. Assigning during render instead would
+  // mutate on renders React goes on to discard.
   useEffect(() => {
-    const socket = new WebSocket(socketUrl);
-    socketRef.current = socket;
-    setupWebSocket(socket);
+    setupWebSocketRef.current = setupWebSocket;
+    connectRef.current = connect;
+    socketUrlRef.current = socketUrl;
+  });
+
+  useEffect(() => {
+    teardownRef.current = false;
+    connect();
+
+    // A backoff timer is not the only way back. These two cover the cases that
+    // actually strand a draft: the laptop that slept through a proxy's idle
+    // timeout, and the phone that changed networks. Both reconnect at once
+    // rather than waiting out whatever delay the streak had reached.
+    const reconnectNow = () => {
+      if (teardownRef.current) {
+        return;
+      }
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        return;
+      }
+      reconnectAttemptRef.current = 0;
+      connectRef.current();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        reconnectNow();
+      }
+    };
+
+    window.addEventListener("online", reconnectNow);
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      // Detach the handlers before closing so this deliberate close (unmount
-      // or React strict-mode dev remount) does not trigger error/close toasts.
-      socket.onopen = null;
-      socket.onmessage = null;
-      socket.onclose = null;
-      socket.onerror = null;
-      socket.close();
-      if (socketRef.current === socket) {
+      teardownRef.current = true;
+      clearReconnectTimer();
+      window.removeEventListener("online", reconnectNow);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+
+      const socket = socketRef.current;
+      if (socket) {
+        // Detach before closing so this deliberate close (unmount, or a React
+        // strict-mode dev remount) neither toasts nor schedules a reconnect.
+        detachHandlers(socket);
+        socket.close();
         socketRef.current = null;
       }
     };
-    // Connect once per mount. `setupWebSocket` and `socketUrl` change whenever
-    // the pool object does, and listing them would tear down and re-open the
-    // socket on every pool update — including the ones the socket delivers.
-    // Reconnecting is done explicitly through `onSocketReconnect`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [connect, clearReconnectTimer]);
 
+  // The manual escape hatch, for when the automatic retries have backed off to
+  // the cap and the user would rather not wait out the delay.
   const onSocketReconnect = () => {
-    if (socketRef.current) {
-      socketRef.current.close();
-    }
-    const newSocket = new WebSocket(socketUrl);
-    socketRef.current = newSocket;
-    setupWebSocket(newSocket);
-    setSocketStatus(SocketStatus.Connecting);
+    reconnectAttemptRef.current = 0;
+    connect();
   };
 
   const renderSocketConnection = (socketStatus: SocketStatus) => (
@@ -245,7 +375,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   );
 
   const contextValue: SocketContextProps = {
-    socket: socketRef.current!,
     sendSocketCommand,
     roomUsers,
   };
