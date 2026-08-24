@@ -12,6 +12,7 @@ import { usePoolContext } from "@/context/pool-context";
 import { useTranslations } from "next-intl";
 import PageTitle from "@/components/page-title";
 import FavoritePoolButton from "@/components/favorite-pool-button";
+import SharePoolButton from "@/components/share-pool-button";
 import { useSession } from "@/context/useSessionData";
 import {
   Tooltip,
@@ -67,6 +68,7 @@ export default function PoolStatus() {
     <>
       <PoolStateIcon status={poolInfo.status} />
       <FavoritePoolButton poolName={poolInfo.name} className="-my-1" />
+      <SharePoolButton poolName={poolInfo.name} className="-my-1" />
     </>
   );
 
@@ -77,7 +79,11 @@ export default function PoolStatus() {
     return (
       <SocketProvider jwt={userSession.info?.jwt}>
         <PageTitle title={poolInfo.name} titleAdornment={titleAdornment} />
-        {poolInfo.status === PoolState.Created ? <CreatedPool /> : <DraftPool />}
+        {poolInfo.status === PoolState.Created ? (
+          <CreatedPool />
+        ) : (
+          <DraftPool />
+        )}
       </SocketProvider>
     );
   }

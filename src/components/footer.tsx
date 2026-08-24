@@ -5,7 +5,7 @@ import { Link } from "@/i18n/routing";
 The footer of the web app.
  */
 
-import { GithubIcon, TwitterIcon } from "lucide-react";
+import { GitHubIcon, XIcon } from "@/components/brand-icons";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
@@ -31,17 +31,16 @@ export default function Footer() {
         <div className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold">{t("FollowUs")}</h3>
           <Link
-            href="https://twitter.com/hockeypool3"
+            href="https://x.com/hockeypool3"
             className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
           >
-            <TwitterIcon className="size-4" />
-            Twitter
+            <XIcon className="size-4" />X
           </Link>
           <Link
             href="https://github.com/jcorriveau23/new-frontend-pool-nhl"
             className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
           >
-            <GithubIcon className="size-4" />
+            <GitHubIcon className="size-4" />
             GitHub
           </Link>
         </div>
