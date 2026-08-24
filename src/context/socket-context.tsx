@@ -2,7 +2,6 @@
 Module that manage the socket connection as a context manager to centralize logics between page that needs to have sockets.
 (Draft/Pool creation)
 */
-import { Signal } from "lucide-react";
 import React, {
   createContext,
   useContext,
@@ -15,12 +14,10 @@ import React, {
 import { usePoolContext } from "./pool-context";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  SocketStatus,
+  SocketStatusIndicator,
+} from "@/components/socket-status-indicator";
 import { useSession } from "./useSessionData";
 import { reconnectDelay } from "@/lib/socket-reconnect";
 
@@ -52,20 +49,6 @@ export enum Command {
   UndoDraftPlayer = "UndoDraftPlayer",
   ModifyRoster = "ModifyRoster",
 }
-
-enum SocketStatus {
-  Connecting = "Connecting",
-  Opened = "Connected",
-  Closing = "Closing",
-  Closed = "Closed",
-}
-
-const SOCKET_STATUS_TO_COLOR: Record<SocketStatus, string> = {
-  [SocketStatus.Connecting]: "yellow",
-  [SocketStatus.Opened]: "green",
-  [SocketStatus.Closing]: "orange",
-  [SocketStatus.Closed]: "red",
-};
 
 export const useSocketContext = (): SocketContextProps => {
   const context = useContext(SocketContext);
@@ -101,6 +84,13 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const [socketStatus, setSocketStatus] = useState<SocketStatus>(
     SocketStatus.Connecting
   );
+  // When the pending retry is due, so the indicator can count it down instead
+  // of leaving the user staring at a dead socket with no idea anything is
+  // still being attempted.
+  const [nextRetryAt, setNextRetryAt] = useState<number | null>(null);
+  // Assumed true until an effect can read `navigator`, which keeps the first
+  // client render identical to the server's.
+  const [isOnline, setIsOnline] = useState(true);
   const session = useSession();
 
   const { poolInfo, updatePoolInfo, applyDraftDelta, resyncPoolInfo } =
@@ -150,6 +140,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
     const delay = reconnectDelay(reconnectAttemptRef.current);
     reconnectAttemptRef.current += 1;
+    setNextRetryAt(Date.now() + delay);
     reconnectTimerRef.current = setTimeout(() => {
       reconnectTimerRef.current = null;
       connectRef.current();
@@ -174,7 +165,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       existing.close();
     }
 
-    setSocketStatus(SocketStatus.Connecting);
+    // No retry is outstanding once this attempt starts, whether it came from
+    // the backoff timer or from the manual button.
+    setNextRetryAt(null);
+    setSocketStatus(
+      hasConnectedRef.current
+        ? SocketStatus.Reconnecting
+        : SocketStatus.Connecting
+    );
     const socket = new WebSocket(socketUrlRef.current);
     socketRef.current = socket;
     setupWebSocketRef.current(socket);
@@ -248,11 +246,18 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
         }
         hasConnectedRef.current = true;
         toast(t("RoomJoined", { poolName: poolInfo.name }), { duration: 2000 });
-        setSocketStatus(SocketStatus.Opened);
+        setNextRetryAt(null);
+        setSocketStatus(SocketStatus.Connected);
       };
 
       socket.onclose = () => {
-        setSocketStatus(SocketStatus.Closed);
+        // A drop is never reported as a resting state: the provider always has
+        // a way back from here, so the indicator says so.
+        setSocketStatus(
+          hasConnectedRef.current
+            ? SocketStatus.Reconnecting
+            : SocketStatus.Connecting
+        );
 
         // Only the first drop of a streak is announced. The retries are silent,
         // so a flapping connection reports itself through the status indicator
@@ -302,6 +307,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
   useEffect(() => {
     teardownRef.current = false;
+    setIsOnline(navigator.onLine);
     connect();
 
     // A backoff timer is not the only way back. These two cover the cases that
@@ -325,13 +331,24 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       }
     };
 
-    window.addEventListener("online", reconnectNow);
+    // Tracked as well as acted on: a socket that cannot come back because the
+    // device has no network is a different message to the user than one that
+    // is being retried.
+    const onOnline = () => {
+      setIsOnline(true);
+      reconnectNow();
+    };
+    const onOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       teardownRef.current = true;
       clearReconnectTimer();
-      window.removeEventListener("online", reconnectNow);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
       document.removeEventListener("visibilitychange", onVisibilityChange);
 
       const socket = socketRef.current;
@@ -352,27 +369,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
     connect();
   };
 
-  const renderSocketConnection = (socketStatus: SocketStatus) => (
-    <div className="fixed bottom-4 left-4 z-50">
-      <Popover>
-        <PopoverTrigger render={<Button variant="outline" />}>
-          <Signal color={SOCKET_STATUS_TO_COLOR[socketStatus]} />
-        </PopoverTrigger>
-        <PopoverContent>
-          <div className="text-sm font-medium">
-            {t("WebSocketConnection", { socketStatus: t(socketStatus) })}
-          </div>
-          <div className="mt-3">
-            {socketStatus === SocketStatus.Closed ? (
-              <Button onClick={() => onSocketReconnect()}>
-                {t("Reconnect")}
-              </Button>
-            ) : null}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
+  // A socket that is down because the device has no network is reported as
+  // such rather than as an endless retry, since only the user can fix it.
+  const displayStatus =
+    !isOnline && socketStatus !== SocketStatus.Connected
+      ? SocketStatus.Offline
+      : socketStatus;
 
   const contextValue: SocketContextProps = {
     sendSocketCommand,
@@ -381,7 +383,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
 
   return (
     <SocketContext.Provider value={contextValue}>
-      {renderSocketConnection(socketStatus)}
+      <SocketStatusIndicator
+        status={displayStatus}
+        nextRetryAt={nextRetryAt}
+        onReconnect={onSocketReconnect}
+      />
       {children}
     </SocketContext.Provider>
   );
