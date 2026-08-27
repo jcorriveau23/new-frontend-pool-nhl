@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
   HomeIcon,
   PencilIcon,
@@ -41,6 +42,7 @@ import {
 } from "./ui/dropdown-menu";
 import LogoutMenuItem from "./hanko/logout-button";
 import { useFavoritePools } from "@/hooks/use-favorite-pools";
+import { seasonFormat } from "@/app/utils/formating";
 
 export function AppSidebar({
   currentSeason,
@@ -96,6 +98,17 @@ export function AppSidebar({
 
   const user = useUser();
   const { favorites, toggleFavorite } = useFavoritePools();
+
+  const favoritesBySeason = React.useMemo(() => {
+    const groups = new Map<number | null, string[]>();
+    for (const { name, season } of favorites) {
+      groups.set(season, [...(groups.get(season) ?? []), name]);
+    }
+    return Array.from(groups, ([season, poolNames]) => ({
+      season,
+      poolNames: poolNames.sort((a, b) => a.localeCompare(b)),
+    })).sort((a, b) => (b.season ?? 0) - (a.season ?? 0));
+  }, [favorites]);
   const router = useRouter();
   const pathname = usePathname();
   const { setOpenMobile, isMobile } = useSidebar();
@@ -155,12 +168,7 @@ export function AppSidebar({
   const connectButton = () => (
     <SidebarMenuItem>
       <SidebarMenuButton
-        render={
-          <Link
-            href="/login"
-            onClick={closeOnMobile}
-          />
-        }
+        render={<Link href="/login" onClick={closeOnMobile} />}
       >
         <LogInIcon />
         <span>{t("Connect")}</span>
@@ -198,45 +206,54 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {favorites.length > 0 ? (
+        {favoritesBySeason.length > 0 ? (
           <SidebarGroup>
             <SidebarGroupLabel>{t("Favorites")}</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {[...favorites]
-                  .sort((a, b) => a.localeCompare(b))
-                  .map((poolName) => (
-                    <SidebarMenuItem key={poolName}>
-                      <SidebarMenuButton
-                        isActive={isActive(`/pool/${poolName}`)}
-                        render={
-                          <Link
-                            href={`/pool/${poolName}`}
-                            onClick={closeOnMobile}
-                          />
-                        }
-                      >
-                        <Star />
-                        <span className="truncate">{poolName}</span>
-                      </SidebarMenuButton>
-                      <SidebarMenuAction
-                        showOnHover
-                        aria-label={t("RemoveFromFavorites", {
-                          pool: poolName,
-                        })}
-                        onClick={() => toggleFavorite(poolName)}
-                      >
-                        <X />
-                      </SidebarMenuAction>
-                    </SidebarMenuItem>
-                  ))}
-              </SidebarMenu>
+              {favoritesBySeason.map(({ season, poolNames }) => (
+                <div key={season ?? "unknown-season"}>
+                  {season !== null ? (
+                    <div className="text-muted-foreground/70 px-2 pb-0.5 pt-1 text-xs font-medium">
+                      {seasonFormat(season, 0)}
+                    </div>
+                  ) : null}
+                  <SidebarMenu>
+                    {poolNames.map((poolName) => (
+                      <SidebarMenuItem key={poolName}>
+                        <SidebarMenuButton
+                          isActive={isActive(`/pool/${poolName}`)}
+                          render={
+                            <Link
+                              href={`/pool/${poolName}`}
+                              onClick={closeOnMobile}
+                            />
+                          }
+                        >
+                          <Star />
+                          <span className="truncate">{poolName}</span>
+                        </SidebarMenuButton>
+                        <SidebarMenuAction
+                          showOnHover
+                          aria-label={t("RemoveFromFavorites", {
+                            pool: poolName,
+                          })}
+                          onClick={() => toggleFavorite(poolName)}
+                        >
+                          <X />
+                        </SidebarMenuAction>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </div>
+              ))}
             </SidebarGroupContent>
           </SidebarGroup>
         ) : null}
         <SidebarGroup>
           <SidebarGroupLabel>{t("MainPages")}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenuItems(hockeyPoolItems)}</SidebarGroupContent>
+          <SidebarGroupContent>
+            {renderMenuItems(hockeyPoolItems)}
+          </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>{t("NhlStatsPages")}</SidebarGroupLabel>
