@@ -19,8 +19,10 @@ import PlayerLink from "@/components/player-link";
 import team_info from "@/lib/teams";
 import { TeamLogo } from "./team-logo";
 import { useTranslations } from "next-intl";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Badge } from "./ui/badge";
 import DraftStatus from "./draft-status";
+import { YouBadge } from "./pooler-name";
 import DraftButton from "./draft-button";
 import {
   Dialog,
@@ -353,6 +355,7 @@ export default function Draft(props: DraftProps) {
                   <span className="font-medium">
                     {dictUsers[pick.drafter]?.name}
                   </span>
+                  {pick.drafter === userData.info?.id ? <YouBadge /> : null}
                   {pick.from ? (
                     <Badge
                       variant="outline"
@@ -437,7 +440,7 @@ export default function Draft(props: DraftProps) {
   }, [poolInfo.context?.players_name_drafted]);
 
   if (draftInfo === null) {
-    return <h1>Loading draft info...</h1>;
+    return <TableSkeleton rows={8} label={t("LoadingDraftInfo")} />;
   }
   return (
     <div className="space-y-4 py-2">

@@ -2,6 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { PreviewPlayer, PreviewTotal } from "./preview-content";
 import { TeamLogo } from "@/components/team-logo";
 import PlayerLink from "@/components/player-link";
+import { PoolerName } from "@/components/pooler-name";
 import { GameStatePopover } from "@/components/game-state-popover";
 import { GamesNightStatus } from "@/context/games-night-context";
 
@@ -20,9 +21,7 @@ export const TotalPreviewColumn: ColumnDef<PreviewTotal>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row }) => {
-      return row.original.participant;
-    },
+    cell: ({ row }) => <PoolerName name={row.original.participant} />,
   },
   {
     accessorKey: "forwardsPlaying",

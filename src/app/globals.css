@@ -170,4 +170,19 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Height of anything pinned over the bottom of the viewport, which today is
+     only the mobile install banner. Sticky action bars sit on top of it rather
+     than under it, and the page reserves the same space at its end so the
+     footer is never covered. Kept in CSS instead of JS because the banner is
+     hidden by a breakpoint, not unmounted. */
+  :root {
+    --app-bottom-inset: 0px;
+  }
+
+  @media (width < 48rem) {
+    :root:has([data-install-banner]) {
+      --app-bottom-inset: 4.5rem;
+    }
+  }
 }

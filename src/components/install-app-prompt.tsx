@@ -114,7 +114,10 @@ export default function InstallAppPrompt() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
+      <div
+        data-install-banner
+        className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
+      >
         <div className="mx-auto flex max-w-5xl items-center gap-3">
           <Image
             src="/icons/icon-192.png"

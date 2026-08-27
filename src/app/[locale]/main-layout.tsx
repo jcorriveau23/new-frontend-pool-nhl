@@ -32,7 +32,7 @@ export default function MainLayout({
         <GamesNightProvider>
           <SidebarProvider>
             <AppSidebar currentSeason={currentSeason} draftYear={draftYear} />
-            <SidebarInset>
+            <SidebarInset className="pb-[var(--app-bottom-inset)]">
               <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
                 <SidebarTrigger className="-ml-1" />
                 <Separator

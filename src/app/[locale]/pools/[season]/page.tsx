@@ -84,6 +84,7 @@ export default async function Pools(props: {
       {hasPools ? (
         <PoolList
           pools={pools}
+          season={Number(params.season)}
           queryString={queryString}
           seasonSelector={seasonSelector}
         />

@@ -48,12 +48,14 @@ const countByStatus = (
 
 interface Props {
   pools: ProjectedPoolShort[];
+  season: number;
   queryString: string;
   seasonSelector: React.ReactNode;
 }
 
 export default function PoolList({
   pools,
+  season,
   queryString,
   seasonSelector,
 }: Props) {
@@ -165,7 +167,11 @@ export default function PoolList({
             {t(pool.status)}
           </span>
         ) : null}
-        <FavoritePoolButton poolName={pool.name} className="relative -mr-2" />
+        <FavoritePoolButton
+          poolName={pool.name}
+          season={season}
+          className="relative -mr-2"
+        />
       </Card>
     );
   };

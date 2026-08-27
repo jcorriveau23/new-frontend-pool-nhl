@@ -67,7 +67,11 @@ export default function PoolStatus() {
   const titleAdornment = (
     <>
       <PoolStateIcon status={poolInfo.status} />
-      <FavoritePoolButton poolName={poolInfo.name} className="-my-1" />
+      <FavoritePoolButton
+        poolName={poolInfo.name}
+        season={poolInfo.season}
+        className="-my-1"
+      />
       <SharePoolButton poolName={poolInfo.name} className="-my-1" />
     </>
   );

@@ -139,7 +139,7 @@ export const SocketStatusIndicator: React.FC<SocketStatusIndicatorProps> = ({
   const isAttemptInFlight = !isConnected && nextRetryAt === null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50">
       {/* Announced on change so the state of the room is not carried by colour
       alone, and so it reaches a user who never opens the popover. */}
       <span role="status" aria-live="polite" className="sr-only">
