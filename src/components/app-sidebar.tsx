@@ -146,9 +146,7 @@ export function AppSidebar({
           <DropdownMenuItem onClick={() => router.push("/profile")}>
             <span>{t("Account")}</span>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <LogoutMenuItem />
-          </DropdownMenuItem>
+          <LogoutMenuItem />
         </DropdownMenuContent>
       </DropdownMenu>
     </SidebarMenuItem>

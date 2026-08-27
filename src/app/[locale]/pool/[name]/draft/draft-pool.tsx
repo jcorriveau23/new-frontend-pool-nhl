@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import React from "react";
 import UndoButton from "@/components/undo-button";
-import StartingRoster from "@/components/starting-roster";
+import LineupDialog from "@/components/lineup-dialog";
 import { useUser } from "@/context/useUserData";
 
 export default function DraftPage() {
@@ -127,27 +127,20 @@ export default function DraftPage() {
             </ScrollArea>
           </DialogContent>
         </Dialog>
-        <Dialog>
-          <DialogTrigger render={<Button variant="outline" />}>
-            {t("PoolersRoster")}
-          </DialogTrigger>
-          <DialogContent className="flex h-full max-h-[92%] w-full max-w-5xl flex-col gap-3 p-4 sm:p-6">
-            <DialogHeader>
-              <DialogTitle>{t("PoolersRoster")}</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="min-h-0 flex-1">
-              <StartingRoster
-                userRoster={getPoolerActivePlayers(
-                  poolInfo.context!,
-                  poolInfo.participants.find(
-                    (user) => user.name === selectedParticipant
-                  ) ?? poolInfo.participants[0]
-                )}
-                teamSalaryCap={poolInfo.settings.salary_cap}
-              />
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
+        <LineupDialog
+          title={t("PoolersRoster")}
+          triggerRender={<Button variant="outline" />}
+          triggerContent={t("PoolersRoster")}
+          roster={{
+            userRoster: getPoolerActivePlayers(
+              poolInfo.context!,
+              poolInfo.participants.find(
+                (user) => user.name === selectedParticipant
+              ) ?? poolInfo.participants[0]
+            ),
+            teamSalaryCap: poolInfo.settings.salary_cap,
+          }}
+        />
         <UndoButton
           disabled={
             poolInfo.context?.players_name_drafted.length == 0 ||

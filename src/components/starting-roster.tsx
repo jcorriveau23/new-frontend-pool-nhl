@@ -59,6 +59,9 @@ interface Props {
   // Production data behind the analysis charts. Absent outside of a running
   // pool, where nothing has been scored yet.
   analytics?: LineupAnalytics;
+  // Reports whether the lineup holds edits that could still be saved, so a
+  // host dialog can warn before throwing them away.
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 type StarterGroup = "forwards" | "defense" | "goalies";
@@ -212,6 +215,15 @@ export default function StartingRoster(props: Props) {
       props.userRoster.reservists.some((p) => p.id === playerId)
   ).length;
   const hasUnsavedChanges = movedPlayerCount > 0;
+
+  // Only savable edits are worth guarding: in simulation mode nothing can be
+  // persisted, so discarding the arrangement on close is the expected outcome
+  // and a confirmation would just be in the way.
+  const isDirty = canSaveLineup && hasUnsavedChanges;
+  const { onDirtyChange } = props;
+  React.useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   // Same validations as the backend, reported before the request is sent so the
   // pooler knows what to fix.

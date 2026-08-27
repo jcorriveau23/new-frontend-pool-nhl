@@ -561,7 +561,7 @@ export default function ProtectionRoster(props: Props) {
         ProtectionPanel()
       )}
 
-      <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-2 border-t bg-background/95 py-3 backdrop-blur">
+      <div className="sticky bottom-[var(--app-bottom-inset)] z-10 flex flex-wrap items-center justify-between gap-2 border-t bg-background/95 py-3 backdrop-blur">
         <div className="min-w-0 text-xs">
           {!canEdit ? (
             <p className="flex items-center gap-2 text-muted-foreground">

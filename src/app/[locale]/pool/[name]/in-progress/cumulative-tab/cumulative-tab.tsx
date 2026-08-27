@@ -72,7 +72,7 @@ import { useSession } from "@/context/useSessionData";
 import { toast } from "sonner";
 import InformationIcon from "@/components/information-box";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import StartingRoster from "@/components/starting-roster";
+import LineupDialog from "@/components/lineup-dialog";
 import { getPoolerCapUsage } from "@/lib/lineup-analytics";
 import { PoolerUserGlobalSelector } from "@/components/pool-user-selector";
 import {
@@ -95,6 +95,7 @@ import { TimeRangePoolChart } from "@/components/chart/time-range-pool-chart";
 import { TimeRangeGoalieChart } from "@/components/chart/time-range-goalie-chart";
 import { useUser } from "@/context/useUserData";
 import PlayersTable from "@/components/player-table";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -206,7 +207,7 @@ export default function CumulativeTab() {
   }, [poolInfo, dailyPointsMade, poolStartDate, poolSelectedEndDate]);
 
   if (ranking === null || playerStats === null) {
-    return <h1>Loading ranking and player stats...</h1>;
+    return <TableSkeleton rows={10} label={t("LoadingPoolRanking")} />;
   }
 
   const rankedByPoints = [...ranking].sort(
@@ -500,34 +501,28 @@ export default function CumulativeTab() {
         <div className="mb-2 flex justify-end">
           {/* No key on the dialog: the pooler selector inside it changes the
               participant, and remounting would close the dialog. */}
-          <Dialog>
-            <DialogTrigger render={<Button variant="outline" size="sm" />}>
-              <PencilLine className="size-4" />
-              {canSaveLineupOf(participant)
+          <LineupDialog
+            title={
+              canSaveLineupOf(participant)
                 ? t("EditLineup")
-                : t("SimulateLineup")}
-            </DialogTrigger>
-            <DialogContent className="flex h-full max-h-[92%] w-full max-w-5xl flex-col gap-3 p-4 sm:p-6">
-              <DialogHeader>
-                <DialogTitle>
-                  {canSaveLineupOf(participant)
-                    ? t("EditLineup")
-                    : t("SimulateLineup")}
-                </DialogTitle>
-              </DialogHeader>
-              <ScrollArea className="min-h-0 flex-1">
-                <StartingRoster
-                  userRoster={getPoolerActivePlayers(
-                    poolInfo.context!,
-                    participant,
-                  )}
-                  teamSalaryCap={poolInfo.settings.salary_cap}
-                  poolerEntries={poolerEntries}
-                  analytics={lineupAnalytics}
-                />
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
+                : t("SimulateLineup")
+            }
+            triggerRender={<Button variant="outline" size="sm" />}
+            triggerContent={
+              <>
+                <PencilLine className="size-4" />
+                {canSaveLineupOf(participant)
+                  ? t("EditLineup")
+                  : t("SimulateLineup")}
+              </>
+            }
+            roster={{
+              userRoster: getPoolerActivePlayers(poolInfo.context!, participant),
+              teamSalaryCap: poolInfo.settings.salary_cap,
+              poolerEntries: poolerEntries,
+              analytics: lineupAnalytics,
+            }}
+          />
         </div>
       ) : null}
       {poolInfo.settings.number_forwards > 0 ? (

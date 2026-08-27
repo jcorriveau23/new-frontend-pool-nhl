@@ -63,13 +63,13 @@ export function DataTable<TData, TValue>({
   rowClickable = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>(
-    initialState?.sorting ?? []
+    initialState?.sorting ?? [],
   );
   const [columnPinning, setColumnPinning] = React.useState<ColumnPinningState>(
     initialState?.columnPinning ?? {
       left: [],
       right: [],
-    }
+    },
   );
   const t = useTranslations();
 
@@ -134,7 +134,7 @@ export function DataTable<TData, TValue>({
 
       setPinnedOffsets((previous) => {
         const isSame = Object.keys(offsets).every(
-          (id) => previous[id] === offsets[id]
+          (id) => previous[id] === offsets[id],
         );
         return isSame &&
           Object.keys(previous).length === Object.keys(offsets).length
@@ -147,7 +147,7 @@ export function DataTable<TData, TValue>({
 
     const observer = new ResizeObserver(computeOffsets);
     Object.values(measuredCells.current).forEach((cell) =>
-      observer.observe(cell)
+      observer.observe(cell),
     );
     return () => observer.disconnect();
     // `pinnedIds` is the joined id string of the two pinned-column arrays: it
@@ -172,7 +172,7 @@ export function DataTable<TData, TValue>({
   const getPinnedClassName = (
     column: Column<TData, unknown>,
     headerBackground: boolean,
-    rowStyles = ""
+    rowStyles = "",
   ) => {
     const isPinned = column.getIsPinned();
     if (!isPinned) {
@@ -215,7 +215,7 @@ export function DataTable<TData, TValue>({
         hoverBackground,
         rowStyles,
         accentReset,
-        column.id === lastLeftPinnedId && "border-r"
+        column.id === lastLeftPinnedId && "border-r",
       );
     }
     return cn(
@@ -226,7 +226,7 @@ export function DataTable<TData, TValue>({
       accentReset,
       // The colour has to be restated: `rowStyles` may have tinted the left
       // border for the accent above, and only its width is reset here.
-      column.id === firstRightPinnedId && "border-l border-l-border"
+      column.id === firstRightPinnedId && "border-l border-l-border",
     );
   };
 
@@ -275,19 +275,19 @@ export function DataTable<TData, TValue>({
                       startsColumnGroup(header.column) && "border-l",
                       // Pinned cells keep their opaque background, so the
                       // sorted tint above only applies to scrollable columns.
-                      getPinnedClassName(header.column, true)
+                      getPinnedClassName(header.column, true),
                     )}
                   >
                     {header.isPlaceholder ? null : (
                       <div
                         className={cn(
                           "flex items-center gap-0.5",
-                          header.colSpan > 1 && "justify-center"
+                          header.colSpan > 1 && "justify-center",
                         )}
                       >
                         {flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                         {sortDirection === "desc" ? (
                           <ArrowDown className="size-3 shrink-0 text-primary" />
@@ -311,13 +311,30 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   onClick={() => table.options.meta?.onRowClick(row)}
+                  // A clickable row has to be reachable without a mouse.
+                  tabIndex={rowClickable ? 0 : undefined}
+                  onKeyDown={
+                    rowClickable
+                      ? (event) => {
+                          if (event.key !== "Enter" && event.key !== " ") {
+                            return;
+                          }
+                          if (event.target !== event.currentTarget) {
+                            return;
+                          }
+                          event.preventDefault();
+                          table.options.meta?.onRowClick(row);
+                        }
+                      : undefined
+                  }
                   // `group` lets the pinned cells follow the row on hover: they
                   // carry their own opaque background, so a plain `hover:` on
                   // the row alone would only repaint the scrolling cells.
                   className={cn(
                     "group",
-                    rowClickable && "cursor-pointer",
-                    rowStyles
+                    rowClickable &&
+                      "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                    rowStyles,
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -344,12 +361,12 @@ export function DataTable<TData, TValue>({
                         !rowStyles &&
                           cell.column.getIsSorted() &&
                           "bg-primary/10 font-semibold",
-                        getPinnedClassName(cell.column, false, rowStyles)
+                        getPinnedClassName(cell.column, false, rowStyles),
                       )}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -378,7 +395,7 @@ export function DataTable<TData, TValue>({
                     "whitespace-nowrap border-t px-1 py-1 text-[11px] tabular-nums sm:px-3 sm:py-2 sm:text-sm",
                     startsColumnGroup(column) && "border-l",
                     column.getIsSorted() && "bg-primary/20 text-foreground",
-                    getPinnedClassName(column, true)
+                    getPinnedClassName(column, true),
                   )}
                 >
                   {footerCells[column.id] ?? null}
@@ -390,7 +407,9 @@ export function DataTable<TData, TValue>({
           // The caller builds these rows, so the separator has to be pushed
           // down onto their cells: `border-separate` ignores it on the
           // `<tfoot>` itself.
-          <TableFooter className="[&>tr>td]:border-t">{tableFooter}</TableFooter>
+          <TableFooter className="[&>tr>td]:border-t">
+            {tableFooter}
+          </TableFooter>
         ) : null}
       </Table>
     </div>

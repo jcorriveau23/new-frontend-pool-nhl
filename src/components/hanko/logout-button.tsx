@@ -6,6 +6,7 @@ import { Hanko } from "@teamhanko/hanko-elements";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 //@ts-expect-error, known environment variable type.
 const hankoApi: string = process.env.NEXT_PUBLIC_HANKO_API_URL;
@@ -26,9 +27,11 @@ export default function LogoutMenuItem() {
       router.refresh();
       return;
     } catch (error) {
-      toast.error(`Error during logout: ${error}`, { duration: 2000 });
+      toast.error(t("LogoutError", { error: String(error) }), {
+        duration: 2000,
+      });
     }
   };
 
-  return <span onClick={logout}>{t("SignOut")}</span>;
+  return <DropdownMenuItem onClick={logout}>{t("SignOut")}</DropdownMenuItem>;
 }
