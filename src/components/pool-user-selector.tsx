@@ -10,6 +10,7 @@ import type { PoolUser } from "@/data/pool/model";
 import { usePoolContext } from "@/context/pool-context";
 import { Label } from "./ui/label";
 import { useTranslations } from "next-intl";
+import { YouBadge } from "./pooler-name";
 
 export interface PoolerSelectorEntry {
   id: string;
@@ -28,8 +29,12 @@ interface PoolerUserGlobalSelectorProps {
 export function PoolerUserGlobalSelector({
   entries,
 }: PoolerUserGlobalSelectorProps = {}) {
-  const { poolInfo, selectedParticipant, updateSelectedParticipant } =
-    usePoolContext();
+  const {
+    poolInfo,
+    selectedParticipant,
+    updateSelectedParticipant,
+    userPoolUser,
+  } = usePoolContext();
   const t = useTranslations();
 
   const poolers: PoolerSelectorEntry[] =
@@ -66,11 +71,16 @@ export function PoolerUserGlobalSelector({
                 ) : null
               }
               trailing={
-                pooler.points !== undefined ? (
-                  <span className="ml-auto pl-4 tabular-nums text-muted-foreground">
-                    {pooler.points} PTS
-                  </span>
-                ) : null
+                <>
+                  {pooler.name === userPoolUser?.name ? (
+                    <YouBadge className="ml-2" />
+                  ) : null}
+                  {pooler.points !== undefined ? (
+                    <span className="ml-auto pl-4 tabular-nums text-muted-foreground">
+                      {pooler.points} PTS
+                    </span>
+                  ) : null}
+                </>
               }
             >
               {pooler.name}

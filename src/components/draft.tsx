@@ -21,6 +21,7 @@ import { TeamLogo } from "./team-logo";
 import { useTranslations } from "next-intl";
 import { Badge } from "./ui/badge";
 import DraftStatus from "./draft-status";
+import { YouBadge } from "./pooler-name";
 import DraftButton from "./draft-button";
 import {
   Dialog,
@@ -353,6 +354,7 @@ export default function Draft(props: DraftProps) {
                   <span className="font-medium">
                     {dictUsers[pick.drafter]?.name}
                   </span>
+                  {pick.drafter === userData.info?.id ? <YouBadge /> : null}
                   {pick.from ? (
                     <Badge
                       variant="outline"

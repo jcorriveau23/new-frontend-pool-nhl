@@ -1,25 +1,12 @@
 "use client";
 import { CellContext, ColumnDef } from "@tanstack/react-table";
 import { GameStatePopover } from "@/components/game-state-popover";
+import { PoolerName } from "@/components/pooler-name";
 import { TotalRanking } from "./cumulative-calculation";
 
-// Renders the pooler name, highlighting the selected pooler of interest with a
-// leading dot so the active row is easy to spot in the ranking.
-const PoolerCell = ({ row, table }: CellContext<TotalRanking, unknown>) => {
-  const isSelected =
-    row.original.participant === table.options.meta?.props?.selectedParticipant;
-  return (
-    <span className="flex items-center gap-1.5">
-      {isSelected ? (
-        <span
-          className="size-1.5 shrink-0 rounded-full bg-primary"
-          aria-hidden
-        />
-      ) : null}
-      {row.original.participant}
-    </span>
-  );
-};
+const PoolerCell = ({ row }: CellContext<TotalRanking, unknown>) => (
+  <PoolerName name={row.original.participant} />
+);
 
 const TotalCumulatedPointsGroup: ColumnDef<TotalRanking> = {
   id: "1",
@@ -46,9 +33,7 @@ const TotalCumulatedPointsGroup: ColumnDef<TotalRanking> = {
     {
       accessorKey: "pooler",
       header: "Pooler",
-      cell: ({ row }) => {
-        return row.original.participant;
-      },
+      cell: PoolerCell,
     },
     {
       accessorKey: "gamePlayed",

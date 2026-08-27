@@ -300,7 +300,6 @@ export default function CumulativeTab() {
           poolInfo: poolInfo,
           gamesState: getDailyGameState(dailyPointsMade?.cumulated),
           dateOfInterest: querySelectedDate,
-          selectedParticipant,
         },
         getRowStyles: (row: Row<TotalRanking>) => {
           if (row.original.participant === selectedParticipant) {

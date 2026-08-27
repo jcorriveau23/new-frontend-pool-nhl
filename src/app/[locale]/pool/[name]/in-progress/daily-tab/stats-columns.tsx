@@ -8,6 +8,7 @@ import { Pool } from "@/data/pool/model";
 import { DailyGoalie, DailySkater } from "@/data/dailyLeaders/model";
 import { TeamLogo } from "@/components/team-logo";
 import PlayerLink from "@/components/player-link";
+import { PoolerName } from "@/components/pooler-name";
 
 const getPlayerCell = (
   player: SkaterDailyInfo | GoalieDailyInfo,
@@ -141,9 +142,7 @@ export const TotalDailyColumn: ColumnDef<TotalDailyPoints>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row }) => {
-      return row.original.participant;
-    },
+    cell: ({ row }) => <PoolerName name={row.original.participant} />,
   },
   {
     id: "1",
@@ -242,9 +241,7 @@ export const ForwardsDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row }) => {
-      return row.original.participant;
-    },
+    cell: ({ row }) => <PoolerName name={row.original.participant} />,
   },
   {
     accessorKey: "gamePlayed",
@@ -306,9 +303,7 @@ export const DefensesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row }) => {
-      return row.original.participant;
-    },
+    cell: ({ row }) => <PoolerName name={row.original.participant} />,
   },
   {
     accessorKey: "gamePlayed",
@@ -370,9 +365,7 @@ export const GoaliesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
   {
     accessorKey: "pooler",
     header: "Pooler",
-    cell: ({ row }) => {
-      return row.original.participant;
-    },
+    cell: ({ row }) => <PoolerName name={row.original.participant} />,
   },
   {
     accessorKey: "gamePlayed",

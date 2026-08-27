@@ -13,6 +13,7 @@ import * as React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import PoolSettingsComponent from "@/components/pool-settings";
+import { YouBadge } from "@/components/pooler-name";
 import {
   Card,
   CardContent,
@@ -280,9 +281,10 @@ export default function CreatedPool() {
               )}
               <label
                 htmlFor={`is-ready-${userId}`}
-                className="flex-1 truncate font-medium"
+                className="flex flex-1 items-center gap-2 truncate font-medium"
               >
-                {users[userId].name}
+                <span className="truncate">{users[userId].name}</span>
+                {userId === userData.info?.id ? <YouBadge /> : null}
               </label>
               <div className="text-sm text-muted-foreground">
                 {users[userId].is_ready ? t("Ready") : t("NotReady")}

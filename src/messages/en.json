@@ -588,6 +588,8 @@
   "SvPct": "SV%",
   "SelectPoolerToTradeWith": "Select the pooler to trade with, then pick the players and draft picks for each side.",
   "YourTeam": "Your team",
+  "You": "You",
+  "YourPoolerHint": "Your team in this pool",
   "FirstTeam": "First team",
   "ClickToTrade": "Click to build a trade with this pick",
   "TradeSimulationOnly": "Simulation only: log in with a team of this pool to send the trade.",

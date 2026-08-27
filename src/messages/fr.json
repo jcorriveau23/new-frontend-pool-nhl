@@ -588,6 +588,8 @@
   "SvPct": "%ARR",
   "SelectPoolerToTradeWith": "Sélectionnez le pooler avec qui échanger, puis choisissez les joueurs et les choix au repêchage de chaque côté.",
   "YourTeam": "Votre équipe",
+  "You": "Vous",
+  "YourPoolerHint": "Votre équipe dans ce pool",
   "FirstTeam": "Première équipe",
   "ClickToTrade": "Cliquer pour bâtir un échange avec ce choix",
   "TradeSimulationOnly": "Simulation seulement : connectez-vous avec une équipe de ce pool pour envoyer l'échange.",

@@ -40,6 +40,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import InformationIcon from "@/components/information-box";
 import { MonthlyPointsChart } from "@/components/chart/monthly-points-chart";
+import { PoolerName } from "@/components/pooler-name";
 import { usePoolContext } from "@/context/pool-context";
 import { cn } from "@/lib/utils";
 
@@ -306,7 +307,9 @@ export default function RecordsTab() {
                       updateSelectedParticipant(nameOf(entry.participantId))
                     }
                   >
-                    <TableCell>{nameOf(entry.participantId)}</TableCell>
+                    <TableCell>
+                      <PoolerName name={nameOf(entry.participantId)} />
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {entry.monthsWon}
                     </TableCell>

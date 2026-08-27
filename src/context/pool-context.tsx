@@ -29,6 +29,7 @@ import { db } from "@/db";
 import { format } from "date-fns";
 import { useDateContext } from "./date-context";
 import { useSearchParams } from "next/navigation";
+import { useUser } from "./useUserData";
 import {
   GoalieDailyInfo,
   SkaterDailyInfo,
@@ -52,6 +53,12 @@ export interface PoolContextProps {
   selectedParticipant: string;
   selectedPoolUser: PoolUser;
   updateSelectedParticipant: (participant: string) => void;
+
+  // The participant the connected user plays as in this pool, when they are
+  // one of them. Null for a visitor, and for the poolers a pool owner manages
+  // on behalf of somebody else. It stays null until Hanko has validated the
+  // session, which happens after the first render.
+  userPoolUser: PoolUser | null;
 
   // The last pool date stored into the pool.
   lastFormatDate: string | null;
@@ -301,32 +308,64 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     getPoolDictUsers(pool)
   );
 
+  const getQuerySelectedParticipant = (): string | null => {
+    // The pooler asked for by the URL, when it names one of this pool's
+    // participants. This is what makes a shared link land on the right pooler.
+    const queryParams = new URLSearchParams(searchParams.toString());
+    const queryParticipant = queryParams.get("selectedParticipant");
+
+    return queryParticipant !== null &&
+      poolInfo.participants.some((user) => user.name === queryParticipant)
+      ? queryParticipant
+      : null;
+  };
+
   const getInitialSelectedParticipant = (): string => {
-    // Return the initial selected participant.
+    // Return the initial selected participant. The connected user is not known
+    // yet on this first render, so their own team is picked by the effect
+    // below instead; this is only the fallback until then.
     if (poolInfo.participants === null || poolInfo.participants.length === 0)
       return "";
 
-    const queryParams = new URLSearchParams(searchParams.toString());
-    const initialSelectedParticipant = queryParams.get("selectedParticipant");
-
-    if (
-      initialSelectedParticipant === null ||
-      !poolInfo.participants.some(
-        (user) => user.name === initialSelectedParticipant
-      )
-    )
-      return poolInfo.participants[0].name;
-
-    return initialSelectedParticipant;
+    return getQuerySelectedParticipant() ?? poolInfo.participants[0].name;
   };
   const router = useRouter();
   const [selectedParticipant, setSelectedParticipant] = React.useState<string>(
     getInitialSelectedParticipant()
   );
+
+  // Whether the pooler in view was asked for — by the URL, or by a click —
+  // rather than being the fallback the provider mounted with. Only the
+  // fallback may be replaced by the connected user's own team below.
+  const hasChosenParticipant = useRef(getQuerySelectedParticipant() !== null);
   const [selectedPoolUser, setSelectedPoolUser] = React.useState<PoolUser>(
     poolInfo.participants.find((user) => user.name === selectedParticipant) ??
       poolInfo.participants[0]
   );
+  const userData = useUser();
+
+  // The participant the connected user plays as, when they are in this pool.
+  const userPoolUser = React.useMemo(
+    () =>
+      poolInfo.participants.find(
+        (user) => user.id !== "" && user.id === userData.info?.id
+      ) ?? null,
+    [poolInfo.participants, userData.info?.id]
+  );
+
+  // Hanko validates the session after the first render, so the connected user
+  // reaches the provider too late to seed the state above. As long as nothing
+  // has been asked for, the pool opens on the user's own team rather than on
+  // whoever happens to be first in the registration order.
+  React.useEffect(() => {
+    if (hasChosenParticipant.current || userPoolUser === null) {
+      return;
+    }
+    hasChosenParticipant.current = true;
+    setSelectedParticipant(userPoolUser.name);
+    setSelectedPoolUser(userPoolUser);
+  }, [userPoolUser]);
+
   const [playersOwner, setPlayersOwner] = React.useState<
     Record<number, string>
   >(getPlayersOwner(poolInfo));
@@ -340,6 +379,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   // render of the provider.
   const updateSelectedParticipant = React.useCallback(
     (participant: string) => {
+      hasChosenParticipant.current = true;
       setSelectedParticipant(participant);
       setSelectedPoolUser(
         poolInfo.participants.find((user) => user.name === participant) ??
@@ -507,6 +547,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     selectedParticipant,
     selectedPoolUser,
     updateSelectedParticipant,
+    userPoolUser,
     lastFormatDate,
     dateOfInterest,
     poolStartDate,

@@ -14,6 +14,7 @@ import {
   History as HistoryIcon,
 } from "lucide-react";
 import PlayerLink from "@/components/player-link";
+import { YouBadge } from "@/components/pooler-name";
 import { usePoolContext } from "@/context/pool-context";
 import { useFormatter, useTranslations } from "next-intl";
 import { TradeItem } from "@/components/trade";
@@ -37,7 +38,7 @@ interface DailyHistory {
 }
 
 export default function HistoryTab() {
-  const { poolInfo, lastFormatDate } = usePoolContext();
+  const { poolInfo, lastFormatDate, userPoolUser } = usePoolContext();
   const t = useTranslations();
   const format = useFormatter();
   const [history, setHistory] = React.useState<DailyHistory[] | null>(null);
@@ -238,6 +239,7 @@ export default function HistoryTab() {
           {movements.participant.slice(0, 2)}
         </span>
         <span className="font-semibold">{movements.participant}</span>
+        {movements.participant === userPoolUser?.name ? <YouBadge /> : null}
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
