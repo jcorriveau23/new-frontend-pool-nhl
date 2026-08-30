@@ -22,7 +22,7 @@ import { useTranslations } from "next-intl";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Badge } from "./ui/badge";
 import DraftStatus from "./draft-status";
-import { YouBadge } from "./pooler-name";
+import { PoolerNameText } from "./pooler-name";
 import DraftButton from "./draft-button";
 import {
   Dialog,
@@ -352,14 +352,15 @@ export default function Draft(props: DraftProps) {
               </TableCell>
               <TableCell className="px-2 py-1.5 sm:px-3 sm:py-2">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="font-medium">
-                    {dictUsers[pick.drafter]?.name}
-                  </span>
-                  {pick.drafter === userData.info?.id ? <YouBadge /> : null}
+                  <PoolerNameText
+                    name={dictUsers[pick.drafter]?.name}
+                    isYou={pick.drafter === userData.info?.id}
+                    className="font-medium"
+                  />
                   {pick.from ? (
                     <Badge
                       variant="outline"
-                      className="border-dashed px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
+                      className="max-w-[160px] truncate border-dashed px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
                     >
                       {t("FromPickTraded", {
                         poolerName: dictUsers[pick.from]?.name,

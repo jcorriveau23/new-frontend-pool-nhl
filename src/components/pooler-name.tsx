@@ -21,6 +21,49 @@ export function YouBadge({ className }: { className?: string }) {
   );
 }
 
+interface PoolerNameTextProps {
+  name: string | undefined;
+  // Applied to the wrapper: this is where a caller widens or narrows the cut
+  // (`max-w-*`), or drops it entirely with `max-w-none`.
+  className?: string;
+  isYou?: boolean;
+  isSelected?: boolean;
+}
+
+// Every pooler name in the app goes through here. Nothing stops a pooler from
+// registering with an email address, and one long name used to stretch its
+// column and squeeze everything else out of the row, so the name is capped and
+// cut with an ellipsis, with the full value kept in the native tooltip. The
+// markers ride along because they must stay readable next to the cut name: the
+// leading dot for the pooler of interest, and the "you" badge, both of which
+// keep their width instead of being truncated with the name.
+export function PoolerNameText({
+  name,
+  className,
+  isYou = false,
+  isSelected = false,
+}: PoolerNameTextProps) {
+  return (
+    <span
+      className={cn(
+        "flex min-w-0 max-w-[140px] items-center gap-1.5 sm:max-w-[200px]",
+        className
+      )}
+    >
+      {isSelected ? (
+        <span
+          className="size-1.5 shrink-0 rounded-full bg-primary"
+          aria-hidden
+        />
+      ) : null}
+      <span className="truncate" title={name}>
+        {name}
+      </span>
+      {isYou ? <YouBadge /> : null}
+    </span>
+  );
+}
+
 interface PoolerNameProps {
   name: string;
   className?: string;
@@ -30,20 +73,17 @@ interface PoolerNameProps {
 // for the pooler of interest, so the active row is easy to spot in a ranking,
 // and the "you" badge above for the connected user. Reads the pool context
 // directly rather than going through the table meta, so every table renders
-// them the same way.
+// them the same way. Use PoolerNameText instead where the markers come from
+// something other than the pool context, such as a user id comparison.
 export function PoolerName({ name, className }: PoolerNameProps) {
   const { selectedParticipant, userPoolUser } = usePoolContext();
 
   return (
-    <span className={cn("flex items-center gap-1.5", className)}>
-      {name === selectedParticipant ? (
-        <span
-          className="size-1.5 shrink-0 rounded-full bg-primary"
-          aria-hidden
-        />
-      ) : null}
-      {name}
-      {userPoolUser?.name === name ? <YouBadge /> : null}
-    </span>
+    <PoolerNameText
+      name={name}
+      className={className}
+      isSelected={name === selectedParticipant}
+      isYou={userPoolUser?.name === name}
+    />
   );
 }

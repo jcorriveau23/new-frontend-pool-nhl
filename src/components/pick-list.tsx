@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { Pool, PoolUser } from "@/data/pool/model";
 import { usePoolContext } from "@/context/pool-context";
+import { PoolerNameText } from "./pooler-name";
 import { useTradeBuilder } from "@/context/trade-builder-context";
 import { cn } from "@/lib/utils";
 import {
@@ -114,13 +115,18 @@ export default function PickList(props: Props) {
           <Icon aria-hidden="true" className="size-3 shrink-0" />
           {/* The own pick needs no name: the whole panel already belongs to
               this pooler, repeating it on every round is only noise. */}
-          <span className="truncate">
-            {pick.origin === "own" ? t("PickOwnOriginal") : userName(pick.from)}
-          </span>
+          {pick.origin === "own" ? (
+            <span className="truncate">{t("PickOwnOriginal")}</span>
+          ) : (
+            <PoolerNameText name={userName(pick.from)} className="max-w-24" />
+          )}
           {pick.origin === "traded" ? (
             <>
               <span aria-hidden="true">→</span>
-              <span className="truncate">{userName(pick.owner)}</span>
+              <PoolerNameText
+                name={userName(pick.owner)}
+                className="max-w-24"
+              />
             </>
           ) : null}
         </TooltipTrigger>
