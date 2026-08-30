@@ -13,6 +13,7 @@ import {
 } from "@/data/pool/model";
 import { apiPost } from "@/lib/client-api";
 import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
+import { PoolerNameText } from "./pooler-name";
 import { useUser } from "@/context/useUserData";
 import { useSession } from "@/context/useSessionData";
 import { useTranslations } from "next-intl";
@@ -429,14 +430,24 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
                   <SelectContent>
                     {fromParticipants.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.name}
+                        <PoolerNameText
+                          name={p.name}
+                          className="max-w-[220px]"
+                        />
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               ) : (
                 <div className="flex h-10 items-center rounded-md border bg-muted/40 px-3 text-sm font-medium">
-                  {fromPooler?.name ?? "—"}
+                  {fromPooler ? (
+                    <PoolerNameText
+                      name={fromPooler.name}
+                      className="max-w-full"
+                    />
+                  ) : (
+                    "—"
+                  )}
                 </div>
               )}
               {fromPooler ? (
@@ -472,7 +483,10 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
                     .filter((p) => p.id !== fromPoolerId)
                     .map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.name}
+                        <PoolerNameText
+                          name={p.name}
+                          className="max-w-[220px]"
+                        />
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -494,8 +508,9 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
               <Separator className="my-4" />
               <div className="grid gap-3 text-left sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {fromPooler.name} {t("Gives")}
+                  <div className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <PoolerNameText name={fromPooler.name} />
+                    <span className="shrink-0">{t("Gives")}</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {Array.from(fromPlayers).map((id) => (
@@ -514,8 +529,9 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {toPooler.name} {t("Gives")}
+                  <div className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <PoolerNameText name={toPooler.name} />
+                    <span className="shrink-0">{t("Gives")}</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {Array.from(toPlayers).map((id) => (

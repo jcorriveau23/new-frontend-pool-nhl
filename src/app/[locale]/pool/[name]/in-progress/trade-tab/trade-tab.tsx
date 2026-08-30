@@ -18,6 +18,7 @@ import {
 } from "@/data/pool/model";
 import { apiPost } from "@/lib/client-api";
 import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
+import { PoolerNameText } from "@/components/pooler-name";
 import { useUser } from "@/context/useUserData";
 import { useSession } from "@/context/useSessionData";
 import { Card } from "@/components/ui/card";
@@ -136,7 +137,10 @@ export default function TradeTab() {
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold uppercase text-primary">
           {dictUsers[poolerId]?.name.slice(0, 2)}
         </span>
-        <span className="font-semibold">{dictUsers[poolerId]?.name}</span>
+        <PoolerNameText
+          name={dictUsers[poolerId]?.name}
+          className="font-semibold"
+        />
       </div>
       <div className="flex flex-wrap gap-1.5">
         {items.players.map((playerId) => (

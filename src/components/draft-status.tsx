@@ -51,7 +51,7 @@ export default function DraftStatus({
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <span className="relative flex size-2.5 shrink-0">
             <span
               className={cn(
@@ -74,8 +74,11 @@ export default function DraftStatus({
               })}
             </p>
             <p
+              // The drafter name lives inside the sentence, so the whole line
+              // is what gets cut when the name runs long.
+              title={currentDrafter ?? undefined}
               className={cn(
-                "font-semibold leading-tight",
+                "truncate font-semibold leading-tight",
                 isUserTurn && "text-success"
               )}
             >

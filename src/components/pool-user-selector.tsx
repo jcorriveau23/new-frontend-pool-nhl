@@ -10,7 +10,7 @@ import type { PoolUser } from "@/data/pool/model";
 import { usePoolContext } from "@/context/pool-context";
 import { Label } from "./ui/label";
 import { useTranslations } from "next-intl";
-import { YouBadge } from "./pooler-name";
+import { PoolerNameText, YouBadge } from "./pooler-name";
 
 export interface PoolerSelectorEntry {
   id: string;
@@ -83,7 +83,7 @@ export function PoolerUserGlobalSelector({
                 </>
               }
             >
-              {pooler.name}
+              <PoolerNameText name={pooler.name} className="max-w-[220px]" />
             </SelectItem>
           ))}
         </SelectContent>

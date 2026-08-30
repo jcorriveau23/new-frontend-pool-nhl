@@ -14,7 +14,7 @@ import {
   History as HistoryIcon,
 } from "lucide-react";
 import PlayerLink from "@/components/player-link";
-import { YouBadge } from "@/components/pooler-name";
+import { PoolerNameText } from "@/components/pooler-name";
 import { usePoolContext } from "@/context/pool-context";
 import { useFormatter, useTranslations } from "next-intl";
 import { TradeItem } from "@/components/trade";
@@ -238,8 +238,11 @@ export default function HistoryTab() {
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold uppercase text-primary">
           {movements.participant.slice(0, 2)}
         </span>
-        <span className="font-semibold">{movements.participant}</span>
-        {movements.participant === userPoolUser?.name ? <YouBadge /> : null}
+        <PoolerNameText
+          name={movements.participant}
+          isYou={movements.participant === userPoolUser?.name}
+          className="font-semibold"
+        />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">

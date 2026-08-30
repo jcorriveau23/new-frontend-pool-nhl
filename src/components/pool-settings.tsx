@@ -21,6 +21,7 @@ import {
 import { apiPost } from "@/lib/client-api";
 import { RadioGroupItem, RadioGroup } from "@/components/ui/radio-group";
 import { useTranslations } from "next-intl";
+import { PoolerNameText } from "@/components/pooler-name";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -1089,7 +1090,7 @@ export default function PoolSettingsComponent(props: Props) {
                     htmlFor={`assistant-${participant.id}`}
                     className="font-normal"
                   >
-                    {participant.name}
+                    <PoolerNameText name={participant.name} />
                   </Label>
                 </li>
               ))}

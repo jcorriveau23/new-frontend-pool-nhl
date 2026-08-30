@@ -3,6 +3,7 @@ import { DraftPick, Pool, Trade, TradeItems } from "@/data/pool/model";
 import { Badge } from "./ui/badge";
 import { ordinal } from "@/app/utils/formating";
 import { usePoolContext } from "@/context/pool-context";
+import { PoolerNameText } from "./pooler-name";
 
 interface Props {
   trade: Trade;
@@ -38,13 +39,13 @@ export function TradeItem(props: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
           <div className="border">
             <h3 className="text-lg font-semibold">
-              {dictUsers[props.trade.ask_to].name}
+              <PoolerNameText name={dictUsers[props.trade.ask_to].name} />
             </h3>
             {Side(props.trade.to_items)}
           </div>
           <div className="border">
             <h3 className="text-lg font-semibold">
-              {dictUsers[props.trade.proposed_by].name}
+              <PoolerNameText name={dictUsers[props.trade.proposed_by].name} />
             </h3>
             {Side(props.trade.from_items)}
           </div>
