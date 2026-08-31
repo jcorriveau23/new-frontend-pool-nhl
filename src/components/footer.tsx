@@ -8,7 +8,7 @@ The footer of the web app.
 import { GitHubIcon, XIcon } from "@/components/brand-icons";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import type { Versions } from "@/lib/version";
+import type { Build, Versions } from "@/lib/version";
 
 export default function Footer({ versions }: { versions: Versions }) {
   const t = useTranslations();
@@ -71,16 +71,50 @@ export default function Footer({ versions }: { versions: Versions }) {
             than an empty placeholder.
           */}
           <p className="text-muted-foreground font-mono text-xs">
-            <span title={t("FrontendVersion")}>web {versions.web}</span>
+            <BuildRef
+              label="web"
+              build={versions.web}
+              title={t("FrontendVersion")}
+            />
             {versions.api !== null && (
               <>
                 <span aria-hidden="true"> · </span>
-                <span title={t("BackendVersion")}>api {versions.api}</span>
+                <BuildRef
+                  label="api"
+                  build={versions.api}
+                  title={t("BackendVersion")}
+                />
               </>
             )}
           </p>
         </div>
       </div>
     </footer>
+  );
+}
+
+function BuildRef({
+  label,
+  build,
+  title,
+}: {
+  label: string;
+  build: Build;
+  title: string;
+}) {
+  const content = `${label} ${build.version}`;
+
+  if (build.releaseUrl === null) {
+    return <span title={title}>{content}</span>;
+  }
+
+  return (
+    <Link
+      href={build.releaseUrl}
+      title={title}
+      className="hover:text-foreground underline-offset-4 transition-colors hover:underline"
+    >
+      {content}
+    </Link>
   );
 }

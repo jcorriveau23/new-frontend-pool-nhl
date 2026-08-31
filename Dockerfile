@@ -15,6 +15,12 @@ COPY . .
 # Build the Next.js application
 ARG NEXT_PUBLIC_HANKO_API_URL
 ENV NEXT_PUBLIC_HANKO_API_URL=${NEXT_PUBLIC_HANKO_API_URL}
+# The release tag, shown in the footer next to the backend's own version.
+# package.json is pinned at 0.1.0 and never bumped — releases are cut from git
+# tags — so the tag has to come in from the build rather than be read from the
+# source tree. Left unset, the app reports "dev".
+ARG NEXT_PUBLIC_APP_VERSION
+ENV NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION}
 RUN npm run build
 
 # Production stage
