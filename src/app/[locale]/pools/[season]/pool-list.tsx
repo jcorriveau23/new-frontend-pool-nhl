@@ -1,13 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { Search } from "lucide-react";
+import { Search, Trash2Icon } from "lucide-react";
 import { PoolState, ProjectedPoolShort } from "@/data/pool/model";
-import { Link } from "@/i18n/routing";
+import { Link, useRouter } from "@/i18n/routing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import FavoritePoolButton from "@/components/favorite-pool-button";
+import DeletePoolDialog from "@/components/delete-pool-dialog";
+import { Button } from "@/components/ui/button";
+import { useUser } from "@/context/useUserData";
 import { useFavoritePools } from "@/hooks/use-favorite-pools";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -60,19 +63,30 @@ export default function PoolList({
   seasonSelector,
 }: Props) {
   const t = useTranslations();
+  const router = useRouter();
+  const userData = useUser();
   const { isFavorite } = useFavoritePools();
   const [search, setSearch] = React.useState("");
   const [selectedTab, setSelectedTab] = React.useState<TabValue | null>(null);
+  // A deleted pool is dropped right away instead of waiting for the server
+  // component to be re-rendered, otherwise its card lingers until the refresh
+  // lands.
+  const [deletedPools, setDeletedPools] = React.useState<string[]>([]);
+
+  const visiblePools = React.useMemo(
+    () => pools.filter((pool) => !deletedPools.includes(pool.name)),
+    [pools, deletedPools],
+  );
 
   // The tab set is derived from every pool so tabs stay stable while searching.
   const totalCountPerStatus = React.useMemo(
-    () => countByStatus(pools),
-    [pools],
+    () => countByStatus(visiblePools),
+    [visiblePools],
   );
   const visibleStatuses = POOL_STATUS_ORDER.filter(
     (status) => totalCountPerStatus[status] > 0,
   );
-  const hasFavorites = pools.some((pool) => isFavorite(pool.name));
+  const hasFavorites = visiblePools.some((pool) => isFavorite(pool.name));
   // A single status makes the "all" tab a duplicate of it.
   const tabs: TabValue[] = [
     ...(hasFavorites ? ([FAVORITES_TAB] as const) : []),
@@ -83,8 +97,8 @@ export default function PoolList({
   const filteredPools = React.useMemo(() => {
     const query = search.trim().toLowerCase();
     const matching = query
-      ? pools.filter((pool) => pool.name.toLowerCase().includes(query))
-      : pools;
+      ? visiblePools.filter((pool) => pool.name.toLowerCase().includes(query))
+      : visiblePools;
 
     // Favorites first, then by name so the list does not depend on the order
     // the backend happens to return.
@@ -93,7 +107,7 @@ export default function PoolList({
         Number(isFavorite(b.name)) - Number(isFavorite(a.name));
       return favoriteDelta !== 0 ? favoriteDelta : a.name.localeCompare(b.name);
     });
-  }, [pools, search, isFavorite]);
+  }, [visiblePools, search, isFavorite]);
 
   const filteredCountPerStatus = React.useMemo(
     () => countByStatus(filteredPools),
@@ -167,11 +181,30 @@ export default function PoolList({
             {t(pool.status)}
           </span>
         ) : null}
-        <FavoritePoolButton
-          poolName={pool.name}
-          season={season}
-          className="relative -mr-2"
-        />
+        <div className="relative -mr-2 flex shrink-0 items-center">
+          <FavoritePoolButton poolName={pool.name} season={season} />
+          {pool.owner === userData.info?.id ? (
+            <DeletePoolDialog
+              poolName={pool.name}
+              onDeleted={() => {
+                setDeletedPools((current) => [...current, pool.name]);
+                // Lets the server component drop the pool from the list it
+                // rendered, so it does not come back on the next navigation.
+                router.refresh();
+              }}
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive size-8"
+                  aria-label={t("DeletePoolLabel", { pool: pool.name })}
+                >
+                  <Trash2Icon />
+                </Button>
+              }
+            />
+          ) : null}
+        </div>
       </Card>
     );
   };
