@@ -95,9 +95,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
     );
 
+  // A closed season's page is frozen, so its `lastmod` has to be frozen too.
+  // Stamping `now` on it would be a lie that repeats every time this file is
+  // revalidated, and Google's documented response to lastmod it can show to be
+  // unreliable is to ignore lastmod for the entire site — spending the credit
+  // of the three pages where the date is actually true. Only the current
+  // season, which really does change, gets today's date.
   const draftPages: Entry[] = years.map((year, i) =>
     entry(`/draft/${year}`, {
-      lastModified: now,
+      // The entry draft is held at the end of June, so the page settles in July.
+      lastModified: i === 0 ? now : new Date(`${year}-07-01`),
       // Only the most recent draft still changes.
       changeFrequency: i === 0 ? "weekly" : "yearly",
       priority: i === 0 ? 0.7 : 0.4,
@@ -106,7 +113,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const rosterSeasonPages: Entry[] = years.map((year, i) =>
     entry(`/roster/${year}${year + 1}`, {
-      lastModified: now,
+      // A season ends in April; by July its rosters are final for good.
+      lastModified: i === 0 ? now : new Date(`${year + 1}-07-01`),
       changeFrequency: i === 0 ? "weekly" : "yearly",
       priority: i === 0 ? 0.7 : 0.4,
     }),

@@ -41,7 +41,9 @@ import { toast } from "sonner";
 import InformationIcon from "./information-box";
 import { useSearchParams } from "next/navigation";
 import { salaryFormat } from "@/app/utils/formating";
-import { LockIcon, PlusIcon, XIcon } from "lucide-react";
+import { LockIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { useUser } from "@/context/useUserData";
+import DeletePoolDialog from "./delete-pool-dialog";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -94,6 +96,7 @@ const numberOrNull = (value: string): number | null =>
 export default function PoolSettingsComponent(props: Props) {
   const t = useTranslations();
   const userSession = useSession();
+  const userData = useUser();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1101,6 +1104,40 @@ export default function PoolSettingsComponent(props: Props) {
     </Card>
   );
 
+  // Deleting a pool is the owner's call alone: assistants may tune the settings
+  // but not take the pool away from everyone else.
+  const IS_OWNER =
+    !isCreationContext() &&
+    props.poolOwner !== undefined &&
+    userData.info?.id === props.poolOwner;
+
+  const DangerZone = () => (
+    <Card className="border-destructive/50">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-destructive text-lg">
+          {t("DangerZone")}
+        </CardTitle>
+        <CardDescription>{t("DeletePoolDescription")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <DeletePoolDialog
+          poolName={props.poolName}
+          // The pool page it was deleted from no longer exists, its own season
+          // list is the closest place left to land on.
+          onDeleted={(pool) =>
+            router.push(`/pools/${pool.season}?${searchParams.toString()}`)
+          }
+          trigger={
+            <Button variant="destructive" className="w-full sm:w-auto">
+              <Trash2Icon />
+              {t("DeletePool")}
+            </Button>
+          }
+        />
+      </CardContent>
+    </Card>
+  );
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -1129,6 +1166,7 @@ export default function PoolSettingsComponent(props: Props) {
           ) : null}
         </fieldset>
       </form>
+      {IS_OWNER ? <div className="pt-4 text-left">{DangerZone()}</div> : null}
     </Form>
   );
 }
