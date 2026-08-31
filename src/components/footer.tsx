@@ -8,8 +8,9 @@ The footer of the web app.
 import { GitHubIcon, XIcon } from "@/components/brand-icons";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import type { Versions } from "@/lib/version";
 
-export default function Footer() {
+export default function Footer({ versions }: { versions: Versions }) {
   const t = useTranslations();
   return (
     <footer className="w-full">
@@ -61,8 +62,23 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t">
-        <div className="mx-auto w-full max-w-5xl px-4 py-4 md:px-6">
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-4 md:px-6">
           <p className="text-muted-foreground text-xs">© 2026 slapshot.xyz</p>
+          {/*
+            The running builds, so a bug report can name them. `web` is
+            compiled in; `api` is absent whenever the backend could not be
+            reached, and the row then shows the web build on its own rather
+            than an empty placeholder.
+          */}
+          <p className="text-muted-foreground font-mono text-xs">
+            <span title={t("FrontendVersion")}>web {versions.web}</span>
+            {versions.api !== null && (
+              <>
+                <span aria-hidden="true"> · </span>
+                <span title={t("BackendVersion")}>api {versions.api}</span>
+              </>
+            )}
+          </p>
         </div>
       </div>
     </footer>

@@ -16,15 +16,18 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import LanguageSelector from "@/components/language-selector";
 import { Link } from "@/i18n/routing";
 import InstallAppPrompt from "@/components/install-app-prompt";
+import type { Versions } from "@/lib/version";
 
 export default function MainLayout({
   children,
   currentSeason,
   draftYear,
+  versions,
 }: {
   children: React.ReactNode;
   currentSeason: string;
   draftYear: string;
+  versions: Versions;
 }) {
   return (
     <DateProvider>
@@ -57,7 +60,7 @@ export default function MainLayout({
                 {children}
               </div>
               <Separator />
-              <Footer />
+              <Footer versions={versions} />
               <InstallAppPrompt />
             </SidebarInset>
           </SidebarProvider>

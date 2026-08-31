@@ -222,6 +222,8 @@
   "CreateYourOwnPool": "créant votre propre pool!",
   "PrivacyPolicy": "Politique de confidentialité",
   "TermOfService": "Termes du contrat de service",
+  "FrontendVersion": "Version de l'application web",
+  "BackendVersion": "Version de l'API",
   "FollowUs": "Nous suivre",
   "Legal": "Légal",
   "EffectiveDate": "Date d'entrée en vigueur : 5 mai 2024",
