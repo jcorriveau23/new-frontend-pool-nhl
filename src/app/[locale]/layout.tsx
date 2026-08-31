@@ -8,6 +8,7 @@ import {
   currentSeason,
   getSeasonInfo,
 } from "@/lib/season-info";
+import { getVersions } from "@/lib/version";
 
 export const metadata: Metadata = {
   // Pages that set their own title (the pool page uses the pool name) get it
@@ -49,6 +50,7 @@ export default async function LocaleLayout(
   setRequestLocale(locale);
   const messages = await getMessages();
   const seasonInfo = await getSeasonInfo();
+  const versions = await getVersions();
 
   return (
     <>
@@ -56,6 +58,7 @@ export default async function LocaleLayout(
         <MainLayout
           currentSeason={currentSeason(seasonInfo)}
           draftYear={currentDraftYear(seasonInfo)}
+          versions={versions}
         >
           {children}
         </MainLayout>

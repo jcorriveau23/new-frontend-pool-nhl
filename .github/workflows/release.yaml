@@ -68,6 +68,7 @@ jobs:
           # this has to be passed on every architecture's build, not just once.
           build-args: |
             NEXT_PUBLIC_HANKO_API_URL=${{ secrets.NEXT_PUBLIC_HANKO_API_URL }}
+            NEXT_PUBLIC_APP_VERSION=${{ github.event.release.tag_name }}
           # Scoped per platform. Sharing one scope makes the two legs evict
           # each other's node_modules and .next layers on every run.
           cache-from: type=gha,scope=${{ matrix.platform }}
