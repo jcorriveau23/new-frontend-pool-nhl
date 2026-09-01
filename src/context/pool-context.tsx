@@ -366,6 +366,21 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     setSelectedPoolUser(userPoolUser);
   }, [userPoolUser]);
 
+  // The pool selection is carried by the pooler's name (it is what the
+  // shareable `selectedParticipant` link holds), but the owner can rename a
+  // pooler at any time. Following the rename on the id keeps the pooler in view
+  // selected, instead of leaving the selection on a name nobody carries anymore.
+  React.useEffect(() => {
+    const renamed = poolInfo.participants.find(
+      (user) => user.id === selectedPoolUser?.id
+    );
+    if (renamed === undefined || renamed.name === selectedParticipant) {
+      return;
+    }
+    setSelectedParticipant(renamed.name);
+    setSelectedPoolUser(renamed);
+  }, [poolInfo.participants, selectedPoolUser, selectedParticipant]);
+
   const [playersOwner, setPlayersOwner] = React.useState<
     Record<number, string>
   >(getPlayersOwner(poolInfo));

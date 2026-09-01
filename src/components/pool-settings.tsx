@@ -41,9 +41,10 @@ import { toast } from "sonner";
 import InformationIcon from "./information-box";
 import { useSearchParams } from "next/navigation";
 import { salaryFormat } from "@/app/utils/formating";
-import { LockIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { LockIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useUser } from "@/context/useUserData";
 import DeletePoolDialog from "./delete-pool-dialog";
+import RenamePoolerDialog from "./rename-pooler-dialog";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -1104,6 +1105,47 @@ export default function PoolSettingsComponent(props: Props) {
     </Card>
   );
 
+  // Renaming a pooler is the owner's alone as well, and only makes sense once
+  // the pool has participants: before the draft the poolers still live in the
+  // draft room, where the owner names them as they are added.
+  const PoolerSettings = () => (
+    <Card>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg">{t("PoolerSettings")}</CardTitle>
+        <CardDescription>{t("RenamePoolerDescription")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="divide-y">
+          {(props.participants ?? []).map((participant) => (
+            <li
+              key={participant.id}
+              className="flex items-center justify-between gap-2 py-2"
+            >
+              <PoolerNameText name={participant.name} />
+              <RenamePoolerDialog
+                poolName={props.poolName}
+                pooler={participant}
+                participants={props.participants ?? []}
+                onRenamed={(pool) => props.onUpdated?.(pool)}
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("RenamePoolerLabel", {
+                      name: participant.name,
+                    })}
+                  >
+                    <PencilIcon className="size-4" />
+                  </Button>
+                }
+              />
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+
   // Deleting a pool is the owner's call alone: assistants may tune the settings
   // but not take the pool away from everyone else.
   const IS_OWNER =
@@ -1166,7 +1208,12 @@ export default function PoolSettingsComponent(props: Props) {
           ) : null}
         </fieldset>
       </form>
-      {IS_OWNER ? <div className="pt-4 text-left">{DangerZone()}</div> : null}
+      {IS_OWNER ? (
+        <div className="space-y-4 pt-4 text-left">
+          {(props.participants ?? []).length > 0 ? PoolerSettings() : null}
+          {DangerZone()}
+        </div>
+      ) : null}
     </Form>
   );
 }

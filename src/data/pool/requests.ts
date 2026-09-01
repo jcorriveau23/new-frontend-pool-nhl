@@ -65,6 +65,12 @@ export interface UpdatePoolSettingsRequest {
   pool_settings: PoolSettings;
 }
 
+export interface UpdatePoolerNameRequest {
+  pool_name: string;
+  pooler_user_id: string;
+  new_name: string;
+}
+
 export interface MarkAsFinalRequest {
   pool_name: string;
 }
