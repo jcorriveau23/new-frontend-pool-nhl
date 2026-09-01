@@ -145,11 +145,19 @@ export default function CreatedPool() {
 
   const onCreateUser = async (values: z.infer<typeof formSchema>) => {
     AddUser(values.name);
+    form.reset();
     setOpen(false);
   };
 
+  const onCreateUserDialogOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      form.reset();
+    }
+  };
+
   const CreateUserDialog = () => (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onCreateUserDialogOpenChange}>
       <DialogTrigger render={<Button variant="ghost" size="icon" />}>
         <PlusCircleIcon className="size-4" />
       </DialogTrigger>
@@ -170,11 +178,7 @@ export default function CreatedPool() {
                 <FormItem>
                   <FormLabel>{t("Username")}</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder={t("Username")}
-                      {...field}
-                      defaultValue=""
-                    />
+                    <Input placeholder={t("Username")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -207,7 +211,7 @@ export default function CreatedPool() {
           {i === 0 && userData.info?.id === poolInfo.owner
             ? CreateUserDialog()
             : null}
-        </li>
+        </li>,
       );
     }
 
@@ -219,7 +223,7 @@ export default function CreatedPool() {
   const onPoolSettingsChanges = (settings: PoolSettings) =>
     sendSocketCommand(
       Command.OnPoolSettingChanges,
-      JSON.stringify({ pool_settings: settings })
+      JSON.stringify({ pool_settings: settings }),
     );
 
   const PoolSettingsDialog = () => (

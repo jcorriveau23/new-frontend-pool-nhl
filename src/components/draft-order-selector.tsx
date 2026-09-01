@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,15 +24,26 @@ import { usePoolContext } from "@/context/pool-context";
 export default function DraftOrderSelector() {
   const { roomUsers, sendSocketCommand } = useSocketContext();
   const { poolInfo } = usePoolContext();
-  const userIds = Object.keys(roomUsers ?? {});
+  const userIds = useMemo(() => Object.keys(roomUsers ?? {}), [roomUsers]);
 
   const t = useTranslations();
 
   const positions = userIds.length;
 
-  const [draftOrder, setDraftOrder] = useState<string[]>(
-    Array(positions).fill("")
-  );
+  const [draftOrder, setDraftOrder] = useState<string[]>([]);
+
+  useEffect(() => {
+    setDraftOrder((prevOrder) => {
+      const newOrder = Array.from({ length: userIds.length }, (_, position) =>
+        userIds.includes(prevOrder[position]) ? prevOrder[position] : "",
+      );
+
+      return newOrder.length === prevOrder.length &&
+        newOrder.every((user, position) => user === prevOrder[position])
+        ? prevOrder
+        : newOrder;
+    });
+  }, [userIds]);
 
   const handleSelectionChange = (position: number, user: string) => {
     setDraftOrder((prevOrder) => {
@@ -43,14 +54,20 @@ export default function DraftOrderSelector() {
   };
 
   const generateRandomOrder = () => {
-    const shuffled = [...userIds].sort(() => 0.5 - Math.random());
+    const shuffled = [...userIds];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
     setDraftOrder(shuffled);
   };
 
   const startDraft = () => {
     sendSocketCommand(
       Command.StartDraft,
-      `{"draft_order": ${JSON.stringify(draftOrder)}}`
+      `{"draft_order": ${JSON.stringify(draftOrder)}}`,
     );
   };
 
@@ -59,7 +76,11 @@ export default function DraftOrderSelector() {
     // number of poolers match the number of poolers in the settings.
     Object.values(users).every((user) => user.is_ready) &&
     Object.keys(users).length === poolInfo.settings.number_poolers &&
-    Object.keys(users).length === draftOrder.length;
+    Object.keys(users).length === draftOrder.length &&
+    // Every pooler needs a spot of their own: the same pooler picked twice
+    // would draft twice a round and leave another one out of the draft.
+    new Set(draftOrder).size === draftOrder.length &&
+    draftOrder.every((user) => user !== "");
 
   const isReadyToStart = areAllUsersReady(roomUsers ?? {});
 
@@ -82,7 +103,7 @@ export default function DraftOrderSelector() {
                 {t("Position")} {positionIndex + 1}
               </span>
               <Select
-                value={draftOrder[positionIndex]}
+                value={draftOrder[positionIndex] ?? ""}
                 items={userIds.map((user) => ({
                   value: user,
                   label: roomUsers?.[user]?.name ?? "",
