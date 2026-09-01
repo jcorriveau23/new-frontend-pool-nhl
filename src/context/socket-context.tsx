@@ -38,6 +38,30 @@ const SocketContext = createContext<SocketContextProps | undefined>(undefined);
 export const createSocketCommand = (command: string, arg: string) =>
   `{"${command}": ${arg}}`;
 
+// The room users come back from the backend as a map, whose serialized order
+// changes from one update to the next. Rebuilding it in the order already on
+// screen keeps everyone in place when a single one of them changes.
+const keepRoomUsersOrder = (
+  prevUsers: Record<string, RoomUser> | null,
+  newUsers: Record<string, RoomUser>,
+): Record<string, RoomUser> => {
+  const orderedUsers: Record<string, RoomUser> = {};
+
+  for (const userId of Object.keys(prevUsers ?? {})) {
+    if (userId in newUsers) {
+      orderedUsers[userId] = newUsers[userId];
+    }
+  }
+
+  for (const userId of Object.keys(newUsers)) {
+    if (!(userId in orderedUsers)) {
+      orderedUsers[userId] = newUsers[userId];
+    }
+  }
+
+  return orderedUsers;
+};
+
 export enum Command {
   JoinRoom = "JoinRoom",
   OnPoolSettingChanges = "OnPoolSettingChanges",
@@ -79,10 +103,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   jwt,
 }) => {
   const [roomUsers, setRoomUsers] = useState<Record<string, RoomUser> | null>(
-    null
+    null,
   );
   const [socketStatus, setSocketStatus] = useState<SocketStatus>(
-    SocketStatus.Connecting
+    SocketStatus.Connecting,
   );
   // When the pending retry is due, so the indicator can count it down instead
   // of leaving the user staring at a dead socket with no idea anything is
@@ -96,8 +120,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const { poolInfo, updatePoolInfo, applyDraftDelta, resyncPoolInfo } =
     usePoolContext();
   const t = useTranslations();
-  const socketProtocol =
-    window.location.protocol === "https:" ? "wss:" : "ws:";
+  const socketProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const socketUrl = `${socketProtocol}//${window.location.host}/api-rust/ws/${
     typeof jwt === "string" && jwt !== "" ? jwt : "unauthenticated"
   }`;
@@ -171,7 +194,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
     setSocketStatus(
       hasConnectedRef.current
         ? SocketStatus.Reconnecting
-        : SocketStatus.Connecting
+        : SocketStatus.Connecting,
     );
     const socket = new WebSocket(socketUrlRef.current);
     socketRef.current = socket;
@@ -217,7 +240,9 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
             // pool, which would be tens of kilobytes per pick per socket.
             applyDraftDelta(response);
           } else if (response.Users) {
-            setRoomUsers(response.Users.room_users);
+            setRoomUsers((prevUsers) =>
+              keepRoomUsersOrder(prevUsers, response.Users.room_users),
+            );
           }
         } catch (e) {
           console.error("Failed to parse WebSocket message:", e);
@@ -232,8 +257,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
         socket.send(
           createSocketCommand(
             Command.JoinRoom,
-            `{"pool_name": "${poolInfo.name}", "number_poolers": ${poolInfo.settings.number_poolers}}`
-          )
+            `{"pool_name": "${poolInfo.name}", "number_poolers": ${poolInfo.settings.number_poolers}}`,
+          ),
         );
 
         // Whatever the room did while this socket was down was broadcast to
@@ -256,7 +281,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
         setSocketStatus(
           hasConnectedRef.current
             ? SocketStatus.Reconnecting
-            : SocketStatus.Connecting
+            : SocketStatus.Connecting,
         );
 
         // Only the first drop of a streak is announced. The retries are silent,
@@ -288,7 +313,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       scheduleReconnect,
       resyncPoolInfo,
       t,
-    ]
+    ],
   );
 
   // `connect` reaches the current handlers through these, so a reconnect that
