@@ -285,10 +285,6 @@ export const calculatePoolStats = (
     }
   }
 
-  console.info(
-    `Calculating cumulative information from ${poolStartDate} to ${poolSelectedEndDate}`,
-  );
-
   for (
     let j = new Date(poolStartDate);
     j <= poolSelectedEndDate;

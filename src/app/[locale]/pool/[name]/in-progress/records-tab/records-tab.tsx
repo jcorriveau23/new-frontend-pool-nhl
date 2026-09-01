@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import InformationIcon from "@/components/information-box";
-import { MonthlyPointsChart } from "@/components/chart/monthly-points-chart";
+import { MonthlyPointsChart } from "@/components/chart/lazy";
 import { PoolerName } from "@/components/pooler-name";
 import { usePoolContext } from "@/context/pool-context";
 import { cn } from "@/lib/utils";

@@ -90,9 +90,11 @@ import {
   TotalRanking,
 } from "./cumulative-calculation";
 import { LineChart, PencilLine } from "lucide-react";
-import { TimeRangeSkaterChart } from "@/components/chart/time-range-skater-chart";
-import { TimeRangePoolChart } from "@/components/chart/time-range-pool-chart";
-import { TimeRangeGoalieChart } from "@/components/chart/time-range-goalie-chart";
+import {
+  TimeRangeGoalieChart,
+  TimeRangePoolChart,
+  TimeRangeSkaterChart,
+} from "@/components/chart/lazy";
 import { useUser } from "@/context/useUserData";
 import PlayersTable from "@/components/player-table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";

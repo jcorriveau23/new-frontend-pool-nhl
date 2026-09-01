@@ -13,7 +13,7 @@ import { usePoolContext } from "@/context/pool-context";
 import { getPoolTimeRangeCharts } from "@/data/pool/model";
 import { cn } from "@/lib/utils";
 
-import { PARTICIPANT_COLORS } from "./utils";
+import { PARTICIPANT_COLORS } from "./colors";
 import { RankedTooltipContent } from "./ranked-tooltip";
 
 interface TimeRangePoolChartProps {

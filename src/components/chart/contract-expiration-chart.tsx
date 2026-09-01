@@ -20,7 +20,7 @@ import {
   ChartTooltip,
 } from "@/components/ui/chart";
 
-import { POSITION_COLORS } from "./utils";
+import { POSITION_COLORS } from "./colors";
 
 interface ContractExpirationChartProps {
   // Every player owned by the pooler, lineup and reservists alike: a contract

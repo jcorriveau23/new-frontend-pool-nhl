@@ -5,8 +5,10 @@ import { useTranslations } from "next-intl";
 import { Player } from "@/data/pool/model";
 import { getCapAllocation, getContractValues } from "@/lib/lineup-analytics";
 import { CapAllocationChart } from "./chart/cap-allocation-chart";
-import { ContractExpirationChart } from "./chart/contract-expiration-chart";
-import { ContractValueChart } from "./chart/contract-value-chart";
+import {
+  ContractExpirationChart,
+  ContractValueChart,
+} from "./chart/lazy";
 import { ChartCard } from "./lineup-analysis";
 
 interface Props {

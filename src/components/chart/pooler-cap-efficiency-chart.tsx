@@ -24,7 +24,7 @@ import {
   ChartTooltip,
 } from "@/components/ui/chart";
 
-import { PARTICIPANT_COLORS } from "./utils";
+import { PARTICIPANT_COLORS } from "./colors";
 
 export interface PoolerEfficiencyEntry {
   id: string;

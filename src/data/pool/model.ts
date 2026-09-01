@@ -391,9 +391,6 @@ export const getPoolTimeRangeCharts = (
   positionFilter: "F" | "D" | "G" | null
 ) => {
   // Return a charts of the amout of points accumulated between 2 dates.
-  console.info(
-    `Calculating cumulative chart from ${poolStartDate} to ${poolSelectedEndDate}`
-  );
   const chartData = [];
   // Keeps the total pooler points per position this is needed for when the option of
   // ignoring worst players points is enable in the pool.

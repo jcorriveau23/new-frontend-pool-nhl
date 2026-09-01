@@ -51,10 +51,7 @@ export default function DynastyPool() {
     // Use effect is used here to manage the popstate event listener.
     // That way if the user go into another page and come back using the "Go Back" or "Go forward"
     // options in the browser he will be in the selected tab.
-    const handlePopState = (_event: PopStateEvent) => {
-      console.info(
-        `A '${_event.type}' event has been triggered, active tabs and selected participants needs to be updated.`
-      );
+    const handlePopState = () => {
       // Read the live URL rather than the `searchParams` of the render that
       // registered this listener, which is the state *before* the navigation.
       const queryParams = new URLSearchParams(window.location.search);
