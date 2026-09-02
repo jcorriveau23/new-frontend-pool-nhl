@@ -11,6 +11,13 @@ import {
   RosterModifiedResponse,
 } from "@/data/pool/model";
 import { apiGet } from "@/lib/client-api";
+import { planScoreFetch } from "@/lib/pool-score-cache";
+import {
+  findLastScoredDate,
+  getPlayersOwner,
+  getProtectedPlayers,
+  hasPoolPrivilege,
+} from "@/lib/pool-roster";
 import {
   applyDraftPickUndone,
   applyPlayerDrafted,
@@ -119,75 +126,9 @@ const getPoolDictUsers = (pool: Pool) =>
     return acc;
   }, {});
 
-const getPlayersOwner = (poolInfo: Pool) => {
-  if (poolInfo.participants === null) {
-    return {};
-  }
-
-  const playersOwner: Record<number, string> = {};
-  for (let i = 0; i < poolInfo.participants.length; i += 1) {
-    const participantId = poolInfo.participants[i].id;
-    const participantName = poolInfo.participants[i].name;
-
-    poolInfo.context?.pooler_roster[participantId].chosen_forwards.map(
-      (playerId) => (playersOwner[playerId] = participantName)
-    );
-    poolInfo.context?.pooler_roster[participantId].chosen_defenders.map(
-      (playerId) => (playersOwner[playerId] = participantName)
-    );
-    poolInfo.context?.pooler_roster[participantId].chosen_goalies.map(
-      (playerId) => (playersOwner[playerId] = participantName)
-    );
-    poolInfo.context?.pooler_roster[participantId].chosen_reservists.map(
-      (playerId) => (playersOwner[playerId] = participantName)
-    );
-  }
-
-  return playersOwner;
-};
-
-const getProtectedPlayers = (
-  poolInfo: Pool,
-  dictUsers: Record<string, PoolUser>
-): Record<number, string> | null => {
-  const protectedPlayers: Record<number, string> = {};
-
-  if (poolInfo.context?.protected_players === null) {
-    return null;
-  }
-
-  for (const [userId, poolProtectedPlayers] of Object.entries(
-    poolInfo.context?.protected_players ?? {}
-  )) {
-    for (const player of poolProtectedPlayers) {
-      protectedPlayers[player] = dictUsers[userId].name;
-    }
-  }
-
-  return protectedPlayers; // Return null if no user owns the player
-};
-
-const findLastDateInDb = (pool: Pool | null) => {
-  // This function looks if there is a date player's stats that have already be stored in the local database.
-  // If so a day will be sent to retrieve the data.
-  if (!pool || !pool.context || !pool.context.score_by_day) {
-    return null;
-  }
-
-  // Sort the keys (dates) in descending order
-  const sortedDates = Object.keys(pool.context.score_by_day).sort((a, b) =>
-    a.localeCompare(b)
-  );
-
-  return sortedDates[sortedDates.length - 1];
-};
-
-export const hasPoolPrivilege = (
-  user: string | undefined,
-  pool: Pool
-): boolean => {
-  return user === pool.owner || pool.settings.assistants.includes(user ?? "");
-};
+// Re-exported from `@/lib/pool-roster`, where it is tested. Kept on this
+// module because that is where the rest of the app already imports it from.
+export { hasPoolPrivilege };
 
 const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
   // Merge score_by_day field. The pool database fields are being overided by the pool information.
@@ -229,38 +170,38 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
   // local cache; the last cached day is re-fetched since it may have been
   // stored while its games were still in progress.
   if (data.context) {
-    const today = format(new Date(), "yyyy-MM-dd");
-    const rangeEnd = today < data.season_end ? today : data.season_end;
-
-    // Only trust cached days inside the current season range (guards against a
-    // stale cache from a previous dynasty season).
     const cachedScores = poolDb?.context?.score_by_day ?? null;
-    const cachedDates = cachedScores
-      ? Object.keys(cachedScores)
-          .filter((date) => date >= data.season_start && date <= rangeEnd)
-          .sort()
-      : [];
-    const lastCachedDate = cachedDates[cachedDates.length - 1];
-    const rangeStart = lastCachedDate ?? data.season_start;
+    const { range, trustedCachedDates } = planScoreFetch({
+      seasonStart: data.season_start,
+      seasonEnd: data.season_end,
+      today: format(new Date(), "yyyy-MM-dd"),
+      cachedDates: cachedScores ? Object.keys(cachedScores) : [],
+    });
 
-    const scoresRes = await apiGet<
-      Record<string, Record<string, DailyRosterPoints>>
-    >(
-      `/pool-scores/${name}/cumulative/${rangeStart}/${rangeEnd}`
-    );
     const cachedByDay = Object.fromEntries(
-      cachedDates.map((date) => [date, cachedScores![date]])
+      trustedCachedDates.map((date) => [date, cachedScores![date]])
     );
-    if (scoresRes.ok) {
-      // Freshly derived days override the cached ones.
-      data.context.score_by_day = {
-        ...cachedByDay,
-        ...scoresRes.data,
-      };
-    } else {
-      // Keep whatever we had locally so the UI can still render history.
+
+    if (range === null) {
+      // Before opening night there is nothing to derive; the old code sent the
+      // backend a backwards range here.
       data.context.score_by_day = cachedByDay;
-      console.error(`could not fetch derived scores: ${scoresRes.error}`);
+    } else {
+      const scoresRes = await apiGet<
+        Record<string, Record<string, DailyRosterPoints>>
+      >(`/pool-scores/${name}/cumulative/${range.start}/${range.end}`);
+
+      if (scoresRes.ok) {
+        // Freshly derived days override the cached ones.
+        data.context.score_by_day = {
+          ...cachedByDay,
+          ...scoresRes.data,
+        };
+      } else {
+        // Keep whatever we had locally so the UI can still render history.
+        data.context.score_by_day = cachedByDay;
+        console.error(`could not fetch derived scores: ${scoresRes.error}`);
+      }
     }
   }
 
@@ -283,7 +224,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   const [dailyPointsMade, setDailyPointsMade] =
     useState<DailyPoolPointsMade | null>(null);
 
-  const lastFormatDate = findLastDateInDb(poolInfo);
+  const lastFormatDate = findLastScoredDate(poolInfo);
 
   const dateOfInterest =
     querySelectedDate !== "now"
