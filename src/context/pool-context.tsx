@@ -426,9 +426,6 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       const user = poolInfo.participants[i];
 
       if (dayInfo && dayInfo[user.id].is_cumulated) {
-        console.info(
-          `processing daily ranking for ${dateOfInterest} using cumulative.`
-        );
         cumulated = true;
         // the information is cumulated in the pool directly get it from there since it
         // is what is being used to display the cumulative page.

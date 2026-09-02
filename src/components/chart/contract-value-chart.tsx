@@ -14,7 +14,7 @@ import { salaryFormat } from "@/app/utils/formating";
 import { ContractValue } from "@/lib/lineup-analytics";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 
-import { POSITION_COLORS } from "./utils";
+import { POSITION_COLORS } from "./colors";
 
 interface ContractValueChartProps {
   values: ContractValue[];

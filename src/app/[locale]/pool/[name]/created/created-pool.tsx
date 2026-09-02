@@ -91,18 +91,15 @@ export default function CreatedPool() {
     },
   });
 
-  const onReady = (checked: boolean) => {
-    console.info(`on ready '${checked}'!`);
+  const onReady = () => {
     sendSocketCommand(Command.OnReady, null);
   };
 
   const AddUser = (userName: string) => {
-    console.info("Add user!");
     sendSocketCommand(Command.AddUser, `{"user_name": "${userName}"}`);
   };
 
   const RemoveUser = (userId: string) => {
-    console.info("remove user!");
     sendSocketCommand(Command.RemoveUser, `{"user_id": "${userId}"}`);
   };
 
@@ -277,7 +274,7 @@ export default function CreatedPool() {
                 <Checkbox
                   id={`is-ready-${userId}`}
                   checked={users[userId].is_ready}
-                  onCheckedChange={(checked) => onReady(checked)}
+                  onCheckedChange={() => onReady()}
                   disabled={userId !== userData.info?.id}
                 />
               ) : (

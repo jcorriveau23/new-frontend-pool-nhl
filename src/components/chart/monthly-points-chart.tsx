@@ -13,7 +13,7 @@ import {
 import { usePoolContext } from "@/context/pool-context";
 import { PeriodResult } from "@/app/[locale]/pool/[name]/in-progress/records-tab/records-calculation";
 
-import { PARTICIPANT_COLORS } from "./utils";
+import { PARTICIPANT_COLORS } from "./colors";
 import { RankedTooltipContent } from "./ranked-tooltip";
 
 interface MonthlyPointsChartProps {

@@ -10,12 +10,12 @@ import {
   LineupPlayers,
 } from "@/lib/lineup-analytics";
 import { CapAllocationChart } from "./chart/cap-allocation-chart";
-import { ContractExpirationChart } from "./chart/contract-expiration-chart";
-import { ContractValueChart } from "./chart/contract-value-chart";
 import {
+  ContractExpirationChart,
+  ContractValueChart,
   PoolerCapEfficiencyChart,
-  PoolerEfficiencyEntry,
-} from "./chart/pooler-cap-efficiency-chart";
+} from "./chart/lazy";
+import type { PoolerEfficiencyEntry } from "./chart/pooler-cap-efficiency-chart";
 import InformationIcon from "./information-box";
 
 export interface LineupAnalytics {

@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { POSITION_COLORS } from "./utils";
+import { POSITION_COLORS } from "./colors";
 
 interface CapAllocationChartProps {
   allocation: CapAllocation;

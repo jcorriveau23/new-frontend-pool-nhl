@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Dice2Icon } from "lucide-react";
-import { Command, RoomUser, useSocketContext } from "@/context/socket-context";
+import { Command, useSocketContext } from "@/context/socket-context";
 import {
   Select,
   SelectContent,
@@ -71,18 +71,75 @@ export default function DraftOrderSelector() {
     );
   };
 
-  const areAllUsersReady = (users: Record<string, RoomUser>) =>
-    // The draft is ready to start if all poolers are ready and the
-    // number of poolers match the number of poolers in the settings.
-    Object.values(users).every((user) => user.is_ready) &&
-    Object.keys(users).length === poolInfo.settings.number_poolers &&
-    Object.keys(users).length === draftOrder.length &&
+  /*
+  Which start condition is still unmet, phrased as something the pooler running
+  the draft can act on — naming the poolers who have not readied up, or the
+  positions still empty. One at a time and in this order, because the checks
+  build on each other: the room has to hold the right people before the order
+  over them means anything, and the order has to be sound before "everyone
+  ready" is the only thing left. Returns null when the draft can start.
+  */
+  const startDraftBlocker = (): string | null => {
+    const users = Object.values(roomUsers ?? {});
+    const expected = poolInfo.settings.number_poolers;
+
+    if (users.length < expected) {
+      return t("StartDraftHintWaitingForPoolers", {
+        count: expected - users.length,
+        current: users.length,
+        expected,
+      });
+    }
+
+    if (users.length > expected) {
+      return t("StartDraftHintTooManyPoolers", {
+        current: users.length,
+        expected,
+      });
+    }
+
+    // A transient state: the effect above resizes the order to the room on the
+    // next render. Guarded anyway so a mismatched order can never start a draft.
+    if (draftOrder.length !== users.length) {
+      return t("StartDraftHintEmptyPositions", {
+        count: Math.abs(users.length - draftOrder.length),
+      });
+    }
+
+    const unfilled = draftOrder.filter((user) => user === "").length;
+    if (unfilled > 0) {
+      return t("StartDraftHintEmptyPositions", { count: unfilled });
+    }
+
     // Every pooler needs a spot of their own: the same pooler picked twice
     // would draft twice a round and leave another one out of the draft.
-    new Set(draftOrder).size === draftOrder.length &&
-    draftOrder.every((user) => user !== "");
+    const duplicated = [
+      ...new Set(
+        draftOrder.filter((user, position) => draftOrder.indexOf(user) !== position),
+      ),
+    ];
+    if (duplicated.length > 0) {
+      return t("StartDraftHintDuplicatePoolers", {
+        count: duplicated.length,
+        names: duplicated
+          .map((user) => roomUsers?.[user]?.name ?? "")
+          .join(", "),
+      });
+    }
 
-  const isReadyToStart = areAllUsersReady(roomUsers ?? {});
+    const notReady = users.filter((user) => !user.is_ready);
+    if (notReady.length > 0) {
+      return t("StartDraftHintNotReady", {
+        count: notReady.length,
+        names: notReady.map((user) => user.name).join(", "),
+      });
+    }
+
+    return null;
+  };
+
+  const blocker = startDraftBlocker();
+  const isReadyToStart = blocker === null;
 
   return (
     <Card className="w-full">
@@ -131,9 +188,14 @@ export default function DraftOrderSelector() {
         <Button onClick={() => startDraft()} disabled={!isReadyToStart}>
           {t("StartDraft")}
         </Button>
-        {!isReadyToStart ? (
-          <p className="text-center text-sm text-muted-foreground">
-            {t("StartDraftHint")}
+        {blocker !== null ? (
+          <p
+            className="text-center text-sm text-muted-foreground"
+            // The button it explains is disabled, so nothing here takes focus:
+            // announce the reason instead of leaving it to be stumbled upon.
+            role="status"
+          >
+            {blocker}
           </p>
         ) : null}
       </CardFooter>

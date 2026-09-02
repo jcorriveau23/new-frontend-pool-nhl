@@ -77,10 +77,7 @@ export default function InProgressPool() {
     // Use effect is used here to manage the popstate event listener.
     // That way if the user go into another page and come back using the "Go Back" or "Go forward"
     // options in the browser he will be in the selected tab.
-    const handlePopState = (_event: PopStateEvent) => {
-      console.info(
-        `A '${_event.type}' event has been triggered, active tabs and selected participants needs to be updated.`,
-      );
+    const handlePopState = () => {
       const queryParams = new URLSearchParams(window.location.search);
       const newActiveTab = queryParams.get("activeTab");
       const newSelectedParticipant = queryParams.get("selectedParticipant");
