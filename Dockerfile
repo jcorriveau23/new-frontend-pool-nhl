@@ -21,7 +21,29 @@ ENV NEXT_PUBLIC_HANKO_API_URL=${NEXT_PUBLIC_HANKO_API_URL}
 # source tree. Left unset, the app reports "dev".
 ARG NEXT_PUBLIC_APP_VERSION
 ENV NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION}
-RUN npm run build
+
+# The Sentry DSN is a build arg for the same reason as the Hanko URL: NEXT_PUBLIC_*
+# is inlined into the client bundle here, so setting it at runtime in the deploy
+# repo would only ever reach the server half and browser errors would silently
+# go unreported. A DSN is a write-only ingest key that ships in the client
+# bundle regardless, so it is not a secret. Left unset, Sentry stays inert.
+ARG NEXT_PUBLIC_SENTRY_DSN
+ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
+
+# Source map upload, so browser stack traces are not minified. Org and project
+# are plain identifiers; the auth token is a real secret and so comes in through
+# a BuildKit secret mount instead of an ARG — ARG values are recorded in the
+# image metadata and would be readable with `docker history`.
+ARG SENTRY_ORG
+ENV SENTRY_ORG=${SENTRY_ORG}
+ARG SENTRY_PROJECT
+ENV SENTRY_PROJECT=${SENTRY_PROJECT}
+
+# The secret is optional: with none mounted the token is empty, next.config.mjs
+# sees an incomplete set and skips the upload rather than failing the build.
+RUN --mount=type=secret,id=sentry_auth_token \
+    SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token 2>/dev/null || true)" \
+    npm run build
 
 # Production stage
 FROM node:22-alpine

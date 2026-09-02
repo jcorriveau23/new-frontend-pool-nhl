@@ -1,5 +1,10 @@
 "use client"; // Error boundaries must be Client Components.
 
+import * as React from "react";
+import * as Sentry from "@sentry/nextjs";
+
+import { isSentryEnabled } from "@/lib/sentry-options";
+
 /*
 Last-resort boundary for errors thrown by the root layout itself (failed font
 load, a provider throwing on mount, a missing environment variable). It
@@ -26,12 +31,12 @@ const COPY = {
 } as const;
 
 // The next-intl provider is unavailable here, so the locale comes from the
-// first path segment the middleware produced (/en/... or /fr/...).
-function copyForLocale() {
+// first path segment the proxy produced (/en/... or /fr/...).
+function localeFromPath(): "en" | "fr" {
   if (typeof window === "undefined") {
-    return COPY.en;
+    return "en";
   }
-  return window.location.pathname.startsWith("/fr") ? COPY.fr : COPY.en;
+  return window.location.pathname.startsWith("/fr") ? "fr" : "en";
 }
 
 export default function GlobalError({
@@ -41,11 +46,22 @@ export default function GlobalError({
   error: Error & { digest?: string };
   retry: () => void;
 }) {
-  const copy = copyForLocale();
+  const locale = localeFromPath();
+  const copy = COPY[locale];
+
+  // The failure that lands here took out the root layout, so it never reached
+  // `onRequestError` on the server and no other boundary will report it.
+  React.useEffect(() => {
+    if (isSentryEnabled) {
+      Sentry.captureException(error);
+    }
+  }, [error]);
 
   return (
     // global-error must include html and body tags.
-    <html lang="en">
+    // `lang` follows the path for the same reason the copy does: this boundary
+    // renders instead of the root layout, so nothing else sets it.
+    <html lang={locale}>
       <body
         style={{
           margin: 0,

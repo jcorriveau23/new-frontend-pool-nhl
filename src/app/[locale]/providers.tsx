@@ -14,9 +14,14 @@ stay a Server Component. That is what lets it read the locale and put it on
 */
 export default function Providers({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+  nonce,
+}: Readonly<{ children: React.ReactNode; nonce?: string }>) {
   return (
     <ThemeProvider
+      // next-themes writes an inline script that sets the theme class before
+      // first paint. Without the nonce the CSP blocks it and every load flashes
+      // the wrong theme before hydration catches up.
+      nonce={nonce}
       attribute="class"
       defaultTheme="system"
       enableSystem
