@@ -208,55 +208,87 @@ export default function CumulativeTab() {
     setRanking(rank);
   }, [poolInfo, dailyPointsMade, poolStartDate, poolSelectedEndDate]);
 
+  /*
+  The three derivations below are memoised, and sit above the loading guard
+  because hooks cannot be called after a conditional return.
+
+  Reference stability is the point rather than raw arithmetic: this component
+  holds seven pieces of state, so opening a chart dialog or picking a date
+  re-runs its body. Rebuilding these arrays each time handed `LineupDialog` and
+  the pooler selector brand new props every render and re-rendered both for
+  nothing.
+  */
+  const rankedByPoints = React.useMemo(
+    () =>
+      ranking === null
+        ? []
+        : [...ranking].sort(
+            (a, b) => b.getTotalPoolPoints() - a.getTotalPoolPoints(),
+          ),
+    [ranking],
+  );
+
+  // The pooler selector lists everybody in standing order, with their rank and
+  // total so the list doubles as a quick leaderboard.
+  const poolerEntries = React.useMemo(() => {
+    // Indexed once rather than scanning `participants` per pooler, which made
+    // this quadratic in the size of the pool.
+    const idByName = new Map(
+      (poolInfo.participants ?? []).map((user) => [user.name, user.id]),
+    );
+
+    return rankedByPoints.map((rank, index) => ({
+      id: idByName.get(rank.participant) ?? rank.participant,
+      name: rank.participant,
+      rank: index + 1,
+      points: rank.getTotalPoolPoints(),
+    }));
+  }, [rankedByPoints, poolInfo.participants]);
+
+  // Feeds the analysis charts of the lineup dialog. Everything here is derived
+  // from the stats already computed above, never from a second
+  // `calculatePoolStats` pass.
+  const lineupAnalytics = React.useMemo(() => {
+    if (playerStats === null || ranking === null) {
+      return { playerPoolPoints: {}, poolers: [] };
+    }
+
+    const playerPoolPoints: Record<number, number> = {};
+    for (const roster of Object.values(playerStats)) {
+      for (const player of [
+        ...roster.forwards,
+        ...roster.defense,
+        ...roster.goalies,
+      ]) {
+        playerPoolPoints[player.id] = player.poolPoints;
+      }
+    }
+
+    // Same quadratic scan as above, for the same reason.
+    const totalByParticipant = new Map(
+      ranking.map((rank) => [rank.participant, rank.getTotalPoolPoints()]),
+    );
+
+    return {
+      playerPoolPoints,
+      poolers: getPoolerCapUsage(poolInfo).map((usage) => ({
+        ...usage,
+        poolPoints: totalByParticipant.get(usage.name) ?? 0,
+      })),
+    };
+  }, [playerStats, ranking, poolInfo]);
+
   if (ranking === null || playerStats === null) {
     return <TableSkeleton rows={10} label={t("LoadingPoolRanking")} />;
   }
 
-  const rankedByPoints = [...ranking].sort(
-    (a, b) => b.getTotalPoolPoints() - a.getTotalPoolPoints(),
-  );
+  // Cheap single passes that depend on the selected pooler, so they are left
+  // out of the memos above rather than adding it to their dependencies.
   const selectedRankIndex = rankedByPoints.findIndex(
     (rank) => rank.participant === selectedParticipant,
   );
   const selectedRankingEntry =
     selectedRankIndex >= 0 ? rankedByPoints[selectedRankIndex] : null;
-
-  // The pooler selector lists everybody in standing order, with their rank and
-  // total so the list doubles as a quick leaderboard.
-  const poolerEntries = rankedByPoints.map((rank, index) => ({
-    id:
-      poolInfo.participants?.find((user) => user.name === rank.participant)
-        ?.id ?? rank.participant,
-    name: rank.participant,
-    rank: index + 1,
-    points: rank.getTotalPoolPoints(),
-  }));
-
-  // Feeds the analysis charts of the lineup dialog. Everything here is derived
-  // from the stats already computed above, never from a second
-  // `calculatePoolStats` pass.
-  const lineupAnalytics = {
-    playerPoolPoints: Object.values(playerStats).reduce(
-      (points: Record<number, number>, roster) => {
-        for (const player of [
-          ...roster.forwards,
-          ...roster.defense,
-          ...roster.goalies,
-        ]) {
-          points[player.id] = player.poolPoints;
-        }
-        return points;
-      },
-      {},
-    ),
-    poolers: getPoolerCapUsage(poolInfo).map((usage) => ({
-      ...usage,
-      poolPoints:
-        ranking
-          .find((rank) => rank.participant === usage.name)
-          ?.getTotalPoolPoints() ?? 0,
-    })),
-  };
 
   // The daily points columns only make sense for a day that belongs to the
   // pool. With no date selected the day being looked at is the one the nhl api
