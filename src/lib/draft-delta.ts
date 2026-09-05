@@ -18,6 +18,15 @@ import {
   RosterModifiedResponse,
 } from "@/data/pool/model";
 
+/*
+Whether a whole pool pushed by the room is newer than the one we hold.
+
+`date_updated` is the pool's version stamp, which the backend forces to
+strictly increase on every write, so anything not newer is behind us.
+*/
+export const isPoolBroadcastNewer = (current: Pool, incoming: Pool): boolean =>
+  incoming.date_updated > current.date_updated;
+
 export const applyPlayerDrafted = (
   pool: Pool,
   delta: PlayerDraftedResponse

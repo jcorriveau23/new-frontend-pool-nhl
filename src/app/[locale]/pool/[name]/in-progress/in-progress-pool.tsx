@@ -1,7 +1,7 @@
 import * as React from "react";
 import CumulativeTab from "./cumulative-tab/cumulative-tab";
 import DailyTab from "./daily-tab/daily-tab";
-import TradeTab from "./trade-tab/trade-tab";
+import TradeList from "@/components/trade-list";
 import HistoryTab from "./history-tab/history-tab";
 import RecordsTab from "./records-tab/records-tab";
 import DraftTab from "./draft-tab/draft-tab";
@@ -165,7 +165,7 @@ export default function InProgressPool() {
         </TabsContent>
         {poolInfo.settings.dynasty_settings ? (
           <TabsContent value={InProgressTabs.TRADE}>
-            <TradeTab />
+            <TradeList />
           </TabsContent>
         ) : null}
         {poolInfo.settings.dynasty_settings ||

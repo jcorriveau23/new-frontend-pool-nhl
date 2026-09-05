@@ -183,7 +183,7 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
                   table.options.meta?.props?.openTradeForPlayer?.(player.id)
                 }
               >
-                {table.options.meta?.t("ProposeTrade")}
+                {table.options.meta?.t("FileTrade")}
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>
@@ -302,7 +302,7 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
                   table.options.meta?.props?.openTradeForPlayer?.(player.id)
                 }
               >
-                {table.options.meta?.t("ProposeTrade")}
+                {table.options.meta?.t("FileTrade")}
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>
@@ -425,7 +425,7 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
                   table.options.meta?.props?.openTradeForPlayer?.(player.id)
                 }
               >
-                {table.options.meta?.t("ProposeTrade")}
+                {table.options.meta?.t("FileTrade")}
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>

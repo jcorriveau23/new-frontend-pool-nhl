@@ -231,15 +231,37 @@ export interface DraftPick {
   from: string;
 }
 
+/*
+Where a trade is between being written down and taking effect.
+
+Anybody in the pool can file one; only the owner and the assistants correct it
+and sign it off, which is the point at which the items actually change hands.
+*/
+export enum TradeStatus {
+  Open = "Open",
+  Confirmed = "Confirmed",
+}
+
 export interface Trade {
   proposed_by: string;
   ask_to: string;
   from_items: TradeItems;
   to_items: TradeItems;
-  status: TradeStatus;
   id: number;
   date_created: number;
-  date_accepted: number;
+  status: TradeStatus;
+
+  /*
+  The day the trade takes effect for scoring (yyyy-MM-dd).
+  */
+  effective_date: string | null;
+
+  /*
+  Where the trade sits on the draft timeline: the number of picks made when it
+  was filed, so it falls between pick `draft_pick_index - 1` and pick
+  `draft_pick_index`.
+  */
+  draft_pick_index: number | null;
 }
 
 export interface TradeItems {
@@ -247,16 +269,9 @@ export interface TradeItems {
   picks: DraftPick[];
 }
 
-export enum TradeStatus {
-  NEW = "NEW",
-  ACCEPTED = "ACCEPTED",
-  CANCELLED = "CANCELLED",
-  REFUSED = "REFUSED",
-}
-
 export const getPoolerAllPlayers = (
   poolContext: PoolContext,
-  user: PoolUser
+  user: PoolUser,
 ) => {
   const reservistForwards = poolContext.pooler_roster[user.id].chosen_reservists
     .map((playerId) => poolContext.players[playerId.toString()])
@@ -272,19 +287,19 @@ export const getPoolerAllPlayers = (
 
   const forwards = [
     ...poolContext.pooler_roster[user.id].chosen_forwards.map(
-      (playerId) => poolContext.players[playerId.toString()]
+      (playerId) => poolContext.players[playerId.toString()],
     ),
     ...reservistForwards,
   ];
   const defense = [
     ...poolContext.pooler_roster[user.id].chosen_defenders.map(
-      (playerId) => poolContext.players[playerId.toString()]
+      (playerId) => poolContext.players[playerId.toString()],
     ),
     ...reservistsDefenders,
   ];
   const goalies = [
     ...poolContext.pooler_roster[user.id].chosen_goalies.map(
-      (playerId) => poolContext.players[playerId.toString()]
+      (playerId) => poolContext.players[playerId.toString()],
     ),
     ...reservistGoalies,
   ];
@@ -299,28 +314,28 @@ export const getPoolerAllPlayers = (
 
 export const getPoolerActivePlayers = (
   poolContext: PoolContext,
-  user: PoolUser
+  user: PoolUser,
 ) => {
   return {
     user,
     forwards: poolContext.pooler_roster[user.id].chosen_forwards.map(
-      (playerId) => poolContext.players[playerId.toString()]
+      (playerId) => poolContext.players[playerId.toString()],
     ),
     defense: poolContext.pooler_roster[user.id].chosen_defenders.map(
-      (playerId) => poolContext.players[playerId.toString()]
+      (playerId) => poolContext.players[playerId.toString()],
     ),
     goalies: poolContext.pooler_roster[user.id].chosen_goalies.map(
-      (playerId) => poolContext.players[playerId.toString()]
+      (playerId) => poolContext.players[playerId.toString()],
     ),
     reservists: poolContext.pooler_roster[user.id].chosen_reservists.map(
-      (playerId) => poolContext.players[playerId.toString()]
+      (playerId) => poolContext.players[playerId.toString()],
     ),
   };
 };
 
 export const getSkaterPoolPoints = (
   skatersSettings: SkaterSettings,
-  skaterPoints: SkaterPoints
+  skaterPoints: SkaterPoints,
 ) => {
   let totalPoints =
     skaterPoints.G * skatersSettings.points_per_goals +
@@ -338,7 +353,7 @@ export const getSkaterPoolPoints = (
 
 export const getGoaliePoolPoints = (
   goaliesSettings: GoaliesSettings,
-  goaliePoints: GoaliePoints
+  goaliePoints: GoaliePoints,
 ) => {
   let totalPoints =
     goaliePoints.G * goaliesSettings.points_per_goals +
@@ -369,7 +384,7 @@ export interface GoaliePoints {
 
 const findXLeastTotalPoints = (
   playersPoints: Record<string, number>,
-  xWorst: number
+  xWorst: number,
 ) => {
   const values = Object.values(playersPoints);
 
@@ -388,7 +403,7 @@ export const getPoolTimeRangeCharts = (
   poolInfo: Pool,
   poolStartDate: Date,
   poolSelectedEndDate: Date,
-  positionFilter: "F" | "D" | "G" | null
+  positionFilter: "F" | "D" | "G" | null,
 ) => {
   // Return a charts of the amout of points accumulated between 2 dates.
   const chartData = [];
@@ -399,7 +414,7 @@ export const getPoolTimeRangeCharts = (
       acc[participant.id] = { F: 0, D: 0, G: 0 };
       return acc;
     },
-    {} as Record<string, { F: number; D: number; G: number }>
+    {} as Record<string, { F: number; D: number; G: number }>,
   );
   // This is necessary to filter points made by worst players of each positions.
   // Participant id -> list of players cumulated points.
@@ -419,7 +434,7 @@ export const getPoolTimeRangeCharts = (
         D: Record<string, number>;
         G: Record<string, number>;
       }
-    >
+    >,
   );
   let worstForwardsPointsIgnored = 0;
   let worstDefendersPointsIgnored = 0;
@@ -465,7 +480,7 @@ export const getPoolTimeRangeCharts = (
             if (skater) {
               const skaterPoints = getSkaterPoolPoints(
                 poolInfo.settings.forwards_settings,
-                skater
+                skater,
               );
 
               totalPoolerCurrentPoints[participant.id].F += skaterPoints;
@@ -476,7 +491,7 @@ export const getPoolTimeRangeCharts = (
           if (poolInfo.settings.ignore_x_worst_players?.forwards ?? 0 > 0) {
             worstForwardsPointsIgnored = findXLeastTotalPoints(
               poolerPlayers[participant.id].F,
-              poolInfo.settings.ignore_x_worst_players?.forwards ?? 0
+              poolInfo.settings.ignore_x_worst_players?.forwards ?? 0,
             );
           }
         }
@@ -491,7 +506,7 @@ export const getPoolTimeRangeCharts = (
             if (skater) {
               const skaterPoints = getSkaterPoolPoints(
                 poolInfo.settings.defense_settings,
-                skater
+                skater,
               );
               totalPoolerCurrentPoints[participant.id].D += skaterPoints;
               poolerPlayers[participant.id].D[skaterId] += skaterPoints;
@@ -500,7 +515,7 @@ export const getPoolTimeRangeCharts = (
           if (poolInfo.settings.ignore_x_worst_players?.defense ?? 0 > 0) {
             worstDefendersPointsIgnored = findXLeastTotalPoints(
               poolerPlayers[participant.id].D,
-              poolInfo.settings.ignore_x_worst_players?.defense ?? 0
+              poolInfo.settings.ignore_x_worst_players?.defense ?? 0,
             );
           }
         }
@@ -515,7 +530,7 @@ export const getPoolTimeRangeCharts = (
             if (goalie) {
               const goaliePoints = getGoaliePoolPoints(
                 poolInfo.settings.goalies_settings,
-                goalie
+                goalie,
               );
               totalPoolerCurrentPoints[participant.id].G += goaliePoints;
               poolerPlayers[participant.id].G[goalieId] += goaliePoints;
@@ -524,7 +539,7 @@ export const getPoolTimeRangeCharts = (
           if (poolInfo.settings.ignore_x_worst_players?.goalies ?? 0 > 0) {
             worstGoaliesPointsIgnored = findXLeastTotalPoints(
               poolerPlayers[participant.id].G,
-              poolInfo.settings.ignore_x_worst_players?.goalies ?? 0
+              poolInfo.settings.ignore_x_worst_players?.goalies ?? 0,
             );
           }
         }
@@ -543,23 +558,33 @@ export const getPoolTimeRangeCharts = (
   return chartData;
 };
 
-const findSkaterPoints = (poolInfo: Pool , jDate: string, participantId: string, playerId: string): SkaterPoints | null => {
+const findSkaterPoints = (
+  poolInfo: Pool,
+  jDate: string,
+  participantId: string,
+  playerId: string,
+): SkaterPoints | null => {
   const roster =
     poolInfo.context?.score_by_day?.[jDate]?.[participantId]?.roster;
 
   // Check both "F" and "D" for the player
   return roster?.F?.[playerId] || roster?.D?.[playerId] || null;
-}
+};
 
-const findGoaliePoints = (poolInfo: Pool , jDate: string, participantId: string, playerId: string): GoaliePoints | null => {
+const findGoaliePoints = (
+  poolInfo: Pool,
+  jDate: string,
+  participantId: string,
+  playerId: string,
+): GoaliePoints | null => {
   const roster =
     poolInfo.context?.score_by_day?.[jDate]?.[participantId]?.roster;
 
   return roster?.G?.[playerId] || null;
-}
+};
 
 export const getSkaterTimeRangeCharts = (
-  poolInfo: Pool ,
+  poolInfo: Pool,
   poolStartDate: Date,
   poolSelectedEndDate: Date,
   playerId: string,
@@ -569,7 +594,7 @@ export const getSkaterTimeRangeCharts = (
   // Return a charts of the amout of points accumulated between 2 dates.
   let prevChartElement = null;
   const chartData = [];
- 
+
   for (
     let j = new Date(poolStartDate);
     j <= poolSelectedEndDate;
@@ -585,26 +610,36 @@ export const getSkaterTimeRangeCharts = (
       continue;
     }
 
-    const skaterPoints = findSkaterPoints(poolInfo, jDate, userId, playerId)
+    const skaterPoints = findSkaterPoints(poolInfo, jDate, userId, playerId);
 
-    chartElement["poolPoints"] = Number(prevChartElement?.["poolPoints"] ?? 0) + (skaterPoints ? getSkaterPoolPoints(skaterSettings, skaterPoints) : 0);
-    chartElement["goals"] = Number(prevChartElement?.["goals"] ?? 0) + (skaterPoints?.G ?? 0);
-    chartElement["assists"] = Number(prevChartElement?.["assists"] ?? 0) + (skaterPoints?.A ?? 0);
-    chartElement["hattricks"] = Number(prevChartElement?.["hattricks"] ?? 0) + (skaterPoints && skaterPoints.G >= 3 ? 1 : 0);
-    chartElement["shootoutGoals"] = Number(prevChartElement?.["shootoutGoals"] ?? 0) + (skaterPoints && skaterPoints.SOG ? skaterPoints.SOG : 0);
-    chartElement["games"] = Number(prevChartElement?.["games"] ?? 0) + (skaterPoints ? 1 : 0);
-    chartElement["isInRoster"] = (playerId in poolInfo.context.score_by_day[jDate][userId].roster.F) || (playerId in poolInfo.context.score_by_day[jDate][userId].roster.D)
-    
+    chartElement["poolPoints"] =
+      Number(prevChartElement?.["poolPoints"] ?? 0) +
+      (skaterPoints ? getSkaterPoolPoints(skaterSettings, skaterPoints) : 0);
+    chartElement["goals"] =
+      Number(prevChartElement?.["goals"] ?? 0) + (skaterPoints?.G ?? 0);
+    chartElement["assists"] =
+      Number(prevChartElement?.["assists"] ?? 0) + (skaterPoints?.A ?? 0);
+    chartElement["hattricks"] =
+      Number(prevChartElement?.["hattricks"] ?? 0) +
+      (skaterPoints && skaterPoints.G >= 3 ? 1 : 0);
+    chartElement["shootoutGoals"] =
+      Number(prevChartElement?.["shootoutGoals"] ?? 0) +
+      (skaterPoints && skaterPoints.SOG ? skaterPoints.SOG : 0);
+    chartElement["games"] =
+      Number(prevChartElement?.["games"] ?? 0) + (skaterPoints ? 1 : 0);
+    chartElement["isInRoster"] =
+      playerId in poolInfo.context.score_by_day[jDate][userId].roster.F ||
+      playerId in poolInfo.context.score_by_day[jDate][userId].roster.D;
+
     prevChartElement = chartElement;
     chartData.push(chartElement);
-    
   }
-  
+
   return chartData;
 };
 
 export const getGoalieTimeRangeCharts = (
-  poolInfo: Pool ,
+  poolInfo: Pool,
   poolStartDate: Date,
   poolSelectedEndDate: Date,
   playerId: string,
@@ -614,7 +649,7 @@ export const getGoalieTimeRangeCharts = (
   // Return a charts of the amout of points accumulated between 2 dates.
   let prevChartElement = null;
   const chartData = [];
- 
+
   for (
     let j = new Date(poolStartDate);
     j <= poolSelectedEndDate;
@@ -630,21 +665,29 @@ export const getGoalieTimeRangeCharts = (
       continue;
     }
 
-    const goaliePoints = findGoaliePoints(poolInfo, jDate, userId, playerId)
+    const goaliePoints = findGoaliePoints(poolInfo, jDate, userId, playerId);
 
-    chartElement["poolPoints"] = Number(prevChartElement?.["poolPoints"] ?? 0) + (goaliePoints ? getGoaliePoolPoints(goaliesSettings, goaliePoints) : 0);
-    chartElement["wins"] = Number(prevChartElement?.["wins"] ?? 0) + (goaliePoints?.W ? 1 : 0);
-    chartElement["shutout"] = Number(prevChartElement?.["shutout"] ?? 0) + (goaliePoints?.SO ? 1 : 0);
-    chartElement["otlosses"] = Number(prevChartElement?.["otlosses"] ?? 0) + (goaliePoints?.OT ? 1 : 0);
-    chartElement["goals"] = Number(prevChartElement?.["goals"] ?? 0) + (goaliePoints?.G ?? 0 );
-    chartElement["assists"] = Number(prevChartElement?.["assists"] ?? 0) + (goaliePoints?.A ?? 0 );
-    chartElement["games"] = Number(prevChartElement?.["games"] ?? 0) + (goaliePoints ? 1 : 0);
-    chartElement["isInRoster"] = playerId in poolInfo.context.score_by_day[jDate][userId].roster.G
-    
+    chartElement["poolPoints"] =
+      Number(prevChartElement?.["poolPoints"] ?? 0) +
+      (goaliePoints ? getGoaliePoolPoints(goaliesSettings, goaliePoints) : 0);
+    chartElement["wins"] =
+      Number(prevChartElement?.["wins"] ?? 0) + (goaliePoints?.W ? 1 : 0);
+    chartElement["shutout"] =
+      Number(prevChartElement?.["shutout"] ?? 0) + (goaliePoints?.SO ? 1 : 0);
+    chartElement["otlosses"] =
+      Number(prevChartElement?.["otlosses"] ?? 0) + (goaliePoints?.OT ? 1 : 0);
+    chartElement["goals"] =
+      Number(prevChartElement?.["goals"] ?? 0) + (goaliePoints?.G ?? 0);
+    chartElement["assists"] =
+      Number(prevChartElement?.["assists"] ?? 0) + (goaliePoints?.A ?? 0);
+    chartElement["games"] =
+      Number(prevChartElement?.["games"] ?? 0) + (goaliePoints ? 1 : 0);
+    chartElement["isInRoster"] =
+      playerId in poolInfo.context.score_by_day[jDate][userId].roster.G;
+
     prevChartElement = chartElement;
     chartData.push(chartElement);
-    
   }
-  
+
   return chartData;
 };

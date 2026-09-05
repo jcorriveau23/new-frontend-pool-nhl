@@ -7,6 +7,7 @@ import {
   Pool,
   PoolUser,
   Position,
+  PoolState,
   Trade,
   TradeStatus,
   getPoolerAllPlayers,
@@ -16,6 +17,7 @@ import { hasPoolPrivilege, usePoolContext } from "@/context/pool-context";
 import { PoolerNameText } from "./pooler-name";
 import { useUser } from "@/context/useUserData";
 import { useSession } from "@/context/useSessionData";
+import { Command, useOptionalSocketContext } from "@/context/socket-context";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
@@ -39,10 +41,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import PlayerSalary from "@/components/player-salary";
-import { ArrowLeftRight, Info } from "lucide-react";
+import { ArrowLeftRight, CalendarIcon, Info } from "lucide-react";
+import { format as formatDate } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ordinal } from "@/app/utils/formating";
+import { getPoolerTradablePicks, pickKey } from "@/lib/pool-picks";
 
-export const pickKey = (pick: DraftPick) => `${pick.round}-${pick.from}`;
+export { pickKey };
 
 // An asset the dialog can be opened on, so the trade starts pre-filled with
 // the player or the pick the user clicked somewhere else in the pool.
@@ -113,10 +123,9 @@ function TradeSideSelector(props: TradeSideSelectorProps) {
 
   const salaryCapEnabled = poolInfo.settings.salary_cap != null;
   const roster = getPoolerAllPlayers(poolInfo.context, props.pooler);
-  const picks = getPoolerPicks(
-    poolInfo.context.tradable_picks,
-    props.pooler.id,
-  );
+  // During a draft this drops the picks that have already been played: they
+  // are a player on a roster by now, and the API refuses to trade them.
+  const picks = getPoolerTradablePicks(poolInfo, props.pooler.id);
 
   const PlayerGroup = (label: string, players: Player[]) =>
     players.length > 0 ? (
@@ -192,35 +201,22 @@ function TradeSideSelector(props: TradeSideSelectorProps) {
   );
 }
 
-// Return the list of draft picks a pooler currently owns, based on the pool
-// tradable_picks (indexed by round, mapping the original owner to the current
-// owner).
-export const getPoolerPicks = (
-  tradablePicks: Record<string, string>[] | null | undefined,
-  poolerId: string,
-): DraftPick[] => {
-  const picks: DraftPick[] = [];
-  tradablePicks?.forEach((roundPicksOwner, round) => {
-    Object.keys(roundPicksOwner).forEach((from) => {
-      if (roundPicksOwner[from] === poolerId) {
-        picks.push({ round, from });
-      }
-    });
-  });
-  return picks;
-};
-
 interface CreateTradeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   // Asset the dialog opens on, pre-selected on the right side of the trade.
   initialAsset?: TradeAsset | null;
+  // An existing open trade being corrected. The dialog then submits an update
+  // for that record instead of filing a new one.
+  editingTrade?: Trade | null;
 }
 
 export default function CreateTradeDialog(props: CreateTradeDialogProps) {
   const { poolInfo, updatePoolInfo, dictUsers } = usePoolContext();
   const userData = useUser();
   const userSession = useSession();
+  // Present on the draft page only; undefined everywhere else.
+  const socketContext = useOptionalSocketContext();
   const t = useTranslations();
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -253,6 +249,19 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
   const [fromPicks, setFromPicks] = React.useState<Set<string>>(new Set());
   const [toPicks, setToPicks] = React.useState<Set<string>>(new Set());
 
+  /*
+  The day the trade counts from.
+
+  Poolers agree on a deal and file it later, so the default is today but the
+  date is theirs to move: backdating it to the day they shook on it is what
+  makes the right rosters score for the days in between. Only a running pool
+  scores days, so the picker is not shown in the other two states.
+  */
+  const seasonStart = new Date(`${poolInfo.season_start}T00:00:00`);
+  const seasonEnd = new Date(`${poolInfo.season_end}T00:00:00`);
+  const datesTheTradeCanCountFrom = poolInfo.status === PoolState.InProgress;
+  const [effectiveDate, setEffectiveDate] = React.useState<Date>(new Date());
+
   const resetSelection = () => {
     setFromPlayers(new Set());
     setToPlayers(new Set());
@@ -262,6 +271,23 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
 
   React.useEffect(() => {
     if (!props.open) {
+      return;
+    }
+
+    // Editing an existing trade: the dialog opens on exactly what it says.
+    const editing = props.editingTrade;
+    if (editing) {
+      setFromPoolerId(editing.proposed_by);
+      setToPoolerId(editing.ask_to);
+      setFromPlayers(new Set(editing.from_items.players));
+      setToPlayers(new Set(editing.to_items.players));
+      setFromPicks(new Set(editing.from_items.picks.map(pickKey)));
+      setToPicks(new Set(editing.to_items.picks.map(pickKey)));
+      setEffectiveDate(
+        editing.effective_date
+          ? new Date(`${editing.effective_date}T00:00:00`)
+          : new Date(),
+      );
       return;
     }
 
@@ -288,6 +314,7 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
     setToPoolerId(to);
 
     resetSelection();
+    setEffectiveDate(new Date());
     if (asset?.playerId != null) {
       const selection = new Set([asset.playerId]);
       if (assetOnFromSide) setFromPlayers(selection);
@@ -301,7 +328,7 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
     // Only re-initialise when the dialog opens on a new asset, so the user
     // selection is never wiped while they are building the trade.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.open, props.initialAsset]);
+  }, [props.open, props.initialAsset, props.editingTrade]);
 
   const toggle = <T,>(
     setter: React.Dispatch<React.SetStateAction<Set<T>>>,
@@ -327,7 +354,7 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
     poolerId: string,
     selected: Set<string>,
   ): DraftPick[] =>
-    getPoolerPicks(poolInfo.context?.tradable_picks, poolerId).filter((pick) =>
+    getPoolerTradablePicks(poolInfo, poolerId).filter((pick) =>
       selected.has(pickKey(pick)),
     );
 
@@ -359,19 +386,53 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
         players: Array.from(toPlayers),
         picks: selectedPicksFor(toPooler.id, toPicks),
       },
-      status: TradeStatus.NEW,
-      id: 0,
+      id: props.editingTrade?.id ?? 0,
       date_created: 0,
-      date_accepted: 0,
+      status: TradeStatus.Open,
+      effective_date: datesTheTradeCanCountFrom
+        ? formatDate(effectiveDate, "yyyy-MM-dd")
+        : null,
+      // Stamped by the backend when the trade is filed during a draft.
+      draft_pick_index: null,
     };
+
+    const editing = props.editingTrade;
 
     setIsSubmitting(true);
     try {
-      const res = await apiPost<Pool>(
-        "/create-trade",
-        { pool_name: poolInfo.name, trade },
-        userSession.info.jwt,
-      );
+      // While the draft runs the trade goes to the room, so every board sees it
+      // the same way it sees a pick. The REST endpoints serve the other states,
+      // which have no room and no socket.
+      if (socketContext) {
+        if (editing) {
+          socketContext.sendSocketCommand(
+            Command.UpdateTrade,
+            JSON.stringify({ trade_id: editing.id, trade }),
+          );
+        } else {
+          socketContext.sendSocketCommand(
+            Command.CreateTrade,
+            JSON.stringify({ trade }),
+          );
+        }
+        toast.success(editing ? t("TradeUpdated") : t("TradeFiled"), {
+          duration: 2000,
+        });
+        props.onOpenChange(false);
+        return;
+      }
+
+      const res = editing
+        ? await apiPost<Pool>(
+            "/update-trade",
+            { pool_name: poolInfo.name, trade_id: editing.id, trade },
+            userSession.info.jwt,
+          )
+        : await apiPost<Pool>(
+            "/create-trade",
+            { pool_name: poolInfo.name, trade },
+            userSession.info.jwt,
+          );
 
       if (!res.ok) {
         toast.error(
@@ -382,7 +443,9 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
       }
 
       updatePoolInfo(res.data);
-      toast.success(t("TradeProposalCreated"), { duration: 2000 });
+      toast.success(editing ? t("TradeUpdated") : t("TradeFiled"), {
+        duration: 2000,
+      });
       props.onOpenChange(false);
     } finally {
       setIsSubmitting(false);
@@ -395,7 +458,7 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle className="flex items-center gap-2">
             <ArrowLeftRight className="h-5 w-5" />
-            {t("ProposeTrade")}
+            {props.editingTrade ? t("EditTrade") : t("FileTrade")}
           </DialogTitle>
           <DialogDescription>{t("SelectPoolerToTradeWith")}</DialogDescription>
         </DialogHeader>
@@ -503,6 +566,46 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
             </div>
           </div>
 
+          {datesTheTradeCanCountFrom ? (
+            <>
+              <Separator className="my-4" />
+              <div className="space-y-2">
+                <Label>{t("TradeEffectiveDate")}</Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Popover>
+                    <PopoverTrigger
+                      render={
+                        <Button
+                          variant="outline"
+                          className="w-[220px] justify-start text-left font-normal"
+                        />
+                      }
+                    >
+                      <CalendarIcon className="mr-2 size-4 shrink-0" />
+                      {formatDate(effectiveDate, "PPP")}
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={effectiveDate}
+                        defaultMonth={effectiveDate}
+                        onSelect={(date) => date && setEffectiveDate(date)}
+                        // A trade belongs to the season it is filed in: outside
+                        // it there are no days for the new rosters to score.
+                        disabled={{ before: seasonStart, after: seasonEnd }}
+                        className="rounded-md border shadow-sm"
+                        required
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <span className="text-xs text-muted-foreground">
+                    {t("TradeEffectiveDateHint")}
+                  </span>
+                </div>
+              </div>
+            </>
+          ) : null}
+
           {nbSelected > 0 && fromPooler && toPooler ? (
             <>
               <Separator className="my-4" />
@@ -578,7 +681,7 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
                 fromPooler.id === toPooler.id
               }
             >
-              {t("ProposeTrade")}
+              {props.editingTrade ? t("SaveTrade") : t("FileTrade")}
             </Button>
           </div>
         </DialogFooter>

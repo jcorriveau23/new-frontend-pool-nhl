@@ -123,14 +123,12 @@ export default function HistoryTab() {
       const jDate = j.toISOString().slice(0, 10);
 
       const dailyMovements = []; // Will capture all movement that happened on this date.
+      // Every stored trade has happened, and it counts from the day the
+      // poolers agreed on it — which is already the day the history is keyed
+      // by, so no timestamp conversion is needed anymore.
       const dailyTrades =
-        poolInfo.trades?.filter(
-          (trade) =>
-            trade.status === "ACCEPTED" &&
-            new Date(trade.date_accepted + 3600000)
-              .toISOString()
-              .slice(0, 10) === jDate,
-        ) ?? [];
+        poolInfo.trades?.filter((trade) => trade.effective_date === jDate) ??
+        [];
 
       if (
         poolInfo.context.score_by_day &&
