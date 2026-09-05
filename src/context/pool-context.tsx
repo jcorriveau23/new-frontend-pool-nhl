@@ -22,6 +22,7 @@ import {
   applyDraftPickUndone,
   applyPlayerDrafted,
   applyRosterModified,
+  isPoolBroadcastNewer,
 } from "@/lib/draft-delta";
 import React, {
   createContext,
@@ -85,6 +86,11 @@ export interface PoolContextProps {
   poolInfo: Pool;
   updatePoolInfo: (newPoolInfo: Pool) => void;
 
+  // Applies a whole pool pushed by the room, ignoring it when it is older than
+  // the pool we already hold. Draft deltas carry their own ordering check
+  // (`pick_count`); a full pool has none, so this is where it lives.
+  applyPoolBroadcast: (newPoolInfo: Pool) => void;
+
   // Applies a draft socket delta (a single pick, or its undo) to the pool.
   // Falls back to refetching the pool when the delta cannot be applied, which
   // means this client missed an earlier update.
@@ -92,7 +98,7 @@ export interface PoolContextProps {
     delta:
       | { PlayerDrafted: PlayerDraftedResponse }
       | { DraftPickUndone: DraftPickUndoneResponse }
-      | { RosterModified: RosterModifiedResponse }
+      | { RosterModified: RosterModifiedResponse },
   ) => void;
 
   // Drop the local copy of the pool and take the server's. Needed on every
@@ -179,7 +185,7 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
     });
 
     const cachedByDay = Object.fromEntries(
-      trustedCachedDates.map((date) => [date, cachedScores![date]])
+      trustedCachedDates.map((date) => [date, cachedScores![date]]),
     );
 
     if (range === null) {
@@ -230,8 +236,8 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     querySelectedDate !== "now"
       ? querySelectedDate
       : lastFormatDate
-      ? lastFormatDate
-      : format(currentDate, "yyyy-MM-dd");
+        ? lastFormatDate
+        : format(currentDate, "yyyy-MM-dd");
 
   // Now parse all the pool date from the start of the season to the current date.
   const poolStartDate = new Date(poolInfo.season_start + "T00:00:00");
@@ -242,11 +248,11 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     endDate < poolStartDate
       ? new Date(poolInfo.season_start + "T00:00:00")
       : endDate > poolEndDate
-      ? new Date(poolInfo.season_end + "T00:00:00")
-      : endDate;
+        ? new Date(poolInfo.season_end + "T00:00:00")
+        : endDate;
 
   const [dictUsers, setDictUsers] = useState<Record<string, PoolUser>>(
-    getPoolDictUsers(pool)
+    getPoolDictUsers(pool),
   );
 
   const getQuerySelectedParticipant = (): string | null => {
@@ -272,7 +278,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   };
   const router = useRouter();
   const [selectedParticipant, setSelectedParticipant] = React.useState<string>(
-    getInitialSelectedParticipant()
+    getInitialSelectedParticipant(),
   );
 
   // Whether the pooler in view was asked for — by the URL, or by a click —
@@ -281,7 +287,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   const hasChosenParticipant = useRef(getQuerySelectedParticipant() !== null);
   const [selectedPoolUser, setSelectedPoolUser] = React.useState<PoolUser>(
     poolInfo.participants.find((user) => user.name === selectedParticipant) ??
-      poolInfo.participants[0]
+      poolInfo.participants[0],
   );
   const userData = useUser();
 
@@ -289,9 +295,9 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   const userPoolUser = React.useMemo(
     () =>
       poolInfo.participants.find(
-        (user) => user.id !== "" && user.id === userData.info?.id
+        (user) => user.id !== "" && user.id === userData.info?.id,
       ) ?? null,
-    [poolInfo.participants, userData.info?.id]
+    [poolInfo.participants, userData.info?.id],
   );
 
   // Hanko validates the session after the first render, so the connected user
@@ -313,7 +319,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   // selected, instead of leaving the selection on a name nobody carries anymore.
   React.useEffect(() => {
     const renamed = poolInfo.participants.find(
-      (user) => user.id === selectedPoolUser?.id
+      (user) => user.id === selectedPoolUser?.id,
     );
     if (renamed === undefined || renamed.name === selectedParticipant) {
       return;
@@ -339,7 +345,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       setSelectedParticipant(participant);
       setSelectedPoolUser(
         poolInfo.participants.find((user) => user.name === participant) ??
-          poolInfo.participants[0]
+          poolInfo.participants[0],
       );
       const queryParams = new URLSearchParams(searchParams.toString());
       queryParams.set("selectedParticipant", participant);
@@ -350,7 +356,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
         scroll: false,
       });
     },
-    [poolInfo.participants, poolInfo.name, searchParams, router]
+    [poolInfo.participants, poolInfo.name, searchParams, router],
   );
 
   React.useEffect(() => {
@@ -372,15 +378,15 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
         // is what is being used to display the cumulative page.
         forwardsDailyStatsTemp[user.id] = getDailySkatersStatsWithCumulative(
           dayInfo[user.id].roster.F,
-          poolInfo.settings.forwards_settings
+          poolInfo.settings.forwards_settings,
         );
         defendersDailyStatsTemp[user.id] = getDailySkatersStatsWithCumulative(
           dayInfo[user.id].roster.D,
-          poolInfo.settings.defense_settings
+          poolInfo.settings.defense_settings,
         );
         goaliesDailyStatsTemp[user.id] = getDailyGoaliesStatsWithCumulative(
           dayInfo[user.id].roster.G,
-          poolInfo.settings.goalies_settings
+          poolInfo.settings.goalies_settings,
         );
       } else {
         // No derived scores for this day yet (e.g. previewing a future roster).
@@ -393,8 +399,8 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
           forwardsDailyStatsTemp[user.id],
           defendersDailyStatsTemp[user.id],
           goaliesDailyStatsTemp[user.id],
-          poolInfo.settings
-        )
+          poolInfo.settings,
+        ),
       );
     }
 
@@ -443,37 +449,46 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     setDictUsers(newDictUsers);
   }, []);
 
+  // A whole pool pushed by the draft room, dropped when it is older than the
+  // one we hold — see `isPoolBroadcastNewer` for why that can happen.
+  const applyPoolBroadcast = useCallback(
+    (newPoolInfo: Pool) => {
+      if (!isPoolBroadcastNewer(poolInfoRef.current, newPoolInfo)) {
+        return;
+      }
+      updatePoolInfo(newPoolInfo);
+    },
+    [updatePoolInfo],
+  );
+
   const resyncInFlight = useRef(false);
 
   // Drop the local copy of the pool and take the server's. Used when a draft
   // delta does not fit the pool we hold, which means we missed an update.
-  const resyncPoolInfo = useCallback(
-    async () => {
-      // A burst of unusable deltas should trigger one refetch, not one each.
-      if (resyncInFlight.current) {
+  const resyncPoolInfo = useCallback(async () => {
+    // A burst of unusable deltas should trigger one refetch, not one each.
+    if (resyncInFlight.current) {
+      return;
+    }
+    resyncInFlight.current = true;
+    try {
+      const refreshedPool = await fetchPoolInfo(poolInfoRef.current.name);
+      if (typeof refreshedPool === "string") {
+        console.error(`could not resynchronize the pool: ${refreshedPool}`);
         return;
       }
-      resyncInFlight.current = true;
-      try {
-        const refreshedPool = await fetchPoolInfo(poolInfoRef.current.name);
-        if (typeof refreshedPool === "string") {
-          console.error(`could not resynchronize the pool: ${refreshedPool}`);
-          return;
-        }
-        updatePoolInfo(refreshedPool);
-      } finally {
-        resyncInFlight.current = false;
-      }
-    },
-    [updatePoolInfo]
-  );
+      updatePoolInfo(refreshedPool);
+    } finally {
+      resyncInFlight.current = false;
+    }
+  }, [updatePoolInfo]);
 
   const applyDraftDelta = useCallback(
     (
       delta:
         | { PlayerDrafted: PlayerDraftedResponse }
         | { DraftPickUndone: DraftPickUndoneResponse }
-        | { RosterModified: RosterModifiedResponse }
+        | { RosterModified: RosterModifiedResponse },
     ) => {
       const currentPool = poolInfoRef.current;
       let newPoolInfo: Pool | null;
@@ -493,7 +508,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
 
       updatePoolInfo(newPoolInfo);
     },
-    [resyncPoolInfo, updatePoolInfo]
+    [resyncPoolInfo, updatePoolInfo],
   );
 
   const contextValue: PoolContextProps = {
@@ -509,6 +524,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     protectedPlayers,
     poolInfo,
     updatePoolInfo,
+    applyPoolBroadcast,
     applyDraftDelta,
     resyncPoolInfo,
     dictUsers,

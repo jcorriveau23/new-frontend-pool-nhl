@@ -7,12 +7,14 @@ import DraftTab from "./draft-tab/draft-tab";
 import SettingsTab from "./settings-tab/settings-tab";
 import RosterTab from "./roster-tab/roster-tab";
 import NhlPlayersTab from "./nhl-players-tab/nhl-players-tab";
+import TradeList from "@/components/trade-list";
 import { salaryFormat, seasonFormat } from "@/app/utils/formating";
 import { ShieldIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 enum DynastyTabs {
   ROSTER = "roster",
+  TRADE = "trade",
   DRAFT = "draft",
   SETTINGS = "settings",
   NHL_PLAYERS = "NhlPlayers",
@@ -117,6 +119,7 @@ export default function DynastyPool() {
             <TabsTrigger value={DynastyTabs.NHL_PLAYERS}>
               {t("NhlPlayers")}
             </TabsTrigger>
+            <TabsTrigger value={DynastyTabs.TRADE}>{t("Trade")}</TabsTrigger>
             <TabsTrigger value={DynastyTabs.DRAFT}>{t("Draft")}</TabsTrigger>
             <TabsTrigger value={DynastyTabs.SETTINGS}>
               {t("Settings")}
@@ -128,6 +131,9 @@ export default function DynastyPool() {
         </TabsContent>
         <TabsContent value={DynastyTabs.NHL_PLAYERS}>
           <NhlPlayersTab />
+        </TabsContent>
+        <TabsContent value={DynastyTabs.TRADE}>
+          <TradeList />
         </TabsContent>
         <TabsContent value={DynastyTabs.DRAFT}>
           <DraftTab />

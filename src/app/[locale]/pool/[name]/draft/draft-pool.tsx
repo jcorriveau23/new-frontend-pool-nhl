@@ -32,6 +32,7 @@ import {
 import React from "react";
 import UndoButton from "@/components/undo-button";
 import LineupDialog from "@/components/lineup-dialog";
+import TradeList from "@/components/trade-list";
 import { useUser } from "@/context/useUserData";
 
 export default function DraftPage() {
@@ -41,7 +42,7 @@ export default function DraftPage() {
   const { sendSocketCommand } = useSocketContext();
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [selectedPlayer, setSelectedPlayer] = React.useState<Player | null>(
-    null
+    null,
   );
   const userData = useUser();
 
@@ -60,7 +61,7 @@ export default function DraftPage() {
     if (selectedPlayer) {
       sendSocketCommand(
         Command.DraftPlayer,
-        `{"player_id": ${selectedPlayer.id}}`
+        `{"player_id": ${selectedPlayer.id}}`,
       );
       setDialogOpen(false); // Close the dialog
       setSelectedPlayer(null); // Clear the selected player
@@ -105,9 +106,7 @@ export default function DraftPage() {
     <div>
       <div className="flex flex-col mt-2 justify-center space-x-2 gap-2">
         <Dialog>
-          <DialogTrigger render={<Button />}>
-            {t("DraftAPlayer")}
-          </DialogTrigger>
+          <DialogTrigger render={<Button />}>{t("DraftAPlayer")}</DialogTrigger>
           <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
             <DialogHeader>
               <DialogTitle>{t("DraftAPlayer")}</DialogTitle>
@@ -135,12 +134,23 @@ export default function DraftPage() {
             userRoster: getPoolerActivePlayers(
               poolInfo.context!,
               poolInfo.participants.find(
-                (user) => user.name === selectedParticipant
-              ) ?? poolInfo.participants[0]
+                (user) => user.name === selectedParticipant,
+              ) ?? poolInfo.participants[0],
             ),
             teamSalaryCap: poolInfo.settings.salary_cap,
           }}
         />
+        <Dialog>
+          <DialogTrigger render={<Button variant="outline" />}>
+            {t("Trade")}
+          </DialogTrigger>
+          <DialogContent className="flex max-h-[90dvh] w-full max-w-[96%] flex-col overflow-y-auto p-4 sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>{t("Trade")}</DialogTitle>
+            </DialogHeader>
+            <TradeList />
+          </DialogContent>
+        </Dialog>
         <UndoButton
           disabled={
             poolInfo.context?.players_name_drafted.length == 0 ||
