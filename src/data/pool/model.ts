@@ -69,6 +69,25 @@ export interface PoolUser {
   is_owned: boolean;
 }
 
+/*
+An invitation, filed by the pool owner, for whoever signs in with a given email
+address to take one of the poolers of the pool over.
+
+The address itself is never stored nor sent: a pool is readable by anybody who
+can read the pool, and an invitation waiting on somebody is not a reason to
+publish their email address to everyone. What travels is the SHA-256 of the
+normalized address, which the invitee's browser recomputes from the address they
+signed in with to know an invitation is theirs, and a masked hint the owner
+recognizes the invitation they filed by.
+*/
+export interface PendingPoolerLink {
+  pooler_user_id: string;
+  email_hash: string;
+  email_hint: string;
+  requested_by: string;
+  date_requested: number;
+}
+
 export interface Pool {
   id: string;
   name: string;
@@ -82,6 +101,7 @@ export interface Pool {
   nb_player_drafted: number;
   nb_trade: number;
   trades: Trade[] | null;
+  pending_pooler_links: PendingPoolerLink[] | null;
   context: PoolContext | null;
   date_updated: number;
   season_start: string;
@@ -100,6 +120,16 @@ export enum PoolState {
 export interface PoolContext {
   pooler_roster: Record<string, PoolerRoster>;
   players_name_drafted: number[];
+  /*
+  Assembled by the client, not sent by the backend.
+
+  The pool document used to carry a roster snapshot for every day of the season
+  and this came straight off it. That blob is gone: the backend keeps the sparse
+  `lineup_events` instead and derives the days on demand, so `fetchPoolInfo`
+  fills this from `/pool-scores/{name}/cumulative/{from}/{to}` and the locally
+  cached days. The shape is unchanged, which is why the tabs and charts that
+  read it did not have to be.
+  */
   score_by_day: Record<string, Record<string, DailyRosterPoints>> | null;
   tradable_picks: Record<string, string>[] | null;
   past_tradable_picks: Record<string, string>[] | null;

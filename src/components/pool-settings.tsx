@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import * as React from "react";
 import {
   DraftType,
+  PendingPoolerLink,
   Pool,
   PoolSettings,
   PoolState,
@@ -41,10 +42,18 @@ import { toast } from "sonner";
 import InformationIcon from "./information-box";
 import { useSearchParams } from "next/navigation";
 import { salaryFormat } from "@/app/utils/formating";
-import { LockIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import {
+  LinkIcon,
+  LockIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import { useUser } from "@/context/useUserData";
 import DeletePoolDialog from "./delete-pool-dialog";
 import RenamePoolerDialog from "./rename-pooler-dialog";
+import LinkPoolerAccountDialog from "./link-pooler-account-dialog";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -62,6 +71,10 @@ interface Props {
   // unknown while the pool is being created.
   poolOwner?: string;
   participants?: PoolUser[];
+
+  // Account links the owner filed that are still waiting on the person they
+  // name. Unknown while the pool is being created, like the participants.
+  pendingPoolerLinks?: PendingPoolerLink[] | null;
 
   // Whether the signed in user may change the settings. Creating a pool always
   // is, an existing pool only for its owner and its assistants.
@@ -1105,14 +1118,22 @@ export default function PoolSettingsComponent(props: Props) {
     </Card>
   );
 
-  // Renaming a pooler is the owner's alone as well, and only makes sense once
-  // the pool has participants: before the draft the poolers still live in the
-  // draft room, where the owner names them as they are added.
+  // Renaming a pooler and handing it to another account are both the owner's
+  // alone, and only make sense once the pool has participants: before the draft
+  // the poolers still live in the draft room, where the owner names them as
+  // they are added.
+  // The invitation standing on a pooler, if any. Filed by the owner and waiting
+  // on the person it names to sign in and accept it.
+  const pendingLinkOf = (poolerUserId: string) =>
+    props.pendingPoolerLinks?.find(
+      (pending) => pending.pooler_user_id === poolerUserId
+    ) ?? null;
+
   const PoolerSettings = () => (
     <Card>
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">{t("PoolerSettings")}</CardTitle>
-        <CardDescription>{t("RenamePoolerDescription")}</CardDescription>
+        <CardDescription>{t("PoolerSettingsDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
         <ul className="divide-y">
@@ -1122,23 +1143,52 @@ export default function PoolSettingsComponent(props: Props) {
               className="flex items-center justify-between gap-2 py-2"
             >
               <PoolerNameText name={participant.name} />
-              <RenamePoolerDialog
-                poolName={props.poolName}
-                pooler={participant}
-                participants={props.participants ?? []}
-                onRenamed={(pool) => props.onUpdated?.(pool)}
-                trigger={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t("RenamePoolerLabel", {
-                      name: participant.name,
-                    })}
-                  >
-                    <PencilIcon className="size-4" />
-                  </Button>
-                }
-              />
+              <div className="flex shrink-0 items-center gap-1">
+                <RenamePoolerDialog
+                  poolName={props.poolName}
+                  pooler={participant}
+                  participants={props.participants ?? []}
+                  onRenamed={(pool) => props.onUpdated?.(pool)}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t("RenamePoolerLabel", {
+                        name: participant.name,
+                      })}
+                    >
+                      <PencilIcon className="size-4" />
+                    </Button>
+                  }
+                />
+                <LinkPoolerAccountDialog
+                  poolName={props.poolName}
+                  pooler={participant}
+                  pendingLink={pendingLinkOf(participant.id)}
+                  onUpdated={(pool) => props.onUpdated?.(pool)}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t(
+                        pendingLinkOf(participant.id)
+                          ? "PendingPoolerLinkLabel"
+                          : "LinkPoolerAccountLabel",
+                        { name: participant.name }
+                      )}
+                      // An invitation already waiting on this pooler is the one
+                      // thing about it that is not visible from the row, and it
+                      // is what the button does next (withdraw it, not file
+                      // another).
+                      className={
+                        pendingLinkOf(participant.id) ? "text-primary" : ""
+                      }
+                    >
+                      <LinkIcon className="size-4" />
+                    </Button>
+                  }
+                />
+              </div>
             </li>
           ))}
         </ul>
