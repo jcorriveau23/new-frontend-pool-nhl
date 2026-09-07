@@ -1,6 +1,18 @@
 import createNextIntlPlugin from "next-intl/plugin";
+// Imported from the `/config` entry point: the same re-export on the package
+// root is deprecated and warns.
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const withNextIntl = createNextIntlPlugin();
+
+// Source maps are only uploaded when a CI job supplies all three values. A
+// normal `npm run build` — a local checkout, a fork, a PR from outside — has
+// none of them and skips the upload rather than failing the build.
+const sentryUploadEnabled = Boolean(
+  process.env.SENTRY_AUTH_TOKEN &&
+    process.env.SENTRY_ORG &&
+    process.env.SENTRY_PROJECT
+);
 
 // The production domains the app is served from. Extra origins (a LAN address
 // used to test on a phone, a staging host) are added through
@@ -53,4 +65,33 @@ const nextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSentryConfig(withNextIntl(nextConfig), {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Without a token there is nothing to upload, and the plugin's default is to
+  // say so on every build. Silence it in that case so a normal build stays
+  // clean, but keep the output when an upload is actually being attempted —
+  // that is when a failure matters.
+  silent: !sentryUploadEnabled,
+  sourcemaps: {
+    disable: !sentryUploadEnabled,
+    // Uploaded maps are deleted from the build output afterwards, so the
+    // container does not serve the app's source to anyone who asks.
+    deleteSourcemapsAfterUpload: true,
+  },
+
+  // Routes browser events through this app's own origin instead of straight to
+  // ingest.sentry.io. Ad blockers drop requests to Sentry's domain, and the
+  // errors most worth seeing come from the people most likely to be running
+  // one. It also keeps the CSP connect-src limited to 'self'.
+  //
+  // A fixed path rather than `true`, which generates a fresh random route on
+  // every build: `proxy.ts` has to exclude this path from locale routing, and
+  // it cannot exclude a name it does not know. Keep the two in step.
+  tunnelRoute: "/monitoring",
+
+  // No build-time telemetry to Sentry about this project.
+  telemetry: false,
+});

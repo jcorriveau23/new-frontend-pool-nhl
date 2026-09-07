@@ -1,5 +1,6 @@
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, setRequestLocale } from "next-intl/server";
+import { headers } from "next/headers";
 import React from "react";
 import MainLayout from "./main-layout";
 import Providers from "./providers";
@@ -90,6 +91,8 @@ export default async function LocaleLayout(
   }>
 ) {
   const locale = await getLocale();
+  // Set per request by `proxy.ts`, alongside the CSP that names it.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   const { children } = props;
 
@@ -105,7 +108,7 @@ export default async function LocaleLayout(
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body className="font-sans antialiased">
-        <Providers>
+        <Providers nonce={nonce}>
           <NextIntlClientProvider locale={locale} messages={messages}>
             <MainLayout
               currentSeason={currentSeason(seasonInfo)}
