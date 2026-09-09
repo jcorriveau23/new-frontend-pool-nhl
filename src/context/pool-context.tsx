@@ -137,7 +137,6 @@ const getPoolDictUsers = (pool: Pool) =>
 export { hasPoolPrivilege };
 
 const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
-  // Merge score_by_day field. The pool database fields are being overided by the pool information.
   if (mergedPoolInfo.context === null) {
     mergedPoolInfo.context = poolDb.context;
     return;
@@ -157,7 +156,7 @@ interpolated into the path as-is: running it through encodeURIComponent would
 double-encode it and the backend would look up a pool literally named
 "Raph%20gagne".
 */
-export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
+const fetchPoolInfoUncached = async (name: string): Promise<Pool | string> => {
   // Pool metadata (participants, settings, roster, lineup events).
   const res = await apiGet<Pool>(`/pool/${name}`);
   if (!res.ok) {
@@ -171,8 +170,7 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
   const poolDb: Pool = await db.pools.get({ name: name });
 
   // Scores are derived on demand server-side from the lineup events + daily
-  // stats, shaped like the legacy score_by_day so the rest of the UI is
-  // unchanged. Past days never change, so only fetch the days missing from the
+  // stats, shaped the way the rest of the UI already reads them. Past days never change, so only fetch the days missing from the
   // local cache; the last cached day is re-fetched since it may have been
   // stored while its games were still in progress.
   if (data.context) {
@@ -215,9 +213,30 @@ export const fetchPoolInfo = async (name: string): Promise<Pool | string> => {
     data.id = poolDb.id;
   }
 
+  // Awaited so that a caller starting right after this one resolves reads the
+  // days we just stored, instead of racing the write and re-deriving the whole
+  // season.
   // @ts-expect-error, Dexie is not typed.
-  db.pools.put(data, "name");
+  await db.pools.put(data, "name");
   return data;
+};
+
+/*
+The fetches already running, keyed by pool name.
+*/
+const poolFetchesInFlight = new Map<string, Promise<Pool | string>>();
+
+export const fetchPoolInfo = (name: string): Promise<Pool | string> => {
+  const inFlight = poolFetchesInFlight.get(name);
+  if (inFlight !== undefined) {
+    return inFlight;
+  }
+
+  const fetching = fetchPoolInfoUncached(name).finally(() => {
+    poolFetchesInFlight.delete(name);
+  });
+  poolFetchesInFlight.set(name, fetching);
+  return fetching;
 };
 
 export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
