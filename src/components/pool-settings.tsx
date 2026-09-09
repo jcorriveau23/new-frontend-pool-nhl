@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import * as React from "react";
 import {
   DraftType,
+  DropPeriod,
   PendingPoolerLink,
   Pool,
   PoolSettings,
@@ -244,6 +245,20 @@ export default function PoolSettingsComponent(props: Props) {
   const DEFAULT_SALARY_CAP_ENABLED =
     (props.oldPoolSettings?.salary_cap ?? null) !== null;
 
+  // 6) Free agency. Only the number of drops is configurable: a drop always
+  // comes with picking a free agent up, so one number covers both halves of
+  // the swap and a roster can never change size.
+  const DEFAULT_PLAYER_DROPS_ENABLED =
+    (props.oldPoolSettings?.player_drop_settings ?? null) !== null;
+
+  const DEFAULT_MAX_PLAYER_DROPS =
+    props.oldPoolSettings?.player_drop_settings?.max_drops ?? 3;
+  const MAX_PLAYER_DROPS_MIN_VALUE = 1;
+  const MAX_PLAYER_DROPS_MAX_VALUE = 50;
+
+  const DEFAULT_DROP_PERIOD =
+    props.oldPoolSettings?.player_drop_settings?.period ?? DropPeriod.SEASON;
+
   const [showDynastySettings, setShowDynastySettings] = React.useState(
     DEFAULT_POOL_TYPE === PoolType.DYNASTY
   );
@@ -252,6 +267,9 @@ export default function PoolSettingsComponent(props: Props) {
   );
   const [salaryCapEnabled, setSalaryCapEnabled] = React.useState(
     DEFAULT_SALARY_CAP_ENABLED
+  );
+  const [playerDropsEnabled, setPlayerDropsEnabled] = React.useState(
+    DEFAULT_PLAYER_DROPS_ENABLED
   );
 
   // Both are list settings without a matching form control, they are kept
@@ -412,6 +430,20 @@ export default function PoolSettingsComponent(props: Props) {
       .min(NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE)
       .max(NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE),
     salaryCap: z.number().min(SALARY_CAP_MIN_VALUE).max(SALARY_CAP_MAX_VALUE),
+    maxPlayerDrops: z
+      .number()
+      .int({ error: t("MaxPlayerDropsMustBeWholeNumberValidation") })
+      .min(MAX_PLAYER_DROPS_MIN_VALUE, {
+        error: t("MaxPlayerDropsMinValidation", {
+          value: MAX_PLAYER_DROPS_MIN_VALUE,
+        }),
+      })
+      .max(MAX_PLAYER_DROPS_MAX_VALUE, {
+        error: t("MaxPlayerDropsMaxValidation", {
+          value: MAX_PLAYER_DROPS_MAX_VALUE,
+        }),
+      }),
+    dropPeriod: z.enum([DropPeriod.SEASON, DropPeriod.MONTH]),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -447,6 +479,8 @@ export default function PoolSettingsComponent(props: Props) {
       tradableDraftPicks: DEFAULT_TRADABLE_DRAFT_PICKS,
       numberOfPlayersToProtect: DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT,
       salaryCap: props.oldPoolSettings?.salary_cap ?? DEFAULT_SALARY_CAP,
+      maxPlayerDrops: DEFAULT_MAX_PLAYER_DROPS,
+      dropPeriod: DEFAULT_DROP_PERIOD,
     },
   });
 
@@ -487,6 +521,12 @@ export default function PoolSettingsComponent(props: Props) {
             forwards: values.numberOfWorstForwardsToIgnore,
             defense: values.numberOfWorstDefendersToIgnore,
             goalies: values.numberOfWorstGoaliesToIgnore,
+          }
+        : null,
+      player_drop_settings: playerDropsEnabled
+        ? {
+            max_drops: values.maxPlayerDrops,
+            period: values.dropPeriod,
           }
         : null,
       dynasty_settings: showDynastySettings
@@ -1050,6 +1090,62 @@ export default function PoolSettingsComponent(props: Props) {
                 <PlusIcon className="size-4" />
                 {t("Add")}
               </Button>
+            </div>
+          ) : null}
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="player-drops-enabled"
+              checked={playerDropsEnabled}
+              disabled={!CAN_EDIT}
+              onCheckedChange={(checked) => setPlayerDropsEnabled(checked)}
+            />
+            <Label htmlFor="player-drops-enabled" className="font-normal">
+              {t("EnablePlayerDrops")}
+            </Label>
+            <InformationIcon text={t("PlayerDropsSettingDescription")} />
+          </div>
+          {playerDropsEnabled ? (
+            <div className="space-y-4 rounded-lg border bg-muted/50 p-4">
+              <div className="max-w-xs">
+                {NumberField(
+                  "maxPlayerDrops",
+                  t("MaxPlayerDrops"),
+                  MAX_PLAYER_DROPS_MIN_VALUE,
+                  MAX_PLAYER_DROPS_MAX_VALUE,
+                  t("MaxPlayerDropsDescription")
+                )}
+              </div>
+              <FormField
+                control={form.control}
+                name="dropPeriod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("DropPeriod")}</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        className="flex min-h-9 flex-wrap items-center gap-x-6 gap-y-2"
+                      >
+                        {RadioOption(
+                          "drop-period-season",
+                          DropPeriod.SEASON,
+                          t("PerSeason"),
+                          t("DropPeriodSeasonDescription")
+                        )}
+                        {RadioOption(
+                          "drop-period-month",
+                          DropPeriod.MONTH,
+                          t("PerMonth"),
+                          t("DropPeriodMonthDescription")
+                        )}
+                      </RadioGroup>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </div>
           ) : null}
         </div>

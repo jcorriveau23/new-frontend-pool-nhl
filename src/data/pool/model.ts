@@ -41,6 +41,43 @@ export enum DraftType {
   STANDARD = "Standard",
 }
 
+/*
+How often a pooler's drop budget refills.
+*/
+export enum DropPeriod {
+  // One budget for the whole pool. Nothing refills it.
+  SEASON = "Season",
+  // The budget refills on the first of every calendar month.
+  MONTH = "Month",
+}
+
+/*
+The owner's free-agency rule. Null on a pool without free agency, which is
+every pool that predates the setting.
+*/
+export interface PlayerDropSettings {
+  // Swaps a pooler may make per period.
+  max_drops: number;
+  period: DropPeriod;
+}
+
+/*
+One completed free-agent swap: a player dropped and an undrafted one picked up
+in the same move. Kept so the drop budget can be counted and the pool can show
+what changed hands on which day.
+*/
+export interface RosterTransaction {
+  participant: string;
+  // The day the swap takes effect for scoring (yyyy-MM-dd), which is also the
+  // date of the lineup event it records.
+  effective_date: string;
+  dropped_player_id: number;
+  added_player_id: number;
+  // When the swap was filed, in milliseconds. Display only: the budget is
+  // counted on `effective_date`, the day the swap is for.
+  date_created: number;
+}
+
 export interface PoolSettings {
   number_poolers: number;
   draft_type: DraftType;
@@ -59,6 +96,7 @@ export interface PoolSettings {
 
   ignore_x_worst_players: PlayerTypeSettings | null;
   dynasty_settings: DynastySettings | null;
+  player_drop_settings: PlayerDropSettings | null;
 }
 
 export interface PoolUser {
@@ -135,6 +173,10 @@ export interface PoolContext {
   past_tradable_picks: Record<string, string>[] | null;
   protected_players: Record<string, number[]> | null;
   players: Record<string, Player>;
+  // Free-agent swaps, one entry per drop/add pair. What the drop budget of
+  // `settings.player_drop_settings` is counted against. Null on a pool that
+  // has never had one.
+  roster_transactions: RosterTransaction[] | null;
 }
 
 export interface PoolerRoster {

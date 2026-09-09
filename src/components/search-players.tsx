@@ -18,6 +18,7 @@ import { TeamLogo } from "./team-logo";
 import { useTranslations } from "next-intl";
 import PlayerSalary from "./player-salary";
 import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 const MINIMUM_SEARCH_CHARACTER = 3;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -27,13 +28,32 @@ interface PlayerSearchDialogProps {
   onPlayerSelect: ((player: Player) => Promise<boolean>) | null;
   variant?: React.ComponentProps<typeof Button>["variant"];
   size?: React.ComponentProps<typeof Button>["size"];
+
+  // Controlled mode: the caller owns the open state and no trigger button is
+  // rendered. Used where the dialog is opened by something other than a button
+  // of its own — picking the replacement of a player being dropped, say.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+
+  // Why a result cannot be picked, when it cannot. A row with a reason is
+  // shown greyed out with it rather than left clickable to fail on submit.
+  unavailableReason?: (player: Player) => string | null;
 }
 
 export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
   const [searchInput, setSearchInput] = React.useState("");
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [isUncontrolledOpen, setIsUncontrolledOpen] = React.useState(false);
   const t = useTranslations();
+
+  const isControlled = props.open !== undefined;
+  const isOpen = isControlled ? props.open! : isUncontrolledOpen;
+  const setIsOpen = (open: boolean) => {
+    if (!isControlled) {
+      setIsUncontrolledOpen(open);
+    }
+    props.onOpenChange?.(open);
+  };
 
   // Debounced so typing a name does not fire a request per keystroke.
   React.useEffect(() => {
@@ -72,18 +92,20 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger
-        render={
-          <Button
-            variant={props.variant}
-            size={props.size}
-            className="flex items-center gap-2"
-          />
-        }
-      >
-        <Search className="size-4" />
-        {props.label}
-      </DialogTrigger>
+      {isControlled ? null : (
+        <DialogTrigger
+          render={
+            <Button
+              variant={props.variant}
+              size={props.size}
+              className="flex items-center gap-2"
+            />
+          }
+        >
+          <Search className="size-4" />
+          {props.label}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{props.label}</DialogTitle>
@@ -140,53 +162,73 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
               </p>
             ) : (
               <ul className="flex flex-col gap-1">
-                {results.map((player) => (
-                  <li key={player.id}>
-                    {/* A div rather than a button: the row embeds a link to
+                {results.map((player) => {
+                  const unavailableReason =
+                    props.unavailableReason?.(player) ?? null;
+                  return (
+                    <li key={player.id}>
+                      {/* A div rather than a button: the row embeds a link to
                         the player page, which cannot live inside a button. */}
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => onPlayerSelect(player)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          onPlayerSelect(player);
+                      <div
+                        role="button"
+                        tabIndex={unavailableReason ? -1 : 0}
+                        aria-disabled={unavailableReason !== null}
+                        onClick={() =>
+                          unavailableReason ? undefined : onPlayerSelect(player)
                         }
-                      }}
-                      className="flex w-full cursor-pointer items-center gap-2 rounded-md border p-2 text-left transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                    >
-                      <TeamLogo teamId={player.team} width={26} height={26} />
-                      <PlayerLink
-                        id={player.id}
-                        name={player.name}
-                        textStyle={null}
-                        onLinkClick={(e: React.MouseEvent) => {
-                          e.stopPropagation();
+                        onKeyDown={(e) => {
+                          if (unavailableReason) {
+                            return;
+                          }
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onPlayerSelect(player);
+                          }
                         }}
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        {player.position}
-                      </span>
-                      <span className="ml-auto">
-                        {player.salary_cap ||
-                        player.contract_expiration_season ? (
-                          <PlayerSalary
-                            playerName={player.name}
-                            team={player.team}
-                            salary={player.salary_cap}
-                            contractExpirationSeason={
-                              player.contract_expiration_season
-                            }
-                            onBadgeClick={(e: React.MouseEvent) => {
-                              e.stopPropagation();
-                            }}
-                          />
+                        className={cn(
+                          "flex w-full items-center gap-2 rounded-md border p-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                          unavailableReason
+                            ? "cursor-not-allowed opacity-60"
+                            : "cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                        )}
+                      >
+                        <TeamLogo teamId={player.team} width={26} height={26} />
+                        <PlayerLink
+                          id={player.id}
+                          name={player.name}
+                          textStyle={null}
+                          onLinkClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                          }}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {player.position}
+                        </span>
+                        {unavailableReason ? (
+                          <span className="text-xs text-muted-foreground">
+                            · {unavailableReason}
+                          </span>
                         ) : null}
-                      </span>
-                    </div>
-                  </li>
-                ))}
+                        <span className="ml-auto">
+                          {player.salary_cap ||
+                          player.contract_expiration_season ? (
+                            <PlayerSalary
+                              playerName={player.name}
+                              team={player.team}
+                              salary={player.salary_cap}
+                              contractExpirationSeason={
+                                player.contract_expiration_season
+                              }
+                              onBadgeClick={(e: React.MouseEvent) => {
+                                e.stopPropagation();
+                              }}
+                            />
+                          ) : null}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
