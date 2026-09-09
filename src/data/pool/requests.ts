@@ -21,6 +21,20 @@ export interface RemovePlayerRequest {
   player_id: number;
 }
 
+/*
+A pooler swapping a player they hold for an undrafted one. The two halves
+travel together: free agency is a paired move, so a roster never changes size
+and the swap costs exactly one unit of the drop budget.
+*/
+export interface DropAddPlayerRequest {
+  pool_name: string;
+  // The pooler the swap is for. A pooler sends their own id; the owner and the
+  // assistants may send anyone's.
+  participant_id: string;
+  dropped_player_id: number;
+  added_player: Player;
+}
+
 export interface CreateTradeRequest {
   pool_name: string;
   trade: Trade;
