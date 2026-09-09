@@ -83,7 +83,8 @@ export const getProtectedPlayers = (
 The most recent day the pool has scores for, or null when it has none.
 
 `score_by_day` is an object, so its keys arrive in no guaranteed order and the
-latest date is the maximum, not the last one inserted.
+latest date is the maximum, not the last one inserted. It is assembled by the
+client from the derived-scores endpoint, not sent by the backend.
 */
 export const findLastScoredDate = (pool: Pool | null): string | null => {
   const scores = pool?.context?.score_by_day;

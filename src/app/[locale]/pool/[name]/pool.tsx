@@ -13,6 +13,7 @@ import { useTranslations } from "next-intl";
 import PageTitle from "@/components/page-title";
 import FavoritePoolButton from "@/components/favorite-pool-button";
 import SharePoolButton from "@/components/share-pool-button";
+import PoolerLinkInvitation from "@/components/pooler-link-invitation";
 import { useSession } from "@/context/useSessionData";
 import {
   Tooltip,
@@ -83,6 +84,7 @@ export default function PoolStatus() {
     return (
       <SocketProvider jwt={userSession.info?.jwt}>
         <PageTitle title={poolInfo.name} titleAdornment={titleAdornment} />
+        <PoolerLinkInvitation />
         {poolInfo.status === PoolState.Created ? (
           <CreatedPool />
         ) : (
@@ -98,6 +100,7 @@ export default function PoolStatus() {
       return (
         <>
           <PageTitle title={poolInfo.name} titleAdornment={titleAdornment} />
+          <PoolerLinkInvitation />
           <InProgressPool />
         </>
       );
@@ -105,6 +108,7 @@ export default function PoolStatus() {
       return (
         <>
           <PageTitle title={poolInfo.name} titleAdornment={titleAdornment} />
+          <PoolerLinkInvitation />
           <DynastyPool />
         </>
       );

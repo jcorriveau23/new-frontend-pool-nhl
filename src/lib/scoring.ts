@@ -1,9 +1,8 @@
 /*
 Pure scoring display helpers for pool daily points.
 
-These classes and helpers turn the per-player breakdown the server derives
-(stored in the score_by_day shape) into the aggregated daily totals the UI
-renders. The scoring rules themselves live on the server; this file only
+These classes and helpers turn the per-player breakdown the server derives into
+the aggregated daily totals the UI renders. The scoring rules themselves live on the server; this file only
 computes display totals from the already-derived per-player stats.
 */
 import {
