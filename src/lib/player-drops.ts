@@ -52,7 +52,9 @@ export const getDropBudget = (
   participantId: string,
   now: Date
 ): DropBudget => {
-  const settings = pool.settings.player_drop_settings;
+  // An API that predates free agency leaves the key out altogether, so the
+  // absent case is undefined as often as it is null.
+  const settings = pool.settings.player_drop_settings ?? null;
   // A swap made before opening night has no day of its own to apply to, so the
   // backend lands it on the season start; the budget is counted there too.
   const filedDate = getEffectiveRosterDate(now);

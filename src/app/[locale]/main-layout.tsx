@@ -35,17 +35,14 @@ export default function MainLayout({
         <GamesNightProvider>
           <SidebarProvider>
             <AppSidebar currentSeason={currentSeason} draftYear={draftYear} />
-            <SidebarInset className="pb-[var(--app-bottom-inset)]">
+            <SidebarInset className="min-w-0 pb-[var(--app-bottom-inset)]">
               <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
                 <SidebarTrigger className="-ml-1" />
                 <Separator
                   orientation="vertical"
                   className="mr-1 data-[orientation=vertical]:h-4"
                 />
-                <Link
-                  href="/"
-                  className="text-sm font-semibold tracking-tight"
-                >
+                <Link href="/" className="text-sm font-semibold tracking-tight">
                   slapshot<span className="text-primary">.xyz</span>
                 </Link>
                 <div className="ml-auto flex items-center gap-2">

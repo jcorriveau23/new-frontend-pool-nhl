@@ -53,7 +53,8 @@ export enum DropPeriod {
 
 /*
 The owner's free-agency rule. Null on a pool without free agency, which is
-every pool that predates the setting.
+every pool that predates the setting — and absent altogether when the pool is
+served by an API that predates it.
 */
 export interface PlayerDropSettings {
   // Swaps a pooler may make per period.
@@ -96,7 +97,7 @@ export interface PoolSettings {
 
   ignore_x_worst_players: PlayerTypeSettings | null;
   dynasty_settings: DynastySettings | null;
-  player_drop_settings: PlayerDropSettings | null;
+  player_drop_settings?: PlayerDropSettings | null;
 }
 
 export interface PoolUser {

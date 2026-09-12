@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
-import { setRequestLocale } from "next-intl/server";
-import { useLocale, useTranslations } from "next-intl";
+import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
+import { currentSeason, getSeasonInfo } from "@/lib/season-info";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,11 +12,28 @@ import {
 } from "@/components/ui/card";
 import { ArrowRight, ArrowLeftRight, BarChart3, Radio } from "lucide-react";
 
-export default function Home() {
-  const locale = useLocale();
+/*
+The standings rows drawn in the hero preview. They are an illustration of what
+a pool looks like mid-season, not real data — the card is labelled "Example" so
+the numbers are never read as a live pool. Names are deliberately locale
+neutral so the same list reads naturally in English and in French.
+*/
+const PREVIEW_STANDINGS = [
+  { name: "Alex", points: 412, today: 6 },
+  { name: "Marie", points: 407, today: 9 },
+  { name: "Sam", points: 398, today: 2 },
+  { name: "Charlie", points: 381, today: 0 },
+];
+
+export default async function Home() {
+  const locale = await getLocale();
 
   setRequestLocale(locale);
-  const t = useTranslations();
+  const t = await getTranslations();
+  // The pool list only exists per season, so the browse link needs the season
+  // the rest of the app is currently on. `getSeasonInfo` is request-cached and
+  // already awaited by the layout, so this costs no extra backend call.
+  const season = currentSeason(await getSeasonInfo());
 
   const features = [
     {
@@ -110,12 +127,71 @@ export default function Home() {
           <p className="text-muted-foreground text-sm">
             {t("HeroBrowseHint")}{" "}
             <Link
-              href="/pools"
+              href={`/pools/${season}`}
               className="text-foreground font-medium underline underline-offset-4"
             >
               {t("HeroBrowsePools")}
             </Link>
           </p>
+
+          <div className="mt-4 w-full max-w-lg text-left sm:mt-6">
+            <div className="bg-card/80 rounded-2xl border shadow-sm backdrop-blur">
+              <div className="flex items-center gap-2 border-b px-4 py-3">
+                <span
+                  aria-hidden
+                  className="bg-success size-2 shrink-0 rounded-full"
+                />
+                <span className="text-sm font-semibold tracking-tight">
+                  {t("HeroPreviewTitle")}
+                </span>
+                <Badge variant="outline" className="ml-auto text-[10px]">
+                  {t("HeroPreviewExample")}
+                </Badge>
+              </div>
+              <div className="text-muted-foreground grid grid-cols-[1.75rem_1fr_auto_auto] items-center gap-x-3 px-4 pt-3 pb-1 text-[10px] font-medium tracking-[0.12em] uppercase">
+                {/*
+                  Holds the rank column open. `sr-only` would not do: it takes
+                  the span out of flow, and an absolutely positioned grid item
+                  occupies no track, so every other header would slide one
+                  column left of the row it labels.
+                */}
+                <span aria-hidden />
+                <span>{t("Pooler")}</span>
+                <span className="text-right">{t("HeroPreviewToday")}</span>
+                <span className="w-12 text-right">
+                  {t("HeroPreviewPoints")}
+                </span>
+              </div>
+              <ol className="px-4 pb-3">
+                {PREVIEW_STANDINGS.map((pooler, index) => (
+                  <li
+                    key={pooler.name}
+                    className="grid grid-cols-[1.75rem_1fr_auto_auto] items-center gap-x-3 border-b py-2 text-sm last:border-b-0"
+                  >
+                    <span className="bg-muted text-muted-foreground flex size-7 items-center justify-center rounded-md text-xs font-semibold">
+                      {index + 1}
+                    </span>
+                    <span className="truncate font-medium">{pooler.name}</span>
+                    <span
+                      className={
+                        pooler.today > 0
+                          ? "text-success text-right text-xs font-semibold tabular-nums"
+                          : "text-muted-foreground text-right text-xs tabular-nums"
+                      }
+                    >
+                      {pooler.today > 0 ? `+${pooler.today}` : "—"}
+                    </span>
+                    <span className="w-12 text-right font-semibold tabular-nums">
+                      {pooler.points}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <p className="text-muted-foreground mt-2 text-center text-xs text-pretty">
+              {t("HeroPreviewFooter")}
+            </p>
+          </div>
         </div>
       </section>
 

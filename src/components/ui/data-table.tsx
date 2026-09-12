@@ -25,8 +25,18 @@ import {
 } from "@/components/ui/table";
 import React from "react";
 import { useTranslations } from "next-intl";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHiddenColumns } from "@/hooks/use-hidden-columns";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 declare module "@tanstack/table-core" {
   interface TableMeta<TData> {
@@ -50,6 +60,13 @@ interface DataTableProps<TData, TValue> {
   // Footer values keyed by column id, so the totals row follows the same
   // column order as the body (including pinned columns).
   footerCells?: Record<string, React.ReactNode> | null;
+  /*
+  Opts the table into a column picker, and names the localStorage entry its
+  choices are remembered under. Which columns are worth their width is a
+  judgement only the pooler can make — on a phone eleven of them do not fit at
+  once, but which four to drop depends on how you read a pool.
+  */
+  columnsStorageKey?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -61,6 +78,7 @@ export function DataTable<TData, TValue>({
   tableFooter = null,
   footerCells = null,
   rowClickable = false,
+  columnsStorageKey,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>(
     initialState?.sorting ?? [],
@@ -72,6 +90,17 @@ export function DataTable<TData, TValue>({
     },
   );
   const t = useTranslations();
+  const [hiddenColumns, setHiddenColumns] = useHiddenColumns(columnsStorageKey);
+
+  /*
+  Hidden through the table rather than with `display: none` on the cells: a
+  hidden column leaves the header groups altogether, so the pinning offsets
+  measured below and the footer built from `leafColumns` both stay aligned.
+  */
+  const columnVisibility = React.useMemo(
+    () => Object.fromEntries(hiddenColumns.map((id) => [id, false])),
+    [hiddenColumns],
+  );
 
   const table = useReactTable({
     data,
@@ -84,6 +113,7 @@ export function DataTable<TData, TValue>({
     state: {
       sorting,
       columnPinning,
+      columnVisibility,
     },
     meta: meta,
     initialState: initialState,
@@ -205,6 +235,23 @@ export function DataTable<TData, TValue>({
     // reappears in the middle of the row and against the right pinned block.
     const accentReset = column.id === firstColumnId ? "" : "border-l-0";
 
+    /*
+    A 1px border alone reads as a hard cut: on a narrow screen the scrolled
+    columns disappear under the pinned block mid-value and the table looks
+    clipped rather than scrollable. A soft shadow on the inner edge of the
+    innermost pinned column on each side is the usual affordance — it says the
+    content passes underneath.
+
+    The shadow is inset, offset away from the edge it should appear on, so it
+    is painted by the pinned cell itself and never has to out-stack its
+    neighbours. Its colour is mixed from `--foreground` rather than hardcoded,
+    so it inverts with the theme like the rest of the table.
+    */
+    const edgeShadow =
+      "shadow-[inset_-6px_0_5px_-5px_color-mix(in_oklab,var(--foreground)_25%,transparent)]";
+    const edgeShadowRight =
+      "shadow-[inset_6px_0_5px_-5px_color-mix(in_oklab,var(--foreground)_25%,transparent)]";
+
     // `z-[1]` only has to beat the scrolling cells of the same row: anything
     // higher would also cover the sticky page header and the sticky action
     // bars, which sit above the table.
@@ -215,7 +262,7 @@ export function DataTable<TData, TValue>({
         hoverBackground,
         rowStyles,
         accentReset,
-        column.id === lastLeftPinnedId && "border-r",
+        column.id === lastLeftPinnedId && cn("border-r", edgeShadow),
       );
     }
     return cn(
@@ -226,7 +273,8 @@ export function DataTable<TData, TValue>({
       accentReset,
       // The colour has to be restated: `rowStyles` may have tinted the left
       // border for the accent above, and only its width is reset here.
-      column.id === firstRightPinnedId && "border-l border-l-border",
+      column.id === firstRightPinnedId &&
+        cn("border-l border-l-border", edgeShadowRight),
     );
   };
 
@@ -243,11 +291,92 @@ export function DataTable<TData, TValue>({
     return column.columns.length > 0;
   };
 
+  /*
+  The label the picker shows for a column. `header` is either a plain string or
+  a render function, and every one of ours reads nothing but `table` off its
+  context — so calling it with just that resolves the same short label the
+  header row shows ("PJ", "$"). Guarded anyway: a header that reached for
+  anything else would throw, and a picker entry is not worth a crashed table.
+
+  Read from `getAllLeafColumns` rather than the rendered headers, because a
+  hidden column has no header left to read and is exactly the one the pooler
+  needs to find in order to bring it back.
+  */
+  const columnLabel = (column: Column<TData, unknown>): React.ReactNode => {
+    const header = column.columnDef.header;
+    if (typeof header === "string") {
+      return header;
+    }
+    try {
+      return (
+        (header as (context: { table: typeof table }) => React.ReactNode)?.({
+          table,
+        }) ?? column.id
+      );
+    } catch {
+      return column.id;
+    }
+  };
+
+  // Pinned columns are the table's anchors (the rank, the player, the points)
+  // and `actions` is not data, so neither is offered.
+  const hideableColumns = table
+    .getAllLeafColumns()
+    .filter((column) => column.getCanHide() && !column.getIsPinned());
+
+  const columnPicker =
+    columnsStorageKey && hideableColumns.length > 0 ? (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-my-1 size-7 shrink-0"
+              aria-label={t("Columns")}
+            />
+          }
+        >
+          <SlidersHorizontal className="size-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>{t("Columns")}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {hideableColumns.map((column) => (
+            <DropdownMenuCheckboxItem
+              key={column.id}
+              checked={column.getIsVisible()}
+              onCheckedChange={(checked) =>
+                setHiddenColumns(
+                  checked
+                    ? hiddenColumns.filter((id) => id !== column.id)
+                    : [...hiddenColumns, column.id],
+                )
+              }
+            >
+              {columnLabel(column)}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ) : null;
+
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
-      {title ? (
-        <div className="border-b px-2 py-2 text-xs font-semibold sm:px-4 sm:py-2.5 sm:text-sm">
-          {title}
+      {title || columnPicker ? (
+        <div
+          className={cn(
+            "flex items-center gap-2 border-b px-2 sm:px-4",
+            // With nothing on the left, `justify-between` would pull the
+            // picker to the start of the bar instead of the end.
+            title ? "justify-between" : "justify-end",
+            // Without a title the bar exists only to hold the picker, so it
+            // stays as thin as the button it carries.
+            title ? "py-2 text-xs font-semibold sm:py-2.5 sm:text-sm" : "py-1",
+          )}
+        >
+          {title ? <span className="min-w-0 truncate">{title}</span> : null}
+          {columnPicker}
         </div>
       ) : null}
       {/* `border-separate` is what makes the pinned columns work: under the

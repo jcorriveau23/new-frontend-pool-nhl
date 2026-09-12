@@ -276,7 +276,8 @@ export default function ProtectionRoster(props: Props) {
             salary={player.salary_cap}
             contractExpirationSeason={player.contract_expiration_season}
             teamSalaryCap={props.teamSalaryCap}
-            onBadgeClick={(e: React.MouseEvent) => e.stopPropagation()}
+            currentSeason={poolInfo.season}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           />
         ) : null}
         {canEdit ? (

@@ -27,6 +27,9 @@ interface PlayerSearchDialogProps {
   label: string;
   onPlayerSelect: ((player: Player) => Promise<boolean>) | null;
   variant?: React.ComponentProps<typeof Button>["variant"];
+  // Season being played, in the 20252026 format, so a result's cap hit can show
+  // the term still to run on the contract.
+  currentSeason?: number;
   size?: React.ComponentProps<typeof Button>["size"];
 
   // Controlled mode: the caller owns the open state and no trigger button is
@@ -219,7 +222,8 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
                               contractExpirationSeason={
                                 player.contract_expiration_season
                               }
-                              onBadgeClick={(e: React.MouseEvent) => {
+                              currentSeason={props.currentSeason}
+                              onClick={(e: React.MouseEvent) => {
                                 e.stopPropagation();
                               }}
                             />

@@ -58,6 +58,17 @@ describe("getDropBudget", () => {
     expect(budget.max).toBe(0);
   });
 
+  it("reports a pool served without the setting as disabled", () => {
+    // An API that predates free agency leaves the key out of the settings
+    // rather than sending it as null.
+    const pool = { ...makePool(null), settings: {} } as Pool;
+
+    const budget = getDropBudget(pool, "u1", at("2025-12-01", 9));
+
+    expect(budget.isEnabled).toBe(false);
+    expect(budget.canDrop).toBe(false);
+  });
+
   it("counts every swap of the pooler against a season budget", () => {
     const budget = getDropBudget(
       makePool(seasonBudget(3), [

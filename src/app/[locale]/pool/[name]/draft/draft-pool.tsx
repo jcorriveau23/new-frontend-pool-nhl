@@ -121,6 +121,7 @@ export default function DraftPage() {
                 playersOwner={playersOwner}
                 protectedPlayers={protectedPlayers}
                 onPlayerSelect={onPlayerSelect}
+                currentSeason={poolInfo.season}
               />
               <ScrollBar orientation="horizontal" />
             </ScrollArea>

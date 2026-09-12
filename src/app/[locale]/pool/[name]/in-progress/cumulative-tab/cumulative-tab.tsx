@@ -67,7 +67,7 @@ import {
   POOL_NAME_MAX_LENGTH,
   POOL_NAME_MIN_LENGTH,
 } from "@/components/pool-settings";
-import { seasonFormat } from "@/app/utils/formating";
+import { salaryFormat, seasonFormat } from "@/app/utils/formating";
 import { useSession } from "@/context/useSessionData";
 import { toast } from "sonner";
 import InformationIcon from "@/components/information-box";
@@ -83,7 +83,6 @@ import {
   calculatePoolStats,
   GoalieInfo,
   GoalieTotal,
-  ParticipantsRoster,
   PlayerStatus,
   SkaterInfo,
   SkaterTotal,
@@ -100,6 +99,7 @@ import PlayersTable from "@/components/player-table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RosterSection, useRosterSections } from "@/hooks/use-roster-sections";
 
 export default function CumulativeTab() {
   const t = useTranslations();
@@ -112,11 +112,6 @@ export default function CumulativeTab() {
   const [isDefenderChartOpen, setIsDefenderChartOpen] = React.useState(false);
   const [isGoalieChartOpen, setIsGoalieChartOpen] = React.useState(false);
   const [isPoolChartOpen, setIsPoolChartOpen] = React.useState(false);
-  const [playerStats, setPlayerStats] = React.useState<Record<
-    string,
-    ParticipantsRoster
-  > | null>(null);
-  const [ranking, setRanking] = React.useState<TotalRanking[] | null>(null);
   const {
     poolInfo,
     updatePoolInfo,
@@ -130,6 +125,24 @@ export default function CumulativeTab() {
     updateSelectedParticipant,
   } = usePoolContext();
   const { openTradeForPlayer } = useTradeBuilder();
+
+  /*
+  Salary only means something once the pool has a cap: without one the column
+  is dead weight in every roster table, so it is dropped from the definitions
+  rather than merely hidden — that keeps it out of the column picker too.
+  */
+  const dropSalaryWithoutCap = React.useCallback(
+    <TData,>(columns: ColumnDef<TData>[]) =>
+      poolInfo.settings.salary_cap === null
+        ? columns.filter(
+            (column) =>
+              (column as { accessorKey?: string }).accessorKey !== "salary",
+          )
+        : columns,
+    [poolInfo.settings.salary_cap],
+  );
+  // Which roster sections are expanded, remembered per pool on this device.
+  const [openSections, updateOpenSections] = useRosterSections(poolInfo.name);
 
   const userSession = useSession();
   const userData = useUser();
@@ -196,17 +209,20 @@ export default function CumulativeTab() {
     updatePoolInfo(res.data);
   };
 
-  React.useEffect(() => {
-    const [stats, rank] = calculatePoolStats(
-      poolInfo,
-      poolStartDate,
-      poolSelectedEndDate,
-      dailyPointsMade,
-    );
-
-    setPlayerStats(stats);
-    setRanking(rank);
-  }, [poolInfo, dailyPointsMade, poolStartDate, poolSelectedEndDate]);
+  // `calculatePoolStats` is synchronous, so it is derived rather than held in
+  // state: computing it in an effect rendered the whole tab as a skeleton once
+  // on every pool update or date change before re-rendering with the data. The
+  // Records tab derives the same call the same way.
+  const [playerStats, ranking] = React.useMemo(
+    () =>
+      calculatePoolStats(
+        poolInfo,
+        poolStartDate,
+        poolSelectedEndDate,
+        dailyPointsMade,
+      ),
+    [poolInfo, dailyPointsMade, poolStartDate, poolSelectedEndDate],
+  );
 
   /*
   The three derivations below are memoised, and sit above the loading guard
@@ -392,10 +408,9 @@ export default function CumulativeTab() {
   const SkaterTable = (
     rows: SkaterInfo[],
     columns: ColumnDef<SkaterInfo>[],
-    title: string,
     total: SkaterTotal,
   ) => (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <DataTable
         data={rows}
         columns={columns}
@@ -424,7 +439,8 @@ export default function CumulativeTab() {
           onRowClick: () => null,
           t: t,
         }}
-        title={title}
+        title={null}
+        columnsStorageKey={`${poolInfo.name}:skaters`}
         tableFooter={null}
         footerCells={{
           player: <span className="font-semibold">{t("Total")}</span>,
@@ -449,10 +465,9 @@ export default function CumulativeTab() {
   const GoalieTable = (
     rows: GoalieInfo[],
     columns: ColumnDef<GoalieInfo>[],
-    title: string,
     total: GoalieTotal,
   ) => (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <DataTable
         data={rows}
         columns={columns}
@@ -480,7 +495,8 @@ export default function CumulativeTab() {
           onRowClick: () => null,
           t: t,
         }}
-        title={title}
+        title={null}
+        columnsStorageKey={`${poolInfo.name}:goalies`}
         tableFooter={null}
         footerCells={{
           player: <span className="font-semibold">{t("Total")}</span>,
@@ -516,7 +532,8 @@ export default function CumulativeTab() {
         onRowClick: () => null,
         t: t,
       }}
-      title={t("AvailableReservists")}
+      title={null}
+      columnsStorageKey={`${poolInfo.name}:reservists`}
       tableFooter={null}
     />
   );
@@ -527,217 +544,259 @@ export default function CumulativeTab() {
     (userData.info?.id === participant.id ||
       hasPoolPrivilege(userData.info?.id, poolInfo));
 
-  const ParticipantRoster = (participant: PoolUser) => (
-    <>
-      {/* Anybody can open the lineup to try combinations, saving it is what
-          needs the rights. */}
-      {poolInfo.settings.number_reservists > 0 ? (
-        <div className="mb-2 flex justify-end">
-          {/* No key on the dialog: the pooler selector inside it changes the
-              participant, and remounting would close the dialog. */}
-          <LineupDialog
-            title={
-              canSaveLineupOf(participant)
-                ? t("EditLineup")
-                : t("SimulateLineup")
-            }
-            triggerRender={<Button variant="outline" size="sm" />}
-            triggerContent={
-              <>
-                <PencilLine className="size-4" />
-                {canSaveLineupOf(participant)
-                  ? t("EditLineup")
-                  : t("SimulateLineup")}
-              </>
-            }
-            roster={{
-              userRoster: getPoolerActivePlayers(poolInfo.context!, participant),
-              teamSalaryCap: poolInfo.settings.salary_cap,
-              poolerEntries: poolerEntries,
-              analytics: lineupAnalytics,
-            }}
-          />
-        </div>
-      ) : null}
-      {poolInfo.settings.number_forwards > 0 ? (
-        <Accordion defaultValue={["forwards"]}>
-          <AccordionItem value="forwards">
-            <AccordionTrigger>{`${t("Forwards")} (${
-              playerStats[participant.id].forwards.filter(
-                (player) =>
-                  player.status === PlayerStatus.InAlignment ||
-                  player.status === PlayerStatus.PointsIgnored,
-              ).length
-            }/${poolInfo.settings.number_forwards})`}</AccordionTrigger>
-            <AccordionContent>
-              <Dialog
-                open={isForwardChartOpen}
-                onOpenChange={setIsForwardChartOpen}
-              >
-                <DialogContent className="sm:max-w-[700px]">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {poolInfo.context?.players[selectedPlayerId ?? ""]?.name}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {t("RecordedPoolPointsDescription", {
-                        playerName:
-                          poolInfo.context?.players[selectedPlayerId ?? ""]
-                            ?.name ?? "",
-                        poolerName: selectedPoolUser.name,
-                      })}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <TimeRangeSkaterChart
-                    playerId={selectedPlayerId ?? ""}
-                    skaterSettings={poolInfo.settings.forwards_settings}
-                  />
-                </DialogContent>
-              </Dialog>
-              {SkaterTable(
-                playerStats[participant.id].forwards,
-                ForwardColumn,
-                getFormatedPlayersTableTitle(
-                  participant.name,
-                  "TotalPointsMadeByForwardsFor",
-                ),
-                ranking.find(
-                  (rank) => rank.participant === selectedPoolUser.name,
-                )!.forwards,
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      ) : null}
-      {poolInfo.settings.number_defenders > 0 ? (
-        <Accordion defaultValue={["defense"]}>
-          <AccordionItem value="defense">
-            <AccordionTrigger>{`${t("Defense")} (${
-              playerStats[participant.id].defense.filter(
-                (player) =>
-                  player.status === PlayerStatus.InAlignment ||
-                  player.status === PlayerStatus.PointsIgnored,
-              ).length
-            }/${poolInfo.settings.number_defenders})`}</AccordionTrigger>
-            <AccordionContent>
-              <Dialog
-                open={isDefenderChartOpen}
-                onOpenChange={setIsDefenderChartOpen}
-              >
-                <DialogContent className="sm:max-w-[700px]">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {poolInfo.context?.players[selectedPlayerId ?? ""]?.name}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {t("RecordedPoolPointsDescription", {
-                        playerName:
-                          poolInfo.context?.players[selectedPlayerId ?? ""]
-                            ?.name ?? "",
-                        poolerName: selectedPoolUser.name,
-                      })}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <TimeRangeSkaterChart
-                    playerId={selectedPlayerId ?? ""}
-                    skaterSettings={poolInfo.settings.defense_settings}
-                  />
-                </DialogContent>
-              </Dialog>
-              {SkaterTable(
-                playerStats[participant.id].defense,
-                DefenseColumn,
-                getFormatedPlayersTableTitle(
-                  participant.name,
-                  "TotalPointsMadeByDefenseFor",
-                ),
-                ranking.find(
-                  (rank) => rank.participant === selectedPoolUser.name,
-                )!.defense,
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      ) : null}
-      {poolInfo.settings.number_goalies > 0 ? (
-        <Accordion defaultValue={["goalies"]}>
-          <AccordionItem value="goalies">
-            <AccordionTrigger>{`${t("Goalies")} (${
-              playerStats[participant.id].goalies.filter(
-                (player) =>
-                  player.status === PlayerStatus.InAlignment ||
-                  player.status === PlayerStatus.PointsIgnored,
-              ).length
-            }/${poolInfo.settings.number_goalies})`}</AccordionTrigger>
-            <AccordionContent>
-              <Dialog
-                open={isGoalieChartOpen}
-                onOpenChange={setIsGoalieChartOpen}
-              >
-                <DialogContent className="sm:max-w-[700px]">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {poolInfo.context?.players[selectedPlayerId ?? ""]?.name}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {t("RecordedPoolPointsDescription", {
-                        playerName:
-                          poolInfo.context?.players[selectedPlayerId ?? ""]
-                            ?.name ?? "",
-                        poolerName: selectedPoolUser.name,
-                      })}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <TimeRangeGoalieChart
-                    playerId={selectedPlayerId ?? ""}
-                    goaliesSettings={poolInfo.settings.goalies_settings}
-                  />
-                </DialogContent>
-              </Dialog>
-              {GoalieTable(
-                playerStats[participant.id].goalies,
-                GoalieColumn,
-                getFormatedPlayersTableTitle(
-                  participant.name,
-                  "TotalPointsMadeByGoaliesFor",
-                ),
-                ranking.find(
-                  (rank) => rank.participant === selectedPoolUser.name,
-                )!.goalies,
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      ) : null}
-      {poolInfo.settings.number_reservists > 0 ? (
-        <Accordion defaultValue={["reservists"]}>
-          <AccordionItem value="reservists">
-            <AccordionTrigger>{t("Reservists")}</AccordionTrigger>
-            <AccordionContent>
-              {ReservistTable(
-                poolInfo.context?.pooler_roster[participant.id]
-                  .chosen_reservists as number[],
-                ReservistColumn,
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      ) : null}
-      {(poolInfo.settings.dynasty_settings?.tradable_picks ?? 0 > 0) ? (
-        <Accordion defaultValue={["picks"]}>
-          <AccordionItem value="picks">
-            <AccordionTrigger>{t("NextSeasonPicks")}</AccordionTrigger>
-            <AccordionContent>
-              <PickList poolUser={selectedPoolUser} poolInfo={poolInfo} />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      ) : null}
-    </>
-  );
+  const ParticipantRoster = (participant: PoolUser) => {
+    // One lookup feeding the three totals rows below, instead of re-scanning
+    // the whole ranking once per section. `ranking` is built from
+    // `poolInfo.participants`, which is also where `participant` comes from, so
+    // the entry is always there.
+    const participantTotals = ranking.find(
+      (rank) => rank.participant === participant.name,
+    )!;
 
-  const getFormatedPlayersTableTitle = (participant: string, title: string) =>
-    `${t(title)} ${participant}`;
+    // The three chart dialogs below all title themselves with the player whose
+    // row was clicked, whichever section it came from.
+    const selectedPlayerName =
+      poolInfo.context?.players[selectedPlayerId ?? ""]?.name ?? "";
+
+    /*
+    What each position group costs against the cap, shown next to its count.
+
+    Summed over the pooler's chosen players for the group — the same source
+    `getPoolerCapUsage` uses — so the three section totals add up to the cap
+    figure the lineup dialog reports, instead of quietly disagreeing with it.
+    Reservists are excluded there and so are excluded here.
+    */
+    const rosterOf = poolInfo.context?.pooler_roster[participant.id];
+
+    const SectionSalary = (playerIds: number[] | undefined) => {
+      if (poolInfo.settings.salary_cap === null || playerIds === undefined) {
+        return null;
+      }
+
+      const total = playerIds.reduce(
+        (sum, playerId) =>
+          sum + (poolInfo.context?.players[playerId]?.salary_cap ?? 0),
+        0,
+      );
+
+      // Set like the cap hits in the rows below rather than as a pill, so the
+      // section total and the player amounts read as the same kind of figure.
+      return (
+        <span className="font-medium tabular-nums text-success">
+          {salaryFormat(total)}
+        </span>
+      );
+    };
+
+    return (
+      <>
+        {/* Anybody can open the lineup to try combinations, saving it is what
+            needs the rights. */}
+        {poolInfo.settings.number_reservists > 0 ? (
+          <div className="mb-2 flex justify-end">
+            {/* No key on the dialog: the pooler selector inside it changes the
+                participant, and remounting would close the dialog. */}
+            <LineupDialog
+              title={
+                canSaveLineupOf(participant)
+                  ? t("EditLineup")
+                  : t("SimulateLineup")
+              }
+              triggerRender={<Button variant="outline" size="sm" />}
+              triggerContent={
+                <>
+                  <PencilLine className="size-4" />
+                  {canSaveLineupOf(participant)
+                    ? t("EditLineup")
+                    : t("SimulateLineup")}
+                </>
+              }
+              roster={{
+                userRoster: getPoolerActivePlayers(
+                  poolInfo.context!,
+                  participant,
+                ),
+                teamSalaryCap: poolInfo.settings.salary_cap,
+                poolerEntries: poolerEntries,
+                analytics: lineupAnalytics,
+              }}
+            />
+          </div>
+        ) : null}
+        {/* One accordion for the whole roster rather than one per section, so
+            the sections share a rhythm and the open set can be remembered.
+            `multiple` is required: Base UI collapses to a single open item
+            without it, and these sections are meant to be read side by side. */}
+        <Accordion
+          multiple
+          value={openSections}
+          onValueChange={(value) =>
+            updateOpenSections(value as RosterSection[])
+          }
+          className="flex flex-col gap-2"
+        >
+          {poolInfo.settings.number_forwards > 0 ? (
+            <AccordionItem value="forwards" className="border-b-0">
+              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
+                <span className="flex items-center gap-2">
+                  {`${t("Forwards")} (${
+                    playerStats[participant.id].forwards.filter(
+                      (player) =>
+                        player.status === PlayerStatus.InAlignment ||
+                        player.status === PlayerStatus.PointsIgnored,
+                    ).length
+                  }/${poolInfo.settings.number_forwards})`}
+                  {SectionSalary(rosterOf?.chosen_forwards)}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-2">
+                <Dialog
+                  open={isForwardChartOpen}
+                  onOpenChange={setIsForwardChartOpen}
+                >
+                  <DialogContent className="sm:max-w-[700px]">
+                    <DialogHeader>
+                      <DialogTitle>{selectedPlayerName}</DialogTitle>
+                      <DialogDescription>
+                        {t("RecordedPoolPointsDescription", {
+                          playerName: selectedPlayerName,
+                          poolerName: selectedPoolUser.name,
+                        })}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <TimeRangeSkaterChart
+                      playerId={selectedPlayerId ?? ""}
+                      skaterSettings={poolInfo.settings.forwards_settings}
+                    />
+                  </DialogContent>
+                </Dialog>
+                {SkaterTable(
+                  playerStats[participant.id].forwards,
+                  dropSalaryWithoutCap(ForwardColumn),
+                  participantTotals.forwards,
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          ) : null}
+          {poolInfo.settings.number_defenders > 0 ? (
+            <AccordionItem value="defense" className="border-b-0">
+              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
+                <span className="flex items-center gap-2">
+                  {`${t("Defense")} (${
+                    playerStats[participant.id].defense.filter(
+                      (player) =>
+                        player.status === PlayerStatus.InAlignment ||
+                        player.status === PlayerStatus.PointsIgnored,
+                    ).length
+                  }/${poolInfo.settings.number_defenders})`}
+                  {SectionSalary(rosterOf?.chosen_defenders)}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-2">
+                <Dialog
+                  open={isDefenderChartOpen}
+                  onOpenChange={setIsDefenderChartOpen}
+                >
+                  <DialogContent className="sm:max-w-[700px]">
+                    <DialogHeader>
+                      <DialogTitle>{selectedPlayerName}</DialogTitle>
+                      <DialogDescription>
+                        {t("RecordedPoolPointsDescription", {
+                          playerName: selectedPlayerName,
+                          poolerName: selectedPoolUser.name,
+                        })}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <TimeRangeSkaterChart
+                      playerId={selectedPlayerId ?? ""}
+                      skaterSettings={poolInfo.settings.defense_settings}
+                    />
+                  </DialogContent>
+                </Dialog>
+                {SkaterTable(
+                  playerStats[participant.id].defense,
+                  dropSalaryWithoutCap(DefenseColumn),
+                  participantTotals.defense,
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          ) : null}
+          {poolInfo.settings.number_goalies > 0 ? (
+            <AccordionItem value="goalies" className="border-b-0">
+              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
+                <span className="flex items-center gap-2">
+                  {`${t("Goalies")} (${
+                    playerStats[participant.id].goalies.filter(
+                      (player) =>
+                        player.status === PlayerStatus.InAlignment ||
+                        player.status === PlayerStatus.PointsIgnored,
+                    ).length
+                  }/${poolInfo.settings.number_goalies})`}
+                  {SectionSalary(rosterOf?.chosen_goalies)}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-2">
+                <Dialog
+                  open={isGoalieChartOpen}
+                  onOpenChange={setIsGoalieChartOpen}
+                >
+                  <DialogContent className="sm:max-w-[700px]">
+                    <DialogHeader>
+                      <DialogTitle>{selectedPlayerName}</DialogTitle>
+                      <DialogDescription>
+                        {t("RecordedPoolPointsDescription", {
+                          playerName: selectedPlayerName,
+                          poolerName: selectedPoolUser.name,
+                        })}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <TimeRangeGoalieChart
+                      playerId={selectedPlayerId ?? ""}
+                      goaliesSettings={poolInfo.settings.goalies_settings}
+                    />
+                  </DialogContent>
+                </Dialog>
+                {GoalieTable(
+                  playerStats[participant.id].goalies,
+                  dropSalaryWithoutCap(GoalieColumn),
+                  participantTotals.goalies,
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          ) : null}
+          {poolInfo.settings.number_reservists > 0 ? (
+            <AccordionItem value="reservists" className="border-b-0">
+              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
+                {`${t("Reservists")} (${
+                  poolInfo.context?.pooler_roster[participant.id]
+                    .chosen_reservists.length ?? 0
+                }/${poolInfo.settings.number_reservists})`}
+              </AccordionTrigger>
+              <AccordionContent className="pb-2">
+                {ReservistTable(
+                  poolInfo.context?.pooler_roster[participant.id]
+                    .chosen_reservists as number[],
+                  dropSalaryWithoutCap(ReservistColumn),
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          ) : null}
+          {/* Parenthesised on purpose: `>` binds tighter than `??`, so without
+              them this reads as `tradable_picks ?? (0 > 0)`. */}
+          {(poolInfo.settings.dynasty_settings?.tradable_picks ?? 0) > 0 ? (
+            <AccordionItem value="picks" className="border-b-0">
+              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
+                {t("NextSeasonPicks")}
+              </AccordionTrigger>
+              <AccordionContent className="pb-2">
+                <PickList poolUser={selectedPoolUser} poolInfo={poolInfo} />
+              </AccordionContent>
+            </AccordionItem>
+          ) : null}
+        </Accordion>
+      </>
+    );
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     generateDynasty(values.name);
@@ -888,6 +947,7 @@ export default function CumulativeTab() {
                   playersOwner={playersOwner}
                   protectedPlayers={null}
                   onPlayerSelect={null}
+                  currentSeason={poolInfo.season}
                 />
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>

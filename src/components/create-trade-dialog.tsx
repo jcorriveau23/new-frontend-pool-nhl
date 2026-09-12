@@ -96,16 +96,23 @@ const PlayerStatLine = ({ player }: { player: Player }) => {
 
 // Cap hit of a player, using the same badge as the pool tables: the contract
 // expiration stays out of the line and is one click away in the popover.
-const PlayerCapHit = ({ player }: { player: Player }) => (
+const PlayerCapHit = ({
+  player,
+  currentSeason,
+}: {
+  player: Player;
+  currentSeason: number;
+}) => (
   <div className="shrink-0">
     <PlayerSalary
       playerName={player.name}
       team={player.team}
       salary={player.salary_cap}
       contractExpirationSeason={player.contract_expiration_season}
+      currentSeason={currentSeason}
       // The row is a <label> driving the checkbox: opening the salary details
       // must not select the player.
-      onBadgeClick={(e: React.MouseEvent) => {
+      onClick={(e: React.MouseEvent) => {
         e.stopPropagation();
         e.preventDefault();
       }}
@@ -150,7 +157,12 @@ function TradeSideSelector(props: TradeSideSelectorProps) {
                   <span className="truncate text-sm font-medium">
                     {player.name}
                   </span>
-                  {salaryCapEnabled ? <PlayerCapHit player={player} /> : null}
+                  {salaryCapEnabled ? (
+                    <PlayerCapHit
+                      player={player}
+                      currentSeason={poolInfo.season}
+                    />
+                  ) : null}
                 </div>
                 <PlayerStatLine player={player} />
               </div>

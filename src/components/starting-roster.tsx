@@ -371,7 +371,8 @@ export default function StartingRoster(props: Props) {
             salary={player.salary_cap}
             contractExpirationSeason={player.contract_expiration_season}
             teamSalaryCap={props.teamSalaryCap}
-            onBadgeClick={(e: React.MouseEvent) => e.stopPropagation()}
+            currentSeason={poolInfo.season}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           />
         ) : null}
         {canSwapPlayers ? DropPlayerButton(player) : null}
@@ -503,6 +504,7 @@ export default function StartingRoster(props: Props) {
               variant="outline"
               size="sm"
               onPlayerSelect={(player) => onPlayerSelect(player)}
+              currentSeason={poolInfo.season}
             />
           ) : null}
         </header>
@@ -841,6 +843,7 @@ export default function StartingRoster(props: Props) {
               ? t("PickReplacementFor", { playerName: playerToDrop.name })
               : t("PickReplacement")
           }
+          currentSeason={poolInfo.season}
           open={playerToDrop !== null}
           onOpenChange={(open) => {
             if (!open) setPlayerToDrop(null);
