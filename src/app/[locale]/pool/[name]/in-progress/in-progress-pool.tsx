@@ -49,42 +49,36 @@ export default function InProgressPool() {
   const { poolInfo, updateSelectedParticipant } = usePoolContext();
   const searchParams = useSearchParams();
 
-  const getInitialSelectedTab = (): string => {
-    // Return the initial tab selection using the url parameters if it exist.
-    const queryParams = new URLSearchParams(searchParams.toString());
-    const initialTab = queryParams.get("activeTab");
-
-    if (
-      initialTab === null ||
-      !Object.values(InProgressTabs).includes(initialTab as InProgressTabs)
-    ) {
-      return InProgressTabs.CUMULATIVE;
-    }
-
-    return initialTab;
-  };
-
-  const [activeTab, setActiveTab] = React.useState(getInitialSelectedTab());
+  // The active tab is read straight off the URL rather than mirrored into
+  // state: `useSearchParams` already re-renders on a back/forward navigation,
+  // so going back to an entry that names no tab falls back to Cumulative
+  // instead of leaving the previous tab selected.
+  const requestedTab = searchParams.get("activeTab");
+  const activeTab = Object.values(InProgressTabs).includes(
+    requestedTab as InProgressTabs,
+  )
+    ? (requestedTab as InProgressTabs)
+    : InProgressTabs.CUMULATIVE;
 
   const handleTabChange = (value: string) => {
-    setActiveTab(value);
     const queryParams = new URLSearchParams(searchParams.toString());
     queryParams.set("activeTab", value);
-    router.push(`/pool/${poolInfo.name}/?${queryParams.toString()}`);
+    // `replace` + `scroll: false`, like `updateSelectedParticipant` does: the
+    // tab is a view of the same page, so it should neither jump back to the top
+    // nor cost a history entry that the Back button has to walk through.
+    router.replace(`/pool/${poolInfo.name}/?${queryParams.toString()}`, {
+      scroll: false,
+    });
   };
 
   React.useEffect(() => {
-    // Use effect is used here to manage the popstate event listener.
-    // That way if the user go into another page and come back using the "Go Back" or "Go forward"
-    // options in the browser he will be in the selected tab.
+    // The selected pooler is held as state by the pool context, seeded from the
+    // URL only on mount, so — unlike the tab above — it has to be restored by
+    // hand when the user navigates back into the page.
     const handlePopState = () => {
       const queryParams = new URLSearchParams(window.location.search);
-      const newActiveTab = queryParams.get("activeTab");
       const newSelectedParticipant = queryParams.get("selectedParticipant");
 
-      if (newActiveTab) {
-        setActiveTab(newActiveTab);
-      }
       if (newSelectedParticipant) {
         updateSelectedParticipant(newSelectedParticipant);
       }
@@ -100,11 +94,7 @@ export default function InProgressPool() {
 
   return (
     <div className="items-center text-center">
-      <Tabs
-        value={activeTab}
-        defaultValue={activeTab}
-        onValueChange={handleTabChange}
-      >
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <div className="overflow-auto text-left">
           <TabsList>
             <TabsTrigger

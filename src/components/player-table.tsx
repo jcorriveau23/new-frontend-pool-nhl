@@ -69,6 +69,9 @@ interface PlayersTableProps {
   playersOwner: Record<string, string> | null; // maps player id to pooler name
   protectedPlayers: Record<string, string> | null; // maps player id to pooler name
   onPlayerSelect: ((player: Player) => Promise<boolean>) | null;
+  // Season being played, in the 20252026 format. Turns a contract expiration
+  // into a remaining term on the cap hit; omitted, only the amount shows.
+  currentSeason?: number;
 }
 
 interface PlayerColumn {
@@ -109,6 +112,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   playersOwner,
   protectedPlayers,
   onPlayerSelect,
+  currentSeason,
 }) => {
   const searchParams = useSearchParams();
   const queryParams = new URLSearchParams(searchParams.toString());
@@ -268,8 +272,8 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
         team={player.team}
         salary={player.salary_cap}
         contractExpirationSeason={player.contract_expiration_season}
-        badgeClassName="px-1.5 text-[10px] sm:px-2.5 sm:text-xs"
-        onBadgeClick={(e: React.MouseEvent) => {
+        currentSeason={currentSeason}
+        onClick={(e: React.MouseEvent) => {
           e.stopPropagation();
         }}
       />

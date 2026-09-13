@@ -53,7 +53,11 @@ const getPlayerSalaryCell = (playerId: number, poolInfo: Pool) => (
     contractExpirationSeason={
       poolInfo.context?.players[playerId].contract_expiration_season
     }
-    onBadgeClick={(e: React.MouseEvent) => {
+    // This column only exists in a pool that has a cap, so the share is always
+    // available here — and the share is what says whether a contract is big.
+    teamSalaryCap={poolInfo.settings.salary_cap}
+    currentSeason={poolInfo.season}
+    onClick={(e: React.MouseEvent) => {
       e.stopPropagation();
     }}
   />

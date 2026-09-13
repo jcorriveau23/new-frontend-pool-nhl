@@ -15,6 +15,7 @@ export default function NhlPlayerTab() {
         playersOwner={null}
         protectedPlayers={protectedPlayers}
         onPlayerSelect={null}
+        currentSeason={poolInfo.season}
       />
     </div>
   );
