@@ -186,3 +186,13 @@
     }
   }
 }
+
+/* A strip of text that overflows sideways instead of being clipped. The
+   scrollbar is hidden because it would be as tall as the 12px line it sits
+   under, and the overflow is read by swiping, not by aiming at a bar. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
