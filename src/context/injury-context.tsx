@@ -2,55 +2,39 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext, ReactNode } from "react";
-// Define the player interface
-interface Player {
-  name: string;
-  position: string;
-  date: string;
-  type: string;
-  recovery: string;
-}
+import type { InjuredPlayer } from "@/lib/injuries";
 
-// Define the context interface
 interface InjuredPlayersContextType {
-  injuredPlayers: Record<string, Player>;
+  injuredPlayers: Record<string, InjuredPlayer>;
 }
 
-// Create the context
 const InjuredPlayersContext = createContext<
   InjuredPlayersContextType | undefined
 >(undefined);
 
-// Provider component
+// Throws on failure rather than resolving to `{}`: an empty object would be
+// cached for the whole stale time as if no player were injured, where a failed
+// query is retried and simply shows no injury markers in the meantime.
+const fetchInjuredPlayers = async (): Promise<
+  Record<string, InjuredPlayer>
+> => {
+  const response = await fetch("/injured-players.json");
+  if (!response.ok) {
+    throw new Error(
+      `could not fetch injured players: HTTP ${response.status}`
+    );
+  }
+  return response.json();
+};
+
 export const InjuredPlayersProvider = ({
   children,
 }: {
   children: ReactNode;
 }) => {
-  // Fetch the list of injured players
-  const fetchInjuredPlayers = async (): Promise<Record<
-    string,
-    Player
-  > | null> => {
-    try {
-      // Replace this URL with the actual API or data source for injured players
-      const response = await fetch("/injured-players.json");
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data: Record<string, Player> = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Failed to fetch injured players", error);
-      return {};
-    }
-  };
-
   const query = useQuery({
     queryKey: ["injury"],
-    queryFn: () => {
-      return fetchInjuredPlayers();
-    },
+    queryFn: fetchInjuredPlayers,
     staleTime: 1000 * 60 * 60, // 60 minutes in ms
   });
 
