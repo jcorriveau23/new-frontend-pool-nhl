@@ -69,6 +69,13 @@ jobs:
           build-args: |
             NEXT_PUBLIC_HANKO_API_URL=${{ secrets.NEXT_PUBLIC_HANKO_API_URL }}
             NEXT_PUBLIC_APP_VERSION=${{ github.event.release.tag_name }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+            SENTRY_ORG=${{ secrets.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
+          # Kept out of build-args on purpose: those are readable in the image
+          # metadata, a secret mount is not. Unset, the build skips the upload.
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           # Scoped per platform. Sharing one scope makes the two legs evict
           # each other's node_modules and .next layers on every run.
           cache-from: type=gha,scope=${{ matrix.platform }}
