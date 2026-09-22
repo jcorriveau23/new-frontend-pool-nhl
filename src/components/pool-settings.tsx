@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import * as React from "react";
 import {
   DraftType,
+  DropPeriod,
+  PendingPoolerLink,
   Pool,
   PoolSettings,
   PoolState,
@@ -41,10 +43,18 @@ import { toast } from "sonner";
 import InformationIcon from "./information-box";
 import { useSearchParams } from "next/navigation";
 import { salaryFormat } from "@/app/utils/formating";
-import { LockIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import {
+  LinkIcon,
+  LockIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import { useUser } from "@/context/useUserData";
 import DeletePoolDialog from "./delete-pool-dialog";
 import RenamePoolerDialog from "./rename-pooler-dialog";
+import LinkPoolerAccountDialog from "./link-pooler-account-dialog";
 
 enum PoolType {
   STANDARD = "Standard",
@@ -62,6 +72,10 @@ interface Props {
   // unknown while the pool is being created.
   poolOwner?: string;
   participants?: PoolUser[];
+
+  // Account links the owner filed that are still waiting on the person they
+  // name. Unknown while the pool is being created, like the participants.
+  pendingPoolerLinks?: PendingPoolerLink[] | null;
 
   // Whether the signed in user may change the settings. Creating a pool always
   // is, an existing pool only for its owner and its assistants.
@@ -231,6 +245,20 @@ export default function PoolSettingsComponent(props: Props) {
   const DEFAULT_SALARY_CAP_ENABLED =
     (props.oldPoolSettings?.salary_cap ?? null) !== null;
 
+  // 6) Free agency. Only the number of drops is configurable: a drop always
+  // comes with picking a free agent up, so one number covers both halves of
+  // the swap and a roster can never change size.
+  const DEFAULT_PLAYER_DROPS_ENABLED =
+    (props.oldPoolSettings?.player_drop_settings ?? null) !== null;
+
+  const DEFAULT_MAX_PLAYER_DROPS =
+    props.oldPoolSettings?.player_drop_settings?.max_drops ?? 3;
+  const MAX_PLAYER_DROPS_MIN_VALUE = 1;
+  const MAX_PLAYER_DROPS_MAX_VALUE = 50;
+
+  const DEFAULT_DROP_PERIOD =
+    props.oldPoolSettings?.player_drop_settings?.period ?? DropPeriod.SEASON;
+
   const [showDynastySettings, setShowDynastySettings] = React.useState(
     DEFAULT_POOL_TYPE === PoolType.DYNASTY
   );
@@ -239,6 +267,9 @@ export default function PoolSettingsComponent(props: Props) {
   );
   const [salaryCapEnabled, setSalaryCapEnabled] = React.useState(
     DEFAULT_SALARY_CAP_ENABLED
+  );
+  const [playerDropsEnabled, setPlayerDropsEnabled] = React.useState(
+    DEFAULT_PLAYER_DROPS_ENABLED
   );
 
   // Both are list settings without a matching form control, they are kept
@@ -399,6 +430,20 @@ export default function PoolSettingsComponent(props: Props) {
       .min(NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE)
       .max(NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE),
     salaryCap: z.number().min(SALARY_CAP_MIN_VALUE).max(SALARY_CAP_MAX_VALUE),
+    maxPlayerDrops: z
+      .number()
+      .int({ error: t("MaxPlayerDropsMustBeWholeNumberValidation") })
+      .min(MAX_PLAYER_DROPS_MIN_VALUE, {
+        error: t("MaxPlayerDropsMinValidation", {
+          value: MAX_PLAYER_DROPS_MIN_VALUE,
+        }),
+      })
+      .max(MAX_PLAYER_DROPS_MAX_VALUE, {
+        error: t("MaxPlayerDropsMaxValidation", {
+          value: MAX_PLAYER_DROPS_MAX_VALUE,
+        }),
+      }),
+    dropPeriod: z.enum([DropPeriod.SEASON, DropPeriod.MONTH]),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -434,6 +479,8 @@ export default function PoolSettingsComponent(props: Props) {
       tradableDraftPicks: DEFAULT_TRADABLE_DRAFT_PICKS,
       numberOfPlayersToProtect: DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT,
       salaryCap: props.oldPoolSettings?.salary_cap ?? DEFAULT_SALARY_CAP,
+      maxPlayerDrops: DEFAULT_MAX_PLAYER_DROPS,
+      dropPeriod: DEFAULT_DROP_PERIOD,
     },
   });
 
@@ -474,6 +521,12 @@ export default function PoolSettingsComponent(props: Props) {
             forwards: values.numberOfWorstForwardsToIgnore,
             defense: values.numberOfWorstDefendersToIgnore,
             goalies: values.numberOfWorstGoaliesToIgnore,
+          }
+        : null,
+      player_drop_settings: playerDropsEnabled
+        ? {
+            max_drops: values.maxPlayerDrops,
+            period: values.dropPeriod,
           }
         : null,
       dynasty_settings: showDynastySettings
@@ -1040,6 +1093,62 @@ export default function PoolSettingsComponent(props: Props) {
             </div>
           ) : null}
         </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="player-drops-enabled"
+              checked={playerDropsEnabled}
+              disabled={!CAN_EDIT}
+              onCheckedChange={(checked) => setPlayerDropsEnabled(checked)}
+            />
+            <Label htmlFor="player-drops-enabled" className="font-normal">
+              {t("EnablePlayerDrops")}
+            </Label>
+            <InformationIcon text={t("PlayerDropsSettingDescription")} />
+          </div>
+          {playerDropsEnabled ? (
+            <div className="space-y-4 rounded-lg border bg-muted/50 p-4">
+              <div className="max-w-xs">
+                {NumberField(
+                  "maxPlayerDrops",
+                  t("MaxPlayerDrops"),
+                  MAX_PLAYER_DROPS_MIN_VALUE,
+                  MAX_PLAYER_DROPS_MAX_VALUE,
+                  t("MaxPlayerDropsDescription")
+                )}
+              </div>
+              <FormField
+                control={form.control}
+                name="dropPeriod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("DropPeriod")}</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        className="flex min-h-9 flex-wrap items-center gap-x-6 gap-y-2"
+                      >
+                        {RadioOption(
+                          "drop-period-season",
+                          DropPeriod.SEASON,
+                          t("PerSeason"),
+                          t("DropPeriodSeasonDescription")
+                        )}
+                        {RadioOption(
+                          "drop-period-month",
+                          DropPeriod.MONTH,
+                          t("PerMonth"),
+                          t("DropPeriodMonthDescription")
+                        )}
+                      </RadioGroup>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
@@ -1105,14 +1214,22 @@ export default function PoolSettingsComponent(props: Props) {
     </Card>
   );
 
-  // Renaming a pooler is the owner's alone as well, and only makes sense once
-  // the pool has participants: before the draft the poolers still live in the
-  // draft room, where the owner names them as they are added.
+  // Renaming a pooler and handing it to another account are both the owner's
+  // alone, and only make sense once the pool has participants: before the draft
+  // the poolers still live in the draft room, where the owner names them as
+  // they are added.
+  // The invitation standing on a pooler, if any. Filed by the owner and waiting
+  // on the person it names to sign in and accept it.
+  const pendingLinkOf = (poolerUserId: string) =>
+    props.pendingPoolerLinks?.find(
+      (pending) => pending.pooler_user_id === poolerUserId
+    ) ?? null;
+
   const PoolerSettings = () => (
     <Card>
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">{t("PoolerSettings")}</CardTitle>
-        <CardDescription>{t("RenamePoolerDescription")}</CardDescription>
+        <CardDescription>{t("PoolerSettingsDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
         <ul className="divide-y">
@@ -1122,23 +1239,52 @@ export default function PoolSettingsComponent(props: Props) {
               className="flex items-center justify-between gap-2 py-2"
             >
               <PoolerNameText name={participant.name} />
-              <RenamePoolerDialog
-                poolName={props.poolName}
-                pooler={participant}
-                participants={props.participants ?? []}
-                onRenamed={(pool) => props.onUpdated?.(pool)}
-                trigger={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t("RenamePoolerLabel", {
-                      name: participant.name,
-                    })}
-                  >
-                    <PencilIcon className="size-4" />
-                  </Button>
-                }
-              />
+              <div className="flex shrink-0 items-center gap-1">
+                <RenamePoolerDialog
+                  poolName={props.poolName}
+                  pooler={participant}
+                  participants={props.participants ?? []}
+                  onRenamed={(pool) => props.onUpdated?.(pool)}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t("RenamePoolerLabel", {
+                        name: participant.name,
+                      })}
+                    >
+                      <PencilIcon className="size-4" />
+                    </Button>
+                  }
+                />
+                <LinkPoolerAccountDialog
+                  poolName={props.poolName}
+                  pooler={participant}
+                  pendingLink={pendingLinkOf(participant.id)}
+                  onUpdated={(pool) => props.onUpdated?.(pool)}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t(
+                        pendingLinkOf(participant.id)
+                          ? "PendingPoolerLinkLabel"
+                          : "LinkPoolerAccountLabel",
+                        { name: participant.name }
+                      )}
+                      // An invitation already waiting on this pooler is the one
+                      // thing about it that is not visible from the row, and it
+                      // is what the button does next (withdraw it, not file
+                      // another).
+                      className={
+                        pendingLinkOf(participant.id) ? "text-primary" : ""
+                      }
+                    >
+                      <LinkIcon className="size-4" />
+                    </Button>
+                  }
+                />
+              </div>
             </li>
           ))}
         </ul>

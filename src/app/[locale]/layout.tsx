@@ -33,9 +33,9 @@ const geistMono = Geist_Mono({
 });
 
 const SITE_NAME = "slapshot.xyz";
-const DEFAULT_TITLE = "NHL pool";
+const DEFAULT_TITLE = "Free NHL pool manager";
 const DEFAULT_DESCRIPTION =
-  "Create your own NHL pool and manage draft, alignment changes, trades and dynasty pools. Fully free.";
+  "Create your NHL hockey pool, draft live with your friends and follow the standings all season long. Trades, lineups and dynasty leagues included. Free, forever.";
 
 export const metadata: Metadata = {
   // Makes every relative URL below (and in each page's own metadata) resolve
@@ -43,10 +43,13 @@ export const metadata: Metadata = {
   // so without this the social card silently has no image.
   metadataBase: new URL(siteUrl),
   // Pages that set their own title (the pool page uses the pool name) get it
-  // suffixed by the template, every other page falls back to the default.
+  // suffixed by the brand, every other page falls back to the default. The
+  // template deliberately does not reuse DEFAULT_TITLE: that string is written
+  // for the home page's search result, and repeating it after every pool name
+  // would push the name itself past the ~60 characters a result actually shows.
   title: {
     default: DEFAULT_TITLE,
-    template: `%s | ${DEFAULT_TITLE}`,
+    template: `%s | ${SITE_NAME}`,
   },
   description: DEFAULT_DESCRIPTION,
   applicationName: SITE_NAME,
@@ -56,13 +59,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
-    title: DEFAULT_TITLE,
+    title: `${SITE_NAME} — ${DEFAULT_TITLE}`,
     description: DEFAULT_DESCRIPTION,
     url: "/",
   },
   twitter: {
     card: "summary_large_image",
-    title: DEFAULT_TITLE,
+    title: `${SITE_NAME} — ${DEFAULT_TITLE}`,
     description: DEFAULT_DESCRIPTION,
   },
   // iOS ignores the manifest: these are what make an installed home-screen
@@ -88,7 +91,7 @@ export const viewport: Viewport = {
 export default async function LocaleLayout(
   props: Readonly<{
     children: React.ReactNode;
-  }>
+  }>,
 ) {
   const locale = await getLocale();
   // Set per request by `proxy.ts`, alongside the CSP that names it.

@@ -8,6 +8,7 @@ import { Pool, PoolUser } from "@/data/pool/model";
 import { usePoolContext } from "@/context/pool-context";
 import { PoolerNameText } from "./pooler-name";
 import { useTradeBuilder } from "@/context/trade-builder-context";
+import { getTradablePicks } from "@/lib/pool-picks";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -55,7 +56,7 @@ export default function PickList(props: Props) {
   // own but traded away, so the impact of the trades stays visible.
   const rounds = React.useMemo<RoundPick[][]>(
     () =>
-      (props.poolInfo.context?.tradable_picks ?? []).map((roundPicksOwner) =>
+      getTradablePicks(props.poolInfo).map((roundPicksOwner) =>
         Object.keys(roundPicksOwner)
           .filter(
             (from) =>
@@ -78,7 +79,7 @@ export default function PickList(props: Props) {
             return order.indexOf(a.origin) - order.indexOf(b.origin);
           }),
       ),
-    [props.poolInfo.context?.tradable_picks, props.poolUser.id],
+    [props.poolInfo, props.poolUser.id],
   );
 
   const allPicks = rounds.flat();

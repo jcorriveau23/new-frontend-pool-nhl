@@ -9,7 +9,7 @@ import React, { createContext, useContext, ReactNode } from "react";
 import CreateTradeDialog, {
   TradeAsset,
 } from "@/components/create-trade-dialog";
-import { DraftPick } from "@/data/pool/model";
+import { DraftPick, Trade } from "@/data/pool/model";
 import { usePoolContext } from "./pool-context";
 
 export interface TradeBuilderContextProps {
@@ -18,6 +18,9 @@ export interface TradeBuilderContextProps {
   // Open the trade dialog on a player, resolving its owner from the rosters.
   openTradeForPlayer: (playerId: number) => void;
   openTradeForPick: (pick: DraftPick, ownerId: string) => void;
+  // Reopen an existing open trade to correct it. Owner and assistants only —
+  // the dialog submits an update instead of filing a new trade.
+  openTradeEditor: (trade: Trade) => void;
 }
 
 const TradeBuilderContext = createContext<TradeBuilderContextProps | undefined>(
@@ -40,14 +43,22 @@ export const TradeBuilderProvider: React.FC<{ children: ReactNode }> = ({
   const { poolInfo } = usePoolContext();
   const [open, setOpen] = React.useState(false);
   const [asset, setAsset] = React.useState<TradeAsset | null>(null);
+  const [editing, setEditing] = React.useState<Trade | null>(null);
 
   const openTradeBuilder = React.useCallback(
     (tradeAsset?: TradeAsset | null) => {
       setAsset(tradeAsset ?? null);
+      setEditing(null);
       setOpen(true);
     },
     [],
   );
+
+  const openTradeEditor = React.useCallback((trade: Trade) => {
+    setAsset(null);
+    setEditing(trade);
+    setOpen(true);
+  }, []);
 
   const openTradeForPlayer = React.useCallback(
     (playerId: number) => {
@@ -77,13 +88,19 @@ export const TradeBuilderProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <TradeBuilderContext.Provider
-      value={{ openTradeBuilder, openTradeForPlayer, openTradeForPick }}
+      value={{
+        openTradeBuilder,
+        openTradeForPlayer,
+        openTradeForPick,
+        openTradeEditor,
+      }}
     >
       {children}
       <CreateTradeDialog
         open={open}
         onOpenChange={setOpen}
         initialAsset={asset}
+        editingTrade={editing}
       />
     </TradeBuilderContext.Provider>
   );

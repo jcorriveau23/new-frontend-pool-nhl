@@ -53,7 +53,11 @@ const getPlayerSalaryCell = (playerId: number, poolInfo: Pool) => (
     contractExpirationSeason={
       poolInfo.context?.players[playerId].contract_expiration_season
     }
-    onBadgeClick={(e: React.MouseEvent) => {
+    // This column only exists in a pool that has a cap, so the share is always
+    // available here — and the share is what says whether a contract is big.
+    teamSalaryCap={poolInfo.settings.salary_cap}
+    currentSeason={poolInfo.season}
+    onClick={(e: React.MouseEvent) => {
       e.stopPropagation();
     }}
   />
@@ -183,7 +187,7 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
                   table.options.meta?.props?.openTradeForPlayer?.(player.id)
                 }
               >
-                {table.options.meta?.t("ProposeTrade")}
+                {table.options.meta?.t("FileTrade")}
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>
@@ -302,7 +306,7 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
                   table.options.meta?.props?.openTradeForPlayer?.(player.id)
                 }
               >
-                {table.options.meta?.t("ProposeTrade")}
+                {table.options.meta?.t("FileTrade")}
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>
@@ -425,7 +429,7 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
                   table.options.meta?.props?.openTradeForPlayer?.(player.id)
                 }
               >
-                {table.options.meta?.t("ProposeTrade")}
+                {table.options.meta?.t("FileTrade")}
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>

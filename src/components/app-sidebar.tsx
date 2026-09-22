@@ -10,6 +10,7 @@ import {
   Users,
   User2,
   UserCog,
+  Ambulance,
   ChevronUp,
   LogInIcon,
   Star,
@@ -93,6 +94,11 @@ export function AppSidebar({
       title: "Players",
       url: `/players`,
       icon: UserCog,
+    },
+    {
+      title: "Injuries",
+      url: `/injuries`,
+      icon: Ambulance,
     },
   ];
 

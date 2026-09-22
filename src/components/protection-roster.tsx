@@ -259,7 +259,10 @@ export default function ProtectionRoster(props: Props) {
             id={player.id}
             textStyle="text-sm font-medium"
           />
-          <p className="truncate text-xs text-muted-foreground">
+          {/* Position, age and the season line do not fit a narrow card. They
+              are scrolled sideways rather than cut off at an ellipsis: every
+              stat here is part of the protection decision. */}
+          <p className="scrollbar-none overflow-x-auto overscroll-x-contain whitespace-nowrap text-xs text-muted-foreground">
             {[
               isProtected ? t(player.position) : null,
               player.age !== null ? t("AgeYears", { age: player.age }) : null,
@@ -276,7 +279,8 @@ export default function ProtectionRoster(props: Props) {
             salary={player.salary_cap}
             contractExpirationSeason={player.contract_expiration_season}
             teamSalaryCap={props.teamSalaryCap}
-            onBadgeClick={(e: React.MouseEvent) => e.stopPropagation()}
+            currentSeason={poolInfo.season}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           />
         ) : null}
         {canEdit ? (

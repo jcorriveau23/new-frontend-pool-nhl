@@ -63,6 +63,7 @@ const keepRoomUsersOrder = (
 };
 
 export enum Command {
+  Auth = "Auth",
   JoinRoom = "JoinRoom",
   OnPoolSettingChanges = "OnPoolSettingChanges",
   OnReady = "OnReady",
@@ -72,6 +73,10 @@ export enum Command {
   DraftPlayer = "DraftPlayer",
   UndoDraftPlayer = "UndoDraftPlayer",
   ModifyRoster = "ModifyRoster",
+  CreateTrade = "CreateTrade",
+  UpdateTrade = "UpdateTrade",
+  ConfirmTrade = "ConfirmTrade",
+  DeleteTrade = "DeleteTrade",
 }
 
 export const useSocketContext = (): SocketContextProps => {
@@ -117,13 +122,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
   const [isOnline, setIsOnline] = useState(true);
   const session = useSession();
 
-  const { poolInfo, updatePoolInfo, applyDraftDelta, resyncPoolInfo } =
+  const { poolInfo, applyPoolBroadcast, applyDraftDelta, resyncPoolInfo } =
     usePoolContext();
   const t = useTranslations();
   const socketProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const socketUrl = `${socketProtocol}//${window.location.host}/api-rust/ws/${
-    typeof jwt === "string" && jwt !== "" ? jwt : "unauthenticated"
-  }`;
+  const socketUrl = `${socketProtocol}//${window.location.host}/api-rust/ws`;
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptRef = useRef(0);
@@ -229,8 +232,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
         try {
           const response = JSON.parse(event.data);
           if (response.Pool) {
-            // This is a pool update
-            updatePoolInfo(response.Pool.pool);
+            // A whole pool pushed by the room. Trades publish one of these
+            // while the draft is running, so it can land out of order next to
+            // the pick deltas — applied blindly it would rewind the board.
+            applyPoolBroadcast(response.Pool.pool);
           } else if (
             response.PlayerDrafted ||
             response.DraftPickUndone ||
@@ -254,6 +259,13 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
         // Reaching OPEN ends the streak, so the next unexpected drop starts
         // its backoff from one second again rather than from the cap.
         reconnectAttemptRef.current = 0;
+
+        if (typeof jwt === "string" && jwt !== "") {
+          socket.send(
+            createSocketCommand(Command.Auth, JSON.stringify({ token: jwt })),
+          );
+        }
+
         socket.send(
           createSocketCommand(
             Command.JoinRoom,
@@ -306,12 +318,13 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
       };
     },
     [
-      updatePoolInfo,
+      applyPoolBroadcast,
       applyDraftDelta,
       poolInfo.name,
       poolInfo.settings.number_poolers,
       scheduleReconnect,
       resyncPoolInfo,
+      jwt,
       t,
     ],
   );

@@ -14,6 +14,7 @@ import {
   applyDraftPickUndone,
   applyPlayerDrafted,
   applyRosterModified,
+  isPoolBroadcastNewer,
 } from "./draft-delta";
 
 const emptyRoster = (): PoolerRoster => ({
@@ -255,5 +256,26 @@ describe("applyRosterModified", () => {
     const pool = { name: "draft-pool", context: null } as unknown as Pool;
 
     expect(applyRosterModified(pool, modified())).toBeNull();
+  });
+});
+
+describe("isPoolBroadcastNewer", () => {
+  const atVersion = (version: number): Pool =>
+    ({ date_updated: version }) as Pool;
+
+  it("accepts a pool newer than the one held", () => {
+    expect(isPoolBroadcastNewer(atVersion(4), atVersion(5))).toBe(true);
+  });
+
+  // A trade committed before a pick can reach the socket after that pick's
+  // delta. Applying it would replace the board and drop the pick.
+  it("drops a pool that is behind the one held", () => {
+    expect(isPoolBroadcastNewer(atVersion(5), atVersion(4))).toBe(false);
+  });
+
+  // Same version means the same pool: nothing to apply, and re-applying it
+  // would discard any delta already folded in on top of it.
+  it("drops a pool at the version already held", () => {
+    expect(isPoolBroadcastNewer(atVersion(5), atVersion(5))).toBe(false);
   });
 });

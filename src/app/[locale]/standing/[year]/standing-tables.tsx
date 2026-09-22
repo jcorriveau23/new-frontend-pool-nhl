@@ -80,6 +80,32 @@ function record(wins: number, losses: number, otLossesOrTies: number): string {
   return `${wins}-${losses}-${otLossesOrTies}`;
 }
 
+/*
+Every column is shown at every width and the table scrolls sideways inside its
+card, like the pool `DataTable`. The rank and the team travel with the scroll,
+so a stat read halfway through the row still has a team attached to it.
+*/
+const PINNED_CELL =
+  "sticky z-[1] bg-card group-hover:bg-[color-mix(in_oklab,var(--muted)_50%,var(--card))]";
+/*
+The team column sticks at exactly the width of the rank column, so the two read
+that width from the same variable, set on the table below. `min-w` is what
+makes the column obey it: a plain `width` is only a suggestion to the auto
+table layout, which drops the column back to its content as soon as the table
+is wider than its scroll port — precisely when the offset has to be right.
+*/
+const RANK_CELL = `${PINNED_CELL} left-0 w-[var(--rank-width)] min-w-[var(--rank-width)]`;
+// Enough for a two digit sequence...
+const RANK_WIDTH = "[--rank-width:2.5rem] sm:[--rank-width:3.5rem]";
+// ...and for the `WC10` of the wild card race, which needs the extra room.
+const WIDE_RANK_WIDTH = "[--rank-width:2.75rem] sm:[--rank-width:4.25rem]";
+// The logo, the abbreviation and the clinch badge do not fit in the width the
+// auto layout hands this column once the table overflows, and they spill over
+// the scrolled stats rather than widening the cell, so the room is reserved
+// here. A hard 1px edge reads as a clipped table; the soft shadow on the inner
+// edge says the stats pass underneath the team instead.
+const TEAM_CELL = `${PINNED_CELL} left-[var(--rank-width)] min-w-28 border-r shadow-[inset_-6px_0_5px_-5px_color-mix(in_oklab,var(--foreground)_25%,transparent)] sm:min-w-32`;
+
 // A group of teams rendered as a single table, `rank` being the sequence to
 // display in the leftmost column (league, conference, division or wild card).
 interface Group {
@@ -89,6 +115,9 @@ interface Group {
   rank: (team: Standing, index: number) => React.ReactNode;
   // Draw the playoff cut line under the row at this index (0 based).
   cutAfterIndex?: number;
+  // The wild card race ranks its teams `WC1` to `WC10` instead of a bare
+  // sequence, which no longer fits in the standard rank column.
+  wideRank?: boolean;
 }
 
 export default function StandingTables(props: Props) {
@@ -98,6 +127,20 @@ export default function StandingTables(props: Props) {
     () => columnFlags(props.standings, props.season),
     [props.standings, props.season],
   );
+
+  // What a section row has to span. The fixed columns are the rank, the team,
+  // GP, W, L, Pts, P%, GF, GA, Diff, home, road, L10 and the streak; the others
+  // come and go with the rules of the season, so they are counted from the
+  // flags that add them to the header below.
+  const columnCount =
+    14 +
+    [
+      flags.otLosses,
+      flags.ties,
+      flags.regulationWins,
+      flags.row,
+      flags.shootout,
+    ].filter(Boolean).length;
 
   const hasConferences = props.standings.some((team) => team.conferenceName);
   const hasDivisions = props.standings.some((team) => team.divisionName);
@@ -203,6 +246,7 @@ export default function StandingTables(props: Props) {
         ),
         rank: (team: Standing) => `WC${team.wildcardSequence}`,
         cutAfterIndex: WILD_CARD_SPOTS_PER_CONFERENCE - 1,
+        wideRank: true,
       });
 
       return { conference, groups };
@@ -225,13 +269,22 @@ export default function StandingTables(props: Props) {
     <TableRow
       key={team.teamAbbrev.default}
       className={cn(
-        group.cutAfterIndex === index && "border-primary border-b-2",
+        "group",
+        // Under `border-separate` the row's own border is not painted, so the
+        // playoff cut line is drawn by the cells of the row.
+        group.cutAfterIndex === index &&
+          "[&>td]:border-primary [&>td]:border-b-2",
       )}
     >
-      <TableCell className="text-muted-foreground w-8 text-right tabular-nums">
+      <TableCell
+        className={cn(
+          RANK_CELL,
+          "text-muted-foreground text-right tabular-nums",
+        )}
+      >
         {group.rank(team, index)}
       </TableCell>
-      <TableCell>
+      <TableCell className={TEAM_CELL}>
         <div className="flex items-center gap-2">
           <TeamLogo
             src={team.teamLogo}
@@ -272,36 +325,34 @@ export default function StandingTables(props: Props) {
       <TableCell className="text-right font-semibold tabular-nums">
         {team.points}
       </TableCell>
-      <TableCell className="text-muted-foreground hidden text-right tabular-nums md:table-cell">
+      <TableCell className="text-muted-foreground text-right tabular-nums">
         {pointsPercentage(team.pointPctg)}
       </TableCell>
       {flags.regulationWins ? (
-        <TableCell className="hidden text-right tabular-nums xl:table-cell">
+        <TableCell className="text-right tabular-nums">
           {team.regulationWins}
         </TableCell>
       ) : null}
       {flags.row ? (
-        <TableCell className="hidden text-right tabular-nums xl:table-cell">
+        <TableCell className="text-right tabular-nums">
           {team.regulationPlusOtWins}
         </TableCell>
       ) : null}
-      <TableCell className="hidden text-right tabular-nums lg:table-cell">
-        {team.goalFor}
-      </TableCell>
-      <TableCell className="hidden text-right tabular-nums lg:table-cell">
+      <TableCell className="text-right tabular-nums">{team.goalFor}</TableCell>
+      <TableCell className="text-right tabular-nums">
         {team.goalAgainst}
       </TableCell>
-      <TableCell className="hidden text-right tabular-nums md:table-cell">
+      <TableCell className="text-right tabular-nums">
         {signedDifferential(team.goalDifferential)}
       </TableCell>
-      <TableCell className="hidden text-right tabular-nums xl:table-cell">
+      <TableCell className="text-right tabular-nums">
         {record(
           team.homeWins,
           team.homeLosses,
           flags.ties ? team.homeTies : team.homeOtLosses,
         )}
       </TableCell>
-      <TableCell className="hidden text-right tabular-nums xl:table-cell">
+      <TableCell className="text-right tabular-nums">
         {record(
           team.roadWins,
           team.roadLosses,
@@ -309,18 +360,18 @@ export default function StandingTables(props: Props) {
         )}
       </TableCell>
       {flags.shootout ? (
-        <TableCell className="hidden text-right tabular-nums xl:table-cell">
+        <TableCell className="text-right tabular-nums">
           {team.shootoutWins}-{team.shootoutLosses}
         </TableCell>
       ) : null}
-      <TableCell className="hidden text-right tabular-nums lg:table-cell">
+      <TableCell className="text-right tabular-nums">
         {record(
           team.l10Wins,
           team.l10Losses,
           flags.ties ? team.l10Ties : team.l10OtLosses,
         )}
       </TableCell>
-      <TableCell className="hidden text-right md:table-cell">
+      <TableCell className="text-right">
         {team.streakCount > 0 ? (
           <Badge
             variant={team.streakCode === "W" ? "default" : "secondary"}
@@ -334,14 +385,49 @@ export default function StandingTables(props: Props) {
     </TableRow>
   );
 
-  const StandingTable = (group: Group) => (
-    // `Table` cells carry no padding of their own, the density here matches the
-    // one used by the pool `DataTable` so both read the same.
-    <Table className="[&_td]:px-1 [&_td]:py-1.5 [&_th]:px-1 sm:[&_td]:px-3 sm:[&_td]:py-2 sm:[&_th]:px-3">
+  /*
+  Groups sharing a table are separated by a full width section row rather than
+  by a card of their own: the wild card race is read by comparing the teams
+  chasing the last two spots with the ones holding the division seeds, which
+  only works when all of them line up under the same columns and scroll
+  together. A single group needs no section row, the card title already says
+  what it is.
+  */
+  const SectionRow = (group: Group) => (
+    <TableRow key={`${group.key}-section`} className="hover:bg-transparent">
+      <TableCell colSpan={columnCount} className="bg-muted/50 font-semibold">
+        {/* Pinned like the rank and the team, so the section a row belongs to
+            stays readable however far the stats are scrolled. */}
+        <span className="sticky left-1 inline-block sm:left-3">
+          {group.title}
+        </span>
+      </TableCell>
+    </TableRow>
+  );
+
+  const StandingTable = (groups: Group[]) => (
+    /*
+    `Table` cells carry no padding of their own, the density here matches the
+    one used by the pool `DataTable` so both read the same.
+
+    `border-separate` is what makes the pinned columns work, for the same
+    reason as in that table: under the collapsed border model the borders
+    belong to the table rather than to the cells, so a row line would slide
+    out from under a sticky cell instead of staying with it. The row lines
+    below therefore live on the cells.
+    */
+    <Table
+      className={cn(
+        groups.some((group) => group.wideRank) ? WIDE_RANK_WIDTH : RANK_WIDTH,
+        "border-separate border-spacing-0 [&_td]:border-b [&_td]:px-1 [&_td]:py-1.5 [&_td]:whitespace-nowrap [&_th]:border-b [&_th]:px-1 [&_th]:whitespace-nowrap [&_tbody_tr:last-child>td]:border-b-0 sm:[&_td]:px-3 sm:[&_td]:py-2 sm:[&_th]:px-3",
+      )}
+    >
       <TableHeader>
-        <TableRow>
-          <TableHead className="w-8 text-right">#</TableHead>
-          <TableHead>{t("Team")}</TableHead>
+        {/* The header is pinned sideways like the rows, so it must not pick up
+            a hover tint the pinned cells would not repaint. */}
+        <TableRow className="hover:bg-transparent">
+          <TableHead className={cn(RANK_CELL, "text-right")}>#</TableHead>
+          <TableHead className={TEAM_CELL}>{t("Team")}</TableHead>
           <TableHead className="text-right">{t("GP")}</TableHead>
           <TableHead className="text-right">{t("W")}</TableHead>
           <TableHead className="text-right">{t("LossesShort")}</TableHead>
@@ -352,67 +438,63 @@ export default function StandingTables(props: Props) {
             <TableHead className="text-right">{t("TiesShort")}</TableHead>
           ) : null}
           <TableHead className="text-right">{t("Pts")}</TableHead>
-          <TableHead className="hidden text-right md:table-cell">
-            {t("PointsPctShort")}
-          </TableHead>
+          <TableHead className="text-right">{t("PointsPctShort")}</TableHead>
           {flags.regulationWins ? (
-            <TableHead className="hidden text-right xl:table-cell">
+            <TableHead className="text-right">
               {t("RegulationWinsShort")}
             </TableHead>
           ) : null}
           {flags.row ? (
-            <TableHead className="hidden text-right xl:table-cell">
+            <TableHead className="text-right">
               {t("RegulationPlusOtWinsShort")}
             </TableHead>
           ) : null}
-          <TableHead className="hidden text-right lg:table-cell">
-            {t("GoalsForShort")}
-          </TableHead>
-          <TableHead className="hidden text-right lg:table-cell">
-            {t("GoalsAgainstShort")}
-          </TableHead>
-          <TableHead className="hidden text-right md:table-cell">
+          <TableHead className="text-right">{t("GoalsForShort")}</TableHead>
+          <TableHead className="text-right">{t("GoalsAgainstShort")}</TableHead>
+          <TableHead className="text-right">
             {t("GoalDifferentialShort")}
           </TableHead>
-          <TableHead className="hidden text-right xl:table-cell">
-            {t("HomeRecordShort")}
-          </TableHead>
-          <TableHead className="hidden text-right xl:table-cell">
-            {t("RoadRecordShort")}
-          </TableHead>
+          <TableHead className="text-right">{t("HomeRecordShort")}</TableHead>
+          <TableHead className="text-right">{t("RoadRecordShort")}</TableHead>
           {flags.shootout ? (
-            <TableHead className="hidden text-right xl:table-cell">
-              {t("ShootoutShort")}
-            </TableHead>
+            <TableHead className="text-right">{t("ShootoutShort")}</TableHead>
           ) : null}
-          <TableHead className="hidden text-right lg:table-cell">
-            {t("LastTenShort")}
-          </TableHead>
-          <TableHead className="hidden text-right md:table-cell">
-            {t("StreakShort")}
-          </TableHead>
+          <TableHead className="text-right">{t("LastTenShort")}</TableHead>
+          <TableHead className="text-right">{t("StreakShort")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {group.teams.map((team, index) => StandingRow(team, group, index))}
+        {groups.map((group) => (
+          <React.Fragment key={group.key}>
+            {groups.length > 1 && group.title ? SectionRow(group) : null}
+            {group.teams.map((team, index) => StandingRow(team, group, index))}
+          </React.Fragment>
+        ))}
       </TableBody>
     </Table>
   );
 
-  // Every view sits on a card surface. The league table is the only group
-  // without a header, it needs no title to say what it is.
-  const GroupCard = (group: Group) => (
-    <Card key={group.key} className="overflow-hidden">
-      {group.title ? (
+  // Every view sits on a card surface. The league table is the only card
+  // without a title, it needs no header to say what it is.
+  const GroupsCard = (
+    key: string,
+    title: string | undefined,
+    groups: Group[],
+  ) => (
+    <Card key={key} className="overflow-hidden">
+      {title ? (
         <CardHeader className="py-4">
-          <CardTitle className="text-base">{group.title}</CardTitle>
+          <CardTitle className="text-base">{title}</CardTitle>
         </CardHeader>
       ) : null}
-      <CardContent className={cn("px-0 pb-2", !group.title && "pt-2")}>
-        {StandingTable(group)}
+      <CardContent className={cn("px-0 pb-2", !title && "pt-2")}>
+        {StandingTable(groups)}
       </CardContent>
     </Card>
   );
+
+  const GroupCard = (group: Group) =>
+    GroupsCard(group.key, group.title, [group]);
 
   const clinchLegend = props.standings.some((team) => team.clinchIndicator) ? (
     <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 px-1 pt-4 text-xs">
@@ -431,18 +513,23 @@ export default function StandingTables(props: Props) {
     <>
       <Tabs defaultValue="league">
         <div className="flex flex-col gap-2 pb-2 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList>
-            <TabsTrigger value="league">{t("League")}</TabsTrigger>
-            {hasConferences ? (
-              <TabsTrigger value="conference">{t("Conference")}</TabsTrigger>
-            ) : null}
-            {hasDivisions ? (
-              <TabsTrigger value="division">{t("Division")}</TabsTrigger>
-            ) : null}
-            {hasWildCard ? (
-              <TabsTrigger value="wildcard">{t("WildCard")}</TabsTrigger>
-            ) : null}
-          </TabsList>
+          {/* The tab labels are long once translated ("Meilleurs deuxièmes"),
+              wider than a phone screen. Left alone the strip stretches the
+              whole page sideways, so it scrolls on its own instead. */}
+          <div className="min-w-0 overflow-x-auto text-left">
+            <TabsList>
+              <TabsTrigger value="league">{t("League")}</TabsTrigger>
+              {hasConferences ? (
+                <TabsTrigger value="conference">{t("Conference")}</TabsTrigger>
+              ) : null}
+              {hasDivisions ? (
+                <TabsTrigger value="division">{t("Division")}</TabsTrigger>
+              ) : null}
+              {hasWildCard ? (
+                <TabsTrigger value="wildcard">{t("WildCard")}</TabsTrigger>
+              ) : null}
+            </TabsList>
+          </div>
           <div className="shrink-0">{props.seasonSelector}</div>
         </div>
 
@@ -470,17 +557,10 @@ export default function StandingTables(props: Props) {
 
         {hasWildCard ? (
           <TabsContent value="wildcard">
-            <div className="flex flex-col gap-6">
-              {wildCardConferences.map(({ conference, groups }) => (
-                <div key={conference} className="flex flex-col gap-2">
-                  <h2 className="text-lg font-semibold tracking-tight">
-                    {conference}
-                  </h2>
-                  <div className="flex flex-col gap-4">
-                    {groups.map(GroupCard)}
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-col gap-4">
+              {wildCardConferences.map(({ conference, groups }) =>
+                GroupsCard(conference, conference, groups),
+              )}
             </div>
             <p className="text-muted-foreground pt-4 text-xs">
               {t("PlayoffCutLineHint")}

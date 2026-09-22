@@ -245,8 +245,9 @@ export default function DailyStatsContent() {
         {dailyPointsMade ? (
           <Accordion
             key={selectedPoolUser.id}
+            multiple
             defaultValue={["forwards", "defense", "goalies"]}
-            className="space-y-2"
+            className="flex flex-col gap-2"
           >
             <AccordionItem value="forwards" className="border-b-0">
               <AccordionTrigger className="py-2 font-semibold hover:no-underline">

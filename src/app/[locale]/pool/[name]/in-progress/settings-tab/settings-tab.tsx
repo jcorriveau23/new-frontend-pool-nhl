@@ -21,6 +21,7 @@ export default function SettingsTab() {
         oldPoolSettings={poolInfo.settings}
         poolOwner={poolInfo.owner}
         participants={poolInfo.participants}
+        pendingPoolerLinks={poolInfo.pending_pooler_links}
         canEdit={canEdit}
         onUpdated={updatePoolInfo}
       />
