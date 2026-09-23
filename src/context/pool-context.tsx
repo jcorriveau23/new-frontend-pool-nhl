@@ -10,6 +10,7 @@ import {
   PoolUser,
   RosterModifiedResponse,
 } from "@/data/pool/model";
+import { MALFORMED_POOL, parsePool } from "@/data/pool/schema";
 import { apiGet } from "@/lib/client-api";
 import { planScoreFetch } from "@/lib/pool-score-cache";
 import {
@@ -162,7 +163,12 @@ const fetchPoolInfoUncached = async (name: string): Promise<Pool | string> => {
   if (!res.ok) {
     return res.error;
   }
-  const data = res.data;
+  // The backend answered; that it answered with a pool is checked here rather
+  // than trusted from the cast.
+  const data = parsePool(res.data);
+  if (data === null) {
+    return MALFORMED_POOL;
+  }
 
   // The locally cached copy of the pool (Dexie), used both to fetch only the
   // missing score days and to preserve the row id so the put() updates in place.
@@ -447,6 +453,15 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
   // for the lifetime of the provider. That matters: the draft socket installs
   // its message handler once, and the handler reaches the pool through here.
   const updatePoolInfo = useCallback((newPoolInfo: Pool) => {
+    // Every mutation that answers with a pool lands here, so this is where the
+    // document is checked once instead of at each call site. A pool that does
+    // not hold up is dropped rather than replacing a good one with a broken
+    // one — the pool on screen stays the last one that made sense.
+    if (parsePool(newPoolInfo) === null) {
+      console.error(`${MALFORMED_POOL}, keeping the pool on screen`);
+      return;
+    }
+
     poolInfoRef.current = newPoolInfo;
     // @ts-expect-error, dexie is not typed.
     db.pools.get({ name: newPoolInfo.name }).then((poolDb) => {

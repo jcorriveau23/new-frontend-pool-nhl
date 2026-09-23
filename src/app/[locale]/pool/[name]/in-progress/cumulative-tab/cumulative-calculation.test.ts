@@ -87,7 +87,7 @@ describe("calculatePoolStats — ignore_x_worst_players", () => {
       makePool(null),
       rangeStart,
       rangeEnd,
-      null
+      null,
     );
 
     expect(rank![0].getTotalPoolPoints()).toBe(13);
@@ -98,14 +98,14 @@ describe("calculatePoolStats — ignore_x_worst_players", () => {
       makePool({ forwards: 1, defense: 0, goalies: 0 }),
       rangeStart,
       rangeEnd,
-      null
+      null,
     );
 
     expect(rank![0].getTotalPoolPoints()).toBe(12);
 
     // The dropped player is the lowest scorer, and only that one.
     const ignored = stats![ALICE].forwards.filter(
-      (forward) => forward.status === PlayerStatus.PointsIgnored
+      (forward) => forward.status === PlayerStatus.PointsIgnored,
     );
     expect(ignored.map((forward) => forward.id)).toEqual([103]);
   });
@@ -115,13 +115,13 @@ describe("calculatePoolStats — ignore_x_worst_players", () => {
       makePool({ forwards: 1, defense: 0, goalies: 0 }),
       rangeStart,
       rangeEnd,
-      null
+      null,
     );
 
     // Sorted best first, so the Records tab and the Cumulative tab agree on
     // who the season leader is.
     expect(
-      stats![ALICE].forwards.map((forward) => [forward.id, forward.poolPoints])
+      stats![ALICE].forwards.map((forward) => [forward.id, forward.poolPoints]),
     ).toEqual([
       [101, 8],
       [102, 4],

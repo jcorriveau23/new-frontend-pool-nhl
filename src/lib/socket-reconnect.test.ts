@@ -15,7 +15,7 @@ describe("reconnectDelay", () => {
   it("starts the first retry within a second", () => {
     expect(reconnectDelay(0, lowest)).toBe(RECONNECT_BASE_DELAY_MS / 2);
     expect(reconnectDelay(0, highest)).toBeLessThanOrEqual(
-      RECONNECT_BASE_DELAY_MS
+      RECONNECT_BASE_DELAY_MS,
     );
   });
 
@@ -29,7 +29,7 @@ describe("reconnectDelay", () => {
     // A draft left open overnight must still be retrying on a sane interval.
     for (const attempt of [6, 10, 50, 1_000]) {
       expect(reconnectDelay(attempt, highest)).toBeLessThanOrEqual(
-        RECONNECT_MAX_DELAY_MS
+        RECONNECT_MAX_DELAY_MS,
       );
       expect(reconnectDelay(attempt, lowest)).toBe(RECONNECT_MAX_DELAY_MS / 2);
     }
@@ -44,9 +44,7 @@ describe("reconnectDelay", () => {
   it("spreads a room of clients that dropped on the same tick", () => {
     // Same attempt number, different random draws: the whole point of the
     // jitter is that these do not collide.
-    const delays = new Set(
-      Array.from({ length: 50 }, () => reconnectDelay(5))
-    );
+    const delays = new Set(Array.from({ length: 50 }, () => reconnectDelay(5)));
 
     expect(delays.size).toBeGreaterThan(1);
   });

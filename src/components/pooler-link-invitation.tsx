@@ -70,7 +70,7 @@ export default function PoolerLinkInvitation() {
 
     return (
       poolInfo.pending_pooler_links?.find(
-        (pending) => pending.email_hash === emailHash
+        (pending) => pending.email_hash === emailHash,
       ) ?? null
     );
   }, [poolInfo.pending_pooler_links, emailHash]);
@@ -78,9 +78,9 @@ export default function PoolerLinkInvitation() {
   const pooler = React.useMemo(
     () =>
       poolInfo.participants.find(
-        (participant) => participant.id === invitation?.pooler_user_id
+        (participant) => participant.id === invitation?.pooler_user_id,
       ) ?? null,
-    [poolInfo.participants, invitation]
+    [poolInfo.participants, invitation],
   );
 
   // An invitation on a pooler that is no longer in the pool is not something
@@ -94,7 +94,7 @@ export default function PoolerLinkInvitation() {
     errorKey: string,
     successKey: string,
     // Accepting rewrites the pooler's id; declining leaves the pool as it is.
-    movesTheParticipantId: boolean
+    movesTheParticipantId: boolean,
   ) => {
     if (isSubmitting) {
       return;
@@ -104,7 +104,7 @@ export default function PoolerLinkInvitation() {
     const res = await apiPost<Pool>(
       path,
       { pool_name: poolInfo.name, pooler_user_id: pooler.id },
-      userSession.info?.jwt
+      userSession.info?.jwt,
     );
 
     if (!res.ok) {
@@ -162,7 +162,7 @@ export default function PoolerLinkInvitation() {
               "/decline-pooler-link",
               "CouldNotDeclinePoolerLinkError",
               "SuccessDeclinePoolerLink",
-              false
+              false,
             )
           }
         >
@@ -176,7 +176,7 @@ export default function PoolerLinkInvitation() {
               "/accept-pooler-link",
               "CouldNotAcceptPoolerLinkError",
               "SuccessAcceptPoolerLink",
-              true
+              true,
             )
           }
         >

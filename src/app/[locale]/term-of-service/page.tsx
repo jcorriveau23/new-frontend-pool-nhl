@@ -13,9 +13,7 @@ export default function TermOfService() {
       <PageTitle title={t("TermOfService")} />
       <div className="flex flex-col gap-8 px-4">
         <div>
-          <p className="mt-2 text-muted-foreground">
-            {t("EffectiveDate")}
-          </p>
+          <p className="mt-2 text-muted-foreground">{t("EffectiveDate")}</p>
         </div>
         <div className="flex flex-col gap-4">
           <h2 className="text-xl font-semibold">{t("AcceptanceOfTerms")}</h2>
@@ -65,7 +63,10 @@ export default function TermOfService() {
           <h2 className="text-xl font-semibold">{t("ContactUs")}</h2>
           <p>
             {t("ToSQuestions")}
-            <a className="text-primary hover:underline">jcorriveau23@gmail.com</a>.
+            <a className="text-primary hover:underline">
+              jcorriveau23@gmail.com
+            </a>
+            .
           </p>
         </div>
       </div>

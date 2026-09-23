@@ -16,7 +16,7 @@ const INVITES: Record<string, (pool: string) => string> = {
 
 export async function generateMetadata(
   props: Props,
-  parent: ResolvingMetadata
+  parent: ResolvingMetadata,
 ): Promise<Metadata> {
   const { name, locale } = await props.params;
   // The [name] segment reaches this still percent-encoded, the same way it does

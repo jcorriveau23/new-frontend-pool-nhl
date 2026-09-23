@@ -30,7 +30,7 @@ describe("getRosterModificationWindow", () => {
   it("is open on an allowed date", () => {
     const window = getRosterModificationWindow(
       makePool(["2025-11-01", "2025-12-01"]),
-      at("2025-12-01", 9)
+      at("2025-12-01", 9),
     );
 
     expect(window.isOpen).toBe(true);
@@ -40,7 +40,7 @@ describe("getRosterModificationWindow", () => {
   it("is closed outside of the allowed dates and points to the next one", () => {
     const window = getRosterModificationWindow(
       makePool(["2025-12-01", "2025-11-01"]),
-      at("2025-11-15", 9)
+      at("2025-11-15", 9),
     );
 
     expect(window.isOpen).toBe(false);
@@ -52,17 +52,17 @@ describe("getRosterModificationWindow", () => {
     const pool = makePool(["2025-12-02"]);
 
     expect(getRosterModificationWindow(pool, at("2025-12-01", 9)).isOpen).toBe(
-      false
+      false,
     );
     expect(getRosterModificationWindow(pool, at("2025-12-01", 13)).isOpen).toBe(
-      true
+      true,
     );
   });
 
   it("is always open until the season starts", () => {
     const window = getRosterModificationWindow(
       makePool([]),
-      at("2025-09-20", 9)
+      at("2025-09-20", 9),
     );
 
     expect(window.isOpen).toBe(true);
@@ -72,7 +72,7 @@ describe("getRosterModificationWindow", () => {
   it("reports no upcoming date once every modification date is past", () => {
     const window = getRosterModificationWindow(
       makePool(["2025-11-01"]),
-      at("2025-12-01", 9)
+      at("2025-12-01", 9),
     );
 
     expect(window.isOpen).toBe(false);

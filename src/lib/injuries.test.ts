@@ -26,7 +26,7 @@ describe("groupInjuriesByTeam", () => {
         "2": injury("Adam"),
         "3": injury("Mitch"),
       },
-      { 1: TORONTO, 2: TORONTO, 3: MONTREAL }
+      { 1: TORONTO, 2: TORONTO, 3: MONTREAL },
     );
 
     expect(groups.map((group) => group.teamName)).toEqual([
@@ -47,7 +47,7 @@ describe("groupInjuriesByTeam", () => {
         "2": injury("Unknown Team"),
         "3": injury("Leaf"),
       },
-      { 2: 999_999, 3: TORONTO }
+      { 2: 999_999, 3: TORONTO },
     );
 
     expect(groups).toHaveLength(2);
@@ -104,14 +104,14 @@ describe("getInjuriesByTeam", () => {
       groups.map((group) => [
         group.teamId,
         group.players.map((player) => player.id),
-      ])
+      ]),
     ).toEqual([
       [MONTREAL, [2]],
       [TORONTO, [3, 1]],
     ]);
     // Only the entry the roster did not list gets a per-player lookup.
     const landingCalls = fetchMock.mock.calls.filter(([url]) =>
-      url.includes("/landing")
+      url.includes("/landing"),
     );
     expect(landingCalls.map(([url]) => url)).toEqual([
       "https://api-web.nhle.com/v1/player/2/landing",

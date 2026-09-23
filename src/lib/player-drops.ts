@@ -50,7 +50,7 @@ one spends the next month's budget, which is the month it actually applies to.
 export const getDropBudget = (
   pool: Pool,
   participantId: string,
-  now: Date
+  now: Date,
 ): DropBudget => {
   // An API that predates free agency leaves the key out altogether, so the
   // absent case is undefined as often as it is null.
@@ -79,7 +79,7 @@ export const getDropBudget = (
     (transaction) =>
       transaction.participant === participantId &&
       (settings.period === DropPeriod.SEASON ||
-        monthOf(transaction.effective_date) === monthOf(effectiveDate))
+        monthOf(transaction.effective_date) === monthOf(effectiveDate)),
   ).length;
 
   const remaining = Math.max(settings.max_drops - used, 0);
@@ -105,7 +105,7 @@ context already keeps up to date — a player it does not name is undrafted.
 */
 export const isFreeAgent = (
   player: Player,
-  playersOwner: Record<number, string>
+  playersOwner: Record<number, string>,
 ): boolean => playersOwner[player.id] === undefined;
 
 /*
@@ -120,7 +120,7 @@ const fitsUnderCap = (
   pool: Pool,
   roster: PoolerRoster,
   droppedPlayerId: number,
-  addedPlayer: Player
+  addedPlayer: Player,
 ): boolean => {
   const teamSalaryCap = pool.settings.salary_cap;
   if (teamSalaryCap === null) {
@@ -140,7 +140,7 @@ const fitsUnderCap = (
     .reduce(
       (total, playerId) =>
         total + (players[playerId.toString()]?.salary_cap ?? 0),
-      0
+      0,
     );
 
   return startersSalary + addedPlayer.salary_cap <= teamSalaryCap;
@@ -158,7 +158,7 @@ export const getSwapLanding = (
   pool: Pool,
   roster: PoolerRoster,
   droppedPlayerId: number,
-  addedPlayer: Player
+  addedPlayer: Player,
 ): "lineup" | "bench" | "no-room" => {
   const limits = {
     F: pool.settings.number_forwards,
@@ -174,7 +174,7 @@ export const getSwapLanding = (
   // The drop happens first, so the incoming player is measured against the
   // roster the drop leaves behind.
   const group = groups[addedPlayer.position].filter(
-    (playerId) => playerId !== droppedPlayerId
+    (playerId) => playerId !== droppedPlayerId,
   );
 
   if (
@@ -185,7 +185,7 @@ export const getSwapLanding = (
   }
 
   const bench = roster.chosen_reservists.filter(
-    (playerId) => playerId !== droppedPlayerId
+    (playerId) => playerId !== droppedPlayerId,
   );
   return bench.length < pool.settings.number_reservists ? "bench" : "no-room";
 };

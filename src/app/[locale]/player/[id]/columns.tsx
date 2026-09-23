@@ -455,7 +455,7 @@ export default function PlayerPointsTable(props: PlayerPointsTableProps) {
         data={props.playerInfo.seasonTotals.filter(
           (s) =>
             s.gameTypeId == props.seasonType &&
-            (!showOnlyNHL || s.leagueAbbrev === "NHL")
+            (!showOnlyNHL || s.leagueAbbrev === "NHL"),
         )}
         // @ts-expect-error, known type issue, might need to separate into skater and goalies table function.
         columns={
@@ -486,12 +486,12 @@ export default function PlayerPointsTable(props: PlayerPointsTableProps) {
                   (props.seasonType === SeasonType.SEASON
                     ? props.playerInfo.careerTotals.regularSeason
                     : props.playerInfo.careerTotals
-                        .playoffs) as SkaterSeasonStats
+                        .playoffs) as SkaterSeasonStats,
                 )
               : TotalNhlGoalieRow(
                   (props.seasonType === SeasonType.SEASON
                     ? props.playerInfo.careerTotals.regularSeason
-                    : props.playerInfo.careerTotals.playoffs) as GoalieStats
+                    : props.playerInfo.careerTotals.playoffs) as GoalieStats,
                 )
             : null
         }

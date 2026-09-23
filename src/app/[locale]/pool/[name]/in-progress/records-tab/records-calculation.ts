@@ -90,7 +90,7 @@ export interface SeasonRecord {
 
 const emptyDaily = (
   date: string,
-  participantId: string
+  participantId: string,
 ): DailyParticipantPoints => ({
   date,
   participantId,
@@ -109,7 +109,7 @@ const accumulateSkater = (
   daily: DailyParticipantPoints,
   playerId: string,
   skater: SkaterPoints,
-  poolPoints: number
+  poolPoints: number,
 ) => {
   daily.poolPoints += poolPoints;
   daily.goals += skater.G;
@@ -127,7 +127,7 @@ const accumulateGoalie = (
   daily: DailyParticipantPoints,
   playerId: string,
   goalie: GoaliePoints,
-  poolPoints: number
+  poolPoints: number,
 ) => {
   daily.poolPoints += poolPoints;
   daily.goals += goalie.G;
@@ -144,7 +144,7 @@ const accumulateGoalie = (
 export const buildDailyIndex = (
   poolInfo: Pool,
   poolStartDate: Date,
-  poolSelectedEndDate: Date
+  poolSelectedEndDate: Date,
 ): DailyParticipantPoints[] => {
   const scoreByDay = poolInfo.context?.score_by_day;
   if (!scoreByDay) {
@@ -175,7 +175,7 @@ export const buildDailyIndex = (
             daily,
             playerId,
             skater,
-            getSkaterPoolPoints(poolInfo.settings.forwards_settings, skater)
+            getSkaterPoolPoints(poolInfo.settings.forwards_settings, skater),
           );
         }
       }
@@ -186,7 +186,7 @@ export const buildDailyIndex = (
             daily,
             playerId,
             skater,
-            getSkaterPoolPoints(poolInfo.settings.defense_settings, skater)
+            getSkaterPoolPoints(poolInfo.settings.defense_settings, skater),
           );
         }
       }
@@ -197,7 +197,7 @@ export const buildDailyIndex = (
             daily,
             playerId,
             goalie,
-            getGoaliePoolPoints(poolInfo.settings.goalies_settings, goalie)
+            getGoaliePoolPoints(poolInfo.settings.goalies_settings, goalie),
           );
         }
       }
@@ -210,13 +210,16 @@ export const buildDailyIndex = (
 };
 
 export const weekKey = (date: string): string =>
-  format(startOfWeek(new Date(`${date}T00:00:00`), { weekStartsOn: 1 }), "yyyy-MM-dd");
+  format(
+    startOfWeek(new Date(`${date}T00:00:00`), { weekStartsOn: 1 }),
+    "yyyy-MM-dd",
+  );
 
 export const monthKey = (date: string): string => date.slice(0, 7);
 
 export const aggregateByPeriod = (
   daily: DailyParticipantPoints[],
-  keyOf: (date: string) => string
+  keyOf: (date: string) => string,
 ): PeriodResult[] => {
   const periods = new Map<
     string,
@@ -237,7 +240,7 @@ export const aggregateByPeriod = (
 
     period.points.set(
       day.participantId,
-      (period.points.get(day.participantId) ?? 0) + day.poolPoints
+      (period.points.get(day.participantId) ?? 0) + day.poolPoints,
     );
   }
 
@@ -269,7 +272,7 @@ const winnersOf = (standings: PeriodStanding[]): string[] => {
 export const computeTrophyCase = (
   days: PeriodResult[],
   weeks: PeriodResult[],
-  months: PeriodResult[]
+  months: PeriodResult[],
 ): TrophyCaseEntry[] => {
   const entries = new Map<string, TrophyCaseEntry>();
 
@@ -307,13 +310,13 @@ export const computeTrophyCase = (
     (a, b) =>
       b.monthsWon - a.monthsWon ||
       b.weeksWon - a.weeksWon ||
-      b.daysWon - a.daysWon
+      b.daysWon - a.daysWon,
   );
 };
 
 const bestPeriodRecord = (
   id: RecordId,
-  periods: PeriodResult[]
+  periods: PeriodResult[],
 ): SeasonRecord | null => {
   let best: { period: PeriodResult; standing: PeriodStanding } | null = null;
 
@@ -342,7 +345,7 @@ const bestPeriodRecord = (
 const bestDailyRecord = (
   id: RecordId,
   daily: DailyParticipantPoints[],
-  valueOf: (day: DailyParticipantPoints) => number
+  valueOf: (day: DailyParticipantPoints) => number,
 ): SeasonRecord | null => {
   let best: DailyParticipantPoints | null = null;
 
@@ -366,12 +369,14 @@ const bestDailyRecord = (
 
 const bestPlayerNightRecord = (
   daily: DailyParticipantPoints[],
-  poolInfo: Pool
+  poolInfo: Pool,
 ): SeasonRecord | null => {
   let best: DailyParticipantPoints | null = null;
 
   for (const day of daily) {
-    if ((day.bestPlayer?.poolPoints ?? 0) > (best?.bestPlayer?.poolPoints ?? 0)) {
+    if (
+      (day.bestPlayer?.poolPoints ?? 0) > (best?.bestPlayer?.poolPoints ?? 0)
+    ) {
       best = day;
     }
   }
@@ -385,12 +390,13 @@ const bestPlayerNightRecord = (
     participantId: best.participantId,
     value: best.bestPlayer.poolPoints,
     dateLabel: best.date,
-    detail: poolInfo.context?.players[best.bestPlayer.playerId.toString()]?.name,
+    detail:
+      poolInfo.context?.players[best.bestPlayer.playerId.toString()]?.name,
   };
 };
 
 const coldestDayRecord = (
-  daily: DailyParticipantPoints[]
+  daily: DailyParticipantPoints[],
 ): SeasonRecord | null => {
   // Only nights where the roster actually had players on the ice count, so a
   // day off is never mistaken for a bad night.
@@ -415,12 +421,16 @@ const coldestDayRecord = (
 };
 
 const longestDailyWinStreakRecord = (
-  days: PeriodResult[]
+  days: PeriodResult[],
 ): SeasonRecord | null => {
   // Longest run of consecutive scored days spent on top of the daily ranking.
   const current = new Map<string, { length: number; start: string }>();
-  let best: { participantId: string; length: number; start: string; end: string } | null =
-    null;
+  let best: {
+    participantId: string;
+    length: number;
+    start: string;
+    end: string;
+  } | null = null;
 
   for (const day of days) {
     const winners = new Set(winnersOf(day.standings));
@@ -467,7 +477,7 @@ export const computeSeasonRecords = (
   days: PeriodResult[],
   weeks: PeriodResult[],
   months: PeriodResult[],
-  poolInfo: Pool
+  poolInfo: Pool,
 ): SeasonRecord[] =>
   [
     bestPeriodRecord(RecordId.BestDay, days),
@@ -478,7 +488,7 @@ export const computeSeasonRecords = (
     bestDailyRecord(
       RecordId.MostGoalieWinsInADay,
       daily,
-      (day) => day.goalieWins
+      (day) => day.goalieWins,
     ),
     longestDailyWinStreakRecord(days),
     coldestDayRecord(daily),
@@ -496,7 +506,7 @@ export interface PoolRecords {
 export const computePoolRecords = (
   poolInfo: Pool,
   poolStartDate: Date,
-  poolSelectedEndDate: Date
+  poolSelectedEndDate: Date,
 ): PoolRecords => {
   const daily = buildDailyIndex(poolInfo, poolStartDate, poolSelectedEndDate);
 

@@ -29,7 +29,7 @@ const player = (id: number, position: Position = Position.F): Player =>
 
 const makePool = (
   playersNameDrafted: number[],
-  rosters: Record<string, PoolerRoster>
+  rosters: Record<string, PoolerRoster>,
 ): Pool =>
   ({
     name: "draft-pool",
@@ -39,13 +39,13 @@ const makePool = (
       players_name_drafted: playersNameDrafted,
       pooler_roster: rosters,
       players: Object.fromEntries(
-        playersNameDrafted.filter((id) => id > 0).map((id) => [id, player(id)])
+        playersNameDrafted.filter((id) => id > 0).map((id) => [id, player(id)]),
       ),
     },
   }) as unknown as Pool;
 
 const drafted = (
-  overrides: Partial<PlayerDraftedResponse> = {}
+  overrides: Partial<PlayerDraftedResponse> = {},
 ): PlayerDraftedResponse => ({
   player: player(7),
   participant_id: "user-1",
@@ -83,7 +83,7 @@ describe("applyPlayerDrafted", () => {
 
     const next = applyPlayerDrafted(
       pool,
-      drafted({ appended_picks: [7, 0], pick_count: 3 })
+      drafted({ appended_picks: [7, 0], pick_count: 3 }),
     )!;
 
     expect(next.context!.players_name_drafted).toEqual([1, 7, 0]);
@@ -106,10 +106,12 @@ describe("applyPlayerDrafted", () => {
           chosen_reservists: [7],
         },
         pick_count: 2,
-      })
+      }),
     )!;
 
-    expect(next.context!.pooler_roster["user-1"].chosen_reservists).toEqual([7]);
+    expect(next.context!.pooler_roster["user-1"].chosen_reservists).toEqual([
+      7,
+    ]);
     expect(next.context!.pooler_roster["user-1"].chosen_forwards).toEqual([1]);
   });
 
@@ -118,7 +120,7 @@ describe("applyPlayerDrafted", () => {
 
     const next = applyPlayerDrafted(
       pool,
-      drafted({ status: PoolState.InProgress })
+      drafted({ status: PoolState.InProgress }),
     )!;
 
     expect(next.status).toBe(PoolState.InProgress);
@@ -139,7 +141,7 @@ describe("applyPlayerDrafted", () => {
 });
 
 const undone = (
-  overrides: Partial<DraftPickUndoneResponse> = {}
+  overrides: Partial<DraftPickUndoneResponse> = {},
 ): DraftPickUndoneResponse => ({
   player_id: 7,
   participant_id: "user-1",
@@ -199,7 +201,7 @@ describe("applyDraftPickUndone", () => {
 });
 
 const modified = (
-  overrides: Partial<RosterModifiedResponse> = {}
+  overrides: Partial<RosterModifiedResponse> = {},
 ): RosterModifiedResponse => ({
   participant_id: "user-1",
   roster: { ...emptyRoster(), chosen_forwards: [1], chosen_reservists: [7] },
@@ -217,7 +219,9 @@ describe("applyRosterModified", () => {
     const next = applyRosterModified(pool, modified())!;
 
     expect(next.context!.pooler_roster["user-1"].chosen_forwards).toEqual([1]);
-    expect(next.context!.pooler_roster["user-1"].chosen_reservists).toEqual([7]);
+    expect(next.context!.pooler_roster["user-1"].chosen_reservists).toEqual([
+      7,
+    ]);
     expect(next.date_updated).toBe(4);
   });
 

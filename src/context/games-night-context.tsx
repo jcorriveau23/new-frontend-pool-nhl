@@ -22,7 +22,7 @@ export interface GamesNightContextProps {
 }
 
 const GamesNightContext = createContext<GamesNightContextProps | undefined>(
-  undefined
+  undefined,
 );
 
 export const useGamesNightContext = (): GamesNightContextProps => {
@@ -54,7 +54,7 @@ export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
     }
     if (
       games.every(
-        (g) => g.gameState === GameState.OFF || g.gameState === GameState.PPD
+        (g) => g.gameState === GameState.OFF || g.gameState === GameState.PPD,
       )
     ) {
       // If there is any live games the global night status would be LIVE.
@@ -64,7 +64,7 @@ export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
         (g) =>
           g.gameState === GameState.FUT ||
           g.gameState === GameState.PRE ||
-          g.gameState === GameState.PPD
+          g.gameState === GameState.PPD,
       )
     ) {
       // If all games as not started, the global night status would be NOT_STARTED.

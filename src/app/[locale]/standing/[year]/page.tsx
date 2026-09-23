@@ -7,7 +7,7 @@ import * as React from "react";
 import {
   getServerSideStanding,
   getServerSideStandingSeasons,
-} from "@/actions/standing";
+} from "@/lib/server-data/standing";
 import { StandingSeason } from "@/data/nhl/standing";
 import { Combobox } from "@/components/ui/link-combobox";
 import { Label } from "@/components/ui/label";

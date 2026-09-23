@@ -57,7 +57,10 @@ export default function DailyGameFeed() {
         <div className="mt-2 flex gap-2 py-2">
           {!score ? (
             Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-[74px] w-[80px] shrink-0 rounded-lg" />
+              <Skeleton
+                key={i}
+                className="h-[74px] w-[80px] shrink-0 rounded-lg"
+              />
             ))
           ) : score.games.length > 0 ? (
             score.games

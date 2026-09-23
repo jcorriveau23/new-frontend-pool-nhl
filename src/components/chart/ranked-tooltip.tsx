@@ -38,7 +38,7 @@ export function RankedTooltipContent({
   }
 
   const sorted = [...payload].sort(
-    (a, b) => (Number(b.value) || 0) - (Number(a.value) || 0)
+    (a, b) => (Number(b.value) || 0) - (Number(a.value) || 0),
   );
 
   const leaderValue = Number(sorted[0]?.value ?? 0);
@@ -48,7 +48,9 @@ export function RankedTooltipContent({
 
   return (
     <div className="grid min-w-[11rem] gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
-      {formattedLabel ? <div className="font-medium">{formattedLabel}</div> : null}
+      {formattedLabel ? (
+        <div className="font-medium">{formattedLabel}</div>
+      ) : null}
       <div className="grid gap-0.5">
         {sorted.map((item, index) => {
           const name = String(item.dataKey ?? item.name ?? "");
@@ -61,15 +63,11 @@ export function RankedTooltipContent({
               key={name}
               className={cn(
                 "flex items-center gap-2 rounded px-1 py-0.5",
-                isSelected && "bg-selection"
+                isSelected && "bg-selection",
               )}
             >
               <span className="w-3 shrink-0 text-muted-foreground tabular-nums">
-                {index === 0 ? (
-                  <Trophy className="size-3" />
-                ) : (
-                  index + 1
-                )}
+                {index === 0 ? <Trophy className="size-3" /> : index + 1}
               </span>
               <span
                 className="h-2 w-2 shrink-0 rounded-[2px]"
@@ -80,7 +78,7 @@ export function RankedTooltipContent({
                   "flex-1 truncate",
                   isSelected
                     ? "font-semibold text-selection-foreground"
-                    : "text-muted-foreground"
+                    : "text-muted-foreground",
                 )}
               >
                 {config[name]?.label ?? name}
@@ -95,7 +93,7 @@ export function RankedTooltipContent({
                   "font-mono tabular-nums",
                   isSelected
                     ? "font-semibold text-selection-foreground"
-                    : "text-foreground"
+                    : "text-foreground",
                 )}
               >
                 {value.toLocaleString()}

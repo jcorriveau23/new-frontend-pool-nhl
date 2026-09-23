@@ -40,7 +40,7 @@ export default function HankoAuth(props: Props) {
       hanko?.onSessionCreated(() => {
         redirectAfterLogin();
       }),
-    [hanko, redirectAfterLogin]
+    [hanko, redirectAfterLogin],
   );
 
   useEffect(() => {

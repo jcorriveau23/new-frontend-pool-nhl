@@ -1,14 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Brush,
-  CartesianGrid,
-  Line,
-  LineChart,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Brush, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import type { TooltipProps } from "recharts";
 import type {
   NameType,
@@ -50,7 +43,7 @@ const formatShortDate = (value: string) =>
 export function PlayerStatsChart({ data, series }: PlayerStatsChartProps) {
   const t = useTranslations();
   const [hiddenSeries, setHiddenSeries] = React.useState<Set<string>>(
-    () => new Set()
+    () => new Set(),
   );
   const [brushRange, setBrushRange] = React.useState<{
     startIndex?: number;
@@ -70,7 +63,9 @@ export function PlayerStatsChart({ data, series }: PlayerStatsChartProps) {
   };
 
   const colorFor = (key: string) =>
-    SERIES_COLORS[series.findIndex((s) => s.key === key) % SERIES_COLORS.length];
+    SERIES_COLORS[
+      series.findIndex((s) => s.key === key) % SERIES_COLORS.length
+    ];
 
   const lastPoint = data[data.length - 1];
   const totalPoolPoints = Number(lastPoint?.poolPoints ?? 0);
@@ -135,7 +130,7 @@ export function PlayerStatsChart({ data, series }: PlayerStatsChartProps) {
           {generateReferenceAreas(
             data,
             brushRange.startIndex ?? 0,
-            brushRange.endIndex ?? data.length - 1
+            brushRange.endIndex ?? data.length - 1,
           )}
           {series.map((s) => (
             <Line
@@ -173,7 +168,7 @@ export function PlayerStatsChart({ data, series }: PlayerStatsChartProps) {
                 "flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-opacity hover:opacity-100",
                 isHidden
                   ? "text-muted-foreground opacity-40 line-through"
-                  : "text-foreground opacity-100"
+                  : "text-foreground opacity-100",
               )}
             >
               <span
@@ -267,7 +262,7 @@ function PlayerTooltipContent({
             "rounded px-1.5 py-px text-[10px] font-medium",
             isInRoster
               ? "bg-selection text-selection-foreground"
-              : "bg-destructive/15 text-destructive"
+              : "bg-destructive/15 text-destructive",
           )}
         >
           {isInRoster ? inRosterLabel : notInRosterLabel}

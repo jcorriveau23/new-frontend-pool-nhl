@@ -12,7 +12,7 @@ const makePlayer = (
   id: number,
   position: Position,
   salary: number | null,
-  contractExpirationSeason: number | null = 20252026
+  contractExpirationSeason: number | null = 20252026,
 ): Player =>
   ({
     id,
@@ -30,7 +30,7 @@ describe("getCapAllocation", () => {
         defense: [makePlayer(2, Position.D, 3_000_000)],
         goalies: [makePlayer(3, Position.G, 1_000_000)],
       },
-      20_000_000
+      20_000_000,
     );
 
     expect(allocation.usedSalary).toBe(10_000_000);
@@ -46,7 +46,7 @@ describe("getCapAllocation", () => {
         defense: [],
         goalies: [],
       },
-      10_000_000
+      10_000_000,
     );
 
     expect(allocation.spaceLeft).toBe(-2_000_000);
@@ -59,7 +59,7 @@ describe("getCapAllocation", () => {
         defense: [],
         goalies: [],
       },
-      10_000_000
+      10_000_000,
     );
 
     expect(allocation.usedSalary).toBe(0);
@@ -73,7 +73,7 @@ describe("getContractValues", () => {
         makePlayer(1, Position.F, 10_000_000),
         makePlayer(2, Position.F, 1_000_000),
       ],
-      { 1: 50, 2: 20 }
+      { 1: 50, 2: 20 },
     );
 
     expect(values.map((value) => value.playerId)).toEqual([2, 1]);
@@ -82,7 +82,10 @@ describe("getContractValues", () => {
   });
 
   it("gives a player with no point a value of zero instead of dividing by it", () => {
-    const [value] = getContractValues([makePlayer(1, Position.F, 4_000_000)], {});
+    const [value] = getContractValues(
+      [makePlayer(1, Position.F, 4_000_000)],
+      {},
+    );
 
     expect(value.poolPoints).toBe(0);
     expect(value.pointsPerMillion).toBe(0);
@@ -91,7 +94,7 @@ describe("getContractValues", () => {
 
   it("leaves out players without a contract", () => {
     expect(
-      getContractValues([makePlayer(1, Position.F, null)], { 1: 30 })
+      getContractValues([makePlayer(1, Position.F, null)], { 1: 30 }),
     ).toEqual([]);
   });
 });

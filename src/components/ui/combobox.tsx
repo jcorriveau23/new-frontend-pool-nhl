@@ -50,7 +50,7 @@ export function Combobox(props: Props) {
       >
         {value
           ? props.selections.find(
-              (s) => s.value.toLowerCase() === value.toLowerCase()
+              (s) => s.value.toLowerCase() === value.toLowerCase(),
             )?.label
           : props.emptyText}
         <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -77,7 +77,7 @@ export function Combobox(props: Props) {
                       "ml-auto h-4 w-4",
                       value === s.value.toLowerCase()
                         ? "opacity-100"
-                        : "opacity-0"
+                        : "opacity-0",
                     )}
                   />
                 </CommandItem>

@@ -93,7 +93,7 @@ export default function RecordsTab() {
 
   const { days, weeks, months, trophyCase, records } = React.useMemo(
     () => computePoolRecords(poolInfo, poolStartDate, poolSelectedEndDate),
-    [poolInfo, poolStartDate, poolSelectedEndDate]
+    [poolInfo, poolStartDate, poolSelectedEndDate],
   );
 
   // The season standing has to come from the same computation the Cumulative
@@ -105,9 +105,9 @@ export default function RecordsTab() {
         poolInfo,
         poolStartDate,
         poolSelectedEndDate,
-        dailyPointsMade
+        dailyPointsMade,
       )[1] ?? [],
-    [poolInfo, poolStartDate, poolSelectedEndDate, dailyPointsMade]
+    [poolInfo, poolStartDate, poolSelectedEndDate, dailyPointsMade],
   );
 
   const nameOf = (participantId: string) =>
@@ -127,10 +127,7 @@ export default function RecordsTab() {
 
   // Records carry either a single day or a "start → end" range.
   const formatRecordDate = (dateLabel: string) =>
-    dateLabel
-      .split(" → ")
-      .map(formatDay)
-      .join(" → ");
+    dateLabel.split(" → ").map(formatDay).join(" → ");
 
   const formatDayRange = (period: PeriodResult) =>
     `${formatDay(period.start)} → ${formatDay(period.end)}`;
@@ -199,7 +196,9 @@ export default function RecordsTab() {
             {record.detail ? ` · ${record.detail}` : null}
           </div>
         </TableCell>
-        <TableCell className="text-left">{nameOf(record.participantId)}</TableCell>
+        <TableCell className="text-left">
+          {nameOf(record.participantId)}
+        </TableCell>
         <TableCell className="text-right tabular-nums font-semibold">
           {record.value}
         </TableCell>
@@ -301,7 +300,7 @@ export default function RecordsTab() {
                     className={cn(
                       "cursor-pointer",
                       nameOf(entry.participantId) === selectedParticipant &&
-                        "bg-selection hover:bg-selection font-semibold border-l-4 border-l-primary"
+                        "bg-selection hover:bg-selection font-semibold border-l-4 border-l-primary",
                     )}
                     onClick={() =>
                       updateSelectedParticipant(nameOf(entry.participantId))
@@ -369,7 +368,7 @@ export default function RecordsTab() {
                   const runnerUp = period.standings[1] ?? null;
                   const selectedIndex = period.standings.findIndex(
                     (standing) =>
-                      nameOf(standing.participantId) === selectedParticipant
+                      nameOf(standing.participantId) === selectedParticipant,
                   );
                   const selected =
                     selectedIndex >= 0 ? period.standings[selectedIndex] : null;
@@ -378,7 +377,10 @@ export default function RecordsTab() {
                   // no champion to crown for that period.
                   if (!champion || champion.poolPoints <= 0) {
                     return (
-                      <TableRow key={period.key} className="text-muted-foreground">
+                      <TableRow
+                        key={period.key}
+                        className="text-muted-foreground"
+                      >
                         <TableCell className="whitespace-nowrap">
                           {formatPeriod(period)}
                         </TableCell>

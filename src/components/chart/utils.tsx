@@ -6,7 +6,7 @@ import { ReferenceArea } from "recharts";
 export const generateReferenceAreas = (
   data: Record<string, string | number | boolean>[],
   visibleStartIndex = 0,
-  visibleEndIndex = data.length - 1
+  visibleEndIndex = data.length - 1,
 ) => {
   // Returns the areas where the player was not in the alignment to display a
   // shaded background when it occurs. Areas are clamped to the visible window
@@ -31,7 +31,7 @@ export const generateReferenceAreas = (
         stroke="var(--destructive)"
         strokeOpacity={0.35}
         strokeDasharray="4 4"
-      />
+      />,
     );
   };
 

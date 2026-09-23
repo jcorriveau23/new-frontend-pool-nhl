@@ -13,9 +13,7 @@ export default function PrivacyPolicy() {
       <PageTitle title={t("PrivacyPolicy")} />
       <div className="flex flex-col gap-8 px-4">
         <div>
-          <p className="mt-2 text-muted-foreground">
-            {t("EffectiveDate")}
-          </p>
+          <p className="mt-2 text-muted-foreground">{t("EffectiveDate")}</p>
         </div>
         <div className="flex flex-col gap-4">
           <h2 className="text-xl font-semibold">{t("InformationWeCollect")}</h2>

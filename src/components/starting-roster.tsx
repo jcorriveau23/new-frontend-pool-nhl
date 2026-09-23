@@ -38,6 +38,23 @@ import {
 import PlayerSearchDialog from "./search-players";
 import { useUser } from "@/context/useUserData";
 import { getRosterModificationWindow } from "@/lib/roster-modification";
+import {
+  bySalary,
+  byPositionThenSalary,
+  countMovedPlayers,
+  findLineupIssue,
+  GROUP_TITLE,
+  Lineup,
+  lineupSignature,
+  moveToLineup as withPlayerInLineup,
+  STARTER_GROUP,
+  moveToReserves as withPlayerOnBench,
+  StarterGroup,
+  StarterLimits,
+  starters as lineupStarters,
+  toLineup,
+  totalStartersSalary,
+} from "@/lib/lineup-edit";
 import { getDropBudget, getSwapLanding, isFreeAgent } from "@/lib/player-drops";
 import { Command, useOptionalSocketContext } from "@/context/socket-context";
 import { cn } from "@/lib/utils";
@@ -47,13 +64,6 @@ import {
   PoolerUserGlobalSelector,
 } from "./pool-user-selector";
 import LineupAnalysis, { LineupAnalytics } from "./lineup-analysis";
-
-interface Lineup {
-  forwards: Player[];
-  defense: Player[];
-  goalies: Player[];
-  reservists: Player[];
-}
 
 interface Props {
   userRoster: Lineup & { user: PoolUser };
@@ -68,56 +78,6 @@ interface Props {
   onDirtyChange?: (isDirty: boolean) => void;
 }
 
-type StarterGroup = "forwards" | "defense" | "goalies";
-
-const STARTER_GROUP: Record<Position, StarterGroup> = {
-  [Position.F]: "forwards",
-  [Position.D]: "defense",
-  [Position.G]: "goalies",
-};
-
-const GROUP_TITLE: Record<StarterGroup, string> = {
-  forwards: "Forwards",
-  defense: "Defense",
-  goalies: "Goalies",
-};
-
-const POSITION_ORDER = [Position.F, Position.D, Position.G];
-
-const bySalary = (players: Player[]): Player[] =>
-  [...players].sort((p1, p2) => (p2.salary_cap ?? 0) - (p1.salary_cap ?? 0));
-
-// The bench mixes positions, grouping them keeps it readable.
-const byPositionThenSalary = (players: Player[]): Player[] =>
-  [...players].sort(
-    (p1, p2) =>
-      POSITION_ORDER.indexOf(p1.position) -
-        POSITION_ORDER.indexOf(p2.position) ||
-      (p2.salary_cap ?? 0) - (p1.salary_cap ?? 0)
-  );
-
-const toLineup = (roster: Lineup): Lineup => ({
-  forwards: [...roster.forwards],
-  defense: [...roster.defense],
-  goalies: [...roster.goalies],
-  reservists: [...roster.reservists],
-});
-
-const LINEUP_GROUPS: (keyof Lineup)[] = [
-  "forwards",
-  "defense",
-  "goalies",
-  "reservists",
-];
-
-const lineupSignature = (lineup: Lineup): string =>
-  LINEUP_GROUPS.map((group) =>
-    lineup[group]
-      .map((player) => player.id)
-      .sort((a, b) => a - b)
-      .join(",")
-  ).join("|");
-
 export default function StartingRoster(props: Props) {
   const { poolInfo, updatePoolInfo, dictUsers, playersOwner } =
     usePoolContext();
@@ -129,7 +89,7 @@ export default function StartingRoster(props: Props) {
   const locale = useLocale();
 
   const [lineup, setLineup] = React.useState<Lineup>(() =>
-    toLineup(props.userRoster)
+    toLineup(props.userRoster),
   );
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -164,7 +124,7 @@ export default function StartingRoster(props: Props) {
 
   const modificationWindow = React.useMemo(
     () => getRosterModificationWindow(poolInfo, new Date()),
-    [poolInfo]
+    [poolInfo],
   );
 
   // Free agency: how much of this pooler's drop budget is left. Unlike a
@@ -172,7 +132,7 @@ export default function StartingRoster(props: Props) {
   // be filed any day of the season.
   const dropBudget = React.useMemo(
     () => getDropBudget(poolInfo, props.userRoster.user.id, new Date()),
-    [poolInfo, props.userRoster.user.id]
+    [poolInfo, props.userRoster.user.id],
   );
 
   // The player whose replacement is being picked. Set by the drop button on a
@@ -195,50 +155,25 @@ export default function StartingRoster(props: Props) {
     });
 
   const moveToReserves = (player: Player) =>
-    setLineup((current) => ({
-      ...current,
-      [STARTER_GROUP[player.position]]: current[
-        STARTER_GROUP[player.position]
-      ].filter((p) => p.id !== player.id),
-      reservists: [...current.reservists, player],
-    }));
+    setLineup((current) => withPlayerOnBench(current, player));
 
   const moveToLineup = (player: Player) =>
-    setLineup((current) => ({
-      ...current,
-      [STARTER_GROUP[player.position]]: [
-        ...current[STARTER_GROUP[player.position]],
-        player,
-      ],
-      reservists: current.reservists.filter((p) => p.id !== player.id),
-    }));
+    setLineup((current) => withPlayerInLineup(current, player));
 
   const resetLineup = () => setLineup(toLineup(props.userRoster));
 
-  const starters = [...lineup.forwards, ...lineup.defense, ...lineup.goalies];
-  const totalSalary = starters.reduce(
-    (total, player) => total + (player.salary_cap ?? 0),
-    0
-  );
+  const starters = lineupStarters(lineup);
+  const totalSalary = totalStartersSalary(lineup);
   const isOverCap =
     props.teamSalaryCap !== null && totalSalary > props.teamSalaryCap;
 
-  const positionLimits: Record<StarterGroup, number> = {
+  const positionLimits: StarterLimits = {
     forwards: poolInfo.settings.number_forwards,
     defense: poolInfo.settings.number_defenders,
     goalies: poolInfo.settings.number_goalies,
   };
 
-  const movedPlayerCount = [
-    ...new Set([
-      ...lineup.reservists.map((p) => p.id),
-      ...props.userRoster.reservists.map((p) => p.id),
-    ]),
-  ].filter(
-    (playerId) =>
-      lineup.reservists.some((p) => p.id === playerId) !==
-      props.userRoster.reservists.some((p) => p.id === playerId)
-  ).length;
+  const movedPlayerCount = countMovedPlayers(lineup, props.userRoster);
   const hasUnsavedChanges = movedPlayerCount > 0;
 
   // Only savable edits are worth guarding: in simulation mode nothing can be
@@ -250,44 +185,33 @@ export default function StartingRoster(props: Props) {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
 
-  // Same validations as the backend, reported before the request is sent so the
-  // pooler knows what to fix.
-  const getBlockingIssue = (): string | null => {
-    for (const [group, limit] of Object.entries(positionLimits) as [
-      StarterGroup,
-      number,
-    ][]) {
-      if (lineup[group].length > limit) {
-        return t("TooManyPlayersInLineup", {
-          position: t(GROUP_TITLE[group]),
-          count: lineup[group].length,
-          limit,
-        });
-      }
-    }
-
-    if (props.teamSalaryCap === null) {
+  // Same validations as the backend, found in `@/lib/lineup-edit` and turned
+  // into a message here so the pooler knows what to fix.
+  const describeIssue = (): string | null => {
+    const issue = findLineupIssue(lineup, positionLimits, props.teamSalaryCap);
+    if (issue === null) {
       return null;
     }
 
-    const playerWithoutContract = starters.find(
-      (player) => player.salary_cap === null
-    );
-    if (playerWithoutContract) {
-      return t("PlayerWithoutContractInLineup", {
-        playerName: playerWithoutContract.name,
-      });
+    switch (issue.kind) {
+      case "too-many-players":
+        return t("TooManyPlayersInLineup", {
+          position: t(GROUP_TITLE[issue.group]),
+          count: issue.count,
+          limit: issue.limit,
+        });
+      case "player-without-contract":
+        return t("PlayerWithoutContractInLineup", {
+          playerName: issue.player.name,
+        });
+      case "over-salary-cap":
+        return t("LineupOverSalaryCap", {
+          diff: salaryFormat(issue.overBy),
+        });
     }
-
-    if (totalSalary > props.teamSalaryCap) {
-      return t("LineupOverSalaryCap", {
-        diff: salaryFormat(totalSalary - props.teamSalaryCap),
-      });
-    }
-
-    return null;
   };
-  const blockingIssue = getBlockingIssue();
+
+  const blockingIssue = describeIssue();
 
   // Drops a player and picks the free agent replacing them. Refused while the
   // lineup holds unsaved edits: the swap is applied to the saved roster and the
@@ -328,7 +252,7 @@ export default function StartingRoster(props: Props) {
     player: Player,
     index: number,
     isStarter: boolean,
-    isTargetFull: boolean
+    isTargetFull: boolean,
   ) => {
     const moveLabel = isStarter
       ? t("MoveToReserves", { playerName: player.name })
@@ -408,14 +332,18 @@ export default function StartingRoster(props: Props) {
 
   // What a group of players weighs on the cap, and the share of the cap it eats.
   // Reservists are outside of the cap, so their share is not shown.
-  const GroupSalary = (players: Player[], tooltip: string, showShare = true) => {
+  const GroupSalary = (
+    players: Player[],
+    tooltip: string,
+    showShare = true,
+  ) => {
     if (props.teamSalaryCap === null) {
       return null;
     }
 
     const groupSalary = players.reduce(
       (total, player) => total + (player.salary_cap ?? 0),
-      0
+      0,
     );
 
     return (
@@ -426,7 +354,9 @@ export default function StartingRoster(props: Props) {
             {showShare ? (
               <span className="ml-1 opacity-70">
                 {t("PercentOfCap", {
-                  percent: Math.round((groupSalary / props.teamSalaryCap) * 100),
+                  percent: Math.round(
+                    (groupSalary / props.teamSalaryCap) * 100,
+                  ),
                 })}
               </span>
             ) : null}
@@ -449,7 +379,7 @@ export default function StartingRoster(props: Props) {
           <div className="flex items-center gap-2">
             {GroupSalary(
               players,
-              t("PositionSalaryTotal", { position: t(GROUP_TITLE[group]) })
+              t("PositionSalaryTotal", { position: t(GROUP_TITLE[group]) }),
             )}
             <Badge
               variant={
@@ -520,8 +450,8 @@ export default function StartingRoster(props: Props) {
                 i,
                 false,
                 lineup[STARTER_GROUP[player.position]].length >=
-                  positionLimits[STARTER_GROUP[player.position]]
-              )
+                  positionLimits[STARTER_GROUP[player.position]],
+              ),
             )
           )}
         </ul>
@@ -531,7 +461,7 @@ export default function StartingRoster(props: Props) {
 
   const SalarySummary = (teamSalaryCap: number) => {
     const contractCount = starters.filter(
-      (player) => player.salary_cap !== null
+      (player) => player.salary_cap !== null,
     ).length;
 
     return (
@@ -561,7 +491,7 @@ export default function StartingRoster(props: Props) {
           <span
             className={cn(
               "font-medium",
-              isOverCap ? "text-destructive" : "text-success"
+              isOverCap ? "text-destructive" : "text-success",
             )}
           >
             {isOverCap
@@ -589,7 +519,7 @@ export default function StartingRoster(props: Props) {
         "flex items-start gap-3 rounded-xl border px-4 py-3",
         modificationWindow.isOpen
           ? "border-success/40 bg-success/10"
-          : "bg-muted/40"
+          : "bg-muted/40",
       )}
     >
       {modificationWindow.isOpen ? (
@@ -640,7 +570,7 @@ export default function StartingRoster(props: Props) {
       if (socketContext) {
         socketContext.sendSocketCommand(
           Command.ModifyRoster,
-          JSON.stringify(modification)
+          JSON.stringify(modification),
         );
         return true;
       }
@@ -648,7 +578,7 @@ export default function StartingRoster(props: Props) {
       const res = await apiPost<Pool>(
         "/modify-roster",
         { pool_name: poolInfo.name, ...modification },
-        userSession.info?.jwt
+        userSession.info?.jwt,
       );
 
       if (!res.ok) {
@@ -657,7 +587,7 @@ export default function StartingRoster(props: Props) {
             userName: dictUsers[props.userRoster.user.id].name,
             error: res.error,
           }),
-          { duration: 5000 }
+          { duration: 5000 },
         );
         return false;
       }
@@ -667,7 +597,7 @@ export default function StartingRoster(props: Props) {
         t("SuccessSaveRosterModification", {
           userName: dictUsers[props.userRoster.user.id].name,
         }),
-        { duration: 2000 }
+        { duration: 2000 },
       );
 
       return true;
@@ -684,7 +614,7 @@ export default function StartingRoster(props: Props) {
         added_player_user_id: props.userRoster.user.id,
         player: player,
       },
-      userSession.info?.jwt
+      userSession.info?.jwt,
     );
 
     if (!res.ok) {
@@ -694,7 +624,7 @@ export default function StartingRoster(props: Props) {
           userName: dictUsers[props.userRoster.user.id].name,
           error: res.error,
         }),
-        { duration: 5000 }
+        { duration: 5000 },
       );
       return false;
     }
@@ -705,7 +635,7 @@ export default function StartingRoster(props: Props) {
         playerName: player.name,
         userName: dictUsers[props.userRoster.user.id].name,
       }),
-      { duration: 2000 }
+      { duration: 2000 },
     );
 
     return true;
@@ -748,7 +678,7 @@ export default function StartingRoster(props: Props) {
           dropped_player_id: dropped.id,
           added_player: replacement,
         },
-        userSession.info?.jwt
+        userSession.info?.jwt,
       );
 
       if (!res.ok) {
@@ -758,7 +688,7 @@ export default function StartingRoster(props: Props) {
             addedPlayerName: replacement.name,
             error: res.error,
           }),
-          { duration: 5000 }
+          { duration: 5000 },
         );
         return false;
       }
@@ -770,7 +700,7 @@ export default function StartingRoster(props: Props) {
           addedPlayerName: replacement.name,
           date: formatDate(dropBudget.effectiveDate),
         }),
-        { duration: 4000 }
+        { duration: 4000 },
       );
       setPlayerToDrop(null);
       return true;

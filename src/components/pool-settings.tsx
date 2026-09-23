@@ -24,7 +24,17 @@ import { apiPost } from "@/lib/client-api";
 import { RadioGroupItem, RadioGroup } from "@/components/ui/radio-group";
 import { useTranslations } from "next-intl";
 import { PoolerNameText } from "@/components/pooler-name";
-import { z } from "zod";
+import {
+  buildPoolSettingsSchema,
+  numberOrNull,
+  poolSettingsDefaults,
+  poolSettingsToggles,
+  PoolSettingsFormValues,
+  POOL_SETTINGS_BOUNDS,
+  PoolType,
+  toPoolSettings,
+  type Translator,
+} from "@/lib/pool-settings-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -56,11 +66,6 @@ import DeletePoolDialog from "./delete-pool-dialog";
 import RenamePoolerDialog from "./rename-pooler-dialog";
 import LinkPoolerAccountDialog from "./link-pooler-account-dialog";
 
-enum PoolType {
-  STANDARD = "Standard",
-  DYNASTY = "Dynasty",
-}
-
 interface Props {
   // When the oldPoolSettings is not filled (not null), it means we are in a context
   // of pool creation. else it is a pool update.
@@ -90,24 +95,6 @@ interface Props {
   onUpdated?: (pool: Pool) => void;
 }
 
-export const POOL_NAME_MIN_LENGTH = 5;
-export const POOL_NAME_MAX_LENGTH = 16;
-
-// The backend stores the points as u8, decimals would be rejected.
-const POINTS_MIN_VALUE = 0;
-const POINTS_MAX_VALUE = 255;
-const DEFAULT_POINTS_VALUE = 1;
-
-const SALARY_CAP_MIN_VALUE = 0;
-const SALARY_CAP_MAX_VALUE = 500_000_000;
-const DEFAULT_SALARY_CAP = 82_500_000;
-
-// An emptied number input holds no value, which the schema reports as a missing
-// field. `Number(value) || null` was used before and mapped a legitimate 0 (no
-// reservist, no worst player ignored) to that same missing value.
-const numberOrNull = (value: string): number | null =>
-  value.trim().length === 0 ? null : Number(value);
-
 export default function PoolSettingsComponent(props: Props) {
   const t = useTranslations();
   const userSession = useSession();
@@ -128,148 +115,28 @@ export default function PoolSettingsComponent(props: Props) {
   const STRUCTURE_LOCKED =
     !isCreationContext() && props.poolStatus !== PoolState.Created;
 
-  // The validation and default values of the form for the pool settings are listed here.
-  // 1) General Settings
-  const DEFAULT_POOL_NAME = props.poolName ?? "";
-
-  const DEFAULT_POOLER_NUMBER = props.oldPoolSettings?.number_poolers ?? 6;
-  const MIN_POOLER_NUMBER = 2;
-  const MAX_POOLER_NUMBER = 24;
-
-  const DEFAULT_POOL_TYPE = props.oldPoolSettings?.dynasty_settings
-    ? PoolType.DYNASTY
-    : PoolType.STANDARD;
-
-  const DEFAULT_DRAFT_TYPE =
-    props.oldPoolSettings?.draft_type ?? DraftType.SERPENTINE;
-
-  // 2) Player Settings
-  // Forwards
-  const DEFAULT_NUMBER_FORWARDS = props.oldPoolSettings?.number_forwards ?? 9;
-  const NUMBER_FORWARDS_MIN_VALUE = 3;
-  const NUMBER_FORWARDS_MAX_VALUE = 15;
-
-  // Defenders
-  const DEFAULT_NUMBER_DEFENDERS = props.oldPoolSettings?.number_defenders ?? 4;
-  const NUMBER_DEFENDERS_MIN_VALUE = 2;
-  const NUMBER_DEFENDERS_MAX_VALUE = 9;
-
-  // Goalies
-  const DEFAULT_NUMBER_GOALIES = props.oldPoolSettings?.number_goalies ?? 2;
-  const NUMBER_GOALIES_MIN_VALUE = 1;
-  const NUMBER_GOALIES_MAX_VALUE = 5;
-
-  // Reservists
-  const DEFAULT_NUMBER_RESERVISTS =
-    props.oldPoolSettings?.number_reservists ?? 0;
-  const NUMBER_RESERVISTS_MIN_VALUE = 0;
-  const NUMBER_RESERVISTS_MAX_VALUE = 10;
-
-  // Ignore x worst players
-  const DEFAULT_IGNORE_WORST_PLAYERS =
-    props.oldPoolSettings !== null &&
-    props.oldPoolSettings.ignore_x_worst_players !== null;
-
-  const DEFAULT_NUMBER_WORST_FORWARDS_TO_IGNORE =
-    props.oldPoolSettings?.ignore_x_worst_players?.forwards ?? 0;
-  const NUMBER_WORST_FORWARDS_TO_IGNORE_MIN_VALUE = 0;
-  const NUMBER_WORST_FORWARDS_TO_IGNORE_MAX_VALUE = 5;
-
-  const DEFAULT_NUMBER_WORST_DEFENDERS_TO_IGNORE =
-    props.oldPoolSettings?.ignore_x_worst_players?.defense ?? 0;
-  const NUMBER_WORST_DEFENDERS_TO_IGNORE_MIN_VALUE = 0;
-  const NUMBER_WORST_DEFENDERS_TO_IGNORE_MAX_VALUE = 5;
-
-  const DEFAULT_NUMBER_WORST_GOALIES_TO_IGNORE =
-    props.oldPoolSettings?.ignore_x_worst_players?.goalies ?? 0;
-  const NUMBER_WORST_GOALIES_TO_IGNORE_MIN_VALUE = 0;
-  const NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE = 5;
-
-  // 3) Points Settings
-  // Forwards
-  const DEFAULT_FORWARDS_POINTS_PER_GOALS =
-    props.oldPoolSettings?.forwards_settings.points_per_goals ??
-    DEFAULT_POINTS_VALUE;
-  const DEFAULT_FORWARDS_POINTS_PER_ASSITS =
-    props.oldPoolSettings?.forwards_settings.points_per_assists ??
-    DEFAULT_POINTS_VALUE;
-  const DEFAULT_FORWARDS_POINTS_PER_HATTRICKS =
-    props.oldPoolSettings?.forwards_settings.points_per_hattricks ??
-    DEFAULT_POINTS_VALUE;
-  const DEFAULT_FORWARDS_POINTS_PER_SHOOTOUT_GOALS =
-    props.oldPoolSettings?.forwards_settings.points_per_shootout_goals ??
-    DEFAULT_POINTS_VALUE;
-  // Defense
-  const DEFAULT_DEFENDERS_POINTS_PER_GOALS =
-    props.oldPoolSettings?.defense_settings.points_per_goals ??
-    DEFAULT_POINTS_VALUE;
-  const DEFAULT_DEFENDERS_POINTS_PER_ASSITS =
-    props.oldPoolSettings?.defense_settings.points_per_assists ??
-    DEFAULT_POINTS_VALUE;
-  const DEFAULT_DEFENDERS_POINTS_PER_HATTRICKS =
-    props.oldPoolSettings?.defense_settings.points_per_hattricks ??
-    DEFAULT_POINTS_VALUE;
-  const DEFAULT_DEFENDERS_POINTS_PER_SHOOTOUT_GOALS =
-    props.oldPoolSettings?.defense_settings.points_per_shootout_goals ??
-    DEFAULT_POINTS_VALUE;
-  // Goalies
-  const DEFAULT_GOALIES_POINTS_PER_WINS =
-    props.oldPoolSettings?.goalies_settings.points_per_wins ??
-    DEFAULT_POINTS_VALUE;
-  const DEFAULT_GOALIES_POINTS_PER_OVERTIME_LOSSES =
-    props.oldPoolSettings?.goalies_settings.points_per_overtimes ??
-    DEFAULT_POINTS_VALUE;
-  const DEFAULT_GOALIES_POINTS_PER_SHUTOUT =
-    props.oldPoolSettings?.goalies_settings.points_per_shutouts ??
-    DEFAULT_POINTS_VALUE;
-  const DEFAULT_GOALIES_POINTS_PER_GOALS =
-    props.oldPoolSettings?.goalies_settings.points_per_goals ??
-    DEFAULT_POINTS_VALUE;
-  const DEFAULT_GOALIES_POINTS_PER_ASSITS =
-    props.oldPoolSettings?.goalies_settings.points_per_assists ??
-    DEFAULT_POINTS_VALUE;
-
-  // 4) Dynasty Settings
-  const DEFAULT_TRADABLE_DRAFT_PICKS =
-    props.oldPoolSettings?.dynasty_settings?.tradable_picks ?? 5;
-  const TRADABLE_DRAFT_PICKS_MIN_VALUE = 0;
-  const TRADABLE_DRAFT_PICKS_MAX_VALUE = 7;
-
-  const DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT =
-    props.oldPoolSettings?.dynasty_settings
-      ?.next_season_number_players_protected ?? 10;
-  const NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE = 5;
-  const NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE = 15;
-
-  // 5) Salary cap
-  const DEFAULT_SALARY_CAP_ENABLED =
-    (props.oldPoolSettings?.salary_cap ?? null) !== null;
-
-  // 6) Free agency. Only the number of drops is configurable: a drop always
-  // comes with picking a free agent up, so one number covers both halves of
-  // the swap and a roster can never change size.
-  const DEFAULT_PLAYER_DROPS_ENABLED =
-    (props.oldPoolSettings?.player_drop_settings ?? null) !== null;
-
-  const DEFAULT_MAX_PLAYER_DROPS =
-    props.oldPoolSettings?.player_drop_settings?.max_drops ?? 3;
-  const MAX_PLAYER_DROPS_MIN_VALUE = 1;
-  const MAX_PLAYER_DROPS_MAX_VALUE = 50;
-
-  const DEFAULT_DROP_PERIOD =
-    props.oldPoolSettings?.player_drop_settings?.period ?? DropPeriod.SEASON;
+  // Every bound, default and validation message of the form lives in
+  // `@/lib/pool-settings-form`; what stays here is the markup and the toggles.
+  const defaultValues = React.useMemo(
+    () => poolSettingsDefaults(props.poolName, props.oldPoolSettings),
+    [props.poolName, props.oldPoolSettings],
+  );
+  const defaultToggles = React.useMemo(
+    () => poolSettingsToggles(props.oldPoolSettings),
+    [props.oldPoolSettings],
+  );
 
   const [showDynastySettings, setShowDynastySettings] = React.useState(
-    DEFAULT_POOL_TYPE === PoolType.DYNASTY
+    defaultToggles.dynasty,
   );
   const [showIgnorePlayers, setShowIgnorePlayers] = React.useState(
-    DEFAULT_IGNORE_WORST_PLAYERS
+    defaultToggles.ignoreWorstPlayers,
   );
   const [salaryCapEnabled, setSalaryCapEnabled] = React.useState(
-    DEFAULT_SALARY_CAP_ENABLED
+    defaultToggles.salaryCap,
   );
   const [playerDropsEnabled, setPlayerDropsEnabled] = React.useState(
-    DEFAULT_PLAYER_DROPS_ENABLED
+    defaultToggles.playerDrops,
   );
 
   // Both are list settings without a matching form control, they are kept
@@ -278,287 +145,48 @@ export default function PoolSettingsComponent(props: Props) {
     string[]
   >(() => [...(props.oldPoolSettings?.roster_modification_date ?? [])].sort());
   const [assistants, setAssistants] = React.useState<string[]>(
-    props.oldPoolSettings?.assistants ?? []
+    props.oldPoolSettings?.assistants ?? [],
   );
   const [newModificationDate, setNewModificationDate] = React.useState("");
 
-  // The backend deserializes every points setting as a u8, a decimal or an out
-  // of range value is rejected before it reaches any validation of ours.
-  const pointsSchema = () =>
-    z
-      .number()
-      .int({ error: t("PointsMustBeWholeNumberValidation") })
-      .min(POINTS_MIN_VALUE)
-      .max(POINTS_MAX_VALUE);
+  // `t` is only ever called with the keys the schema names, which is what
+  // Translator describes; next-intl's own type is keyed on the message file.
+  const formSchema = React.useMemo(
+    () => buildPoolSettingsSchema(t as Translator),
+    [t],
+  );
 
-  // Define the schema
-  const formSchema = z.object({
-    name: z
-      .string()
-      .min(POOL_NAME_MIN_LENGTH, {
-        error: t("PoolNameMinLenghtValidation", {
-          value: POOL_NAME_MIN_LENGTH,
-        }),
-      })
-      .max(POOL_NAME_MAX_LENGTH, {
-        error: t("PoolNameMaxLenghtValidation", {
-          value: POOL_NAME_MAX_LENGTH,
-        }),
-      }),
-    numberOfPooler: z
-      .number()
-      .min(MIN_POOLER_NUMBER, {
-        error: t("NumberOfPoolerMinLengthValidation", {
-          value: MIN_POOLER_NUMBER,
-        }),
-      })
-      .max(MAX_POOLER_NUMBER, {
-        error: t("NumberOfPoolerMaxLengthValidation", {
-          value: MAX_POOLER_NUMBER,
-        }),
-      }),
-    typeOfPool: z.enum([PoolType.STANDARD, PoolType.DYNASTY]),
-    draftType: z.enum([DraftType.SERPENTINE, DraftType.STANDARD]),
-    // Number of player per types
-    numberOfForwards: z
-      .number()
-      .min(NUMBER_FORWARDS_MIN_VALUE, {
-        error: t("NumberOfForwardsMinValidation", {
-          value: NUMBER_FORWARDS_MIN_VALUE,
-        }),
-      })
-      .max(NUMBER_FORWARDS_MAX_VALUE, {
-        error: t("NumberOfForwardsMaxValidation", {
-          value: NUMBER_FORWARDS_MAX_VALUE,
-        }),
-      }),
-    numberOfDefenders: z
-      .number()
-      .min(NUMBER_DEFENDERS_MIN_VALUE, {
-        error: t("NumberOfDefendersMinValidation", {
-          value: NUMBER_DEFENDERS_MIN_VALUE,
-        }),
-      })
-      .max(NUMBER_DEFENDERS_MAX_VALUE, {
-        error: t("NumberOfDefendersMaxValidation", {
-          value: NUMBER_DEFENDERS_MAX_VALUE,
-        }),
-      }),
-    numberOfGoalies: z
-      .number()
-      .min(NUMBER_GOALIES_MIN_VALUE, {
-        error: t("NumberOfGoaliesMinValidation", {
-          value: NUMBER_GOALIES_MIN_VALUE,
-        }),
-      })
-      .max(NUMBER_GOALIES_MAX_VALUE, {
-        error: t("NumberOfGoaliesMaxValidation", {
-          value: NUMBER_GOALIES_MAX_VALUE,
-        }),
-      }),
-    numberOfReservists: z
-      .number()
-      .min(NUMBER_RESERVISTS_MIN_VALUE, {
-        error: t("NumberOfReservistsMinValidation", {
-          value: NUMBER_RESERVISTS_MIN_VALUE,
-        }),
-      })
-      .max(NUMBER_RESERVISTS_MAX_VALUE, {
-        error: t("NumberOfReservistsMaxValidation", {
-          value: NUMBER_RESERVISTS_MAX_VALUE,
-        }),
-      }),
-    // Number of players to ignore points.
-    numberOfWorstForwardsToIgnore: z
-      .number()
-      .min(NUMBER_WORST_FORWARDS_TO_IGNORE_MIN_VALUE, {
-        error: t("NumberOfWorstForwardsToIgnoreMinValidation", {
-          value: NUMBER_WORST_FORWARDS_TO_IGNORE_MIN_VALUE,
-        }),
-      })
-      .max(NUMBER_WORST_FORWARDS_TO_IGNORE_MAX_VALUE, {
-        error: t("NumberOfWorstForwardsToIgnoreMaxValidation", {
-          value: NUMBER_WORST_FORWARDS_TO_IGNORE_MAX_VALUE,
-        }),
-      }),
-    numberOfWorstDefendersToIgnore: z
-      .number()
-      .min(NUMBER_WORST_DEFENDERS_TO_IGNORE_MIN_VALUE, {
-        error: t("NumberOfWorstDefendersToIgnoreMinValidation", {
-          value: NUMBER_WORST_DEFENDERS_TO_IGNORE_MIN_VALUE,
-        }),
-      })
-      .max(NUMBER_WORST_DEFENDERS_TO_IGNORE_MAX_VALUE, {
-        error: t("NumberOfWorstDefendersToIgnoreMaxValidation", {
-          value: NUMBER_WORST_DEFENDERS_TO_IGNORE_MAX_VALUE,
-        }),
-      }),
-    numberOfWorstGoaliesToIgnore: z
-      .number()
-      .min(NUMBER_WORST_GOALIES_TO_IGNORE_MIN_VALUE, {
-        error: t("NumberOfWorstGoaliesToIgnoreMinValidation", {
-          value: NUMBER_WORST_GOALIES_TO_IGNORE_MIN_VALUE,
-        }),
-      })
-      .max(NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE, {
-        error: t("NumberOfWorstGoaliesToIgnoreMaxValidation", {
-          value: NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE,
-        }),
-      }),
-    //Forwards
-    forwardsPointsPerGoals: pointsSchema(),
-    forwardsPointsPerAssists: pointsSchema(),
-    forwardsPointsPerHatTricks: pointsSchema(),
-    forwardsPointsPerShootOutGoals: pointsSchema(),
-    // Defenders
-    defendersPointsPerGoals: pointsSchema(),
-    defendersPointsPerAssists: pointsSchema(),
-    defendersPointsPerHatTricks: pointsSchema(),
-    defendersPointsPerShootOutGoals: pointsSchema(),
-    // Goalies
-    goaliesPointsPerGoals: pointsSchema(),
-    goaliesPointsPerAssists: pointsSchema(),
-    goaliesPointsPerWins: pointsSchema(),
-    goaliesPointsPerOvertimeLosses: pointsSchema(),
-    goaliesPointsPerShutout: pointsSchema(),
-    tradableDraftPicks: z
-      .number()
-      .min(TRADABLE_DRAFT_PICKS_MIN_VALUE)
-      .max(TRADABLE_DRAFT_PICKS_MAX_VALUE),
-    numberOfPlayersToProtect: z
-      .number()
-      .min(NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE)
-      .max(NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE),
-    salaryCap: z.number().min(SALARY_CAP_MIN_VALUE).max(SALARY_CAP_MAX_VALUE),
-    maxPlayerDrops: z
-      .number()
-      .int({ error: t("MaxPlayerDropsMustBeWholeNumberValidation") })
-      .min(MAX_PLAYER_DROPS_MIN_VALUE, {
-        error: t("MaxPlayerDropsMinValidation", {
-          value: MAX_PLAYER_DROPS_MIN_VALUE,
-        }),
-      })
-      .max(MAX_PLAYER_DROPS_MAX_VALUE, {
-        error: t("MaxPlayerDropsMaxValidation", {
-          value: MAX_PLAYER_DROPS_MAX_VALUE,
-        }),
-      }),
-    dropPeriod: z.enum([DropPeriod.SEASON, DropPeriod.MONTH]),
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<PoolSettingsFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: DEFAULT_POOL_NAME,
-      numberOfPooler: DEFAULT_POOLER_NUMBER,
-      typeOfPool: DEFAULT_POOL_TYPE,
-      draftType: DEFAULT_DRAFT_TYPE,
-      numberOfForwards: DEFAULT_NUMBER_FORWARDS,
-      numberOfDefenders: DEFAULT_NUMBER_DEFENDERS,
-      numberOfGoalies: DEFAULT_NUMBER_GOALIES,
-      numberOfReservists: DEFAULT_NUMBER_RESERVISTS,
-      numberOfWorstForwardsToIgnore: DEFAULT_NUMBER_WORST_FORWARDS_TO_IGNORE,
-      numberOfWorstDefendersToIgnore: DEFAULT_NUMBER_WORST_DEFENDERS_TO_IGNORE,
-      numberOfWorstGoaliesToIgnore: DEFAULT_NUMBER_WORST_GOALIES_TO_IGNORE,
-      forwardsPointsPerGoals: DEFAULT_FORWARDS_POINTS_PER_GOALS,
-      forwardsPointsPerAssists: DEFAULT_FORWARDS_POINTS_PER_ASSITS,
-      forwardsPointsPerHatTricks: DEFAULT_FORWARDS_POINTS_PER_HATTRICKS,
-      forwardsPointsPerShootOutGoals:
-        DEFAULT_FORWARDS_POINTS_PER_SHOOTOUT_GOALS,
-      defendersPointsPerGoals: DEFAULT_DEFENDERS_POINTS_PER_GOALS,
-      defendersPointsPerAssists: DEFAULT_DEFENDERS_POINTS_PER_ASSITS,
-      defendersPointsPerHatTricks: DEFAULT_DEFENDERS_POINTS_PER_HATTRICKS,
-      defendersPointsPerShootOutGoals:
-        DEFAULT_DEFENDERS_POINTS_PER_SHOOTOUT_GOALS,
-      goaliesPointsPerGoals: DEFAULT_GOALIES_POINTS_PER_GOALS,
-      goaliesPointsPerAssists: DEFAULT_GOALIES_POINTS_PER_ASSITS,
-      goaliesPointsPerWins: DEFAULT_GOALIES_POINTS_PER_WINS,
-      goaliesPointsPerOvertimeLosses:
-        DEFAULT_GOALIES_POINTS_PER_OVERTIME_LOSSES,
-      goaliesPointsPerShutout: DEFAULT_GOALIES_POINTS_PER_SHUTOUT,
-      tradableDraftPicks: DEFAULT_TRADABLE_DRAFT_PICKS,
-      numberOfPlayersToProtect: DEFAULT_NUMBER_OF_PLAYERS_TO_PROTECT,
-      salaryCap: props.oldPoolSettings?.salary_cap ?? DEFAULT_SALARY_CAP,
-      maxPlayerDrops: DEFAULT_MAX_PLAYER_DROPS,
-      dropPeriod: DEFAULT_DROP_PERIOD,
-    },
+    defaultValues,
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    // Every field of PoolSettings has to be sent back: the backend replaces the
-    // whole settings document, anything missing from the payload is dropped.
-    const settings: PoolSettings = {
-      number_poolers: values.numberOfPooler,
-      draft_type: values.draftType,
-      assistants: assistants,
-      number_forwards: values.numberOfForwards,
-      number_defenders: values.numberOfDefenders,
-      number_goalies: values.numberOfGoalies,
-      number_reservists: values.numberOfReservists,
-      salary_cap: salaryCapEnabled ? values.salaryCap : null,
-      roster_modification_date: rosterModificationDates,
-      forwards_settings: {
-        points_per_goals: values.forwardsPointsPerGoals,
-        points_per_assists: values.forwardsPointsPerAssists,
-        points_per_hattricks: values.forwardsPointsPerHatTricks,
-        points_per_shootout_goals: values.forwardsPointsPerShootOutGoals,
+  const onSubmit = async (values: PoolSettingsFormValues) => {
+    const settings = toPoolSettings(values, {
+      toggles: {
+        dynasty: showDynastySettings,
+        ignoreWorstPlayers: showIgnorePlayers,
+        salaryCap: salaryCapEnabled,
+        playerDrops: playerDropsEnabled,
       },
-      defense_settings: {
-        points_per_goals: values.defendersPointsPerGoals,
-        points_per_assists: values.defendersPointsPerAssists,
-        points_per_hattricks: values.defendersPointsPerHatTricks,
-        points_per_shootout_goals: values.defendersPointsPerShootOutGoals,
-      },
-      goalies_settings: {
-        points_per_wins: values.goaliesPointsPerWins,
-        points_per_shutouts: values.goaliesPointsPerShutout,
-        points_per_overtimes: values.goaliesPointsPerOvertimeLosses,
-        points_per_goals: values.goaliesPointsPerGoals,
-        points_per_assists: values.goaliesPointsPerAssists,
-      },
-      ignore_x_worst_players: showIgnorePlayers
-        ? {
-            forwards: values.numberOfWorstForwardsToIgnore,
-            defense: values.numberOfWorstDefendersToIgnore,
-            goalies: values.numberOfWorstGoaliesToIgnore,
-          }
-        : null,
-      player_drop_settings: playerDropsEnabled
-        ? {
-            max_drops: values.maxPlayerDrops,
-            period: values.dropPeriod,
-          }
-        : null,
-      dynasty_settings: showDynastySettings
-        ? {
-            next_season_number_players_protected:
-              values.numberOfPlayersToProtect,
-            tradable_picks: values.tradableDraftPicks,
-            // Pool lineage is maintained by the backend when the next season is
-            // generated, it is carried over untouched.
-            past_season_pool_name:
-              props.oldPoolSettings?.dynasty_settings?.past_season_pool_name ??
-              [],
-            next_season_pool_name:
-              props.oldPoolSettings?.dynasty_settings?.next_season_pool_name ??
-              null,
-          }
-        : null,
-    };
+      assistants,
+      rosterModificationDates,
+      oldPoolSettings: props.oldPoolSettings,
+    });
 
-    const poolName = values.name ?? DEFAULT_POOL_NAME;
+    const poolName = values.name ?? props.poolName;
 
     if (isCreationContext()) {
       const res = await apiPost(
         "/create-pool",
         { pool_name: poolName, settings },
-        userSession.info?.jwt
+        userSession.info?.jwt,
       );
 
       if (!res.ok) {
         toast.error(
           t("CouldNotGeneratePoolError", { name: poolName, error: res.error }),
-          { duration: 2000 }
+          { duration: 2000 },
         );
         // Stay on the form so the settings are not lost: navigating to the
         // pool page would only 404 since the pool was never created.
@@ -577,13 +205,13 @@ export default function PoolSettingsComponent(props: Props) {
     const res = await apiPost<Pool>(
       "/update-pool-settings",
       { pool_name: poolName, settings },
-      userSession.info?.jwt
+      userSession.info?.jwt,
     );
 
     if (!res.ok) {
       toast.error(
         t("CouldNotUpdatePoolError", { name: poolName, error: res.error }),
-        { duration: 5000 }
+        { duration: 5000 },
       );
       return;
     }
@@ -591,8 +219,6 @@ export default function PoolSettingsComponent(props: Props) {
     props.onUpdated?.(res.data);
     toast.success(t("SuccessUpdatePoolSettings"), { duration: 2000 });
   };
-
-  type FormValues = z.infer<typeof formSchema>;
 
   const LockedHint = () =>
     STRUCTURE_LOCKED ? (
@@ -603,14 +229,14 @@ export default function PoolSettingsComponent(props: Props) {
     ) : null;
 
   const NumberField = (
-    fieldName: FieldPath<FormValues>,
+    fieldName: FieldPath<PoolSettingsFormValues>,
     label: string,
     min: number,
     max: number,
     info?: string,
     // Kept out of react-hook-form's own `disabled`, which would strip the value
     // from the submitted payload and wipe the setting on the backend.
-    locked?: boolean
+    locked?: boolean,
   ) => (
     <FormField
       control={form.control}
@@ -644,7 +270,7 @@ export default function PoolSettingsComponent(props: Props) {
     value: string,
     label: string,
     info?: string,
-    locked?: boolean
+    locked?: boolean,
   ) => (
     <div className="flex items-center gap-2">
       <RadioGroupItem value={value} id={id} disabled={locked} />
@@ -713,10 +339,10 @@ export default function PoolSettingsComponent(props: Props) {
           {NumberField(
             "numberOfPooler",
             t("NumberPooler"),
-            MIN_POOLER_NUMBER,
-            MAX_POOLER_NUMBER,
+            POOL_SETTINGS_BOUNDS.numberOfPooler.min,
+            POOL_SETTINGS_BOUNDS.numberOfPooler.max,
             undefined,
-            STRUCTURE_LOCKED
+            STRUCTURE_LOCKED,
           )}
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -743,14 +369,14 @@ export default function PoolSettingsComponent(props: Props) {
                       PoolType.STANDARD,
                       "Standard",
                       undefined,
-                      STRUCTURE_LOCKED
+                      STRUCTURE_LOCKED,
                     )}
                     {RadioOption(
                       "pool-type-dynasty",
                       PoolType.DYNASTY,
                       t("Dynasty"),
                       t("DynastyPoolTypeDescription"),
-                      STRUCTURE_LOCKED
+                      STRUCTURE_LOCKED,
                     )}
                   </RadioGroup>
                 </FormControl>
@@ -772,13 +398,13 @@ export default function PoolSettingsComponent(props: Props) {
                     {RadioOption(
                       "draft-type-standard",
                       DraftType.STANDARD,
-                      "Standard"
+                      "Standard",
                     )}
                     {RadioOption(
                       "draft-type-serpentine",
                       DraftType.SERPENTINE,
                       t("Serpentine"),
-                      t("SerpentinDescription")
+                      t("SerpentinDescription"),
                     )}
                   </RadioGroup>
                 </FormControl>
@@ -792,18 +418,18 @@ export default function PoolSettingsComponent(props: Props) {
               {NumberField(
                 "tradableDraftPicks",
                 t("TradableDraftPicks"),
-                TRADABLE_DRAFT_PICKS_MIN_VALUE,
-                TRADABLE_DRAFT_PICKS_MAX_VALUE,
+                POOL_SETTINGS_BOUNDS.tradableDraftPicks.min,
+                POOL_SETTINGS_BOUNDS.tradableDraftPicks.max,
                 t("TradablePicksDescription"),
-                STRUCTURE_LOCKED
+                STRUCTURE_LOCKED,
               )}
               {NumberField(
                 "numberOfPlayersToProtect",
                 t("NumberOfProtectedPlayers"),
-                NUMBER_OF_PLAYERS_TO_PROTECT_MIN_VALUE,
-                NUMBER_OF_PLAYERS_TO_PROTECT_MAX_VALUE,
+                POOL_SETTINGS_BOUNDS.numberOfPlayersToProtect.min,
+                POOL_SETTINGS_BOUNDS.numberOfPlayersToProtect.max,
                 t("NumberOfPlayersToProtectDescription"),
-                STRUCTURE_LOCKED
+                STRUCTURE_LOCKED,
               )}
             </div>
             {DynastyLineage()}
@@ -826,34 +452,34 @@ export default function PoolSettingsComponent(props: Props) {
           {NumberField(
             "numberOfForwards",
             t("NumberOfForwards"),
-            NUMBER_FORWARDS_MIN_VALUE,
-            NUMBER_FORWARDS_MAX_VALUE,
+            POOL_SETTINGS_BOUNDS.numberOfForwards.min,
+            POOL_SETTINGS_BOUNDS.numberOfForwards.max,
             undefined,
-            STRUCTURE_LOCKED
+            STRUCTURE_LOCKED,
           )}
           {NumberField(
             "numberOfDefenders",
             t("NumberOfDefenders"),
-            NUMBER_DEFENDERS_MIN_VALUE,
-            NUMBER_DEFENDERS_MAX_VALUE,
+            POOL_SETTINGS_BOUNDS.numberOfDefenders.min,
+            POOL_SETTINGS_BOUNDS.numberOfDefenders.max,
             undefined,
-            STRUCTURE_LOCKED
+            STRUCTURE_LOCKED,
           )}
           {NumberField(
             "numberOfGoalies",
             t("NumberOfGoalies"),
-            NUMBER_GOALIES_MIN_VALUE,
-            NUMBER_GOALIES_MAX_VALUE,
+            POOL_SETTINGS_BOUNDS.numberOfGoalies.min,
+            POOL_SETTINGS_BOUNDS.numberOfGoalies.max,
             undefined,
-            STRUCTURE_LOCKED
+            STRUCTURE_LOCKED,
           )}
           {NumberField(
             "numberOfReservists",
             t("NumberOfReservists"),
-            NUMBER_RESERVISTS_MIN_VALUE,
-            NUMBER_RESERVISTS_MAX_VALUE,
+            POOL_SETTINGS_BOUNDS.numberOfReservists.min,
+            POOL_SETTINGS_BOUNDS.numberOfReservists.max,
             undefined,
-            STRUCTURE_LOCKED
+            STRUCTURE_LOCKED,
           )}
         </div>
         <div className="flex items-center gap-2 pt-2">
@@ -874,20 +500,20 @@ export default function PoolSettingsComponent(props: Props) {
             {NumberField(
               "numberOfWorstForwardsToIgnore",
               t("Forwards"),
-              NUMBER_WORST_FORWARDS_TO_IGNORE_MIN_VALUE,
-              NUMBER_WORST_FORWARDS_TO_IGNORE_MAX_VALUE
+              POOL_SETTINGS_BOUNDS.numberOfWorstForwardsToIgnore.min,
+              POOL_SETTINGS_BOUNDS.numberOfWorstForwardsToIgnore.max,
             )}
             {NumberField(
               "numberOfWorstDefendersToIgnore",
               t("Defense"),
-              NUMBER_WORST_DEFENDERS_TO_IGNORE_MIN_VALUE,
-              NUMBER_WORST_DEFENDERS_TO_IGNORE_MAX_VALUE
+              POOL_SETTINGS_BOUNDS.numberOfWorstDefendersToIgnore.min,
+              POOL_SETTINGS_BOUNDS.numberOfWorstDefendersToIgnore.max,
             )}
             {NumberField(
               "numberOfWorstGoaliesToIgnore",
               t("Goalies"),
-              NUMBER_WORST_GOALIES_TO_IGNORE_MIN_VALUE,
-              NUMBER_WORST_GOALIES_TO_IGNORE_MAX_VALUE
+              POOL_SETTINGS_BOUNDS.numberOfWorstGoaliesToIgnore.min,
+              POOL_SETTINGS_BOUNDS.numberOfWorstGoaliesToIgnore.max,
             )}
           </div>
         ) : null}
@@ -895,7 +521,10 @@ export default function PoolSettingsComponent(props: Props) {
     </Card>
   );
 
-  const PointsField = (fieldName: FieldPath<FormValues>, label: string) => (
+  const PointsField = (
+    fieldName: FieldPath<PoolSettingsFormValues>,
+    label: string,
+  ) => (
     <FormField
       control={form.control}
       name={fieldName}
@@ -910,8 +539,8 @@ export default function PoolSettingsComponent(props: Props) {
               className="h-8 w-20 text-right"
               step={1}
               type="number"
-              min={POINTS_MIN_VALUE}
-              max={POINTS_MAX_VALUE}
+              min={POOL_SETTINGS_BOUNDS.points.min}
+              max={POOL_SETTINGS_BOUNDS.points.max}
               onChange={(e) => field.onChange(numberOrNull(e.target.value))}
             />
           </FormControl>
@@ -944,7 +573,7 @@ export default function PoolSettingsComponent(props: Props) {
               {PointsField("forwardsPointsPerAssists", "Assists")}
               {PointsField("forwardsPointsPerHatTricks", "HatTricks")}
               {PointsField("forwardsPointsPerShootOutGoals", "ShootoutGoals")}
-            </>
+            </>,
           )}
           {PointsGroup(
             t("Defense"),
@@ -953,7 +582,7 @@ export default function PoolSettingsComponent(props: Props) {
               {PointsField("defendersPointsPerAssists", "Assists")}
               {PointsField("defendersPointsPerHatTricks", "HatTricks")}
               {PointsField("defendersPointsPerShootOutGoals", "ShootoutGoals")}
-            </>
+            </>,
           )}
           {PointsGroup(
             t("Goalies"),
@@ -963,7 +592,7 @@ export default function PoolSettingsComponent(props: Props) {
               {PointsField("goaliesPointsPerShutout", "Shutouts")}
               {PointsField("goaliesPointsPerGoals", "Goals")}
               {PointsField("goaliesPointsPerAssists", "Assists")}
-            </>
+            </>,
           )}
         </div>
       </CardContent>
@@ -977,7 +606,7 @@ export default function PoolSettingsComponent(props: Props) {
     setRosterModificationDates((dates) =>
       dates.includes(newModificationDate)
         ? dates
-        : [...dates, newModificationDate].sort()
+        : [...dates, newModificationDate].sort(),
     );
     setNewModificationDate("");
   };
@@ -1017,8 +646,8 @@ export default function PoolSettingsComponent(props: Props) {
                       {...field}
                       type="number"
                       step={100000}
-                      min={SALARY_CAP_MIN_VALUE}
-                      max={SALARY_CAP_MAX_VALUE}
+                      min={POOL_SETTINGS_BOUNDS.salaryCap.min}
+                      max={POOL_SETTINGS_BOUNDS.salaryCap.max}
                       onChange={(e) =>
                         field.onChange(numberOrNull(e.target.value))
                       }
@@ -1061,7 +690,7 @@ export default function PoolSettingsComponent(props: Props) {
                       aria-label={t("RemoveRosterModificationDate", { date })}
                       onClick={() =>
                         setRosterModificationDates((dates) =>
-                          dates.filter((d) => d !== date)
+                          dates.filter((d) => d !== date),
                         )
                       }
                     >
@@ -1112,9 +741,9 @@ export default function PoolSettingsComponent(props: Props) {
                 {NumberField(
                   "maxPlayerDrops",
                   t("MaxPlayerDrops"),
-                  MAX_PLAYER_DROPS_MIN_VALUE,
-                  MAX_PLAYER_DROPS_MAX_VALUE,
-                  t("MaxPlayerDropsDescription")
+                  POOL_SETTINGS_BOUNDS.maxPlayerDrops.min,
+                  POOL_SETTINGS_BOUNDS.maxPlayerDrops.max,
+                  t("MaxPlayerDropsDescription"),
                 )}
               </div>
               <FormField
@@ -1133,13 +762,13 @@ export default function PoolSettingsComponent(props: Props) {
                           "drop-period-season",
                           DropPeriod.SEASON,
                           t("PerSeason"),
-                          t("DropPeriodSeasonDescription")
+                          t("DropPeriodSeasonDescription"),
                         )}
                         {RadioOption(
                           "drop-period-month",
                           DropPeriod.MONTH,
                           t("PerMonth"),
-                          t("DropPeriodMonthDescription")
+                          t("DropPeriodMonthDescription"),
                         )}
                       </RadioGroup>
                     </FormControl>
@@ -1155,12 +784,12 @@ export default function PoolSettingsComponent(props: Props) {
 
   const assistantCandidates = (props.participants ?? []).filter(
     (participant) =>
-      participant.is_owned && participant.id !== (props.poolOwner ?? "")
+      participant.is_owned && participant.id !== (props.poolOwner ?? ""),
   );
 
   const ownerName =
     props.participants?.find(
-      (participant) => participant.id === (props.poolOwner ?? "")
+      (participant) => participant.id === (props.poolOwner ?? ""),
     )?.name ?? props.poolOwner;
 
   const PermissionSettings = () => (
@@ -1195,7 +824,7 @@ export default function PoolSettingsComponent(props: Props) {
                       setAssistants((current) =>
                         checked
                           ? [...current, participant.id]
-                          : current.filter((id) => id !== participant.id)
+                          : current.filter((id) => id !== participant.id),
                       )
                     }
                   />
@@ -1222,7 +851,7 @@ export default function PoolSettingsComponent(props: Props) {
   // on the person it names to sign in and accept it.
   const pendingLinkOf = (poolerUserId: string) =>
     props.pendingPoolerLinks?.find(
-      (pending) => pending.pooler_user_id === poolerUserId
+      (pending) => pending.pooler_user_id === poolerUserId,
     ) ?? null;
 
   const PoolerSettings = () => (
@@ -1270,7 +899,7 @@ export default function PoolSettingsComponent(props: Props) {
                         pendingLinkOf(participant.id)
                           ? "PendingPoolerLinkLabel"
                           : "LinkPoolerAccountLabel",
-                        { name: participant.name }
+                        { name: participant.name },
                       )}
                       // An invitation already waiting on this pooler is the one
                       // thing about it that is not visible from the row, and it

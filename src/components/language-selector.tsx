@@ -36,11 +36,13 @@ export default function LanguageSelector() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
-        render={<Button variant="outline" role="combobox" aria-expanded={open} />}
+        render={
+          <Button variant="outline" role="combobox" aria-expanded={open} />
+        }
       >
         <Globe className="mr-2 size-4 shrink-0" />
         {t(
-          languages.find((language) => language.value === locale)?.label ?? ""
+          languages.find((language) => language.value === locale)?.label ?? "",
         )}
       </PopoverTrigger>
       <PopoverContent className="w-[150px] p-0">
@@ -59,7 +61,7 @@ export default function LanguageSelector() {
                 <Check
                   className={cn(
                     "ml-auto size-4",
-                    locale === language.value ? "opacity-100" : "opacity-0"
+                    locale === language.value ? "opacity-100" : "opacity-0",
                   )}
                 />
               </CommandItem>

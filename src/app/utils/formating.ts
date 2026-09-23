@@ -43,14 +43,16 @@ export function salaryFormat(salaryDollars: number): string {
 }
 
 export function heightFormat(heightInInches: number): string {
-  return `${Math.floor(heightInInches / 12)}'${heightInInches % 12}''`
+  return `${Math.floor(heightInInches / 12)}'${heightInInches % 12}''`;
 }
 
-export function ageFormat(birthDateString: string): number{
-  return new Date().getFullYear() -
-  new Date(birthDateString).getFullYear() -
-  (new Date() <
-  new Date(new Date(birthDateString).setFullYear(new Date().getFullYear()))
-    ? 1
-    : 0);
+export function ageFormat(birthDateString: string): number {
+  return (
+    new Date().getFullYear() -
+    new Date(birthDateString).getFullYear() -
+    (new Date() <
+    new Date(new Date(birthDateString).setFullYear(new Date().getFullYear()))
+      ? 1
+      : 0)
+  );
 }

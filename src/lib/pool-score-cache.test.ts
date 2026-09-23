@@ -49,10 +49,7 @@ describe("planScoreFetch", () => {
   it("ignores cached days in the future", () => {
     // A client whose clock ran ahead can cache a day that has not happened.
     // Pinning the range start to it would skip every real day in between.
-    const { range, trustedCachedDates } = plan([
-      "2025-11-01",
-      "2027-01-01",
-    ]);
+    const { range, trustedCachedDates } = plan(["2025-11-01", "2027-01-01"]);
 
     expect(trustedCachedDates).toEqual(["2025-11-01"]);
     expect(range).toEqual({ start: "2025-11-01", end: TODAY });

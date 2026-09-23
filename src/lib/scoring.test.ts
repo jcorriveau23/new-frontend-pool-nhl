@@ -40,7 +40,7 @@ const poolSettings = {
 const makeSkater = (
   goals: number,
   assists: number,
-  shootoutGoals = 0
+  shootoutGoals = 0,
 ): SkaterDailyInfo => {
   const skater = new SkaterDailyInfo(1, true);
   skater.goals = goals;
@@ -52,7 +52,7 @@ const makeSkater = (
 const makeGoalie = (
   goals: number,
   assists: number,
-  status: GoalieGameStatus | null
+  status: GoalieGameStatus | null,
 ): GoalieDailyInfo => {
   const goalie = new GoalieDailyInfo(1, true);
   goalie.goals = goals;
@@ -64,7 +64,7 @@ const makeGoalie = (
 describe("SkaterDailyInfo.getTotalPoolPts", () => {
   it("counts goals, assists and shootout goals", () => {
     expect(makeSkater(1, 2, 1).getTotalPoolPts(skaterSettings)).toBe(
-      1 * 2 + 2 * 1 + 1 * 1
+      1 * 2 + 2 * 1 + 1 * 1,
     );
   });
 
@@ -81,31 +81,31 @@ describe("SkaterDailyInfo.getTotalPoolPts", () => {
 describe("GoalieDailyInfo.getTotalPoolPts", () => {
   it("adds the win bonus", () => {
     expect(
-      makeGoalie(0, 1, GoalieGameStatus.Win).getTotalPoolPts(goaliesSettings)
+      makeGoalie(0, 1, GoalieGameStatus.Win).getTotalPoolPts(goaliesSettings),
     ).toBe(1 + 2);
   });
 
   it("adds the win and shutout bonuses on a shutout", () => {
     expect(
       makeGoalie(0, 0, GoalieGameStatus.Shutout).getTotalPoolPts(
-        goaliesSettings
-      )
+        goaliesSettings,
+      ),
     ).toBe(2 + 3);
   });
 
   it("adds the overtime bonus on an overtime loss", () => {
     expect(
       makeGoalie(0, 0, GoalieGameStatus.OverTime).getTotalPoolPts(
-        goaliesSettings
-      )
+        goaliesSettings,
+      ),
     ).toBe(1);
   });
 
   it("gives only goal/assist points on a regulation loss", () => {
     expect(
       makeGoalie(1, 1, GoalieGameStatus.Losses).getTotalPoolPts(
-        goaliesSettings
-      )
+        goaliesSettings,
+      ),
     ).toBe(3 + 1);
   });
 
@@ -116,7 +116,11 @@ describe("GoalieDailyInfo.getTotalPoolPts", () => {
 
 describe("getDailySkaterStatsWithCumulative", () => {
   it("marks the skater as not played when there is no stats entry", () => {
-    const skater = getDailySkaterStatsWithCumulative(null, "8478402", skaterSettings);
+    const skater = getDailySkaterStatsWithCumulative(
+      null,
+      "8478402",
+      skaterSettings,
+    );
     expect(skater.id).toBe(8478402);
     expect(skater.played).toBe(false);
     expect(skater.poolPoints).toBe(0);
@@ -126,7 +130,7 @@ describe("getDailySkaterStatsWithCumulative", () => {
     const skater = getDailySkaterStatsWithCumulative(
       { G: 3, A: 1, SOG: 1 },
       "8478402",
-      skaterSettings
+      skaterSettings,
     );
     expect(skater.played).toBe(true);
     expect(skater.goals).toBe(3);
@@ -138,7 +142,7 @@ describe("getDailySkaterStatsWithCumulative", () => {
     const skater = getDailySkaterStatsWithCumulative(
       { G: 1, A: 0 },
       "1",
-      skaterSettings
+      skaterSettings,
     );
     expect(skater.shootoutGoals).toBe(0);
     expect(skater.poolPoints).toBe(2);
@@ -147,7 +151,11 @@ describe("getDailySkaterStatsWithCumulative", () => {
 
 describe("getDailyGoalieStatsWithCumulative", () => {
   it("marks the goalie as not played when there is no stats entry", () => {
-    const goalie = getDailyGoalieStatsWithCumulative(null, "1", goaliesSettings);
+    const goalie = getDailyGoalieStatsWithCumulative(
+      null,
+      "1",
+      goaliesSettings,
+    );
     expect(goalie.played).toBe(false);
     expect(goalie.status).toBeNull();
   });
@@ -161,14 +169,18 @@ describe("getDailyGoalieStatsWithCumulative", () => {
     const goalie = getDailyGoalieStatsWithCumulative(
       { G: 0, A: 0, ...flags },
       "1",
-      goaliesSettings
+      goaliesSettings,
     );
     expect(goalie.status).toBe(expected);
   });
 });
 
 describe("daily total points aggregation", () => {
-  const forwards = [makeSkater(3, 1), makeSkater(0, 2), new SkaterDailyInfo(3, false)];
+  const forwards = [
+    makeSkater(3, 1),
+    makeSkater(0, 2),
+    new SkaterDailyInfo(3, false),
+  ];
   const defense = [makeSkater(1, 0)];
   const goalies = [makeGoalie(0, 1, GoalieGameStatus.Win)];
 
@@ -191,7 +203,7 @@ describe("daily total points aggregation", () => {
         makeGoalie(0, 0, GoalieGameStatus.OverTime),
         new GoalieDailyInfo(4, false),
       ],
-      goaliesSettings
+      goaliesSettings,
     );
     expect(totals.numberOfGame).toBe(3);
     expect(totals.wins).toBe(1);
@@ -207,7 +219,7 @@ describe("daily total points aggregation", () => {
       forwards,
       defense,
       goalies,
-      poolSettings
+      poolSettings,
     );
     expect(total.participant).toBe("participant");
     expect(total.numberOfGames).toBe(4);

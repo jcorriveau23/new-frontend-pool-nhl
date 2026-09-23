@@ -67,7 +67,7 @@ export function Combobox(props: Props) {
                   onSelect={(newValue) => {
                     if (props.linkTo)
                       router.push(
-                        `${props.linkTo.replace("${value}", newValue)}`
+                        `${props.linkTo.replace("${value}", newValue)}`,
                       );
                     else setValue(newValue === value ? "" : newValue);
                     setOpen(false);
@@ -77,7 +77,7 @@ export function Combobox(props: Props) {
                   <CheckIcon
                     className={cn(
                       "ml-auto h-4 w-4",
-                      value === s.value ? "opacity-100" : "opacity-0"
+                      value === s.value ? "opacity-100" : "opacity-0",
                     )}
                   />
                 </CommandItem>

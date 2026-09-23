@@ -507,7 +507,7 @@ export const calculatePoolStats = (
     const totalDailyPoints = dailyPointsMade?.totalDailyPoints.find(
       (t) => t.participant === user.name,
     );
-    
+
     rank.push(
       new TotalRanking(
         user.name,

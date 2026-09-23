@@ -13,6 +13,7 @@ import React, {
 } from "react";
 import { usePoolContext } from "./pool-context";
 import { toast } from "sonner";
+import { classifySocketMessage, RoomUser } from "@/lib/socket-messages";
 import { useTranslations } from "next-intl";
 import {
   SocketStatus,
@@ -21,12 +22,9 @@ import {
 import { useSession } from "./useSessionData";
 import { reconnectDelay } from "@/lib/socket-reconnect";
 
-export interface RoomUser {
-  id: string;
-  name: string;
-  email: string | null;
-  is_ready: boolean;
-}
+// Declared alongside the frame that carries it, and re-exported here because
+// this is where the app has always imported it from.
+export type { RoomUser };
 
 export interface SocketContextProps {
   roomUsers: Record<string, RoomUser> | null;
@@ -230,24 +228,28 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({
     (socket: WebSocket) => {
       socket.onmessage = (event) => {
         try {
-          const response = JSON.parse(event.data);
-          if (response.Pool) {
-            // A whole pool pushed by the room. Trades publish one of these
-            // while the draft is running, so it can land out of order next to
-            // the pick deltas — applied blindly it would rewind the board.
-            applyPoolBroadcast(response.Pool.pool);
-          } else if (
-            response.PlayerDrafted ||
-            response.DraftPickUndone ||
-            response.RosterModified
-          ) {
-            // Draft picks send only what they changed instead of the whole
-            // pool, which would be tens of kilobytes per pick per socket.
-            applyDraftDelta(response);
-          } else if (response.Users) {
-            setRoomUsers((prevUsers) =>
-              keepRoomUsersOrder(prevUsers, response.Users.room_users),
-            );
+          const message = classifySocketMessage(JSON.parse(event.data));
+          switch (message.kind) {
+            case "pool":
+              // A whole pool pushed by the room. Trades publish one of these
+              // while the draft is running, so it can land out of order next
+              // to the pick deltas — applied blindly it would rewind the board.
+              if (message.pool === null) {
+                console.error("the room pushed a malformed pool, ignoring it");
+                break;
+              }
+              applyPoolBroadcast(message.pool);
+              break;
+            case "draft-delta":
+              // Draft picks send only what they changed instead of the whole
+              // pool, which would be tens of kilobytes per pick per socket.
+              applyDraftDelta(message.delta);
+              break;
+            case "users":
+              setRoomUsers((prevUsers) =>
+                keepRoomUsersOrder(prevUsers, message.roomUsers),
+              );
+              break;
           }
         } catch (e) {
           console.error("Failed to parse WebSocket message:", e);

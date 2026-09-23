@@ -1,4 +1,6 @@
-"use server";
+/*
+Server-side reads of the NHL api and of the Rust backend.
+*/
 
 import { StandingSeasonData, StandingsData } from "@/data/nhl/standing";
 import { fetchJson } from "@/lib/server-api";

@@ -12,7 +12,7 @@ import { PoolerName } from "@/components/pooler-name";
 
 const getPlayerCell = (
   player: SkaterDailyInfo | GoalieDailyInfo,
-  poolInfo: Pool
+  poolInfo: Pool,
 ) => (
   <div className="w-[105px] sm:w-auto">
     <PlayerLink
@@ -25,7 +25,7 @@ const getPlayerCell = (
 
 const getTeamCell = (
   player: SkaterDailyInfo | GoalieDailyInfo,
-  poolInfo: Pool
+  poolInfo: Pool,
 ) => (
   <TeamLogo
     teamId={poolInfo.context?.players[player.id].team ?? null}
@@ -345,7 +345,7 @@ export const DefensesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
     header: ({ table }) => table.options.meta?.t("PTS/G"),
     accessorFn: (ranking) =>
       (ranking.defense.totalPoolPoints / ranking.defense.numberOfGame).toFixed(
-        3
+        3,
       ),
   },
 ];
@@ -407,7 +407,7 @@ export const GoaliesDailyTotalColumn: ColumnDef<TotalDailyPoints>[] = [
     header: ({ table }) => table.options.meta?.t("PTS/G"),
     accessorFn: (ranking) =>
       (ranking.goalies.totalPoolPoints / ranking.goalies.numberOfGame).toFixed(
-        3
+        3,
       ),
   },
 ];

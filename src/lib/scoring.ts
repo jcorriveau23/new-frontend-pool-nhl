@@ -21,15 +21,15 @@ export class SkatersDailyTotalPoints {
     this.hattricks = skaters.filter((skater) => skater.goals >= 3).length;
     this.shootoutGoals = skaters.reduce(
       (acc, skater) => acc + skater.shootoutGoals,
-      0
+      0,
     );
     this.totalPoints = skaters.reduce(
       (acc, skater) => acc + skater.goals + skater.assists,
-      0
+      0,
     );
     this.totalPoolPoints = skaters.reduce(
       (acc, skater) => acc + skater.getTotalPoolPts(skaters_settings),
-      0
+      0,
     );
   }
   numberOfGame: number;
@@ -47,17 +47,17 @@ export class GoaliesDailyTotalPoints {
     this.goals = goalies.reduce((acc, goalie) => acc + goalie.goals, 0);
     this.assists = goalies.reduce((acc, goalie) => acc + goalie.assists, 0);
     this.wins = goalies.filter(
-      (goalie) => goalie.status === GoalieGameStatus.Win
+      (goalie) => goalie.status === GoalieGameStatus.Win,
     ).length;
     this.shutouts = goalies.filter(
-      (goalie) => goalie.status === GoalieGameStatus.Shutout
+      (goalie) => goalie.status === GoalieGameStatus.Shutout,
     ).length;
     this.overtimeLosses = goalies.filter(
-      (goalie) => goalie.status === GoalieGameStatus.OverTime
+      (goalie) => goalie.status === GoalieGameStatus.OverTime,
     ).length;
     this.totalPoolPoints = goalies.reduce(
       (acc, goalie) => acc + goalie.getTotalPoolPts(settings),
-      0
+      0,
     );
   }
 
@@ -76,20 +76,20 @@ export class TotalDailyPoints {
     forwards: SkaterDailyInfo[],
     defense: SkaterDailyInfo[],
     goalies: GoalieDailyInfo[],
-    settings: PoolSettings
+    settings: PoolSettings,
   ) {
     this.participant = participant;
     this.forwards = new SkatersDailyTotalPoints(
       forwards,
-      settings.forwards_settings
+      settings.forwards_settings,
     );
     this.defense = new SkatersDailyTotalPoints(
       defense,
-      settings.defense_settings
+      settings.defense_settings,
     );
     this.goalies = new GoaliesDailyTotalPoints(
       goalies,
-      settings.goalies_settings
+      settings.goalies_settings,
     );
 
     this.numberOfGames =
@@ -197,7 +197,7 @@ export class GoalieDailyInfo {
 export const getDailySkaterStatsWithCumulative = (
   skaterPoints: SkaterPoints | null,
   playerId: string,
-  skaters_settings: SkaterSettings
+  skaters_settings: SkaterSettings,
 ): SkaterDailyInfo => {
   // Build the daily display info from the per-player breakdown derived by the server.
   if (skaterPoints === null) {
@@ -217,7 +217,7 @@ export const getDailySkaterStatsWithCumulative = (
 export const getDailyGoalieStatsWithCumulative = (
   goaliePoints: GoaliePoints | null,
   playerId: string,
-  settings: GoaliesSettings
+  settings: GoaliesSettings,
 ): GoalieDailyInfo => {
   // Build the daily display info from the per-player breakdown derived by the server.
   if (goaliePoints === null) {
@@ -244,20 +244,20 @@ export const getDailyGoalieStatsWithCumulative = (
 
 export const getDailySkatersStatsWithCumulative = (
   rosterInfo: Record<string, SkaterPoints | null>,
-  skaters_settings: SkaterSettings
+  skaters_settings: SkaterSettings,
 ): SkaterDailyInfo[] =>
   // The per-player breakdown derived by the server, turned into display totals.
   Object.keys(rosterInfo).map((key) => {
     return getDailySkaterStatsWithCumulative(
       rosterInfo[key],
       key,
-      skaters_settings
+      skaters_settings,
     );
   });
 
 export const getDailyGoaliesStatsWithCumulative = (
   rosterInfo: Record<string, GoaliePoints | null>,
-  settings: GoaliesSettings
+  settings: GoaliesSettings,
 ): GoalieDailyInfo[] =>
   // The per-player breakdown derived by the server, turned into display totals.
   Object.keys(rosterInfo).map((key) => {

@@ -29,7 +29,7 @@ const InformationIcon: React.FC<InformationIconProps> = ({
         aria-label={t("MoreInformation")}
         className={cn(
           "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-          className
+          className,
         )}
       >
         <InfoIcon aria-hidden="true" className="size-3.5" />

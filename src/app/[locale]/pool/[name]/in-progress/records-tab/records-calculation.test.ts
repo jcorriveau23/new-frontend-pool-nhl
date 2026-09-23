@@ -39,14 +39,14 @@ const BOB = "bob-id";
 
 const day = (
   aliceRoster: DailyRosterPoints,
-  bobRoster: DailyRosterPoints
+  bobRoster: DailyRosterPoints,
 ): Record<string, DailyRosterPoints> => ({
   [ALICE]: aliceRoster,
   [BOB]: bobRoster,
 });
 
 const forwards = (
-  players: Record<string, { G: number; A: number } | null>
+  players: Record<string, { G: number; A: number } | null>,
 ): DailyRosterPoints => ({
   roster: { F: players, D: {}, G: {} },
   is_cumulated: true,
@@ -86,15 +86,15 @@ const makePool = (): Pool =>
       score_by_day: {
         "2024-01-22": day(
           forwards({ "101": { G: 1, A: 0 } }),
-          forwards({ "201": { G: 0, A: 2 } })
+          forwards({ "201": { G: 0, A: 2 } }),
         ),
         "2024-01-23": day(
           forwards({ "101": { G: 3, A: 0 } }),
-          forwards({ "201": null })
+          forwards({ "201": null }),
         ),
         "2024-01-29": day(
           forwards({ "101": { G: 0, A: 1 } }),
-          forwards({ "201": { G: 2, A: 0 } })
+          forwards({ "201": { G: 2, A: 0 } }),
         ),
         "2024-02-01": day(forwards({ "101": { G: 0, A: 0 } }), {
           roster: {
@@ -109,7 +109,7 @@ const makePool = (): Pool =>
             roster: { F: {}, D: { "102": { G: 1, A: 0 } }, G: {} },
             is_cumulated: true,
           },
-          forwards({ "201": null })
+          forwards({ "201": null }),
         ),
       },
     },
@@ -120,11 +120,10 @@ const seasonEnd = new Date("2024-02-28T00:00:00");
 
 const recordOf = (
   records: { id: RecordId }[],
-  id: RecordId
+  id: RecordId,
 ): Record<string, unknown> | undefined =>
   records.find((record) => record.id === id) as
-    | Record<string, unknown>
-    | undefined;
+    Record<string, unknown> | undefined;
 
 describe("weekKey / monthKey", () => {
   it("groups a Monday-to-Sunday week under its Monday", () => {
@@ -145,7 +144,7 @@ describe("buildDailyIndex", () => {
     const { daily } = computePoolRecords(makePool(), seasonStart, seasonEnd);
 
     const hatTrickNight = daily.find(
-      (entry) => entry.date === "2024-01-23" && entry.participantId === ALICE
+      (entry) => entry.date === "2024-01-23" && entry.participantId === ALICE,
     );
 
     expect(hatTrickNight).toMatchObject({
@@ -157,7 +156,7 @@ describe("buildDailyIndex", () => {
     });
 
     const goalieNight = daily.find(
-      (entry) => entry.date === "2024-02-01" && entry.participantId === BOB
+      (entry) => entry.date === "2024-02-01" && entry.participantId === BOB,
     );
 
     expect(goalieNight).toMatchObject({
@@ -173,8 +172,8 @@ describe("buildDailyIndex", () => {
 
     expect(
       daily.find(
-        (entry) => entry.date === "2024-01-23" && entry.participantId === BOB
-      )
+        (entry) => entry.date === "2024-01-23" && entry.participantId === BOB,
+      ),
     ).toMatchObject({ poolPoints: 0, gamesPlayed: 0, bestPlayer: null });
   });
 
@@ -182,7 +181,7 @@ describe("buildDailyIndex", () => {
     const { days } = computePoolRecords(
       makePool(),
       seasonStart,
-      new Date("2024-01-31T00:00:00")
+      new Date("2024-01-31T00:00:00"),
     );
 
     expect(days.map((period) => period.key)).toEqual([
@@ -211,7 +210,7 @@ describe("aggregateByPeriod", () => {
     const { weeks, months } = computePoolRecords(
       makePool(),
       seasonStart,
-      seasonEnd
+      seasonEnd,
     );
 
     expect(weeks.map((week) => week.key)).toEqual([
@@ -249,7 +248,7 @@ describe("computeTrophyCase", () => {
     const { trophyCase } = computePoolRecords(
       makePool(),
       seasonStart,
-      seasonEnd
+      seasonEnd,
     );
 
     expect(trophyCase).toEqual([

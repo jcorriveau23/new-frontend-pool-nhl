@@ -14,7 +14,7 @@ const NavigationMenu = React.forwardRef<
     ref={ref}
     className={cn(
       "relative z-10 flex max-w-max flex-1 items-center justify-center",
-      className
+      className,
     )}
     {...props}
   >
@@ -32,7 +32,7 @@ const NavigationMenuList = React.forwardRef<
     ref={ref}
     className={cn(
       "group flex flex-1 list-none items-center justify-center space-x-1",
-      className
+      className,
     )}
     {...props}
   />
@@ -42,7 +42,7 @@ NavigationMenuList.displayName = "NavigationMenuList";
 const NavigationMenuItem = NavigationMenuPrimitive.Item;
 
 const navigationMenuTriggerStyle = cva(
-  "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-popup-open:text-accent-foreground data-popup-open:bg-accent/50 data-popup-open:hover:bg-accent data-popup-open:focus:bg-accent"
+  "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-popup-open:text-accent-foreground data-popup-open:bg-accent/50 data-popup-open:hover:bg-accent data-popup-open:focus:bg-accent",
 );
 
 const NavigationMenuTrigger = React.forwardRef<
@@ -71,7 +71,7 @@ const NavigationMenuContent = React.forwardRef<
     ref={ref}
     className={cn(
       "left-0 top-0 w-full p-0 transition-[opacity,transform,translate] duration-200 data-starting-style:opacity-0 data-ending-style:opacity-0 data-starting-style:data-[activation-direction=right]:translate-x-[50%] data-starting-style:data-[activation-direction=left]:translate-x-[-50%] data-ending-style:data-[activation-direction=right]:translate-x-[-50%] data-ending-style:data-[activation-direction=left]:translate-x-[50%] md:w-auto",
-      className
+      className,
     )}
     {...props}
   />
@@ -89,8 +89,15 @@ const NavigationMenuViewport = React.forwardRef<
     >
 >(
   (
-    { className, align = "start", alignOffset = 0, side = "bottom", sideOffset = 6, ...props },
-    ref
+    {
+      className,
+      align = "start",
+      alignOffset = 0,
+      side = "bottom",
+      sideOffset = 6,
+      ...props
+    },
+    ref,
   ) => (
     <NavigationMenuPrimitive.Portal>
       <NavigationMenuPrimitive.Positioner
@@ -103,7 +110,7 @@ const NavigationMenuViewport = React.forwardRef<
         <NavigationMenuPrimitive.Popup
           className={cn(
             "origin-(--transform-origin) relative h-(--popup-height) w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg outline-none transition-[opacity,transform,width,height,scale] duration-200 data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 md:w-(--popup-width)",
-            className
+            className,
           )}
         >
           <NavigationMenuPrimitive.Viewport
@@ -114,7 +121,7 @@ const NavigationMenuViewport = React.forwardRef<
         </NavigationMenuPrimitive.Popup>
       </NavigationMenuPrimitive.Positioner>
     </NavigationMenuPrimitive.Portal>
-  )
+  ),
 );
 NavigationMenuViewport.displayName = "NavigationMenuViewport";
 
@@ -126,7 +133,7 @@ const NavigationMenuIndicator = React.forwardRef<
     ref={ref}
     className={cn(
       "top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden",
-      className
+      className,
     )}
     {...props}
   >

@@ -55,7 +55,7 @@ export function DatePicker(props: DatePickerProps) {
   // current month, and follows along when the date is changed from the outside
   // (prev/next buttons, url query).
   const [month, setMonth] = React.useState<Date>(
-    displayedDate ?? props.currentDate
+    displayedDate ?? props.currentDate,
   );
   const displayedTime = displayedDate?.getTime();
   React.useEffect(() => {
@@ -69,7 +69,7 @@ export function DatePicker(props: DatePickerProps) {
     props.selectedDate.toDateString() !== props.currentDate.toDateString();
 
   const handleSelectCurrentDate = (
-    event: React.MouseEvent<SVGSVGElement, MouseEvent>
+    event: React.MouseEvent<SVGSVGElement, MouseEvent>,
   ) => {
     event.stopPropagation(); // Prevents the click event from reaching the outer button+
     props.updateDate(null);
@@ -89,43 +89,43 @@ export function DatePicker(props: DatePickerProps) {
                 : "w-[144px] sm:w-[200px]",
               !displayedDate && "text-muted-foreground",
               isOffCurrentDate &&
-                "border-amber-500/70 bg-amber-500/10 text-amber-600 hover:bg-amber-500/15 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-400"
+                "border-amber-500/70 bg-amber-500/10 text-amber-600 hover:bg-amber-500/15 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-400",
             )}
           />
         }
       >
-          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-          {displayedDate ? (
-            <>
-              <span className="whitespace-nowrap sm:hidden">
-                {format(displayedDate, dateFormat.short, { locale: dateLocale })}
-              </span>
-              <span className="hidden whitespace-nowrap sm:inline">
-                {format(displayedDate, dateFormat.long, { locale: dateLocale })}
-              </span>
-            </>
-          ) : (
-            <span>{t("PickDate")}</span>
-          )}
-          {isOffCurrentDate && (
-            <div className="ml-auto pl-1">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <AlertTriangle
-                        className="size-4 shrink-0 text-amber-500"
-                        onClick={handleSelectCurrentDate}
-                      />
-                    }
-                  />
-                  <TooltipContent>
-                    <p>{t("NotCurrentDateSelected")}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          )}
+        <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+        {displayedDate ? (
+          <>
+            <span className="whitespace-nowrap sm:hidden">
+              {format(displayedDate, dateFormat.short, { locale: dateLocale })}
+            </span>
+            <span className="hidden whitespace-nowrap sm:inline">
+              {format(displayedDate, dateFormat.long, { locale: dateLocale })}
+            </span>
+          </>
+        ) : (
+          <span>{t("PickDate")}</span>
+        )}
+        {isOffCurrentDate && (
+          <div className="ml-auto pl-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <AlertTriangle
+                      className="size-4 shrink-0 text-amber-500"
+                      onClick={handleSelectCurrentDate}
+                    />
+                  }
+                />
+                <TooltipContent>
+                  <p>{t("NotCurrentDateSelected")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar

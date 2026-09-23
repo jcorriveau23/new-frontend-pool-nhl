@@ -3,7 +3,7 @@
 Module that share the context of the current date, the selected date 
 and allow to update the selected date across the whole application.
 */
-import { getServerSideDailyGames } from "@/actions/daily-games";
+import { fetchDailyGames } from "@/lib/client-data";
 import { useRouter, usePathname } from "@/i18n/routing";
 import React, { createContext, useContext, ReactNode, useEffect } from "react";
 import { Score } from "../data/nhl/game";
@@ -59,9 +59,7 @@ export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
 
   const query = useQuery({
     queryKey: ["daily_games", querySelectedDate],
-    queryFn: () => {
-      return getServerSideDailyGames(querySelectedDate);
-    },
+    queryFn: () => fetchDailyGames(querySelectedDate),
     staleTime: 1000 * 60 * 3, // 3 minutes in ms
   });
 

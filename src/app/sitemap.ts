@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getServerSideStandingSeasons } from "@/actions/standing";
+import { getServerSideStandingSeasons } from "@/lib/server-data/standing";
 import { routing } from "@/i18n/routing";
 import { getAllTeamForSeason } from "@/lib/nhl";
 import { getSeasonInfo, lastSeasonYear } from "@/lib/season-info";
@@ -51,7 +51,10 @@ function entry(path: string, rest: Omit<Entry, "url" | "alternates">): Entry {
     ...rest,
     alternates: {
       languages: Object.fromEntries(
-        routing.locales.map((locale) => [locale, `${siteUrl}/${locale}${path}`]),
+        routing.locales.map((locale) => [
+          locale,
+          `${siteUrl}/${locale}${path}`,
+        ]),
       ),
     },
   };

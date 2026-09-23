@@ -97,10 +97,12 @@ export function PoolerCapEfficiencyChart({
         capUsed: pooler.capUsed / MILLION,
         poolPoints: pooler.poolPoints,
         pointsPerMillion:
-          pooler.capUsed > 0 ? pooler.poolPoints / (pooler.capUsed / MILLION) : 0,
+          pooler.capUsed > 0
+            ? pooler.poolPoints / (pooler.capUsed / MILLION)
+            : 0,
         isSelected: pooler.name === selectedParticipant,
       })),
-    [poolers, selectedParticipant]
+    [poolers, selectedParticipant],
   );
 
   // The cap line is the whole point of the reference: the domain has to hold it
@@ -121,7 +123,7 @@ export function PoolerCapEfficiencyChart({
         };
         return config;
       }, {} as ChartConfig),
-    [poolers]
+    [poolers],
   );
 
   return (

@@ -56,7 +56,7 @@ function TooltipContent({
           data-slot="tooltip-content"
           className={cn(
             "bg-primary text-primary-foreground z-50 w-fit origin-(--transform-origin) rounded-md px-3 py-1.5 text-xs text-balance transition-[opacity,scale] duration-150 data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
-            className
+            className,
           )}
           {...props}
         >

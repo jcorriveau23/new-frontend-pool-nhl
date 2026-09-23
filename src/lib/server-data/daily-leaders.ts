@@ -1,10 +1,12 @@
-"use server";
+/*
+Server-side reads of the NHL api and of the Rust backend.
+*/
 
 import { DailyLeaders } from "@/data/dailyLeaders/model";
 import { backendUrl, fetchJson } from "@/lib/server-api";
 
 export async function getServerSideDailyLeaders(
-  keyDay: string
+  keyDay: string,
 ): Promise<DailyLeaders | null> {
   /*
   Get the daily stats information. This is being called to query the daily pool scorer.

@@ -29,7 +29,7 @@ const AccordionTrigger = React.forwardRef<
       ref={ref}
       className={cn(
         "flex flex-1 cursor-pointer items-center justify-between py-4 font-medium transition-all hover:underline [&[data-panel-open]>svg]:rotate-180",
-        className
+        className,
       )}
       {...props}
     >
@@ -52,7 +52,7 @@ const AccordionContent = React.forwardRef<
     <div
       className={cn(
         "h-(--accordion-panel-height) pb-4 pt-0 data-starting-style:h-0 data-ending-style:h-0",
-        className
+        className,
       )}
     >
       {children}

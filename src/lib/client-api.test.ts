@@ -4,7 +4,7 @@ import { apiGet, apiPost } from "./client-api";
 
 const mockFetch = (impl: (url: string, init?: RequestInit) => Response) => {
   const spy = vi.fn((url: string, init?: RequestInit) =>
-    Promise.resolve(impl(url, init))
+    Promise.resolve(impl(url, init)),
   );
   vi.stubGlobal("fetch", spy);
   return spy;
@@ -56,7 +56,7 @@ describe("apiGet", () => {
   it("reports a network failure instead of rejecting", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(() => Promise.reject(new TypeError("Failed to fetch")))
+      vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))),
     );
 
     const res = await apiGet("/pool/my-pool");

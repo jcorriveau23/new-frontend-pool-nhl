@@ -1,0 +1,14 @@
+# Build output and dependencies.
+.next/
+node_modules/
+next-env.d.ts
+
+# Generated or vendored data, not source: the injury report is written by the
+# scraper and package-lock by npm, and reformatting either only creates noise.
+package-lock.json
+public/
+
+# Agent tooling directories.
+.agents/
+.claude/
+skills-lock.json

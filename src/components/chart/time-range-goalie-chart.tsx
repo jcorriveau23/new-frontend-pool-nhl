@@ -26,7 +26,7 @@ export function TimeRangeGoalieChart(props: TimeRangePlayerChartProps) {
         poolSelectedEndDate,
         props.playerId,
         selectedPoolUser.id,
-        props.goaliesSettings
+        props.goaliesSettings,
       ),
     [
       poolInfo,
@@ -35,7 +35,7 @@ export function TimeRangeGoalieChart(props: TimeRangePlayerChartProps) {
       props.playerId,
       selectedPoolUser.id,
       props.goaliesSettings,
-    ]
+    ],
   );
 
   return (

@@ -1,6 +1,7 @@
 import { defineConfig } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTypescript from "eslint-config-next/typescript";
+import prettier from "eslint-config-prettier";
 
 // `next lint` was removed in Next.js 16; eslint runs through its own CLI.
 // Since eslint-config-next 16 the shareable configs are native flat configs, so
@@ -8,6 +9,9 @@ import nextTypescript from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTypescript,
+  // Last, so it switches off the rules that would fight prettier. Formatting is
+  // prettier's job (`npm run format`), and CI checks it separately.
+  prettier,
   {
     rules: {
       "react-hooks/exhaustive-deps": "warn",

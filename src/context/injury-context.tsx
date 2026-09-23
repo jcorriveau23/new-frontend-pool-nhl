@@ -20,9 +20,7 @@ const fetchInjuredPlayers = async (): Promise<
 > => {
   const response = await fetch("/injured-players.json");
   if (!response.ok) {
-    throw new Error(
-      `could not fetch injured players: HTTP ${response.status}`
-    );
+    throw new Error(`could not fetch injured players: HTTP ${response.status}`);
   }
   return response.json();
 };
@@ -52,7 +50,7 @@ export const useInjuredPlayers = () => {
   const context = useContext(InjuredPlayersContext);
   if (context === undefined) {
     throw new Error(
-      "useInjuredPlayers must be used within an InjuredPlayersProvider"
+      "useInjuredPlayers must be used within an InjuredPlayersProvider",
     );
   }
   return context;

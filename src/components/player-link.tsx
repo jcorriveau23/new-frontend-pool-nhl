@@ -28,7 +28,9 @@ export default function PlayerLink(props: Props) {
         target="_blank"
         className="min-w-0"
       >
-        <p className={`${props.textStyle ?? ""} truncate text-primary hover:underline`}>
+        <p
+          className={`${props.textStyle ?? ""} truncate text-primary hover:underline`}
+        >
           {props.name}
         </p>
       </Link>

@@ -47,7 +47,7 @@ export default function DraftStatus({
     <div
       className={cn(
         "rounded-xl border bg-card px-4 py-3",
-        isUserTurn && "border-success/40 bg-success/10"
+        isUserTurn && "border-success/40 bg-success/10",
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -56,13 +56,13 @@ export default function DraftStatus({
             <span
               className={cn(
                 "absolute inline-flex size-full animate-ping rounded-full opacity-60",
-                isUserTurn ? "bg-success" : "bg-primary"
+                isUserTurn ? "bg-success" : "bg-primary",
               )}
             />
             <span
               className={cn(
                 "relative inline-flex size-2.5 rounded-full",
-                isUserTurn ? "bg-success" : "bg-primary"
+                isUserTurn ? "bg-success" : "bg-primary",
               )}
             />
           </span>
@@ -79,7 +79,7 @@ export default function DraftStatus({
               title={currentDrafter ?? undefined}
               className={cn(
                 "truncate font-semibold leading-tight",
-                isUserTurn && "text-success"
+                isUserTurn && "text-success",
               )}
             >
               {isUserTurn

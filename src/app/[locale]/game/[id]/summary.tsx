@@ -30,7 +30,7 @@ import { getTranslations } from "next-intl/server";
 import { TeamLogo } from "@/components/team-logo";
 import PlayerLink from "@/components/player-link";
 import { ExternalLink, Shield } from "lucide-react";
-import { getServerSideGameLanding } from "@/actions/game-landing";
+import { getServerSideGameLanding } from "@/lib/server-data/game-landing";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import GameInfoCard from "./game-info-card";
@@ -58,7 +58,7 @@ function starInitials(name: string): string {
 
 export default async function GameSummary(props: Props) {
   const gameLanding: GameLanding | null = await getServerSideGameLanding(
-    props.gameId
+    props.gameId,
   );
   const t = await getTranslations();
 
@@ -92,11 +92,11 @@ export default async function GameSummary(props: Props) {
                 </span>
               </div>
               {Object.values(GoalSituation).includes(
-                goal.situationCode as GoalSituation
+                goal.situationCode as GoalSituation,
               ) ? (
                 <Badge variant="destructive">
                   {getSituationCodeFormatedName(
-                    goal.situationCode as GoalSituation
+                    goal.situationCode as GoalSituation,
                   )}
                 </Badge>
               ) : null}
@@ -106,7 +106,7 @@ export default async function GameSummary(props: Props) {
                 <AvatarImage src={goal.headshot} />
                 <AvatarFallback className="text-xs">
                   {starInitials(
-                    `${goal.firstName.default} ${goal.lastName.default}`
+                    `${goal.firstName.default} ${goal.lastName.default}`,
                   )}
                 </AvatarFallback>
               </Avatar>
@@ -368,7 +368,7 @@ export default async function GameSummary(props: Props) {
 
   const summary = gameLanding.summary;
   const hasPenalties = summary?.penalties?.some(
-    (period) => period.penalties.length > 0
+    (period) => period.penalties.length > 0,
   );
 
   return (
@@ -403,7 +403,8 @@ export default async function GameSummary(props: Props) {
           <div className="px-0 pb-5 sm:px-5">
             {summary.scoring
               .filter(
-                (period) => period.periodDescriptor.periodType !== PeriodType.SO
+                (period) =>
+                  period.periodDescriptor.periodType !== PeriodType.SO,
               )
               .map((period) => (
                 <Accordion

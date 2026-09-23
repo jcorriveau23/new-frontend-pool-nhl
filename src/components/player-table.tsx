@@ -8,8 +8,20 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { getServerSidePlayers, searchPlayersByName } from "@/actions/players";
+import { fetchPlayers, searchPlayers } from "@/lib/client-data";
 import { Player } from "@/data/pool/model";
+import {
+  comparePlayersBy,
+  DEFAULT_PAGE_SIZE,
+  filterByPositions,
+  isSearchActive,
+  movePage,
+  MINIMUM_SEARCH_CHARACTERS,
+  PlayerQueryState,
+  SEARCH_DEBOUNCE_MS,
+  showGoalieColumns,
+  sortByColumn,
+} from "@/lib/player-table-query";
 import PlayerLink from "./player-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,17 +43,6 @@ import {
   X,
 } from "lucide-react";
 
-const MINIMUM_SEARCH_CHARACTERS = 3;
-const SEARCH_DEBOUNCE_MS = 300;
-const DEFAULT_PAGE_SIZE = 100;
-
-// On a phone the stats are what the horizontal scroll is for, so only the name
-// stays pinned there and the rank scrolls away under it. Pinning both would eat
-// most of the width. From sm up there is room for the two, and the left offset
-// of the name column then has to match the rank width exactly, otherwise the
-// header and the body drift apart while scrolling horizontally.
-// `z-[1]` only has to beat the scrolling cells of the same row: anything higher
-// would also cover the sticky page header, which sits above the table.
 const RANK_CELL = "w-8 sm:w-12 sm:sticky sm:left-0 sm:z-[1]";
 const NAME_CELL = "sticky left-0 z-[1] max-w-[36vw] sm:left-12 sm:max-w-xs";
 const STICKY_BG = "bg-background group-hover:bg-muted/50";
@@ -82,27 +83,6 @@ interface PlayerColumn {
   render: (player: Player) => React.ReactNode;
 }
 
-// Sorts the name search results client side: the search endpoint matches on the
-// name only, so it cannot honour the column the user is sorting on.
-const comparePlayersBy =
-  (sortField: string | null, descending: boolean) => (a: Player, b: Player) => {
-    const left = a[(sortField ?? "points") as keyof Player];
-    const right = b[(sortField ?? "points") as keyof Player];
-
-    // Players without the stat (no contract, goalie stat on a skater, ...) go
-    // last in both directions rather than pretending to be zeros.
-    if (left == null && right == null) return 0;
-    if (left == null) return 1;
-    if (right == null) return -1;
-
-    if (typeof left === "number" && typeof right === "number") {
-      return descending ? right - left : left - right;
-    }
-    return descending
-      ? String(right).localeCompare(String(left))
-      : String(left).localeCompare(String(right));
-  };
-
 const PlayersTable: React.FC<PlayersTableProps> = ({
   sortField: initialSortField,
   skip: initialSkip,
@@ -136,7 +116,13 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   const t = useTranslations();
 
   const pageSize = initialLimit ?? DEFAULT_PAGE_SIZE;
-  const isGoalies = selectedPositions.includes("G");
+
+  const queryState: PlayerQueryState = {
+    sortField,
+    descendingOrder,
+    skip,
+    positions: selectedPositions,
+  };
 
   // Debounced so typing a name does not fire a request per keystroke.
   useEffect(() => {
@@ -148,7 +134,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  const isSearchActive = searchTerm.length >= MINIMUM_SEARCH_CHARACTERS;
+  const searchActive = isSearchActive(searchTerm);
 
   const listQuery = useQuery({
     queryKey: [
@@ -160,28 +146,28 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       pageSize,
     ],
     queryFn: () =>
-      getServerSidePlayers(
-        selectedPositions,
-        sortField,
-        descendingOrder,
+      fetchPlayers({
+        positions: selectedPositions,
+        sort: sortField,
+        descending: descendingOrder,
         skip,
-        pageSize,
-      ),
-    enabled: !isSearchActive,
+        limit: pageSize,
+      }),
+    enabled: !searchActive,
     placeholderData: keepPreviousData,
   });
 
   const searchQuery = useQuery({
     queryKey: ["players-search", searchTerm],
-    queryFn: () => searchPlayersByName(searchTerm),
-    enabled: isSearchActive,
+    queryFn: () => searchPlayers(searchTerm),
+    enabled: searchActive,
     placeholderData: keepPreviousData,
   });
 
-  const activeQuery = isSearchActive ? searchQuery : listQuery;
+  const activeQuery = searchActive ? searchQuery : listQuery;
 
   const players = useMemo(() => {
-    if (!isSearchActive) return listQuery.data ?? [];
+    if (!searchActive) return listQuery.data ?? [];
 
     // Searching by name deliberately ignores the position filter: looking up a
     // goalie while the list is filtered on skaters should find them, not
@@ -191,74 +177,63 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       comparePlayersBy(sortField, descendingOrder),
     );
   }, [
-    isSearchActive,
+    searchActive,
     listQuery.data,
     searchQuery.data,
     sortField,
     descendingOrder,
   ]);
 
-  // Goalie and skater stats share no column, so a name search falls back to the
-  // skater columns unless every match happens to be a goalie.
-  const showGoalieColumns = isSearchActive
-    ? players.length > 0 && players.every((player) => player.position === "G")
-    : isGoalies;
+  const useGoalieColumns = showGoalieColumns(
+    searchActive,
+    players,
+    selectedPositions,
+  );
 
-  // The server actions resolve to null on failure instead of throwing, so an
+  // The route reads resolve to null on failure instead of throwing, so an
   // empty result and a failed request have to be told apart explicitly.
   const hasFailed = !activeQuery.isPending && activeQuery.data === null;
 
-  const updateUrl = (params: URLSearchParams) =>
-    router.push(`${pushUrl}/?${params.toString()}`);
+  /*
+  Every transition returns the next query state, which is applied to the
+  component state and to the URL together — the two cannot drift apart, and the
+  rules themselves are tested in `@/lib/player-table-query`.
+  */
+  const applyQueryState = (next: PlayerQueryState) => {
+    setSortField(next.sortField);
+    setDescendingOrder(next.descendingOrder);
+    setSkip(next.skip);
+    setSelectedPositions(next.positions);
 
-  // Toggle sorting order on column header click
-  const handleSort = (newSortField: string) => {
-    const newDescendingOrder =
-      newSortField === sortField ? !descendingOrder : true;
+    // An absent column is dropped from the URL rather than written as an empty
+    // value, which would be read back as a column named "" on the next load.
+    if (next.sortField === null) {
+      queryParams.delete("sortField");
+    } else {
+      queryParams.set("sortField", next.sortField);
+    }
+    queryParams.set("descendingOrder", next.descendingOrder.toString());
+    queryParams.set("skip", next.skip.toString());
+    queryParams.delete("positions");
+    next.positions.forEach((position) =>
+      queryParams.append("positions", position),
+    );
 
-    setSkip(0);
-    queryParams.set("skip", "0");
-    setSortField(newSortField);
-    queryParams.set("sortField", newSortField);
-    setDescendingOrder(newDescendingOrder);
-    queryParams.set("descendingOrder", newDescendingOrder.toString());
-
-    updateUrl(queryParams);
+    router.push(`${pushUrl}/?${queryParams.toString()}`);
   };
+
+  const handleSort = (newSortField: string) =>
+    applyQueryState(sortByColumn(queryState, newSortField));
 
   const handlePageChange = (pageOffset: number) => {
-    const newSkip = skip + pageOffset * pageSize;
-
-    if (newSkip < 0) return;
-    setSkip(newSkip);
-    queryParams.set("skip", newSkip.toString());
-
-    updateUrl(queryParams);
+    const next = movePage(queryState, pageOffset, pageSize);
+    if (next !== null) {
+      applyQueryState(next);
+    }
   };
 
-  const handlePositionFilter = (newPositions: string[]) => {
-    const willBeGoalies = newPositions.includes("G");
-
-    // If position changed from skater <-> goalies we need to setup the default
-    // sorting, the columns of the two tables have nothing in common.
-    const newSortField = willBeGoalies
-      ? "wins"
-      : isGoalies
-        ? "points"
-        : (sortField ?? "points");
-
-    setSortField(newSortField);
-    queryParams.set("sortField", newSortField);
-
-    setSkip(0);
-    queryParams.set("skip", "0");
-
-    setSelectedPositions(newPositions);
-    queryParams.delete("positions");
-    newPositions.forEach((p) => queryParams.append("positions", p));
-
-    updateUrl(queryParams);
-  };
+  const handlePositionFilter = (newPositions: string[]) =>
+    applyQueryState(filterByPositions(queryState, newPositions));
 
   const clearSearch = () => {
     setSearchInput("");
@@ -410,7 +385,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     },
   ];
 
-  const columns = showGoalieColumns ? goalieColumns : skaterColumns;
+  const columns = useGoalieColumns ? goalieColumns : skaterColumns;
 
   // A player is unavailable once a pooler holds them, either by protecting them
   // for next season or by drafting them. Protection wins over ownership: on the
@@ -421,9 +396,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       protectedBy ??
       (considerOnlyProtected ? undefined : playersOwner?.[player.id]);
 
-    return owner
-      ? { owner, isProtected: protectedBy !== undefined }
-      : null;
+    return owner ? { owner, isProtected: protectedBy !== undefined } : null;
   };
 
   const PlayerNameCell = (
@@ -522,7 +495,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
                   ownership && TAKEN_MARKER,
                 )}
               >
-                {(isSearchActive ? 0 : skip) + i + 1}
+                {(searchActive ? 0 : skip) + i + 1}
               </TableCell>
               {/* The name keeps the default text size: it is what the row is
                   about, and the stats shrinking around it gives the hierarchy. */}
@@ -571,7 +544,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   const PlayersToolbar = () => (
     <div className="flex flex-col gap-2 p-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:max-w-xs">
-        {activeQuery.isFetching && isSearchActive ? (
+        {activeQuery.isFetching && searchActive ? (
           <LoaderCircle className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
         ) : (
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -605,14 +578,14 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       </div>
       {/* The filter is not applied to a name search, so it would only be
           misleading while one is running. */}
-      {isSearchActive ? null : PlayerPositionFilter()}
+      {searchActive ? null : PlayerPositionFilter()}
       <p
         aria-live="polite"
         className="text-xs text-muted-foreground sm:ml-auto"
       >
-        {searchInput.trim().length > 0 && !isSearchActive
+        {searchInput.trim().length > 0 && !searchActive
           ? t("SearchMinimumCharacters", { count: MINIMUM_SEARCH_CHARACTERS })
-          : isSearchActive && !activeQuery.isPending
+          : searchActive && !activeQuery.isPending
             ? t("SearchResultCount", { count: players.length })
             : null}
       </p>
@@ -677,7 +650,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     if (players.length === 0) {
       return (
         <p className="p-8 text-center text-sm text-muted-foreground">
-          {isSearchActive
+          {searchActive
             ? t("NoPlayersFoundWith", { searchValue: searchTerm })
             : t("NoData")}
         </p>
@@ -702,7 +675,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     <div className="mx-auto w-full max-w-5xl text-left">
       {PlayersToolbar()}
       {PlayersContent()}
-      {!isSearchActive && !hasFailed ? PlayersPagination() : null}
+      {!searchActive && !hasFailed ? PlayersPagination() : null}
     </div>
   );
 };
