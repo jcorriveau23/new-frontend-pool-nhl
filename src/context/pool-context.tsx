@@ -465,8 +465,10 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     poolInfoRef.current = newPoolInfo;
     // @ts-expect-error, dexie is not typed.
     db.pools.get({ name: newPoolInfo.name }).then((poolDb) => {
-      mergeScoreByDay(newPoolInfo, poolDb);
-      newPoolInfo.id = poolDb.id;
+      if (poolDb) {
+        mergeScoreByDay(newPoolInfo, poolDb);
+        newPoolInfo.id = poolDb.id;
+      }
       // @ts-expect-error, dexie is not typed.
       db.pools.put(newPoolInfo, "name");
       // Two picks landing back to back both reach this callback. Only the

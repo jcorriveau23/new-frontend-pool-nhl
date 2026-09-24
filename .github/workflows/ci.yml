@@ -31,7 +31,17 @@ jobs:
         run: npm run typecheck
 
       - name: Test
-        run: npm test
+        run: npm run test:coverage
+
+      # Kept even when a previous step failed, so a run that trips a coverage
+      # threshold still publishes the report that says which file dropped.
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
 
       - name: Build
         run: npm run build --if-present
