@@ -26,11 +26,11 @@ delays would bring them all back on the same tick.
 */
 export function reconnectDelay(
   attempt: number,
-  random: () => number = Math.random
+  random: () => number = Math.random,
 ): number {
   const ceiling = Math.min(
     RECONNECT_BASE_DELAY_MS * 2 ** attempt,
-    RECONNECT_MAX_DELAY_MS
+    RECONNECT_MAX_DELAY_MS,
   );
 
   return ceiling / 2 + random() * (ceiling / 2);

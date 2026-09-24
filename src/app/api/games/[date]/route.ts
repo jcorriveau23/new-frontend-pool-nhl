@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { getServerSideDailyGames } from "@/actions/daily-games";
+import { getServerSideDailyGames } from "@/lib/server-data/daily-games";
 
 export async function GET(
   request: Request,
-  props: { params: Promise<{ date: string }> }
+  props: { params: Promise<{ date: string }> },
 ) {
   const params = await props.params;
   const { date } = params;
@@ -16,7 +16,7 @@ export async function GET(
   } else {
     return NextResponse.json(
       { error: `No score found with date ${date}.` },
-      { status: 404 }
+      { status: 404 },
     );
   }
 }

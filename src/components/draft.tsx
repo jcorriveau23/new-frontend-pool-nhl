@@ -83,7 +83,7 @@ export default function Draft(props: DraftProps) {
 
   const isDraftDone = (
     draftedPlayerCountDictPerPooler: Map<string, number>,
-    participants: string[]
+    participants: string[],
   ) => {
     for (let i = 0; i < participants.length; i += 1) {
       if (
@@ -132,7 +132,7 @@ export default function Draft(props: DraftProps) {
   const getDynastyRoundDrafters = (
     draftedPlayerCountDictPerPooler: Map<string, number>,
     draftOrder: string[],
-    roundIndex: number
+    roundIndex: number,
   ): Pick[] => {
     const drafters: Pick[] = [];
     if (!poolInfo.context) {
@@ -152,7 +152,7 @@ export default function Draft(props: DraftProps) {
 
         draftedPlayerCountDictPerPooler.set(
           realNextDrafter,
-          (draftedPlayerCountDictPerPooler.get(realNextDrafter) ?? 0) + 1
+          (draftedPlayerCountDictPerPooler.get(realNextDrafter) ?? 0) + 1,
         );
 
         drafters.push({
@@ -164,7 +164,7 @@ export default function Draft(props: DraftProps) {
         const nextDrafter = draftOrder[i];
         draftedPlayerCountDictPerPooler.set(
           nextDrafter,
-          (draftedPlayerCountDictPerPooler.get(nextDrafter) ?? 0) + 1
+          (draftedPlayerCountDictPerPooler.get(nextDrafter) ?? 0) + 1,
         );
 
         drafters.push({
@@ -184,7 +184,7 @@ export default function Draft(props: DraftProps) {
     draftedPlayerCountDictPerPooler: Map<string, number>,
     participants: string[],
     roundIndex: number,
-    isSnakeDraft: boolean
+    isSnakeDraft: boolean,
   ): Pick[] => {
     const drafters: Pick[] = [];
     for (let j = 0; j < participants.length; j += 1) {
@@ -198,7 +198,7 @@ export default function Draft(props: DraftProps) {
 
       draftedPlayerCountDictPerPooler.set(
         nextDrafter,
-        (draftedPlayerCountDictPerPooler.get(nextDrafter) ?? 0) + 1
+        (draftedPlayerCountDictPerPooler.get(nextDrafter) ?? 0) + 1,
       );
     }
 
@@ -233,7 +233,7 @@ export default function Draft(props: DraftProps) {
         drafters = getDynastyRoundDrafters(
           draftedPlayerCountDictPerPooler,
           poolInfo.draft_order,
-          roundIndex
+          roundIndex,
         );
       } else {
         // This is logic is for new drafts.
@@ -241,7 +241,7 @@ export default function Draft(props: DraftProps) {
           draftedPlayerCountDictPerPooler,
           poolInfo.draft_order,
           roundIndex,
-          true
+          true,
         );
       }
 
@@ -279,7 +279,9 @@ export default function Draft(props: DraftProps) {
         <Dialog>
           <DialogTrigger
             nativeButton={false}
-            render={<TableCell colSpan={3} className="px-2 py-1.5 sm:px-3 sm:py-2" />}
+            render={
+              <TableCell colSpan={3} className="px-2 py-1.5 sm:px-3 sm:py-2" />
+            }
           >
             <DraftButton label="Draft Player" />
           </DialogTrigger>
@@ -306,7 +308,10 @@ export default function Draft(props: DraftProps) {
       </>
     ) : (
       // Pick that has not been made yet.
-      <TableCell colSpan={3} className="px-2 py-1.5 text-muted-foreground/60 sm:px-3 sm:py-2">
+      <TableCell
+        colSpan={3}
+        className="px-2 py-1.5 text-muted-foreground/60 sm:px-3 sm:py-2"
+      >
         —
       </TableCell>
     );
@@ -433,7 +438,7 @@ export default function Draft(props: DraftProps) {
       totalPicks: rounds.reduce(
         (total, round) =>
           total + round.picks.filter((pick) => !pick.done).length,
-        0
+        0,
       ),
     });
     // The three helpers are re-created on every render; the draft board only
@@ -463,7 +468,7 @@ export default function Draft(props: DraftProps) {
         className="overflow-hidden rounded-xl border bg-card"
       >
         {draftInfo.rounds.map((round) =>
-          RenderRound(round, draftInfo.currentRound)
+          RenderRound(round, draftInfo.currentRound),
         )}
       </Accordion>
     </div>

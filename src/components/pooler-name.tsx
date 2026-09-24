@@ -13,7 +13,7 @@ export function YouBadge({ className }: { className?: string }) {
     <span
       className={cn(
         "shrink-0 rounded-sm bg-primary/15 px-1 py-px text-[9px] font-semibold uppercase leading-normal tracking-wide text-primary sm:text-[10px]",
-        className
+        className,
       )}
     >
       {t("You")}
@@ -47,7 +47,7 @@ export function PoolerNameText({
     <span
       className={cn(
         "flex min-w-0 max-w-[140px] items-center gap-1.5 sm:max-w-[200px]",
-        className
+        className,
       )}
     >
       {isSelected ? (

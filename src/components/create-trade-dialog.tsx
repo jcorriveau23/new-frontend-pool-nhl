@@ -51,17 +51,18 @@ import {
 } from "@/components/ui/popover";
 import { ordinal } from "@/app/utils/formating";
 import { getPoolerTradablePicks, pickKey } from "@/lib/pool-picks";
+import {
+  buildTrade,
+  findTradeIssue,
+  initialTradeSelection,
+  manageableParticipants,
+  selectedPicksFor,
+  toggleInSet,
+  TradeAsset,
+} from "@/lib/trade-builder";
 
 export { pickKey };
-
-// An asset the dialog can be opened on, so the trade starts pre-filled with
-// the player or the pick the user clicked somewhere else in the pool.
-export interface TradeAsset {
-  // Pooler currently owning the asset.
-  poolerId: string;
-  playerId?: number;
-  pick?: DraftPick;
-}
+export type { TradeAsset };
 
 interface TradeSideSelectorProps {
   pooler: PoolUser;
@@ -233,26 +234,18 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Poolers the current user is allowed to propose a trade on behalf of. A
-  // regular user only manages his own team; an owner/assistant manages all.
-  const manageableParticipants = React.useMemo(
-    () =>
-      poolInfo.participants.filter(
-        (p) =>
-          userData.info?.id === p.id ||
-          hasPoolPrivilege(userData.info?.id, poolInfo),
-      ),
+  // Poolers the current user is allowed to propose a trade on behalf of.
+  const manageablePoolers = React.useMemo(
+    () => manageableParticipants(poolInfo, userData.info?.id),
     [poolInfo, userData.info?.id],
   );
 
   // A visitor that manages no team can still build a trade to see what it
   // would look like, he simply cannot send it.
   const canSubmit =
-    Boolean(userSession.info?.jwt) && manageableParticipants.length > 0;
+    Boolean(userSession.info?.jwt) && manageablePoolers.length > 0;
   const fromParticipants =
-    manageableParticipants.length > 0
-      ? manageableParticipants
-      : poolInfo.participants;
+    manageablePoolers.length > 0 ? manageablePoolers : poolInfo.participants;
 
   const [fromPoolerId, setFromPoolerId] = React.useState<string>("");
   const [toPoolerId, setToPoolerId] = React.useState<string>("");
@@ -286,57 +279,22 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
       return;
     }
 
-    // Editing an existing trade: the dialog opens on exactly what it says.
-    const editing = props.editingTrade;
-    if (editing) {
-      setFromPoolerId(editing.proposed_by);
-      setToPoolerId(editing.ask_to);
-      setFromPlayers(new Set(editing.from_items.players));
-      setToPlayers(new Set(editing.to_items.players));
-      setFromPicks(new Set(editing.from_items.picks.map(pickKey)));
-      setToPicks(new Set(editing.to_items.picks.map(pickKey)));
-      setEffectiveDate(
-        editing.effective_date
-          ? new Date(`${editing.effective_date}T00:00:00`)
-          : new Date(),
-      );
-      return;
-    }
+    const selection = initialTradeSelection(
+      poolInfo,
+      fromParticipants,
+      userData.info?.id,
+      props.editingTrade,
+      props.initialAsset,
+      new Date(),
+    );
 
-    const asset = props.initialAsset;
-    const defaultFrom =
-      fromParticipants.find((p) => p.id === userData.info?.id)?.id ??
-      fromParticipants[0]?.id ??
-      "";
-
-    // The asset lands on the side of the pooler owning it: on the user's own
-    // side when he manages that team, on the partner side otherwise.
-    const assetOnFromSide =
-      asset != null &&
-      (asset.poolerId === defaultFrom ||
-        fromParticipants.some((p) => p.id === asset.poolerId));
-
-    const from = assetOnFromSide ? asset!.poolerId : defaultFrom;
-    const to =
-      asset != null && !assetOnFromSide
-        ? asset.poolerId
-        : (poolInfo.participants.find((p) => p.id !== from)?.id ?? "");
-
-    setFromPoolerId(from);
-    setToPoolerId(to);
-
-    resetSelection();
-    setEffectiveDate(new Date());
-    if (asset?.playerId != null) {
-      const selection = new Set([asset.playerId]);
-      if (assetOnFromSide) setFromPlayers(selection);
-      else setToPlayers(selection);
-    }
-    if (asset?.pick) {
-      const selection = new Set([pickKey(asset.pick)]);
-      if (assetOnFromSide) setFromPicks(selection);
-      else setToPicks(selection);
-    }
+    setFromPoolerId(selection.fromPoolerId);
+    setToPoolerId(selection.toPoolerId);
+    setFromPlayers(selection.fromPlayers);
+    setToPlayers(selection.toPlayers);
+    setFromPicks(selection.fromPicks);
+    setToPicks(selection.toPicks);
+    setEffectiveDate(selection.effectiveDate);
     // Only re-initialise when the dialog opens on a new asset, so the user
     // selection is never wiped while they are building the trade.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -345,16 +303,7 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
   const toggle = <T,>(
     setter: React.Dispatch<React.SetStateAction<Set<T>>>,
     value: T,
-  ) =>
-    setter((prev) => {
-      const next = new Set(prev);
-      if (next.has(value)) {
-        next.delete(value);
-      } else {
-        next.add(value);
-      }
-      return next;
-    });
+  ) => setter((prev) => toggleInSet(prev, value));
 
   const fromPooler = poolInfo.participants.find((p) => p.id === fromPoolerId);
   const toPooler = poolInfo.participants.find((p) => p.id === toPoolerId);
@@ -362,51 +311,47 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
   const nbSelected =
     fromPlayers.size + toPlayers.size + fromPicks.size + toPicks.size;
 
-  const selectedPicksFor = (
-    poolerId: string,
-    selected: Set<string>,
-  ): DraftPick[] =>
-    getPoolerTradablePicks(poolInfo, poolerId).filter((pick) =>
-      selected.has(pickKey(pick)),
-    );
-
   const onSubmit = async () => {
-    if (!userSession.info?.jwt) {
-      toast.error(t("LoginToTrade"), { duration: 3000 });
-      return;
+    const issue = findTradeIssue({
+      isSignedIn: Boolean(userSession.info?.jwt),
+      fromPooler,
+      toPooler,
+      selectedCount: nbSelected,
+    });
+
+    switch (issue) {
+      case "not-signed-in":
+        toast.error(t("LoginToTrade"), { duration: 3000 });
+        return;
+      case "incomplete":
+        return;
+      case "same-pooler":
+        toast.error(t("SamePoolerTradeError"), { duration: 3000 });
+        return;
+      case "no-assets":
+        toast.error(t("SelectAtLeastOneAsset"), { duration: 3000 });
+        return;
     }
-    if (!fromPooler || !toPooler) {
-      return;
-    }
-    if (fromPooler.id === toPooler.id) {
-      toast.error(t("SamePoolerTradeError"), { duration: 3000 });
-      return;
-    }
-    if (nbSelected === 0) {
-      toast.error(t("SelectAtLeastOneAsset"), { duration: 3000 });
+
+    // Re-stated for the type checker: `findTradeIssue` already reported each of
+    // these, and returning here is unreachable.
+    if (!userSession.info?.jwt || !fromPooler || !toPooler) {
       return;
     }
 
-    const trade: Trade = {
-      proposed_by: fromPooler.id,
-      ask_to: toPooler.id,
-      from_items: {
-        players: Array.from(fromPlayers),
-        picks: selectedPicksFor(fromPooler.id, fromPicks),
-      },
-      to_items: {
-        players: Array.from(toPlayers),
-        picks: selectedPicksFor(toPooler.id, toPicks),
-      },
-      id: props.editingTrade?.id ?? 0,
-      date_created: 0,
-      status: TradeStatus.Open,
-      effective_date: datesTheTradeCanCountFrom
+    const trade = buildTrade({
+      poolInfo,
+      fromPoolerId: fromPooler.id,
+      toPoolerId: toPooler.id,
+      fromPlayers,
+      toPlayers,
+      fromPicks,
+      toPicks,
+      effectiveDate: datesTheTradeCanCountFrom
         ? formatDate(effectiveDate, "yyyy-MM-dd")
         : null,
-      // Stamped by the backend when the trade is filed during a draft.
-      draft_pick_index: null,
-    };
+      editingTradeId: props.editingTrade?.id,
+    });
 
     const editing = props.editingTrade;
 
@@ -633,11 +578,14 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
                         {poolInfo.context?.players[id]?.name}
                       </Badge>
                     ))}
-                    {selectedPicksFor(fromPooler.id, fromPicks).map((pick) => (
-                      <Badge key={pickKey(pick)} variant="secondary">
-                        {ordinal(pick.round + 1)} ({dictUsers[pick.from]?.name})
-                      </Badge>
-                    ))}
+                    {selectedPicksFor(poolInfo, fromPooler.id, fromPicks).map(
+                      (pick) => (
+                        <Badge key={pickKey(pick)} variant="secondary">
+                          {ordinal(pick.round + 1)} (
+                          {dictUsers[pick.from]?.name})
+                        </Badge>
+                      ),
+                    )}
                     {fromPlayers.size + fromPicks.size === 0 ? (
                       <span className="text-sm text-muted-foreground">—</span>
                     ) : null}
@@ -654,11 +602,14 @@ export default function CreateTradeDialog(props: CreateTradeDialogProps) {
                         {poolInfo.context?.players[id]?.name}
                       </Badge>
                     ))}
-                    {selectedPicksFor(toPooler.id, toPicks).map((pick) => (
-                      <Badge key={pickKey(pick)} variant="secondary">
-                        {ordinal(pick.round + 1)} ({dictUsers[pick.from]?.name})
-                      </Badge>
-                    ))}
+                    {selectedPicksFor(poolInfo, toPooler.id, toPicks).map(
+                      (pick) => (
+                        <Badge key={pickKey(pick)} variant="secondary">
+                          {ordinal(pick.round + 1)} (
+                          {dictUsers[pick.from]?.name})
+                        </Badge>
+                      ),
+                    )}
                     {toPlayers.size + toPicks.size === 0 ? (
                       <span className="text-sm text-muted-foreground">—</span>
                     ) : null}

@@ -21,7 +21,7 @@ interface UserSessionContextType {
 }
 
 const UserSessionContext = createContext<UserSessionContextType | undefined>(
-  undefined
+  undefined,
 );
 
 interface UserSessionProviderProps {

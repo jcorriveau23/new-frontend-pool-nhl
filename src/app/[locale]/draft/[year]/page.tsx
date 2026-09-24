@@ -115,7 +115,7 @@ const getServerSideSeasonDraft = async (year: string) => {
       */
   const res = await fetch(
     `https://records.nhl.com/site/api/draft?include=draftProspect.id&include=player.birthStateProvince&include=player.birthCountry&include=player.position&include=player.onRoster&include=player.yearsPro&include=player.firstName&include=player.lastName&include=player.id&include=team.id&include=team.placeName&include=team.commonName&include=team.fullName&include=team.triCode&include=team.logos&include=franchiseTeam.franchise.mostRecentTeamId&include=franchiseTeam.franchise.teamCommonName&include=franchiseTeam.franchise.teamPlaceName&sort=[{"property":"overallPickNumber","direction":"ASC"}]&cayenneExp=draftYear=${year}`,
-    { next: { revalidate: 86400 } } // revalidate each day
+    { next: { revalidate: 86400 } }, // revalidate each day
   );
   if (!res.ok) {
     return null;

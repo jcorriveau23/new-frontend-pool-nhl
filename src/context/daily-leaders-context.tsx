@@ -1,6 +1,6 @@
 "use client";
 
-import { getServerSideDailyLeaders } from "@/actions/daily-leaders";
+import { fetchDailyLeaders } from "@/lib/client-data";
 import { DailyLeaders } from "@/data/dailyLeaders/model";
 import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
@@ -11,14 +11,14 @@ interface DailyLeadersContextProps {
 }
 
 const DailyLeadersContext = createContext<DailyLeadersContextProps | undefined>(
-  undefined
+  undefined,
 );
 
 export const useDailyLeadersContext = (): DailyLeadersContextProps => {
   const context = useContext(DailyLeadersContext);
   if (!context) {
     throw new Error(
-      "useDailyLeadersContext must be used within a DailyLeadersProvider"
+      "useDailyLeadersContext must be used within a DailyLeadersProvider",
     );
   }
   return context;
@@ -39,9 +39,7 @@ export function DailyLeadersProvider({
 
   const query = useQuery({
     queryKey: ["daily_leaders", keyDay],
-    queryFn: () => {
-      return getServerSideDailyLeaders(keyDay);
-    },
+    queryFn: () => fetchDailyLeaders(keyDay),
     staleTime: 1000 * 60 * 3, // 3 minutes in ms
   });
 

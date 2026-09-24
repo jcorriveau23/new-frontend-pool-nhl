@@ -88,10 +88,10 @@ export default function LinkPoolerAccountDialog({
     trimmedEmail.length === 0
       ? null
       : trimmedEmail.length > MAX_EMAIL_LENGTH
-      ? t("PoolerLinkEmailTooLongError", { max: MAX_EMAIL_LENGTH })
-      : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)
-      ? null
-      : t("PoolerLinkEmailInvalidError");
+        ? t("PoolerLinkEmailTooLongError", { max: MAX_EMAIL_LENGTH })
+        : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)
+          ? null
+          : t("PoolerLinkEmailInvalidError");
 
   const canInvite = error === null && trimmedEmail.length > 0;
 
@@ -123,7 +123,7 @@ export default function LinkPoolerAccountDialog({
           name: pooler.name,
           error: res.error,
         }),
-        { duration: 5000 }
+        { duration: 5000 },
       );
       return;
     }
@@ -151,7 +151,7 @@ export default function LinkPoolerAccountDialog({
           name: pooler.name,
           error: res.error,
         }),
-        { duration: 5000 }
+        { duration: 5000 },
       );
       return;
     }

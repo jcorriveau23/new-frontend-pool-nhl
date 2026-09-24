@@ -66,7 +66,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   POOL_NAME_MAX_LENGTH,
   POOL_NAME_MIN_LENGTH,
-} from "@/components/pool-settings";
+} from "@/lib/pool-settings-form";
 import { salaryFormat, seasonFormat } from "@/app/utils/formating";
 import { useSession } from "@/context/useSessionData";
 import { toast } from "sonner";
@@ -100,6 +100,13 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RosterSection, useRosterSections } from "@/hooks/use-roster-sections";
+import {
+  buildLineupAnalytics,
+  buildPoolerEntries,
+  isDateInPoolRange,
+  resolveDisplayedDate,
+  sortByPoolPoints,
+} from "@/lib/pool-standings";
 
 export default function CumulativeTab() {
   const t = useTranslations();
@@ -232,67 +239,22 @@ export default function CumulativeTab() {
   holds seven pieces of state, so opening a chart dialog or picking a date
   re-runs its body. Rebuilding these arrays each time handed `LineupDialog` and
   the pooler selector brand new props every render and re-rendered both for
-  nothing.
+  nothing. The derivations themselves live in `@/lib/pool-standings`.
   */
   const rankedByPoints = React.useMemo(
-    () =>
-      ranking === null
-        ? []
-        : [...ranking].sort(
-            (a, b) => b.getTotalPoolPoints() - a.getTotalPoolPoints(),
-          ),
+    () => sortByPoolPoints(ranking),
     [ranking],
   );
 
-  // The pooler selector lists everybody in standing order, with their rank and
-  // total so the list doubles as a quick leaderboard.
-  const poolerEntries = React.useMemo(() => {
-    // Indexed once rather than scanning `participants` per pooler, which made
-    // this quadratic in the size of the pool.
-    const idByName = new Map(
-      (poolInfo.participants ?? []).map((user) => [user.name, user.id]),
-    );
+  const poolerEntries = React.useMemo(
+    () => buildPoolerEntries(rankedByPoints, poolInfo.participants),
+    [rankedByPoints, poolInfo.participants],
+  );
 
-    return rankedByPoints.map((rank, index) => ({
-      id: idByName.get(rank.participant) ?? rank.participant,
-      name: rank.participant,
-      rank: index + 1,
-      points: rank.getTotalPoolPoints(),
-    }));
-  }, [rankedByPoints, poolInfo.participants]);
-
-  // Feeds the analysis charts of the lineup dialog. Everything here is derived
-  // from the stats already computed above, never from a second
-  // `calculatePoolStats` pass.
-  const lineupAnalytics = React.useMemo(() => {
-    if (playerStats === null || ranking === null) {
-      return { playerPoolPoints: {}, poolers: [] };
-    }
-
-    const playerPoolPoints: Record<number, number> = {};
-    for (const roster of Object.values(playerStats)) {
-      for (const player of [
-        ...roster.forwards,
-        ...roster.defense,
-        ...roster.goalies,
-      ]) {
-        playerPoolPoints[player.id] = player.poolPoints;
-      }
-    }
-
-    // Same quadratic scan as above, for the same reason.
-    const totalByParticipant = new Map(
-      ranking.map((rank) => [rank.participant, rank.getTotalPoolPoints()]),
-    );
-
-    return {
-      playerPoolPoints,
-      poolers: getPoolerCapUsage(poolInfo).map((usage) => ({
-        ...usage,
-        poolPoints: totalByParticipant.get(usage.name) ?? 0,
-      })),
-    };
-  }, [playerStats, ranking, poolInfo]);
+  const lineupAnalytics = React.useMemo(
+    () => buildLineupAnalytics(playerStats, ranking, poolInfo),
+    [playerStats, ranking, poolInfo],
+  );
 
   if (ranking === null || playerStats === null) {
     return <TableSkeleton rows={10} label={t("LoadingPoolRanking")} />;
@@ -306,20 +268,12 @@ export default function CumulativeTab() {
   const selectedRankingEntry =
     selectedRankIndex >= 0 ? rankedByPoints[selectedRankIndex] : null;
 
-  // The daily points columns only make sense for a day that belongs to the
-  // pool. With no date selected the day being looked at is the one the nhl api
-  // reports as "now" (what the date picker shows), which lands outside of the
-  // season during the off-season — the pool context falls back to the last day
-  // of the pool instead, so it cannot be used to answer that question. All
-  // three values are yyyy-MM-dd strings, which compare exactly without any
-  // timezone question.
-  const displayedDate =
-    querySelectedDate === "now"
-      ? (score?.currentDate ?? format(currentDate, "yyyy-MM-dd"))
-      : dateOfInterest;
-  const isDateInPoolRange =
-    displayedDate >= poolInfo.season_start &&
-    displayedDate <= poolInfo.season_end;
+  const displayedDate = resolveDisplayedDate(
+    querySelectedDate,
+    score?.currentDate,
+    format(currentDate, "yyyy-MM-dd"),
+    dateOfInterest,
+  );
 
   const getDailyGameState = (cumulated: boolean | undefined) => {
     if (cumulated) {
@@ -959,7 +913,7 @@ export default function CumulativeTab() {
           {chartPanel(null)}
           {TotalTable(
             ranking,
-            isDateInPoolRange
+            isDateInPoolRange(displayedDate, poolInfo)
               ? TotalPointsColumn
               : TotalPointsColumnWithoutDaily,
             t("TotalRanking"),

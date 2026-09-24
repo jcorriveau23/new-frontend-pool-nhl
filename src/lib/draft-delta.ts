@@ -29,7 +29,7 @@ export const isPoolBroadcastNewer = (current: Pool, incoming: Pool): boolean =>
 
 export const applyPlayerDrafted = (
   pool: Pool,
-  delta: PlayerDraftedResponse
+  delta: PlayerDraftedResponse,
 ): Pool | null => {
   if (pool.context === null) {
     // No draft context yet: this client has not seen the StartDraft broadcast.
@@ -71,7 +71,7 @@ export const applyPlayerDrafted = (
 
 export const applyDraftPickUndone = (
   pool: Pool,
-  delta: DraftPickUndoneResponse
+  delta: DraftPickUndoneResponse,
 ): Pool | null => {
   if (pool.context === null) {
     return null;
@@ -95,7 +95,7 @@ export const applyDraftPickUndone = (
       ...pool.context,
       players_name_drafted: pool.context.players_name_drafted.slice(
         0,
-        delta.pick_count
+        delta.pick_count,
       ),
       players,
       pooler_roster: {
@@ -111,7 +111,7 @@ export const applyDraftPickUndone = (
 // roster the backend sends is simply the new truth for that participant.
 export const applyRosterModified = (
   pool: Pool,
-  delta: RosterModifiedResponse
+  delta: RosterModifiedResponse,
 ): Pool | null => {
   if (pool.context === null) {
     return null;

@@ -120,8 +120,10 @@ export function ContractExpirationChart({
       const salaryOf = (position: Position) =>
         expiringPlayers.reduce(
           (total, player) =>
-            player.position === position ? total + player.salary / MILLION : total,
-          0
+            player.position === position
+              ? total + player.salary / MILLION
+              : total,
+          0,
         );
 
       return {
@@ -144,7 +146,7 @@ export function ContractExpirationChart({
       defense: { label: t("Defense"), color: POSITION_COLORS[Position.D] },
       goalies: { label: t("Goalies"), color: POSITION_COLORS[Position.G] },
     }),
-    [t]
+    [t],
   );
 
   if (data.length === 0) {
@@ -156,14 +158,22 @@ export function ContractExpirationChart({
   }
 
   return (
-    <ChartContainer config={chartConfig} className="aspect-auto h-[260px] w-full">
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-auto h-[260px] w-full"
+    >
       <BarChart
         accessibilityLayer
         data={data}
         margin={{ left: 4, right: 12, top: 8 }}
       >
         <CartesianGrid vertical={false} />
-        <XAxis dataKey="season" tickLine={false} axisLine={false} tickMargin={8} />
+        <XAxis
+          dataKey="season"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+        />
         <YAxis
           tickLine={false}
           axisLine={false}

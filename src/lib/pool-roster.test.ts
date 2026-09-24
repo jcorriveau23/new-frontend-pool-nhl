@@ -8,14 +8,13 @@ import {
   hasPoolPrivilege,
 } from "./pool-roster";
 
-const user = (id: string, name: string): PoolUser =>
-  ({ id, name }) as PoolUser;
+const user = (id: string, name: string): PoolUser => ({ id, name }) as PoolUser;
 
 const roster = (
   forwards: number[] = [],
   defenders: number[] = [],
   goalies: number[] = [],
-  reservists: number[] = []
+  reservists: number[] = [],
 ) => ({
   chosen_forwards: forwards,
   chosen_defenders: defenders,
@@ -45,7 +44,7 @@ describe("getPlayersOwner", () => {
             b: roster([6], [7], [8], [9]),
           },
         },
-      })
+      }),
     );
 
     expect(result).toEqual({
@@ -63,7 +62,7 @@ describe("getPlayersOwner", () => {
 
   it("returns nothing when the pool has no draft context yet", () => {
     expect(
-      getPlayersOwner(pool({ participants: [user("a", "Alex")] }))
+      getPlayersOwner(pool({ participants: [user("a", "Alex")] })),
     ).toEqual({});
   });
 
@@ -75,7 +74,7 @@ describe("getPlayersOwner", () => {
       pool({
         participants: [user("a", "Alex"), user("ghost", "Nobody")],
         context: { pooler_roster: { a: roster([1]) } },
-      })
+      }),
     );
 
     expect(result).toEqual({ 1: "Alex" });
@@ -90,7 +89,7 @@ describe("getPlayersOwner", () => {
             a: { chosen_forwards: [1] } as never,
           },
         },
-      })
+      }),
     );
 
     expect(result).toEqual({ 1: "Alex" });
@@ -103,7 +102,7 @@ describe("getProtectedPlayers", () => {
   it("names the pooler protecting each player", () => {
     const result = getProtectedPlayers(
       pool({ context: { protected_players: { a: [1, 2], b: [3] } } }),
-      dictUsers
+      dictUsers,
     );
 
     expect(result).toEqual({ 1: "Alex", 2: "Alex", 3: "Sam" });
@@ -113,7 +112,10 @@ describe("getProtectedPlayers", () => {
     // A standard (non-dynasty) pool. Null is meaningful here: the UI uses it to
     // hide the protection column entirely rather than show it empty.
     expect(
-      getProtectedPlayers(pool({ context: { protected_players: null } }), dictUsers)
+      getProtectedPlayers(
+        pool({ context: { protected_players: null } }),
+        dictUsers,
+      ),
     ).toBeNull();
     expect(getProtectedPlayers(pool(), dictUsers)).toBeNull();
   });
@@ -123,7 +125,7 @@ describe("getProtectedPlayers", () => {
     // someone who is no longer a participant.
     const result = getProtectedPlayers(
       pool({ context: { protected_players: { a: [1], gone: [2] } } }),
-      dictUsers
+      dictUsers,
     );
 
     expect(result).toEqual({ 1: "Alex" });
@@ -144,8 +146,8 @@ describe("findLastScoredDate", () => {
               "2025-10-20": {},
             },
           },
-        })
-      )
+        }),
+      ),
     ).toBe("2026-01-15");
   });
 
@@ -153,7 +155,7 @@ describe("findLastScoredDate", () => {
     expect(findLastScoredDate(null)).toBeNull();
     expect(findLastScoredDate(pool())).toBeNull();
     expect(
-      findLastScoredDate(pool({ context: { score_by_day: null } }))
+      findLastScoredDate(pool({ context: { score_by_day: null } })),
     ).toBeNull();
   });
 
@@ -161,7 +163,7 @@ describe("findLastScoredDate", () => {
     // The caller treats null as "no scores" and falls back to today; undefined
     // would leak into a date string.
     expect(
-      findLastScoredDate(pool({ context: { score_by_day: {} } }))
+      findLastScoredDate(pool({ context: { score_by_day: {} } })),
     ).toBeNull();
   });
 });
@@ -193,10 +195,7 @@ describe("hasPoolPrivilege", () => {
     // stray empty entry — which the settings form can produce — handed pool
     // privilege to every visitor.
     expect(
-      hasPoolPrivilege(
-        undefined,
-        pool({ settings: { assistants: [""] } })
-      )
+      hasPoolPrivilege(undefined, pool({ settings: { assistants: [""] } })),
     ).toBe(false);
   });
 });

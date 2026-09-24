@@ -30,41 +30,43 @@ const chartFallback = (className: string) => {
 
 export const MonthlyPointsChart = dynamic(
   () => import("./monthly-points-chart").then((m) => m.MonthlyPointsChart),
-  { loading: chartFallback("h-[320px]"), ssr: false }
+  { loading: chartFallback("h-[320px]"), ssr: false },
 );
 
 export const TimeRangePoolChart = dynamic(
   () => import("./time-range-pool-chart").then((m) => m.TimeRangePoolChart),
-  { loading: chartFallback("h-[320px]"), ssr: false }
+  { loading: chartFallback("h-[320px]"), ssr: false },
 );
 
 export const TimeRangeSkaterChart = dynamic(
   () => import("./time-range-skater-chart").then((m) => m.TimeRangeSkaterChart),
-  { loading: chartFallback("h-[280px]"), ssr: false }
+  { loading: chartFallback("h-[280px]"), ssr: false },
 );
 
 export const TimeRangeGoalieChart = dynamic(
   () => import("./time-range-goalie-chart").then((m) => m.TimeRangeGoalieChart),
-  { loading: chartFallback("h-[280px]"), ssr: false }
+  { loading: chartFallback("h-[280px]"), ssr: false },
 );
 
 export const ContractExpirationChart = dynamic(
   () =>
-    import("./contract-expiration-chart").then((m) => m.ContractExpirationChart),
-  { loading: chartFallback("h-[260px]"), ssr: false }
+    import("./contract-expiration-chart").then(
+      (m) => m.ContractExpirationChart,
+    ),
+  { loading: chartFallback("h-[260px]"), ssr: false },
 );
 
 export const PoolerCapEfficiencyChart = dynamic(
   () =>
     import("./pooler-cap-efficiency-chart").then(
-      (m) => m.PoolerCapEfficiencyChart
+      (m) => m.PoolerCapEfficiencyChart,
     ),
-  { loading: chartFallback("h-[260px]"), ssr: false }
+  { loading: chartFallback("h-[260px]"), ssr: false },
 );
 
 // This one sizes itself to its row count rather than a fixed height, so the
 // fallback only reserves a plausible minimum.
 export const ContractValueChart = dynamic(
   () => import("./contract-value-chart").then((m) => m.ContractValueChart),
-  { loading: chartFallback("h-[200px]"), ssr: false }
+  { loading: chartFallback("h-[200px]"), ssr: false },
 );

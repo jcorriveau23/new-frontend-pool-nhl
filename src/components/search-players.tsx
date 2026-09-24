@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { LoaderCircle, Search, X } from "lucide-react";
 import { Player } from "@/data/pool/model";
-import { searchPlayersByName } from "@/actions/players";
+import { searchPlayers } from "@/lib/client-data";
 import PlayerLink from "./player-link";
 import { TeamLogo } from "./team-logo";
 import { useTranslations } from "next-intl";
@@ -63,7 +63,7 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
     const trimmed = searchInput.trim();
     const timeout = setTimeout(
       () => setSearchTerm(trimmed),
-      trimmed.length >= MINIMUM_SEARCH_CHARACTER ? SEARCH_DEBOUNCE_MS : 0
+      trimmed.length >= MINIMUM_SEARCH_CHARACTER ? SEARCH_DEBOUNCE_MS : 0,
     );
     return () => clearTimeout(timeout);
   }, [searchInput]);
@@ -72,7 +72,7 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
 
   const query = useQuery({
     queryKey: ["players-search", searchTerm],
-    queryFn: () => searchPlayersByName(searchTerm),
+    queryFn: () => searchPlayers(searchTerm),
     enabled: isSearchActive,
   });
 
@@ -192,7 +192,7 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
                           "flex w-full items-center gap-2 rounded-md border p-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
                           unavailableReason
                             ? "cursor-not-allowed opacity-60"
-                            : "cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                            : "cursor-pointer hover:bg-accent hover:text-accent-foreground",
                         )}
                       >
                         <TeamLogo teamId={player.team} width={26} height={26} />

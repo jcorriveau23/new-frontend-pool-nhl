@@ -45,7 +45,7 @@ export default function SortHeaderCell({
         className={cn(
           "group flex h-9 w-full items-center gap-0.5 whitespace-nowrap px-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:h-10 sm:gap-1 sm:px-2",
           align === "right" && "justify-end",
-          isActive && "text-foreground"
+          isActive && "text-foreground",
         )}
       >
         <span>{label}</span>

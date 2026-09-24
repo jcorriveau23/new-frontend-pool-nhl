@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { getServerSideBoxScore } from "@/actions/game-boxscore";
+import { getServerSideBoxScore } from "@/lib/server-data/game-boxscore";
 
 export async function GET(
-  request: Request, 
-  props: { params: Promise<{ id: string }> }
+  request: Request,
+  props: { params: Promise<{ id: string }> },
 ) {
   const params = await props.params;
   const { id } = params;
@@ -16,7 +16,7 @@ export async function GET(
   } else {
     return NextResponse.json(
       { error: `No game boxscore found with game ${id}.` },
-      { status: 404 }
+      { status: 404 },
     );
   }
 }

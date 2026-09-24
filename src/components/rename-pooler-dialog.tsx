@@ -81,13 +81,14 @@ export default function RenamePoolerDialog({
     trimmedName.length === 0
       ? null
       : trimmedName.length > MAX_POOLER_NAME_LENGTH
-      ? t("PoolerNameTooLongError", { max: MAX_POOLER_NAME_LENGTH })
-      : participants.some(
-          (participant) =>
-            participant.id !== pooler.id && participant.name === trimmedName
-        )
-      ? t("PoolerNameAlreadyTakenError", { name: trimmedName })
-      : null;
+        ? t("PoolerNameTooLongError", { max: MAX_POOLER_NAME_LENGTH })
+        : participants.some(
+              (participant) =>
+                participant.id !== pooler.id &&
+                participant.name === trimmedName,
+            )
+          ? t("PoolerNameAlreadyTakenError", { name: trimmedName })
+          : null;
 
   const canRename =
     error === null && trimmedName.length > 0 && trimmedName !== pooler.name;
@@ -107,7 +108,7 @@ export default function RenamePoolerDialog({
         pooler_user_id: pooler.id,
         new_name: trimmedName,
       },
-      userSession.info?.jwt
+      userSession.info?.jwt,
     );
     setIsRenaming(false);
 
@@ -119,7 +120,7 @@ export default function RenamePoolerDialog({
           name: pooler.name,
           error: res.error,
         }),
-        { duration: 5000 }
+        { duration: 5000 },
       );
       return;
     }
@@ -127,7 +128,7 @@ export default function RenamePoolerDialog({
     setOpen(false);
     toast.success(
       t("SuccessRenamePooler", { name: pooler.name, newName: trimmedName }),
-      { duration: 2000 }
+      { duration: 2000 },
     );
     onRenamed?.(res.data);
   };
@@ -167,9 +168,7 @@ export default function RenamePoolerDialog({
               maxLength={MAX_POOLER_NAME_LENGTH}
               disabled={isRenaming}
             />
-            {error ? (
-              <p className="text-sm text-destructive">{error}</p>
-            ) : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </div>
 
           <DialogFooter>

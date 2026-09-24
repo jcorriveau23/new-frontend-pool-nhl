@@ -56,7 +56,7 @@ removed between seasons — so an unknown id is skipped rather than dereferenced
 */
 export const getProtectedPlayers = (
   poolInfo: Pool,
-  dictUsers: Record<string, PoolUser>
+  dictUsers: Record<string, PoolUser>,
 ): Record<number, string> | null => {
   const protectedByUser = poolInfo.context?.protected_players;
 
@@ -109,7 +109,7 @@ export const findLastScoredDate = (pool: Pool | null): string | null => {
 // assistants list happens to contain an empty string.
 export const hasPoolPrivilege = (
   user: string | undefined,
-  pool: Pool
+  pool: Pool,
 ): boolean => {
   if (user === undefined) {
     return false;

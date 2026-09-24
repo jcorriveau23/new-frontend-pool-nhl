@@ -2,15 +2,16 @@
 Server-side assembly of the NHL injury report.
 
 The injury data itself is scraped from CBS Sports and published as a flat
-`playerId -> injury` file; it carries no team, so the team each player belongs
-to is resolved here against the NHL API.
+`playerId -> injury` file. The scraper writes each player's team into it; a file
+from before it did carries no team, and for those entries the team is resolved
+here against the NHL API instead.
 */
 
 import team_info, { abbrevToTeamId } from "@/lib/teams";
 import { siteUrl } from "@/lib/site";
 
-// One injury entry as the scraper writes it. Mirrors the shape the client-side
-// injury context reads out of the same file.
+// One injury entry as the scraper writes it. The client-side injury context
+// reads the same file with this same type.
 export interface InjuredPlayer {
   name: string;
   position: string;
@@ -18,6 +19,9 @@ export interface InjuredPlayer {
   date: string;
   type: string;
   recovery: string;
+  // The NHL team id, `null` for a player with no current team. Absent from files
+  // written before the scraper added it.
+  team?: number | null;
 }
 
 export interface InjuredPlayerWithId extends InjuredPlayer {
@@ -51,7 +55,7 @@ const PLAYER_LOOKUP_CONCURRENCY = 8;
 
 async function fetchJsonOrNull<T>(
   url: string,
-  init?: RequestInit
+  init?: RequestInit,
 ): Promise<T | null> {
   try {
     const res = await fetch(url, init);
@@ -92,17 +96,17 @@ does not resolve is skipped rather than failing the report.
 */
 async function getCurrentRosterTeams(): Promise<Record<number, number>> {
   const activeTeams = Object.entries(abbrevToTeamId).filter(
-    ([, teamId]) => team_info[teamId]?.lastSeason === null
+    ([, teamId]) => team_info[teamId]?.lastSeason === null,
   );
 
   const rosters = await Promise.all(
     activeTeams.map(async ([abbrev, teamId]) => {
       const roster = await fetchJsonOrNull<RosterResponse>(
         `https://api-web.nhle.com/v1/roster/${abbrev}/current`,
-        { next: { revalidate: ROSTER_REVALIDATE_SECONDS } }
+        { next: { revalidate: ROSTER_REVALIDATE_SECONDS } },
       );
       return { teamId, roster };
-    })
+    }),
   );
 
   const playerTeams: Record<number, number> = {};
@@ -130,7 +134,7 @@ report is about, so the per-player endpoint gets a second pass at them. Players
 it has no current team for either -- unsigned free agents -- stay unresolved.
 */
 async function getTeamsForMissingPlayers(
-  playerIds: number[]
+  playerIds: number[],
 ): Promise<Record<number, number>> {
   const playerTeams: Record<number, number> = {};
 
@@ -141,9 +145,9 @@ async function getTeamsForMissingPlayers(
         playerId,
         landing: await fetchJsonOrNull<PlayerLandingResponse>(
           `https://api-web.nhle.com/v1/player/${playerId}/landing`,
-          { next: { revalidate: PLAYER_LANDING_REVALIDATE_SECONDS } }
+          { next: { revalidate: PLAYER_LANDING_REVALIDATE_SECONDS } },
         ),
-      }))
+      })),
     );
     for (const { playerId, landing } of landings) {
       if (landing?.currentTeamId !== undefined) {
@@ -156,17 +160,57 @@ async function getTeamsForMissingPlayers(
 }
 
 /*
+Resolves the team of every injured player: from the file where the scraper wrote
+one, and through the NHL API only for entries that predate the `team` field.
+*/
+async function resolvePlayerTeams(
+  injuredPlayers: Record<string, InjuredPlayer>,
+): Promise<Record<number, number>> {
+  const playerTeams: Record<number, number> = {};
+  const unresolved: number[] = [];
+
+  for (const [playerId, injury] of Object.entries(injuredPlayers)) {
+    if (injury.team === undefined) {
+      unresolved.push(Number(playerId));
+    } else if (injury.team !== null) {
+      playerTeams[Number(playerId)] = injury.team;
+    }
+  }
+
+  if (unresolved.length === 0) {
+    return playerTeams;
+  }
+
+  const rosterTeams = await getCurrentRosterTeams();
+  const missing: number[] = [];
+  for (const playerId of unresolved) {
+    if (playerId in rosterTeams) {
+      playerTeams[playerId] = rosterTeams[playerId];
+    } else {
+      missing.push(playerId);
+    }
+  }
+  return Object.assign(playerTeams, await getTeamsForMissingPlayers(missing));
+}
+
+export async function getInjuriesByTeam(
+  injuredPlayers: Record<string, InjuredPlayer>,
+): Promise<TeamInjuries[]> {
+  return groupInjuriesByTeam(
+    injuredPlayers,
+    await resolvePlayerTeams(injuredPlayers),
+  );
+}
+
+/*
 Groups the injury report by team, teams in alphabetical order and players by
 name within a team. The teamless group, when there is one, sorts last.
 */
-export async function getInjuriesByTeam(
-  injuredPlayers: Record<string, InjuredPlayer>
-): Promise<TeamInjuries[]> {
+export function groupInjuriesByTeam(
+  injuredPlayers: Record<string, InjuredPlayer>,
+  playerTeams: Record<number, number>,
+): TeamInjuries[] {
   const playerIds = Object.keys(injuredPlayers).map(Number);
-
-  const playerTeams = await getCurrentRosterTeams();
-  const missing = playerIds.filter((playerId) => !(playerId in playerTeams));
-  Object.assign(playerTeams, await getTeamsForMissingPlayers(missing));
 
   const groups = new Map<number | null, InjuredPlayerWithId[]>();
   for (const playerId of playerIds) {
@@ -175,9 +219,7 @@ export async function getInjuriesByTeam(
     // disagreeing over whether it is a team.
     const resolved = playerTeams[playerId];
     const teamId =
-      resolved !== undefined && team_info[resolved]?.fullName
-        ? resolved
-        : null;
+      resolved !== undefined && team_info[resolved]?.fullName ? resolved : null;
     const player = { ...injuredPlayers[String(playerId)], id: playerId };
     groups.set(teamId, [...(groups.get(teamId) ?? []), player]);
   }

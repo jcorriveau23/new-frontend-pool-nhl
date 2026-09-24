@@ -14,13 +14,13 @@ export function backendUrl(path: string): string {
 
 export async function fetchJson<T>(
   url: string,
-  init?: RequestInit
+  init?: RequestInit,
 ): Promise<T | null> {
   try {
     const res = await fetch(url, init);
     if (!res.ok) {
       console.error(
-        `Request to ${url} failed with status ${res.status}: ${await res.text()}`
+        `Request to ${url} failed with status ${res.status}: ${await res.text()}`,
       );
       return null;
     }

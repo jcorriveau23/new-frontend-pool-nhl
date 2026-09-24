@@ -36,7 +36,7 @@ export default function GameInfoCard(props: Props) {
 
   // De-duplicate broadcast networks (the API lists them per market).
   const networks = Array.from(
-    new Set((props.broadcasts ?? []).map((b) => b.network).filter(Boolean))
+    new Set((props.broadcasts ?? []).map((b) => b.network).filter(Boolean)),
   );
 
   const InfoItem = ({

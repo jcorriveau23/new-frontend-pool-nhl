@@ -11,9 +11,7 @@ someone else, the backend down) and the UI reports it with a toast. Only
 programming errors are left to throw.
 */
 
-export type ApiResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: string };
+export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 // Reasons a request can fail before or after reaching the backend. The
 // backend's own message is forwarded verbatim, it is already user-facing.
@@ -50,7 +48,7 @@ async function readJson<T>(res: Response): Promise<ApiResult<T>> {
 
 async function request<T>(
   path: string,
-  init: RequestInit
+  init: RequestInit,
 ): Promise<ApiResult<T>> {
   let res: Response;
   try {
@@ -80,7 +78,7 @@ token short-circuits to an `unauthenticated` result instead.
 export function apiPost<T>(
   path: string,
   body: unknown,
-  jwt: string | null | undefined
+  jwt: string | null | undefined,
 ): Promise<ApiResult<T>> {
   if (!jwt) {
     return Promise.resolve({ ok: false, error: UNAUTHENTICATED });

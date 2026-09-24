@@ -74,7 +74,7 @@ export function ContractValueChart({ values }: ContractValueChartProps) {
     () => ({
       pointsPerMillion: { label: t("PointsPerMillion") },
     }),
-    [t]
+    [t],
   );
 
   if (values.length === 0) {

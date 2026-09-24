@@ -78,13 +78,7 @@ export default function GamePreview({ matchup, awayTeam, homeTeam }: Props) {
     </div>
   );
 
-  const ComparisonBar = ({
-    away,
-    home,
-  }: {
-    away: number;
-    home: number;
-  }) => {
+  const ComparisonBar = ({ away, home }: { away: number; home: number }) => {
     const total = away + home;
     const awayPct = total > 0 ? (away / total) * 100 : 50;
     return (
@@ -143,14 +137,14 @@ export default function GamePreview({ matchup, awayTeam, homeTeam }: Props) {
             </div>
           </div>
         ) : (
-          <span className="text-muted-foreground text-sm">
-            {t("NoData")}
-          </span>
+          <span className="text-muted-foreground text-sm">{t("NoData")}</span>
         )}
         {totals ? (
           <div className="text-muted-foreground grid grid-cols-3 gap-2 border-t pt-3 text-center text-xs">
             <div>
-              <div className="text-foreground font-semibold">{totals.gaa.toFixed(2)}</div>
+              <div className="text-foreground font-semibold">
+                {totals.gaa.toFixed(2)}
+              </div>
               {t("Gaa")}
             </div>
             <div>

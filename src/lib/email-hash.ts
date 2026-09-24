@@ -27,7 +27,7 @@ export async function hashEmail(email: string): Promise<string | null> {
 
   const digest = await globalThis.crypto.subtle.digest(
     "SHA-256",
-    new TextEncoder().encode(normalized)
+    new TextEncoder().encode(normalized),
   );
 
   return Array.from(new Uint8Array(digest))

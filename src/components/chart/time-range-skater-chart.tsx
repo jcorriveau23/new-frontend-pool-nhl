@@ -26,7 +26,7 @@ export function TimeRangeSkaterChart(props: TimeRangePlayerChartProps) {
         poolSelectedEndDate,
         props.playerId,
         selectedPoolUser.id,
-        props.skaterSettings
+        props.skaterSettings,
       ),
     [
       poolInfo,
@@ -35,7 +35,7 @@ export function TimeRangeSkaterChart(props: TimeRangePlayerChartProps) {
       props.playerId,
       selectedPoolUser.id,
       props.skaterSettings,
-    ]
+    ],
   );
 
   return (

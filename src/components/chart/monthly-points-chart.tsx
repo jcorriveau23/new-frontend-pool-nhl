@@ -37,7 +37,7 @@ export function MonthlyPointsChart({ months }: MonthlyPointsChartProps) {
 
         for (const standing of month.standings) {
           const participant = poolInfo.participants.find(
-            (user) => user.id === standing.participantId
+            (user) => user.id === standing.participantId,
           );
           if (participant) {
             entry[participant.name] = standing.poolPoints;
@@ -46,7 +46,7 @@ export function MonthlyPointsChart({ months }: MonthlyPointsChartProps) {
 
         return entry;
       }),
-    [months, poolInfo.participants]
+    [months, poolInfo.participants],
   );
 
   const chartConfig = React.useMemo(
@@ -58,12 +58,19 @@ export function MonthlyPointsChart({ months }: MonthlyPointsChartProps) {
         };
         return config;
       }, {} as ChartConfig),
-    [poolInfo.participants]
+    [poolInfo.participants],
   );
 
   return (
-    <ChartContainer config={chartConfig} className="aspect-auto h-[320px] w-full">
-      <BarChart accessibilityLayer data={data} margin={{ left: 12, right: 12, top: 8 }}>
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-auto h-[320px] w-full"
+    >
+      <BarChart
+        accessibilityLayer
+        data={data}
+        margin={{ left: 12, right: 12, top: 8 }}
+      >
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="month"

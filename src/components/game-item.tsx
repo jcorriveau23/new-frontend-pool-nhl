@@ -69,7 +69,7 @@ export default function GameItem(props: Props) {
       <span
         className={cn(
           "text-sm tabular-nums",
-          won ? "font-semibold" : isFinal && "text-muted-foreground"
+          won ? "font-semibold" : isFinal && "text-muted-foreground",
         )}
       >
         {team.score ?? 0}
@@ -82,7 +82,7 @@ export default function GameItem(props: Props) {
       type="button"
       className={cn(
         "bg-card hover:border-primary/50 hover:shadow-sm flex min-w-[80px] shrink-0 cursor-pointer flex-col gap-0.5 rounded-lg border p-1.5 text-left shadow-xs transition-all duration-150 active:scale-[0.96] active:shadow-none",
-        isLive && "border-destructive/40"
+        isLive && "border-destructive/40",
       )}
       onClick={() =>
         router.push(`/game/${props.game.id}?${searchParams.toString()}`)

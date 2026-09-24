@@ -104,10 +104,7 @@ export default function LineupDialog({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={isConfirmingClose}
-        onOpenChange={setIsConfirmingClose}
-      >
+      <AlertDialog open={isConfirmingClose} onOpenChange={setIsConfirmingClose}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>

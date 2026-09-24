@@ -73,10 +73,10 @@ const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     const cleanups = [
       hanko.onSessionCreated(() => refreshUser()),
       hanko.onSessionExpired(() =>
-        setUserState({ id: "", email: "", isValid: false })
+        setUserState({ id: "", email: "", isValid: false }),
       ),
       hanko.onUserLoggedOut(() =>
-        setUserState({ id: "", email: "", isValid: false })
+        setUserState({ id: "", email: "", isValid: false }),
       ),
     ];
 

@@ -71,11 +71,15 @@ export const skaterColumns: ColumnDef<SkaterStats>[] = [
   },
   {
     accessorKey: "giveaways",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="GV" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="GV" />
+    ),
   },
   {
     accessorKey: "takeaways",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="TK" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="TK" />
+    ),
   },
   {
     accessorKey: "faceoffWinningPctg",
@@ -132,7 +136,9 @@ export const goalieColumns: ColumnDef<GoalieStats>[] = [
   },
   {
     accessorKey: "savePctg",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="SV%" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="SV%" />
+    ),
     accessorFn: (row) =>
       row.savePctg != null && row.savePctg !== ""
         ? Number(row.savePctg).toFixed(3)
@@ -140,7 +146,9 @@ export const goalieColumns: ColumnDef<GoalieStats>[] = [
   },
   {
     accessorKey: "goalsAgainst",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="GA" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="GA" />
+    ),
   },
   {
     accessorKey: "pim",

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { getServerSideGameLanding } from "@/actions/game-landing";
+import { getServerSideGameLanding } from "@/lib/server-data/game-landing";
 
 export async function GET(
-  request: Request, 
-  props: { params: Promise<{ id: string }> }
+  request: Request,
+  props: { params: Promise<{ id: string }> },
 ) {
   const params = await props.params;
   const { id } = params;
@@ -16,7 +16,7 @@ export async function GET(
   } else {
     return NextResponse.json(
       { error: `No game landing found with game ${id}.` },
-      { status: 404 }
+      { status: 404 },
     );
   }
 }

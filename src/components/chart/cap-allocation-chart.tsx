@@ -103,7 +103,7 @@ export function CapAllocationChart({
             aria-hidden="true"
             className={cn(
               "size-2.5 shrink-0 rounded-[3px]",
-              isOverCap ? "bg-destructive" : "bg-muted ring-1 ring-border"
+              isOverCap ? "bg-destructive" : "bg-muted ring-1 ring-border",
             )}
           />
           <span className="truncate">
@@ -112,15 +112,13 @@ export function CapAllocationChart({
           <span
             className={cn(
               "ml-auto shrink-0 font-medium tabular-nums",
-              isOverCap ? "text-destructive" : "text-success"
+              isOverCap ? "text-destructive" : "text-success",
             )}
           >
             {salaryFormat(Math.abs(allocation.spaceLeft))}
           </span>
           <span className="w-11 shrink-0 text-right tabular-nums text-muted-foreground">
-            {Math.round(
-              (Math.abs(allocation.spaceLeft) / teamSalaryCap) * 100
-            )}
+            {Math.round((Math.abs(allocation.spaceLeft) / teamSalaryCap) * 100)}
             %
           </span>
         </li>

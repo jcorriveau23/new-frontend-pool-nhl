@@ -37,57 +37,55 @@ export default async function OpenGraphImage({
   const logoSrc = `data:image/png;base64,${logo.toString("base64")}`;
 
   return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          background: BACKGROUND,
-          padding: "0 90px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 48 }}>
-          <img
-            src={logoSrc}
-            width={260}
-            height={260}
-            alt=""
-            // The mark is a circle on a rounded-rect of the brand navy. Clipping
-            // it to a circle drops those corners, which are a shade darker than
-            // the card and otherwise show as a faint box around the logo.
-            style={{ borderRadius: "50%" }}
-          />
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div
-              style={{
-                display: "flex",
-                fontSize: 82,
-                fontWeight: 700,
-                color: "#ffffff",
-                letterSpacing: "-0.03em",
-              }}
-            >
-              slapshot
-              <span style={{ color: ACCENT }}>.xyz</span>
-            </div>
-            <div
-              style={{
-                fontSize: 34,
-                color: "#94a3b8",
-                marginTop: 18,
-                lineHeight: 1.35,
-                maxWidth: 640,
-              }}
-            >
-              {TAGLINES[locale] ?? TAGLINES.en}
-            </div>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        background: BACKGROUND,
+        padding: "0 90px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 48 }}>
+        <img
+          src={logoSrc}
+          width={260}
+          height={260}
+          alt=""
+          // The mark is a circle on a rounded-rect of the brand navy. Clipping
+          // it to a circle drops those corners, which are a shade darker than
+          // the card and otherwise show as a faint box around the logo.
+          style={{ borderRadius: "50%" }}
+        />
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div
+            style={{
+              display: "flex",
+              fontSize: 82,
+              fontWeight: 700,
+              color: "#ffffff",
+              letterSpacing: "-0.03em",
+            }}
+          >
+            slapshot
+            <span style={{ color: ACCENT }}>.xyz</span>
+          </div>
+          <div
+            style={{
+              fontSize: 34,
+              color: "#94a3b8",
+              marginTop: 18,
+              lineHeight: 1.35,
+              maxWidth: 640,
+            }}
+          >
+            {TAGLINES[locale] ?? TAGLINES.en}
           </div>
         </div>
       </div>
-    ),
-    size
+    </div>,
+    size,
   );
 }

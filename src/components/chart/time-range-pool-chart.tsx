@@ -37,9 +37,9 @@ export function TimeRangePoolChart(props: TimeRangePoolChartProps) {
         poolInfo,
         poolStartDate,
         poolSelectedEndDate,
-        props.positionFilter
+        props.positionFilter,
       ),
-    [poolInfo, poolStartDate, poolSelectedEndDate, props.positionFilter]
+    [poolInfo, poolStartDate, poolSelectedEndDate, props.positionFilter],
   );
 
   const chartConfig = React.useMemo(
@@ -51,7 +51,7 @@ export function TimeRangePoolChart(props: TimeRangePoolChartProps) {
         };
         return config;
       }, {} as ChartConfig),
-    [poolInfo.participants]
+    [poolInfo.participants],
   );
 
   // Window kept by the brush, so the header and the legend describe what is
@@ -90,7 +90,7 @@ export function TimeRangePoolChart(props: TimeRangePoolChartProps) {
         day: "numeric",
         ...(withYear ? { year: "numeric" } : {}),
       }),
-    [locale]
+    [locale],
   );
 
   const scopeLabel = props.positionFilter
@@ -121,7 +121,7 @@ export function TimeRangePoolChart(props: TimeRangePoolChartProps) {
         <span className="text-xs tabular-nums text-muted-foreground">
           {`${formatDate(
             data[visibleStartIndex].date as string,
-            true
+            true,
           )} – ${formatDate(data[visibleEndIndex].date as string, true)}`}
         </span>
       </div>
@@ -172,8 +172,8 @@ export function TimeRangePoolChart(props: TimeRangePoolChartProps) {
               a.name === selectedParticipant
                 ? 1
                 : b.name === selectedParticipant
-                ? -1
-                : 0
+                  ? -1
+                  : 0,
             )
             .map((p) => {
               const isSelected = p.name === selectedParticipant;
@@ -237,7 +237,7 @@ function PoolLegendContent({
               "flex items-center gap-1.5 rounded-md border px-1.5 py-0.5 text-xs transition-colors",
               isSelected
                 ? "border-primary/40 bg-selection font-semibold text-selection-foreground"
-                : "border-transparent text-muted-foreground hover:bg-muted"
+                : "border-transparent text-muted-foreground hover:bg-muted",
             )}
           >
             <span className="tabular-nums opacity-60">{index + 1}</span>

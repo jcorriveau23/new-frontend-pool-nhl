@@ -16,7 +16,7 @@ const SEASON_END = "2026-04-15";
 
 const transaction = (
   participant: string,
-  effectiveDate: string
+  effectiveDate: string,
 ): RosterTransaction => ({
   participant,
   effective_date: effectiveDate,
@@ -27,7 +27,7 @@ const transaction = (
 
 const makePool = (
   dropSettings: PlayerDropSettings | null,
-  transactions: RosterTransaction[] = []
+  transactions: RosterTransaction[] = [],
 ): Pool =>
   ({
     season_start: SEASON_START,
@@ -77,7 +77,7 @@ describe("getDropBudget", () => {
         transaction("u2", "2025-12-01"),
       ]),
       "u1",
-      at("2026-02-01", 9)
+      at("2026-02-01", 9),
     );
 
     expect(budget.used).toBe(2);
@@ -110,7 +110,7 @@ describe("getDropBudget", () => {
     const budget = getDropBudget(
       makePool(seasonBudget(2)),
       "u1",
-      at("2025-09-01", 9)
+      at("2025-09-01", 9),
     );
 
     expect(budget.effectiveDate).toBe(SEASON_START);
@@ -121,7 +121,7 @@ describe("getDropBudget", () => {
     const budget = getDropBudget(
       makePool(seasonBudget(2)),
       "u1",
-      at("2026-05-01", 9)
+      at("2026-05-01", 9),
     );
 
     expect(budget.isSeasonOver).toBe(true);
@@ -137,7 +137,7 @@ describe("getDropBudget", () => {
         transaction("u1", "2025-11-02"),
       ]),
       "u1",
-      at("2025-12-01", 9)
+      at("2025-12-01", 9),
     );
 
     expect(budget.remaining).toBe(0);
@@ -184,7 +184,7 @@ describe("getSwapLanding", () => {
 
   it("puts the incoming player in the spot the dropped one frees", () => {
     expect(getSwapLanding(pool, roster, 1, incoming(Position.F))).toBe(
-      "lineup"
+      "lineup",
     );
   });
 
@@ -194,7 +194,7 @@ describe("getSwapLanding", () => {
     const emptyBench = { ...roster, chosen_reservists: [] };
 
     expect(getSwapLanding(pool, emptyBench, 1, incoming(Position.G))).toBe(
-      "bench"
+      "bench",
     );
   });
 
@@ -230,7 +230,7 @@ describe("getSwapLanding", () => {
     // Under the cap, the same spot is taken.
     const affordable = { ...expensive, salary_cap: 1_000_000 };
     expect(getSwapLanding(cappedPool, emptyBench, 1, affordable)).toBe(
-      "lineup"
+      "lineup",
     );
 
     // A player with no contract can never start in a pool that counts the cap.
@@ -242,14 +242,14 @@ describe("getSwapLanding", () => {
     // The single goalie spot is taken and the drop frees a forward spot, not
     // the bench, so the goalie has nowhere to go.
     expect(getSwapLanding(pool, roster, 1, incoming(Position.G))).toBe(
-      "no-room"
+      "no-room",
     );
 
     const noBench = {
       settings: { ...pool.settings, number_reservists: 0 },
     } as Pool;
     expect(getSwapLanding(noBench, roster, 1, incoming(Position.G))).toBe(
-      "no-room"
+      "no-room",
     );
   });
 });

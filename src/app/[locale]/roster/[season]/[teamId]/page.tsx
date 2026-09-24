@@ -22,7 +22,7 @@ import { seasonFormat, seasonWithYearFormat } from "@/app/utils/formating";
 
 const getServerSideSkatersTeamPerSeason = async (
   teamId: string,
-  season: string
+  season: string,
 ) => {
   /*
   Query the list of skaters and their points for a specific team and season.
@@ -36,7 +36,7 @@ const getServerSideSkatersTeamPerSeason = async (
 
   const res = await fetch(
     urlSkaters,
-    { next: { revalidate: 86400 } } // revalidate each day
+    { next: { revalidate: 86400 } }, // revalidate each day
   );
   if (!res.ok) {
     return null;
@@ -49,7 +49,7 @@ const getServerSideSkatersTeamPerSeason = async (
 
 const getServerSideGoaliesTeamPerSeason = async (
   teamId: string,
-  season: string
+  season: string,
 ) => {
   /*
   Query the list of goalies and their stats for a specific team and season.
@@ -63,7 +63,7 @@ const getServerSideGoaliesTeamPerSeason = async (
 
   const res = await fetch(
     urlgoalies,
-    { next: { revalidate: 86400 } } // revalidate each day
+    { next: { revalidate: 86400 } }, // revalidate each day
   );
   if (!res.ok) {
     return null;
@@ -81,12 +81,12 @@ export default async function Standing(props: {
   const lastSeason = lastSeasonYear(await getSeasonInfo());
   const skaters = await getServerSideSkatersTeamPerSeason(
     params.teamId,
-    params.season
+    params.season,
   );
 
   const goalies = await getServerSideGoaliesTeamPerSeason(
     params.teamId,
-    params.season
+    params.season,
   );
 
   const YearInputs = () => (
@@ -97,7 +97,7 @@ export default async function Standing(props: {
           (season) => ({
             value: `${season}${season + 1}`,
             label: seasonWithYearFormat(season),
-          })
+          }),
         )}
         defaultSelectedValue={params.season}
         emptyText=""

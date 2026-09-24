@@ -1,10 +1,12 @@
-"use server";
+/*
+Server-side reads of the NHL api and of the Rust backend.
+*/
 
 import { Score } from "@/data/nhl/game";
 import { fetchJson } from "@/lib/server-api";
 
 export async function getServerSideDailyGames(
-  selectedDate: string
+  selectedDate: string,
 ): Promise<Score | null> {
   /*
   Get the daily score for a specific date.

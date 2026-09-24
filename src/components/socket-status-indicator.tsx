@@ -154,7 +154,7 @@ export const SocketStatusIndicator: React.FC<SocketStatusIndicatorProps> = ({
               aria-label={title}
               className={cn(
                 "gap-2 rounded-full px-3 shadow-lg backdrop-blur-sm",
-                presentation.trigger
+                presentation.trigger,
               )}
             />
           }
@@ -165,14 +165,14 @@ export const SocketStatusIndicator: React.FC<SocketStatusIndicatorProps> = ({
                 <span
                   className={cn(
                     "absolute inline-flex size-full animate-ping rounded-full opacity-60",
-                    presentation.dot
+                    presentation.dot,
                   )}
                 />
               ) : null}
               <span
                 className={cn(
                   "relative inline-flex size-2 rounded-full",
-                  presentation.dot
+                  presentation.dot,
                 )}
               />
             </span>
@@ -192,7 +192,7 @@ export const SocketStatusIndicator: React.FC<SocketStatusIndicatorProps> = ({
             <span
               className={cn(
                 "mt-1.5 size-2.5 shrink-0 rounded-full",
-                presentation.dot
+                presentation.dot,
               )}
             />
             <div className="min-w-0 space-y-1">

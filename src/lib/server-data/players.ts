@@ -1,4 +1,6 @@
-"use server";
+/*
+Server-side reads of the NHL api and of the Rust backend.
+*/
 
 import { Player } from "@/data/pool/model";
 import { backendUrl, fetchJson } from "@/lib/server-api";
@@ -8,7 +10,7 @@ export async function getServerSidePlayers(
   sortField: string | null,
   descending: boolean | null,
   skip: number | null,
-  limit: number | null
+  limit: number | null,
 ): Promise<Player[] | null> {
   /*
   Get the daily stats information. This is being called to query the daily pool scorer.
@@ -23,15 +25,15 @@ export async function getServerSidePlayers(
   return fetchJson<Player[]>(
     backendUrl(
       `/get-players?active=true&positions=${positions.join(
-        ","
-      )}&sort=${sortField}&skip=${skip}&limit=${limit}&descending=${descending}`
+        ",",
+      )}&sort=${sortField}&skip=${skip}&limit=${limit}&descending=${descending}`,
     ),
-    { next: { revalidate: 60 } }
+    { next: { revalidate: 60 } },
   );
 }
 
 export async function searchPlayersByName(
-  name: string
+  name: string,
 ): Promise<Player[] | null> {
   /*
   Search players by (partial) name. The backend matches on the name only, so
@@ -40,6 +42,6 @@ export async function searchPlayersByName(
 
   return fetchJson<Player[]>(
     backendUrl(`/get-players/${encodeURIComponent(name)}`),
-    { next: { revalidate: 60 } }
+    { next: { revalidate: 60 } },
   );
 }

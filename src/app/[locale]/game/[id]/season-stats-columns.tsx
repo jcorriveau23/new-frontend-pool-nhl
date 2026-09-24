@@ -1,8 +1,5 @@
 "use client";
-import {
-  GoalieSeasonStat,
-  SkaterSeasonStat,
-} from "@/data/nhl/gameLanding";
+import { GoalieSeasonStat, SkaterSeasonStat } from "@/data/nhl/gameLanding";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { DataTableColumnHeader } from "@/components/ui/column-header";
@@ -30,7 +27,9 @@ export const skaterSeasonColumns: ColumnDef<SkaterSeasonStat>[] = [
   },
   {
     accessorKey: "gamesPlayed",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="GP" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="GP" />
+    ),
   },
   {
     accessorKey: "goals",
@@ -72,7 +71,9 @@ export const skaterSeasonColumns: ColumnDef<SkaterSeasonStat>[] = [
   },
   {
     accessorKey: "shootingPctg",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="S%" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="S%" />
+    ),
     accessorFn: (row) =>
       row.shootingPctg != null ? (row.shootingPctg * 100).toFixed(1) : "-",
   },
@@ -113,7 +114,9 @@ export const goalieSeasonColumns: ColumnDef<GoalieSeasonStat>[] = [
   },
   {
     accessorKey: "gamesPlayed",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="GP" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="GP" />
+    ),
   },
   {
     accessorKey: "wins",
@@ -139,16 +142,21 @@ export const goalieSeasonColumns: ColumnDef<GoalieSeasonStat>[] = [
   },
   {
     accessorKey: "savePctg",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="SV%" />,
-    accessorFn: (row) =>
-      row.savePctg != null ? row.savePctg.toFixed(3) : "-",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="SV%" />
+    ),
+    accessorFn: (row) => (row.savePctg != null ? row.savePctg.toFixed(3) : "-"),
   },
   {
     accessorKey: "shutouts",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="SO" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="SO" />
+    ),
   },
   {
     accessorKey: "saves",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="SV" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="SV" />
+    ),
   },
 ];

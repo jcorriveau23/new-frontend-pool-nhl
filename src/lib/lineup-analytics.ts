@@ -31,7 +31,7 @@ export interface CapAllocation {
 
 export const getCapAllocation = (
   lineup: LineupPlayers,
-  teamSalaryCap: number
+  teamSalaryCap: number,
 ): CapAllocation => {
   const sumSalary = (players: Player[]) =>
     players.reduce((total, player) => total + (player.salary_cap ?? 0), 0);
@@ -70,7 +70,7 @@ export interface ContractValue {
 
 export const getContractValues = (
   players: Player[],
-  playerPoolPoints: Record<number, number>
+  playerPoolPoints: Record<number, number>,
 ): ContractValue[] =>
   players
     // A player without a contract has no cap cost to weigh his production
@@ -100,7 +100,9 @@ export interface ExpirationBucket {
   players: { id: number; name: string; salary: number }[];
 }
 
-export const getExpirationSchedule = (players: Player[]): ExpirationBucket[] => {
+export const getExpirationSchedule = (
+  players: Player[],
+): ExpirationBucket[] => {
   const buckets = new Map<number | null, ExpirationBucket>();
 
   for (const player of players) {
@@ -167,7 +169,7 @@ export const getPoolerCapUsage = (pool: Pool): PoolerCapUsage[] => {
       capUsed: playerIds.reduce(
         (total, playerId) =>
           total + (context.players[playerId.toString()]?.salary_cap ?? 0),
-        0
+        0,
       ),
     };
   });

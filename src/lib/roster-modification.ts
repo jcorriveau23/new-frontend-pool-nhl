@@ -23,7 +23,7 @@ export interface RosterModificationWindow {
 const toDateKey = (date: Date): string =>
   `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(
     2,
-    "0"
+    "0",
   )}-${`${date.getDate()}`.padStart(2, "0")}`;
 
 export const getEffectiveRosterDate = (now: Date): string => {
@@ -38,7 +38,7 @@ export const getEffectiveRosterDate = (now: Date): string => {
 
 export const getRosterModificationWindow = (
   pool: Pool,
-  now: Date
+  now: Date,
 ): RosterModificationWindow => {
   const effectiveDate = getEffectiveRosterDate(now);
   const allowedDates = [...pool.settings.roster_modification_date].sort();

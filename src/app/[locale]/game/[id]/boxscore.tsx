@@ -20,8 +20,8 @@ import {
   goalieSeasonColumns,
 } from "./season-stats-columns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getServerSideBoxScore } from "@/actions/game-boxscore";
-import { getServerSideGameLanding } from "@/actions/game-landing";
+import { getServerSideBoxScore } from "@/lib/server-data/game-boxscore";
+import { getServerSideGameLanding } from "@/lib/server-data/game-landing";
 
 interface Props {
   gameId: string;

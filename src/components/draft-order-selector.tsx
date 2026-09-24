@@ -115,7 +115,9 @@ export default function DraftOrderSelector() {
     // would draft twice a round and leave another one out of the draft.
     const duplicated = [
       ...new Set(
-        draftOrder.filter((user, position) => draftOrder.indexOf(user) !== position),
+        draftOrder.filter(
+          (user, position) => draftOrder.indexOf(user) !== position,
+        ),
       ),
     ];
     if (duplicated.length > 0) {

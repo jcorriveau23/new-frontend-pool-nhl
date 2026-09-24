@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
 function AspectRatio({
   ratio = 1,
@@ -13,7 +13,7 @@ function AspectRatio({
       style={{ aspectRatio: ratio, ...style }}
       {...props}
     />
-  )
+  );
 }
 
-export { AspectRatio }
+export { AspectRatio };
