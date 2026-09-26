@@ -121,6 +121,8 @@ export default function DraftPage() {
                 playersOwner={playersOwner}
                 protectedPlayers={protectedPlayers}
                 onPlayerSelect={onPlayerSelect}
+                selectLabel={t("Draft")}
+                playerLinksInNewTab
                 currentSeason={poolInfo.season}
               />
               <ScrollBar orientation="horizontal" />

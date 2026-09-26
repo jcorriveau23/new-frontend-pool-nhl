@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, Table } from "@tanstack/react-table";
 
 import { Pool } from "@/data/pool/model";
 import PlayerLink from "@/components/player-link";
@@ -70,6 +70,63 @@ const getTeamCell = (player: SkaterInfo | GoalieInfo, poolInfo: Pool) => (
     height={30}
   />
 );
+
+/*
+The menu a roster row offers.
+
+All four roster tables carry the same one, so it is built here rather than
+copied per table: what differs is the chart the row opens, which the reservists
+have none of. Everything it acts on travels in `meta.props`, which is how the
+columns reach the screen that renders them.
+*/
+const getActionsCell = <TData,>(
+  playerId: number,
+  table: Table<TData>,
+  openChart: (() => void) | null,
+) => {
+  const meta = table.options.meta;
+  const poolInfo = meta?.props?.poolInfo as Pool;
+  const player = poolInfo?.context?.players[playerId];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" className="size-4 p-0" />}
+      >
+        <span className="sr-only">{meta?.t("OpenMenu")}</span>
+        <MoreHorizontal className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>{meta?.t("Actions")}</DropdownMenuLabel>
+        {openChart !== null ? (
+          <DropdownMenuItem onClick={openChart}>
+            {meta?.t("Chart")}
+          </DropdownMenuItem>
+        ) : null}
+        {/* Trades only exist in dynasty pools, like the trade tab itself. */}
+        {poolInfo?.settings.dynasty_settings ? (
+          <DropdownMenuItem
+            onClick={() => meta?.props?.openTradeForPlayer?.(playerId)}
+          >
+            {meta?.t("FileTrade")}
+          </DropdownMenuItem>
+        ) : null}
+        {/* Taking a player off the roster is the owner's to do, on a
+            running pool — `canManageRoster` is the rule the backend applies.
+            It is the one item here that changes the pool, so it asks first,
+            which is the screen's job rather than the column's. */}
+        {meta?.props?.canManageRoster && player !== undefined ? (
+          <DropdownMenuItem
+            className="text-destructive"
+            onClick={() => meta?.props?.confirmPlayerRemoval?.(player)}
+          >
+            {meta?.t("RemoveFromRoster")}
+          </DropdownMenuItem>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
   {
@@ -156,44 +213,13 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
     id: "actions",
     enableHiding: false,
     size: 48,
-    cell: ({ table, row }) => {
-      const player = row.original;
-      const poolInfo = table.options.meta?.props?.poolInfo as Pool;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button variant="ghost" className="size-4 p-0" />}
-          >
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="size-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => {
-                table.options.meta?.props?.setSelectedPlayerId(
-                  player.id.toString(),
-                );
-                table.options.meta?.props?.setIsForwardChartOpen(true);
-              }}
-            >
-              Chart
-            </DropdownMenuItem>
-            {/* Trades only exist in dynasty pools, like the trade tab itself. */}
-            {poolInfo?.settings.dynasty_settings ? (
-              <DropdownMenuItem
-                onClick={() =>
-                  table.options.meta?.props?.openTradeForPlayer?.(player.id)
-                }
-              >
-                {table.options.meta?.t("FileTrade")}
-              </DropdownMenuItem>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ table, row }) =>
+      getActionsCell(row.original.id, table, () => {
+        table.options.meta?.props?.setSelectedPlayerId(
+          row.original.id.toString(),
+        );
+        table.options.meta?.props?.setIsForwardChartOpen(true);
+      }),
   },
 ];
 
@@ -275,44 +301,13 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
     id: "actions",
     enableHiding: false,
     size: 48,
-    cell: ({ table, row }) => {
-      const player = row.original;
-      const poolInfo = table.options.meta?.props?.poolInfo as Pool;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button variant="ghost" className="size-4 p-0" />}
-          >
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="size-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => {
-                table.options.meta?.props?.setSelectedPlayerId(
-                  player.id.toString(),
-                );
-                table.options.meta?.props?.setIsDefenderChartOpen(true);
-              }}
-            >
-              Chart
-            </DropdownMenuItem>
-            {/* Trades only exist in dynasty pools, like the trade tab itself. */}
-            {poolInfo?.settings.dynasty_settings ? (
-              <DropdownMenuItem
-                onClick={() =>
-                  table.options.meta?.props?.openTradeForPlayer?.(player.id)
-                }
-              >
-                {table.options.meta?.t("FileTrade")}
-              </DropdownMenuItem>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ table, row }) =>
+      getActionsCell(row.original.id, table, () => {
+        table.options.meta?.props?.setSelectedPlayerId(
+          row.original.id.toString(),
+        );
+        table.options.meta?.props?.setIsDefenderChartOpen(true);
+      }),
   },
 ];
 
@@ -398,44 +393,13 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
     id: "actions",
     enableHiding: false,
     size: 48,
-    cell: ({ table, row }) => {
-      const player = row.original;
-      const poolInfo = table.options.meta?.props?.poolInfo as Pool;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button variant="ghost" className="size-4 p-0" />}
-          >
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="size-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => {
-                table.options.meta?.props?.setSelectedPlayerId(
-                  player.id.toString(),
-                );
-                table.options.meta?.props?.setIsGoalieChartOpen(true);
-              }}
-            >
-              Chart
-            </DropdownMenuItem>
-            {/* Trades only exist in dynasty pools, like the trade tab itself. */}
-            {poolInfo?.settings.dynasty_settings ? (
-              <DropdownMenuItem
-                onClick={() =>
-                  table.options.meta?.props?.openTradeForPlayer?.(player.id)
-                }
-              >
-                {table.options.meta?.t("FileTrade")}
-              </DropdownMenuItem>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ table, row }) =>
+      getActionsCell(row.original.id, table, () => {
+        table.options.meta?.props?.setSelectedPlayerId(
+          row.original.id.toString(),
+        );
+        table.options.meta?.props?.setIsGoalieChartOpen(true);
+      }),
   },
 ];
 
@@ -455,14 +419,17 @@ export const ReservistColumn: ColumnDef<number>[] = [
     accessorKey: "player",
     header: ({ table }) => table.options.meta?.t("Player"),
     cell: ({ row, table }) => {
-      return getPlayerCell(row.original, table.options.meta?.props as Pool);
+      return getPlayerCell(
+        row.original,
+        table.options.meta?.props?.poolInfo as Pool,
+      );
     },
   },
   {
     accessorKey: "team",
     header: ({ table }) => table.options.meta?.t("T"),
     cell: ({ row, table }) => {
-      const poolInfo = table.options.meta?.props as Pool;
+      const poolInfo = table.options.meta?.props?.poolInfo as Pool;
       return (
         <TeamLogo
           teamId={poolInfo.context?.players[row.original].team ?? null}
@@ -476,7 +443,7 @@ export const ReservistColumn: ColumnDef<number>[] = [
     accessorKey: "role",
     header: "R",
     cell: ({ row, table }) => {
-      const poolInfo = table.options.meta?.props as Pool;
+      const poolInfo = table.options.meta?.props?.poolInfo as Pool;
       return table.options.meta?.t(
         poolInfo.context?.players[row.original].position,
       );
@@ -488,8 +455,15 @@ export const ReservistColumn: ColumnDef<number>[] = [
     cell: ({ row, table }) => {
       return getPlayerSalaryCell(
         row.original,
-        table.options.meta?.props as Pool,
+        table.options.meta?.props?.poolInfo as Pool,
       );
     },
+  },
+  {
+    id: "actions",
+    enableHiding: false,
+    size: 48,
+    // No chart: a reservist scores nothing to plot.
+    cell: ({ table, row }) => getActionsCell(row.original, table, null),
   },
 ];

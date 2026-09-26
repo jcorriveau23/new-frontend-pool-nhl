@@ -12,6 +12,12 @@ interface Props {
   id: number | undefined;
   textStyle: string | null;
   onLinkClick?: (e: React.MouseEvent) => void;
+  // Opens the player page in a new tab instead of navigating in place. Set
+  // where the link sits inside a dialog: navigating there would tear the dialog
+  // down and lose whatever the user was in the middle of — a draft, a lineup
+  // being rearranged. Everywhere else the link stays in the same tab, so the
+  // back button comes straight back to the list.
+  openInNewTab?: boolean;
 }
 
 export default function PlayerLink(props: Props) {
@@ -25,7 +31,8 @@ export default function PlayerLink(props: Props) {
       <Link
         onClick={(e) => props.onLinkClick?.(e)}
         href={`/player/${props.id}?${searchParams}`}
-        target="_blank"
+        target={props.openInNewTab ? "_blank" : undefined}
+        rel={props.openInNewTab ? "noreferrer" : undefined}
         className="min-w-0"
       >
         <p

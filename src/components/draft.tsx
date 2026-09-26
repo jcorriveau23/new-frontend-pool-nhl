@@ -299,6 +299,8 @@ export default function Draft(props: DraftProps) {
                 playersOwner={playersOwner}
                 protectedPlayers={null}
                 onPlayerSelect={props.onPlayerSelect}
+                selectLabel={t("Draft")}
+                playerLinksInNewTab
                 currentSeason={poolInfo.season}
               />
               <ScrollBar orientation="horizontal" />
