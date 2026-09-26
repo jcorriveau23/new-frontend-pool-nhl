@@ -4,6 +4,7 @@
 import * as React from "react";
 import {
   getPoolerActivePlayers,
+  Player,
   Pool,
   PoolState,
   PoolUser,
@@ -88,7 +89,16 @@ import {
   SkaterTotal,
   TotalRanking,
 } from "./cumulative-calculation";
-import { LineChart, PencilLine } from "lucide-react";
+import { LineChart, LoaderCircle, PencilLine, Plus } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   TimeRangeGoalieChart,
   TimeRangePoolChart,
@@ -100,6 +110,7 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RosterSection, useRosterSections } from "@/hooks/use-roster-sections";
+import { useRosterMoves } from "@/hooks/use-roster-moves";
 import {
   buildLineupAnalytics,
   buildPoolerEntries,
@@ -132,6 +143,15 @@ export default function CumulativeTab() {
     updateSelectedParticipant,
   } = usePoolContext();
   const { openTradeForPlayer } = useTradeBuilder();
+  // Adding to the bench and taking a player off, shared with the lineup dialog.
+  const { canManageRoster, pendingPlayerId, addPlayer, removePlayer } =
+    useRosterMoves();
+  // The player the removal is being confirmed for, set from the row menu of any
+  // of the four roster tables. One dialog serves them all.
+  const [playerToRemove, setPlayerToRemove] = React.useState<Player | null>(
+    null,
+  );
+  const [isAddingToReservists, setIsAddingToReservists] = React.useState(false);
 
   /*
   Salary only means something once the pool has a cap: without one the column
@@ -387,6 +407,8 @@ export default function CumulativeTab() {
             setIsForwardChartOpen,
             setIsDefenderChartOpen,
             openTradeForPlayer,
+            canManageRoster,
+            confirmPlayerRemoval: setPlayerToRemove,
           },
           getRowStyles: (row: Row<SkaterInfo>) =>
             getPlayerStatusRowStyle(row.original.status),
@@ -443,6 +465,8 @@ export default function CumulativeTab() {
             setSelectedPlayerId,
             setIsGoalieChartOpen,
             openTradeForPlayer,
+            canManageRoster,
+            confirmPlayerRemoval: setPlayerToRemove,
           },
           getRowStyles: (row: Row<GoalieInfo>) =>
             getPlayerStatusRowStyle(row.original.status),
@@ -478,10 +502,17 @@ export default function CumulativeTab() {
       data={rows}
       columns={columns}
       initialState={{
-        columnPinning: { left: ["number", "player"] },
+        columnPinning: { left: ["number", "player"], right: ["actions"] },
       }}
       meta={{
-        props: poolInfo,
+        // The same bag the other three tables pass, so the row menu is built
+        // from one shape rather than two.
+        props: {
+          poolInfo,
+          openTradeForPlayer,
+          canManageRoster,
+          confirmPlayerRemoval: setPlayerToRemove,
+        },
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
@@ -491,6 +522,123 @@ export default function CumulativeTab() {
       tableFooter={null}
     />
   );
+
+  /*
+  Puts a player nobody in the pool holds on a pooler's bench.
+
+  The pick is made from the same available-players table the search uses, so the
+  owner chooses on stats rather than from a name box: it already greys out the
+  players somebody holds and says who holds them.
+  */
+  const AddToReservistsDialog = (participant: PoolUser) => (
+    <Dialog open={isAddingToReservists} onOpenChange={setIsAddingToReservists}>
+      <DialogTrigger
+        render={
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={t("AddToReservists")}
+          />
+        }
+      >
+        <Plus className="size-4" />
+        {t("AddPlayer")}
+      </DialogTrigger>
+      <DialogContent className="h-full max-h-[96%] p-4 w-full max-w-[96%]">
+        <DialogHeader>
+          <DialogTitle>{t("AddToReservists")}</DialogTitle>
+          <DialogDescription>{t("AvailablePlayers")}</DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="p-0">
+          <PlayersTable
+            sortField={"points"}
+            skip={null}
+            limit={51}
+            considerOnlyProtected={false}
+            pushUrl={`/pool/${poolInfo.name}`}
+            playersOwner={playersOwner}
+            protectedPlayers={null}
+            selectLabel={t("Add")}
+            onPlayerSelect={async (player) => {
+              const added = await addPlayer(participant.id, player);
+              // Left open on a failure so another player can be picked.
+              if (added) {
+                setIsAddingToReservists(false);
+              }
+              return added;
+            }}
+            playerLinksInNewTab
+            currentSeason={poolInfo.season}
+          />
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+
+  /*
+  Confirms taking a player off the roster.
+
+  Mounted once for the whole tab: the row menus of the four roster tables all
+  set the player, and only one removal is ever being confirmed.
+  */
+  const RemovePlayerDialog = (participant: PoolUser) => {
+    // A removed starter leaves the lineup a player short until the spot is
+    // filled; a reservist leaving changes nothing that is being scored.
+    const isStarter =
+      playerToRemove !== null &&
+      !(
+        poolInfo.context?.pooler_roster[participant.id].chosen_reservists ?? []
+      ).includes(playerToRemove.id);
+
+    return (
+      <AlertDialog
+        open={playerToRemove !== null}
+        onOpenChange={(open) => {
+          if (!open) setPlayerToRemove(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("RemovePlayerConfirmationTitle", {
+                playerName: playerToRemove?.name ?? "",
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("RemovePlayerConfirmationDescription", {
+                playerName: playerToRemove?.name ?? "",
+                userName: participant.name,
+              })}
+              {isStarter ? ` ${t("RemoveStarterConfirmationWarning")}` : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pendingPlayerId !== null}>
+              {t("Cancel")}
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={pendingPlayerId !== null}
+              onClick={async () => {
+                if (
+                  playerToRemove !== null &&
+                  (await removePlayer(participant.id, playerToRemove))
+                ) {
+                  setPlayerToRemove(null);
+                }
+              }}
+            >
+              {pendingPlayerId !== null ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : null}
+              {t("Remove")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  };
 
   // Mirrors what the backend accepts for a roster modification.
   const canSaveLineupOf = (participant: PoolUser) =>
@@ -726,7 +874,15 @@ export default function CumulativeTab() {
                     .chosen_reservists.length ?? 0
                 }/${poolInfo.settings.number_reservists})`}
               </AccordionTrigger>
-              <AccordionContent className="pb-2">
+              <AccordionContent className="flex flex-col gap-2 pb-2">
+                {/* Outside the trigger on purpose: a button nested in one is
+                    both hard to hit and hard to tell apart from the row that
+                    opens the section. */}
+                {canManageRoster ? (
+                  <div className="flex justify-end">
+                    {AddToReservistsDialog(participant)}
+                  </div>
+                ) : null}
                 {ReservistTable(
                   poolInfo.context?.pooler_roster[participant.id]
                     .chosen_reservists as number[],
@@ -748,6 +904,7 @@ export default function CumulativeTab() {
             </AccordionItem>
           ) : null}
         </Accordion>
+        {canManageRoster ? RemovePlayerDialog(participant) : null}
       </>
     );
   };
@@ -901,6 +1058,7 @@ export default function CumulativeTab() {
                   playersOwner={playersOwner}
                   protectedPlayers={null}
                   onPlayerSelect={null}
+                  playerLinksInNewTab
                   currentSeason={poolInfo.season}
                 />
                 <ScrollBar orientation="horizontal" />

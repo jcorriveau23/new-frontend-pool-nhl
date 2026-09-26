@@ -67,6 +67,23 @@ const SAVED_ROSTER = {
   reservists: [testPlayer(5, "Calle Jarnkrok", Position.F, 2_100_000)],
 };
 
+/*
+A row of the player search dialog. The row itself is a div carrying
+role="button" — it embeds a link to the player page, which cannot live inside
+a real button — and the salary chip nested in it is named after the player too,
+so the row is picked out by the aria-disabled only it carries.
+*/
+const searchResultRow = async (name: RegExp) => {
+  const candidates = await screen.findAllByRole("button", { name });
+  const row = candidates.find((candidate) =>
+    candidate.hasAttribute("aria-disabled"),
+  );
+  if (row === undefined) {
+    throw new Error(`no search result row matching ${name}`);
+  }
+  return row;
+};
+
 const renderRoster = (
   overrides: {
     pool?: Pool;
@@ -234,6 +251,180 @@ describe("StartingRoster", () => {
 
     expect(await screen.findByText("LineupUpToDate")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reset" })).toBeDisabled();
+  });
+
+  it("puts a player nobody holds on the bench", async () => {
+    const user = userEvent.setup();
+    stubFetch([
+      NO_INJURIES,
+      {
+        match: "/api/players/search",
+        json: [testPlayer(9, "Matias Maccelli", Position.F, 900_000)],
+      },
+    ]);
+    renderRoster();
+
+    await user.click(screen.getByRole("button", { name: /AddPlayer/ }));
+    await user.type(screen.getByRole("searchbox"), "mac");
+    await user.click(await searchResultRow(/Maccelli/));
+
+    await waitFor(() => expect(apiPost).toHaveBeenCalled());
+    const [path, body] = apiPost.mock.calls[0];
+    expect(path).toBe("/add-player");
+    expect(body).toMatchObject({
+      pool_name: "my-pool",
+      added_player_user_id: "user-a",
+      player: { id: 9 },
+    });
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalled());
+  });
+
+  it("flags a player somebody in the pool already holds", async () => {
+    const user = userEvent.setup();
+    stubFetch([
+      NO_INJURIES,
+      {
+        match: "/api/players/search",
+        json: [testPlayer(9, "Matias Maccelli", Position.F, 900_000)],
+      },
+    ]);
+    renderRoster({ context: { playersOwner: { 9: "Bob" } } });
+
+    await user.click(screen.getByRole("button", { name: /AddPlayer/ }));
+    await user.type(screen.getByRole("searchbox"), "mac");
+
+    const row = await searchResultRow(/Maccelli/);
+    expect(row).toHaveAttribute("aria-disabled", "true");
+    await user.click(row);
+
+    // Refused on the spot rather than sent for the backend to turn down.
+    expect(apiPost).not.toHaveBeenCalled();
+  });
+
+  it("removes a starter from the roster once the removal is confirmed", async () => {
+    const user = userEvent.setup();
+    renderRoster();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: 'RemovePlayerFromRoster:{"playerName":"Auston Matthews"}',
+      }),
+    );
+
+    // The lineup is left a player short, which the confirmation says.
+    expect(
+      await screen.findByText(/RemoveStarterConfirmationWarning/),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Remove" }));
+
+    await waitFor(() => expect(apiPost).toHaveBeenCalled());
+    const [path, body] = apiPost.mock.calls[0];
+    expect(path).toBe("/remove-player");
+    expect(body).toMatchObject({
+      pool_name: "my-pool",
+      removed_player_user_id: "user-a",
+      player_id: 1,
+    });
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalled());
+  });
+
+  it("removes a reservist without warning about the lineup", async () => {
+    const user = userEvent.setup();
+    renderRoster();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: 'RemovePlayerFromRoster:{"playerName":"Calle Jarnkrok"}',
+      }),
+    );
+
+    expect(
+      await screen.findByText(/RemovePlayerConfirmationTitle/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/RemoveStarterConfirmationWarning/)).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Remove" }));
+
+    await waitFor(() => expect(apiPost).toHaveBeenCalled());
+    expect(apiPost.mock.calls[0][1]).toMatchObject({ player_id: 5 });
+  });
+
+  it("keeps the removal out of reach while the lineup holds unsaved edits", async () => {
+    const user = userEvent.setup();
+    renderRoster();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: 'MoveToReserves:{"playerName":"Auston Matthews"}',
+      }),
+    );
+    await screen.findByText('UnsavedLineupChanges:{"count":1}');
+
+    // The removal applies to the saved roster, and the pool coming back would
+    // throw the arrangement on screen away.
+    expect(
+      screen.getByRole("button", {
+        name: 'RemovePlayerFromRoster:{"playerName":"Auston Matthews"}',
+      }),
+    ).toBeDisabled();
+  });
+
+  it("offers no removal to somebody without rights on the pool", () => {
+    // user-a neither owns this roster nor the pool.
+    const pool = testPool({ owner: "user-c" });
+    const roster = { ...SAVED_ROSTER, user: poolUser("user-b", "Bob") };
+    renderRoster({ pool, roster });
+
+    expect(
+      screen.queryByRole("button", {
+        name: 'RemovePlayerFromRoster:{"playerName":"Auston Matthews"}',
+      }),
+    ).toBeNull();
+  });
+
+  it("fills a free lineup spot on a day the lineup is otherwise locked", async () => {
+    const user = userEvent.setup();
+    // A running season with no modification date left: saving a rearranged
+    // lineup would be refused, so the free spot is filled through fill-spot.
+    const pool = testPool({ season_start: "2025-10-07" });
+    const roster = {
+      ...SAVED_ROSTER,
+      forwards: [SAVED_ROSTER.forwards[0]],
+    };
+    renderRoster({ pool, roster });
+
+    expect(screen.getByText("LineupLocked")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: 'FillSpotWith:{"playerName":"Calle Jarnkrok"}',
+      }),
+    );
+
+    await waitFor(() => expect(apiPost).toHaveBeenCalled());
+    const [path, body] = apiPost.mock.calls[0];
+    expect(path).toBe("/fill-spot");
+    expect(body).toMatchObject({
+      pool_name: "my-pool",
+      filled_spot_user_id: "user-a",
+      player_id: 5,
+    });
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalled());
+  });
+
+  it("offers no fill-spot while the lineup can simply be saved", () => {
+    // The modification window is open before the season starts, so moving the
+    // reservist up and saving is the way in and the shortcut stays hidden.
+    const roster = { ...SAVED_ROSTER, forwards: [SAVED_ROSTER.forwards[0]] };
+    renderRoster({ roster });
+
+    expect(screen.getByText("LineupChangesAllowed")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: 'FillSpotWith:{"playerName":"Calle Jarnkrok"}',
+      }),
+    ).toBeNull();
   });
 
   it("lets somebody with no rights rearrange a roster but never save it", async () => {

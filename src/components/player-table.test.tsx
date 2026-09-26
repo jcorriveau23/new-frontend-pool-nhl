@@ -114,6 +114,98 @@ describe("PlayersTable", () => {
     ).toBeInTheDocument();
   });
 
+  it("navigates in the same tab, and opens a new one only inside a dialog", async () => {
+    stubFetch([
+      NO_INJURIES,
+      { match: "/api/players?", json: [player(1, "Auston Matthews")] },
+    ]);
+
+    const { unmount } = renderWithProviders(<PlayersTable {...props} />);
+
+    expect(
+      await screen.findByRole("link", { name: "Auston Matthews" }),
+    ).not.toHaveAttribute("target");
+
+    unmount();
+    renderWithProviders(<PlayersTable {...props} playerLinksInNewTab />);
+
+    // Hosted in a dialog, where navigating in place would tear it down.
+    expect(
+      await screen.findByRole("link", { name: "Auston Matthews" }),
+    ).toHaveAttribute("target", "_blank");
+  });
+
+  it("offers no row action when the table is only for browsing", async () => {
+    stubFetch([
+      NO_INJURIES,
+      { match: "/api/players?", json: [player(1, "Auston Matthews")] },
+    ]);
+
+    renderWithProviders(<PlayersTable {...props} />);
+    await screen.findByText("Auston Matthews");
+
+    // The salary chip is named after the player too, so the action is looked up
+    // by what it does.
+    expect(
+      screen.queryByRole("button", { name: /PlayerRowAction/ }),
+    ).toBeNull();
+  });
+
+  it("selects a player from a button of its own, not from the row", async () => {
+    const user = userEvent.setup();
+    const onPlayerSelect = vi.fn().mockResolvedValue(true);
+    stubFetch([
+      NO_INJURIES,
+      { match: "/api/players?", json: [player(1, "Auston Matthews")] },
+    ]);
+
+    renderWithProviders(
+      <PlayersTable
+        {...props}
+        onPlayerSelect={onPlayerSelect}
+        selectLabel="Draft"
+      />,
+    );
+    await screen.findByText("Auston Matthews");
+
+    // Clicking the row itself does nothing: it used to draft the player, with
+    // nothing on screen saying so.
+    await user.click(screen.getByText("25"));
+    expect(onPlayerSelect).not.toHaveBeenCalled();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: 'PlayerRowAction:{"action":"Draft","playerName":"Auston Matthews"}',
+      }),
+    );
+
+    await waitFor(() => expect(onPlayerSelect).toHaveBeenCalledTimes(1));
+    expect(onPlayerSelect.mock.calls[0][0]).toMatchObject({ id: 1 });
+  });
+
+  it("keeps a player somebody already holds out of reach", async () => {
+    stubFetch([
+      NO_INJURIES,
+      { match: "/api/players?", json: [player(1, "Auston Matthews")] },
+    ]);
+
+    renderWithProviders(
+      <PlayersTable
+        {...props}
+        onPlayerSelect={vi.fn()}
+        selectLabel="Draft"
+        playersOwner={{ "1": "Bob" }}
+      />,
+    );
+    await screen.findByText("Auston Matthews");
+
+    expect(
+      screen.getByRole("button", {
+        name: 'PlayerRowAction:{"action":"Draft","playerName":"Auston Matthews"}',
+      }),
+    ).toBeDisabled();
+  });
+
   it("waits for enough characters before searching by name", async () => {
     const user = userEvent.setup();
     const stub = stubFetch([

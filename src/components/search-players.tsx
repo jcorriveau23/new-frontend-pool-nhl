@@ -200,6 +200,9 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
                           id={player.id}
                           name={player.name}
                           textStyle={null}
+                          // The search runs in a dialog, which navigating in
+                          // place would tear down.
+                          openInNewTab
                           onLinkClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
                           }}

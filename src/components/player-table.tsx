@@ -44,6 +44,10 @@ import {
 } from "lucide-react";
 
 const RANK_CELL = "w-8 sm:w-12 sm:sticky sm:left-0 sm:z-[1]";
+// The action a row offers has to stay within reach on a phone, where a dozen
+// stat columns scroll past the right edge, so it is pinned there the way the
+// rank and the name are pinned to the left.
+const ACTION_CELL = "sticky right-0 z-[1] w-px px-1 sm:px-2";
 const NAME_CELL = "sticky left-0 z-[1] max-w-[36vw] sm:left-12 sm:max-w-xs";
 const STICKY_BG = "bg-background group-hover:bg-muted/50";
 // A player a pooler already holds stays in the list -- you still want to look
@@ -70,6 +74,12 @@ interface PlayersTableProps {
   playersOwner: Record<string, string> | null; // maps player id to pooler name
   protectedPlayers: Record<string, string> | null; // maps player id to pooler name
   onPlayerSelect: ((player: Player) => Promise<boolean>) | null;
+  // What the button that runs `onPlayerSelect` says. Both callers draft with it
+  // today; the table does not assume that.
+  selectLabel?: string;
+  // Player links open in a new tab. For a table hosted in a dialog, where
+  // navigating in place would tear the dialog down.
+  playerLinksInNewTab?: boolean;
   // Season being played, in the 20252026 format. Turns a contract expiration
   // into a remaining term on the cap hit; omitted, only the amount shows.
   currentSeason?: number;
@@ -92,6 +102,8 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   playersOwner,
   protectedPlayers,
   onPlayerSelect,
+  selectLabel,
+  playerLinksInNewTab,
   currentSeason,
 }) => {
   const searchParams = useSearchParams();
@@ -112,6 +124,12 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   );
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  // The player whose selection is in flight. Picking one is not something to
+  // do twice by accident — it drafts them — so every button locks until it
+  // lands.
+  const [selectingPlayerId, setSelectingPlayerId] = useState<number | null>(
+    null,
+  );
   const router = useRouter();
   const t = useTranslations();
 
@@ -248,9 +266,6 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
         salary={player.salary_cap}
         contractExpirationSeason={player.contract_expiration_season}
         currentSeason={currentSeason}
-        onClick={(e: React.MouseEvent) => {
-          e.stopPropagation();
-        }}
       />
     ) : null;
 
@@ -412,9 +427,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
           name={player.name}
           id={player.id}
           textStyle={null}
-          onLinkClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-          }}
+          openInNewTab={playerLinksInNewTab}
         />
         {ownership ? (
           <span className="truncate text-[10px] font-medium leading-tight text-muted-foreground">
@@ -424,6 +437,57 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
           </span>
         ) : null}
       </div>
+    );
+  };
+
+  const onSelect = async (player: Player) => {
+    if (onPlayerSelect === null) {
+      return;
+    }
+
+    setSelectingPlayerId(player.id);
+    try {
+      await onPlayerSelect(player);
+    } finally {
+      setSelectingPlayerId(null);
+    }
+  };
+
+  /*
+  The row's action, in a cell of its own.
+
+  The row used to be the action: clicking anywhere on it drafted the player,
+  while the name inside it swallowed the click to open the player page instead.
+  Nothing on screen said which was which, and the more consequential of the two
+  was the one with no affordance at all. The action is a button now, and the
+  name is just a link.
+  */
+  const SelectPlayerButton = (
+    player: Player,
+    ownership: ReturnType<typeof getOwnership>,
+  ) => {
+    const label = selectLabel ?? t("Select");
+    const isSelecting = selectingPlayerId === player.id;
+
+    return (
+      <Button
+        size="sm"
+        variant="secondary"
+        className="h-7 px-2 text-xs"
+        // The visible label repeats down the column, so the name of the player
+        // it acts on is what a screen reader is given.
+        aria-label={t("PlayerRowAction", {
+          action: label,
+          playerName: player.name,
+        })}
+        // A player somebody already holds cannot be picked up; the row says who
+        // holds them right under the name.
+        disabled={ownership !== null || selectingPlayerId !== null}
+        onClick={() => onSelect(player)}
+      >
+        {isSelecting ? <LoaderCircle className="size-3 animate-spin" /> : null}
+        {label}
+      </Button>
     );
   };
 
@@ -462,6 +526,11 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
               </TableHead>
             ),
           )}
+          {onPlayerSelect ? (
+            <TableHead className={cn(ACTION_CELL, "bg-background")}>
+              <span className="sr-only">{selectLabel ?? t("Select")}</span>
+            </TableHead>
+          ) : null}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -472,19 +541,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
           return (
             <TableRow
               key={player.id}
-              className={cn(
-                "group",
-                onPlayerSelect && "cursor-pointer",
-                ownership && TAKEN_ROW,
-              )}
-              tabIndex={onPlayerSelect ? 0 : undefined}
-              onClick={() => onPlayerSelect?.(player)}
-              onKeyDown={(e) => {
-                if (onPlayerSelect && (e.key === "Enter" || e.key === " ")) {
-                  e.preventDefault();
-                  onPlayerSelect(player);
-                }
-              }}
+              className={cn("group", ownership && TAKEN_ROW)}
             >
               <TableCell
                 className={cn(
@@ -516,6 +573,11 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
                   {column.render(player)}
                 </TableCell>
               ))}
+              {onPlayerSelect ? (
+                <TableCell className={cn(ACTION_CELL, stickyBg, "py-1.5")}>
+                  {SelectPlayerButton(player, ownership)}
+                </TableCell>
+              ) : null}
             </TableRow>
           );
         })}

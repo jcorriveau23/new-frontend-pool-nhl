@@ -7,7 +7,6 @@ import {
   Pool,
   PoolState,
   PoolUser,
-  Position,
 } from "@/data/pool/model";
 import { apiPost } from "@/lib/client-api";
 import { useLocale, useTranslations } from "next-intl";
@@ -27,6 +26,7 @@ import {
   AlertCircleIcon,
   ArrowDownIcon,
   ArrowLeftRightIcon,
+  ArrowUpFromLineIcon,
   ArrowUpIcon,
   CalendarClockIcon,
   InfoIcon,
@@ -34,10 +34,21 @@ import {
   RepeatIcon,
   RotateCcwIcon,
   UnlockIcon,
+  UserMinusIcon,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 import PlayerSearchDialog from "./search-players";
 import { useUser } from "@/context/useUserData";
 import { getRosterModificationWindow } from "@/lib/roster-modification";
+import { useRosterMoves } from "@/hooks/use-roster-moves";
 import {
   bySalary,
   byPositionThenSalary,
@@ -113,8 +124,11 @@ export default function StartingRoster(props: Props) {
   const canSaveLineup =
     (isPoolInProgress || isPoolDrafting) &&
     (isOwnRoster || hasPoolPrivilege(userData.info?.id, poolInfo));
-  const canAddPlayer =
-    isPoolInProgress && hasPoolPrivilege(userData.info?.id, poolInfo);
+  // Putting a player on the bench and taking one off the roster are the
+  // owner's tools, shared with the cumulative tab's roster tables.
+  const { canManageRoster, pendingPlayerId, addPlayer, removePlayer } =
+    useRosterMoves();
+  const isMoveInFlight = pendingPlayerId !== null;
 
   // Shuffling players around costs nothing and is the whole point of looking at
   // a lineup, so anybody can try combinations. Only saving needs the rights.
@@ -140,12 +154,27 @@ export default function StartingRoster(props: Props) {
   const [playerToDrop, setPlayerToDrop] = React.useState<Player | null>(null);
   const [isSwapping, setIsSwapping] = React.useState(false);
 
+  // The player the removal is being confirmed for. Set by the remove button on
+  // a row, which is what opens the confirmation.
+  const [playerToRemove, setPlayerToRemove] = React.useState<Player | null>(
+    null,
+  );
+  const [isFillingSpot, setIsFillingSpot] = React.useState(false);
+
   // A pooler swaps on their own roster; the owner and the assistants may swap
   // on anyone's — the same rule the backend applies.
   const canSwapPlayers =
     dropBudget.isEnabled &&
     isPoolInProgress &&
     (isOwnRoster || hasPoolPrivilege(userData.info?.id, poolInfo));
+
+  // A free lineup spot only appears when a player left the roster — removed
+  // by the owner, or traded away — and the pooler should not have to play a man
+  // short until the next modification date to fill it back up. That is what the
+  // backend's `fill-spot` is for, so it is offered exactly when moving the
+  // reservist up and saving would be refused.
+  const canFillSpot =
+    isPoolInProgress && canSaveLineup && !modificationWindow.isOpen;
 
   const formatDate = (dateKey: string) =>
     new Date(`${dateKey}T00:00:00`).toLocaleDateString(locale, {
@@ -248,6 +277,62 @@ export default function StartingRoster(props: Props) {
     );
   };
 
+  // Takes a player off the roster for good. Refused while the lineup holds
+  // unsaved edits, for the same reason a swap is: the removal applies to the
+  // saved roster, and the pool that comes back would throw the local
+  // arrangement away.
+  const RemovePlayerButton = (player: Player) => {
+    const blockedReason = hasUnsavedChanges
+      ? t("SaveLineupBeforeRemoving")
+      : null;
+
+    return (
+      <Tooltip>
+        {/* The trigger wraps the button rather than being it: a disabled
+            button never reports the hover that explains why. */}
+        <TooltipTrigger render={<span className="inline-flex" />}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground hover:text-destructive"
+            aria-label={t("RemovePlayerFromRoster", {
+              playerName: player.name,
+            })}
+            disabled={blockedReason !== null || isMoveInFlight}
+            onClick={() => setPlayerToRemove(player)}
+          >
+            <UserMinusIcon className="size-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {blockedReason ??
+            t("RemovePlayerFromRoster", { playerName: player.name })}
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
+
+  // Moves a reservist straight into the free spot of his position, without
+  // waiting for a modification date. Only offered on a saved roster: it is
+  // applied to what the pool holds, not to the arrangement on screen.
+  const FillSpotButton = (player: Player) => (
+    <Tooltip>
+      <TooltipTrigger render={<span className="inline-flex" />}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-success"
+          aria-label={t("FillSpotWith", { playerName: player.name })}
+          disabled={isFillingSpot}
+          onClick={() => onFillSpot(player)}
+        >
+          <ArrowUpFromLineIcon className="size-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{t("FillSpotHint")}</TooltipContent>
+    </Tooltip>
+  );
+
   const PlayerRow = (
     player: Player,
     index: number,
@@ -274,6 +359,9 @@ export default function StartingRoster(props: Props) {
             name={player.name}
             id={player.id}
             textStyle="text-sm font-medium"
+            // The roster is shown in a dialog, and navigating in place would
+            // throw away a lineup that is mid-rearrangement.
+            openInNewTab
           />
           <p className="text-xs text-muted-foreground">
             {isStarter ? null : `${t(player.position)} · `}
@@ -299,7 +387,11 @@ export default function StartingRoster(props: Props) {
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
           />
         ) : null}
+        {!isStarter && canFillSpot && !isTargetFull && !hasUnsavedChanges
+          ? FillSpotButton(player)
+          : null}
         {canSwapPlayers ? DropPlayerButton(player) : null}
+        {canManageRoster ? RemovePlayerButton(player) : null}
         {canMovePlayers ? (
           <Tooltip>
             {/* The trigger wraps the button instead of being it: a full bench
@@ -428,12 +520,15 @@ export default function StartingRoster(props: Props) {
             </Badge>
             {GroupSalary(players, t("ReservistsSalaryTotal"), false)}
           </div>
-          {canAddPlayer ? (
+          {canManageRoster ? (
             <PlayerSearchDialog
               label={t("AddPlayer")}
               variant="outline"
               size="sm"
-              onPlayerSelect={(player) => onPlayerSelect(player)}
+              onPlayerSelect={(player) =>
+                addPlayer(props.userRoster.user.id, player)
+              }
+              unavailableReason={addUnavailableReason}
               currentSeason={poolInfo.season}
             />
           ) : null}
@@ -606,39 +701,63 @@ export default function StartingRoster(props: Props) {
     }
   };
 
-  const onPlayerSelect = async (player: Player) => {
-    const res = await apiPost<Pool>(
-      "/add-player",
-      {
-        pool_name: poolInfo.name,
-        added_player_user_id: props.userRoster.user.id,
-        player: player,
-      },
-      userSession.info?.jwt,
-    );
+  // Why `player` cannot be put on the bench, shown on the search result rather
+  // than left to fail once the request is sent. Same rule the backend applies:
+  // a player somebody in the pool holds is not available.
+  const addUnavailableReason = (player: Player): string | null =>
+    isFreeAgent(player, playersOwner)
+      ? null
+      : t("PlayerHeldBy", { userName: playersOwner[player.id] });
 
-    if (!res.ok) {
-      toast.error(
-        t("CouldNotAddPlayerToRoster", {
-          playerName: player.name,
-          userName: dictUsers[props.userRoster.user.id].name,
-          error: res.error,
-        }),
-        { duration: 5000 },
-      );
-      return false;
+  // A removed starter leaves the lineup a player short until somebody fills the
+  // spot; a reservist leaving changes nothing that is being scored, so the
+  // confirmation only warns about the first.
+  const isRemovedPlayerAStarter =
+    playerToRemove !== null &&
+    !lineup.reservists.some((player) => player.id === playerToRemove.id);
+
+  const onRemovePlayer = async () => {
+    if (playerToRemove === null) {
+      return;
     }
 
-    updatePoolInfo(res.data);
-    toast.success(
-      t("SuccessAddPlayerToRoster", {
-        playerName: player.name,
-        userName: dictUsers[props.userRoster.user.id].name,
-      }),
-      { duration: 2000 },
-    );
+    // Left open on a failure so the removal can be retried.
+    if (await removePlayer(props.userRoster.user.id, playerToRemove)) {
+      setPlayerToRemove(null);
+    }
+  };
 
-    return true;
+  const onFillSpot = async (player: Player) => {
+    setIsFillingSpot(true);
+    try {
+      const res = await apiPost<Pool>(
+        "/fill-spot",
+        {
+          pool_name: poolInfo.name,
+          filled_spot_user_id: props.userRoster.user.id,
+          player_id: player.id,
+        },
+        userSession.info?.jwt,
+      );
+
+      if (!res.ok) {
+        toast.error(
+          t("CouldNotFillSpot", {
+            playerName: player.name,
+            error: res.error,
+          }),
+          { duration: 5000 },
+        );
+        return;
+      }
+
+      updatePoolInfo(res.data);
+      toast.success(t("SuccessFillSpot", { playerName: player.name }), {
+        duration: 2000,
+      });
+    } finally {
+      setIsFillingSpot(false);
+    }
   };
 
   // The saved roster the backend will act on. A swap is applied to what the
@@ -756,7 +875,7 @@ export default function StartingRoster(props: Props) {
             : null}
         </div>
         <div className="space-y-3">
-          {hasBench || canAddPlayer ? ReservesSection() : null}
+          {hasBench || canManageRoster ? ReservesSection() : null}
         </div>
       </div>
     </div>
@@ -781,6 +900,50 @@ export default function StartingRoster(props: Props) {
           unavailableReason={swapUnavailableReason}
           onPlayerSelect={onDropAddPlayer}
         />
+      ) : null}
+      {/* Mounted once rather than per row, the same way the swap dialog is:
+          only one removal is ever being confirmed. */}
+      {canManageRoster ? (
+        <AlertDialog
+          open={playerToRemove !== null}
+          onOpenChange={(open) => {
+            if (!open) setPlayerToRemove(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("RemovePlayerConfirmationTitle", {
+                  playerName: playerToRemove?.name ?? "",
+                })}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("RemovePlayerConfirmationDescription", {
+                  playerName: playerToRemove?.name ?? "",
+                  userName: dictUsers[props.userRoster.user.id].name,
+                })}
+                {isRemovedPlayerAStarter
+                  ? ` ${t("RemoveStarterConfirmationWarning")}`
+                  : null}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isMoveInFlight}>
+                {t("Cancel")}
+              </AlertDialogCancel>
+              <Button
+                variant="destructive"
+                disabled={isMoveInFlight}
+                onClick={() => onRemovePlayer()}
+              >
+                {isMoveInFlight ? (
+                  <LoaderCircleIcon className="animate-spin" />
+                ) : null}
+                {t("Remove")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       ) : null}
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-[200px] flex-1">
