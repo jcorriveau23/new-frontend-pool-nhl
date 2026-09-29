@@ -111,6 +111,8 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RosterSection, useRosterSections } from "@/hooks/use-roster-sections";
 import { useRosterMoves } from "@/hooks/use-roster-moves";
+import { useWaiverClaim } from "@/hooks/use-waiver-claim";
+import WaiverClaimDialog from "@/components/waiver-claim-dialog";
 import {
   buildLineupAnalytics,
   buildPoolerEntries,
@@ -152,6 +154,9 @@ export default function CumulativeTab() {
     null,
   );
   const [isAddingToReservists, setIsAddingToReservists] = React.useState(false);
+  // Waiver claims on the displayed pooler's roster, filed from the row menu of
+  // any of the four roster tables — the same claim the lineup dialog files.
+  const waiverClaim = useWaiverClaim(selectedPoolUser.id);
 
   /*
   Salary only means something once the pool has a cap: without one the column
@@ -409,6 +414,9 @@ export default function CumulativeTab() {
             openTradeForPlayer,
             canManageRoster,
             confirmPlayerRemoval: setPlayerToRemove,
+            canPlaceOnWaivers: waiverClaim.canClaim,
+            waiverBlockedReason: waiverClaim.blockedReason,
+            placeOnWaivers: waiverClaim.setPlayerToDrop,
           },
           getRowStyles: (row: Row<SkaterInfo>) =>
             getPlayerStatusRowStyle(row.original.status),
@@ -467,6 +475,9 @@ export default function CumulativeTab() {
             openTradeForPlayer,
             canManageRoster,
             confirmPlayerRemoval: setPlayerToRemove,
+            canPlaceOnWaivers: waiverClaim.canClaim,
+            waiverBlockedReason: waiverClaim.blockedReason,
+            placeOnWaivers: waiverClaim.setPlayerToDrop,
           },
           getRowStyles: (row: Row<GoalieInfo>) =>
             getPlayerStatusRowStyle(row.original.status),
@@ -512,6 +523,9 @@ export default function CumulativeTab() {
           openTradeForPlayer,
           canManageRoster,
           confirmPlayerRemoval: setPlayerToRemove,
+          canPlaceOnWaivers: waiverClaim.canClaim,
+          waiverBlockedReason: waiverClaim.blockedReason,
+          placeOnWaivers: waiverClaim.setPlayerToDrop,
         },
         getRowStyles: () => null,
         onRowClick: () => null,
@@ -693,8 +707,12 @@ export default function CumulativeTab() {
     return (
       <>
         {/* Anybody can open the lineup to try combinations, saving it is what
-            needs the rights. */}
-        {poolInfo.settings.number_reservists > 0 ? (
+            needs the rights. A pool without a bench has no combination to
+            try, but the dialog is still where waiver claims and removals are
+            filed, so it stays reachable for whoever may file them. */}
+        {poolInfo.settings.number_reservists > 0 ||
+        waiverClaim.canClaim ||
+        canManageRoster ? (
           <div className="mb-2 flex justify-end">
             {/* No key on the dialog: the pooler selector inside it changes the
                 participant, and remounting would close the dialog. */}
@@ -905,6 +923,9 @@ export default function CumulativeTab() {
           ) : null}
         </Accordion>
         {canManageRoster ? RemovePlayerDialog(participant) : null}
+        {waiverClaim.canClaim ? (
+          <WaiverClaimDialog claim={waiverClaim} />
+        ) : null}
       </>
     );
   };

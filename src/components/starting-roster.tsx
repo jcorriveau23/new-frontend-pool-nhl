@@ -46,9 +46,12 @@ import {
   AlertDialogTitle,
 } from "./ui/alert-dialog";
 import PlayerSearchDialog from "./search-players";
+import WaiverClaimDialog from "./waiver-claim-dialog";
 import { useUser } from "@/context/useUserData";
 import { getRosterModificationWindow } from "@/lib/roster-modification";
 import { useRosterMoves } from "@/hooks/use-roster-moves";
+import { useWaiverClaim } from "@/hooks/use-waiver-claim";
+import { isFreeAgent } from "@/lib/player-drops";
 import {
   bySalary,
   byPositionThenSalary,
@@ -66,7 +69,6 @@ import {
   toLineup,
   totalStartersSalary,
 } from "@/lib/lineup-edit";
-import { getDropBudget, getSwapLanding, isFreeAgent } from "@/lib/player-drops";
 import { Command, useOptionalSocketContext } from "@/context/socket-context";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -141,18 +143,10 @@ export default function StartingRoster(props: Props) {
     [poolInfo],
   );
 
-  // Free agency: how much of this pooler's drop budget is left. Unlike a
-  // lineup change it is not tied to the pool's modification dates — a swap can
-  // be filed any day of the season.
-  const dropBudget = React.useMemo(
-    () => getDropBudget(poolInfo, props.userRoster.user.id, new Date()),
-    [poolInfo, props.userRoster.user.id],
-  );
-
-  // The player whose replacement is being picked. Set by the drop button on a
-  // row, which is what opens the search dialog.
-  const [playerToDrop, setPlayerToDrop] = React.useState<Player | null>(null);
-  const [isSwapping, setIsSwapping] = React.useState(false);
+  // Free agency, shared with the row menus of the cumulative tab: the budget,
+  // who may claim, and the claim itself.
+  const waiverClaim = useWaiverClaim(props.userRoster.user.id);
+  const dropBudget = waiverClaim.budget;
 
   // The player the removal is being confirmed for. Set by the remove button on
   // a row, which is what opens the confirmation.
@@ -161,12 +155,7 @@ export default function StartingRoster(props: Props) {
   );
   const [isFillingSpot, setIsFillingSpot] = React.useState(false);
 
-  // A pooler swaps on their own roster; the owner and the assistants may swap
-  // on anyone's — the same rule the backend applies.
-  const canSwapPlayers =
-    dropBudget.isEnabled &&
-    isPoolInProgress &&
-    (isOwnRoster || hasPoolPrivilege(userData.info?.id, poolInfo));
+  const canSwapPlayers = waiverClaim.canClaim;
 
   // A free lineup spot only appears when a player left the roster — removed
   // by the owner, or traded away — and the pooler should not have to play a man
@@ -246,13 +235,9 @@ export default function StartingRoster(props: Props) {
   // lineup holds unsaved edits: the swap is applied to the saved roster and the
   // pool that comes back would throw the local arrangement away.
   const DropPlayerButton = (player: Player) => {
-    const blockedReason = dropBudget.isSeasonOver
-      ? t("FreeAgencyClosedForTheSeason")
-      : dropBudget.remaining === 0
-        ? t("NoDropLeft")
-        : hasUnsavedChanges
-          ? t("SaveLineupBeforeSwapping")
-          : null;
+    const blockedReason =
+      waiverClaim.blockedReason ??
+      (hasUnsavedChanges ? t("SaveLineupBeforeSwapping") : null);
 
     return (
       <Tooltip>
@@ -264,8 +249,8 @@ export default function StartingRoster(props: Props) {
             size="icon"
             className="size-7"
             aria-label={t("DropAndReplace", { playerName: player.name })}
-            disabled={blockedReason !== null || isSwapping}
-            onClick={() => setPlayerToDrop(player)}
+            disabled={blockedReason !== null || waiverClaim.isClaiming}
+            onClick={() => waiverClaim.setPlayerToDrop(player)}
           >
             <RepeatIcon className="size-4" />
           </Button>
@@ -760,74 +745,6 @@ export default function StartingRoster(props: Props) {
     }
   };
 
-  // The saved roster the backend will act on. A swap is applied to what the
-  // pool holds, not to the arrangement being previewed locally.
-  const savedRoster = poolInfo.context?.pooler_roster[props.userRoster.user.id];
-
-  // Why `player` cannot be the replacement, shown on the search result rather
-  // than left to fail once the swap is sent.
-  const swapUnavailableReason = (player: Player): string | null => {
-    if (!isFreeAgent(player, playersOwner)) {
-      return t("PlayerHeldBy", { userName: playersOwner[player.id] });
-    }
-    if (
-      playerToDrop !== null &&
-      savedRoster !== undefined &&
-      getSwapLanding(poolInfo, savedRoster, playerToDrop.id, player) ===
-        "no-room"
-    ) {
-      return t("NoRoomForPlayer");
-    }
-    return null;
-  };
-
-  const onDropAddPlayer = async (replacement: Player) => {
-    const dropped = playerToDrop;
-    if (dropped === null) {
-      return false;
-    }
-
-    setIsSwapping(true);
-    try {
-      const res = await apiPost<Pool>(
-        "/drop-add-player",
-        {
-          pool_name: poolInfo.name,
-          participant_id: props.userRoster.user.id,
-          dropped_player_id: dropped.id,
-          added_player: replacement,
-        },
-        userSession.info?.jwt,
-      );
-
-      if (!res.ok) {
-        toast.error(
-          t("CouldNotSwapPlayer", {
-            droppedPlayerName: dropped.name,
-            addedPlayerName: replacement.name,
-            error: res.error,
-          }),
-          { duration: 5000 },
-        );
-        return false;
-      }
-
-      updatePoolInfo(res.data);
-      toast.success(
-        t("SuccessSwapPlayer", {
-          droppedPlayerName: dropped.name,
-          addedPlayerName: replacement.name,
-          date: formatDate(dropBudget.effectiveDate),
-        }),
-        { duration: 4000 },
-      );
-      setPlayerToDrop(null);
-      return true;
-    } finally {
-      setIsSwapping(false);
-    }
-  };
-
   const FreeAgencyBanner = () => (
     <div className="flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3">
       <ArrowLeftRightIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -883,24 +800,7 @@ export default function StartingRoster(props: Props) {
 
   return (
     <div className="space-y-3 text-left">
-      {/* Mounted once rather than per row: only one swap is ever in flight,
-          and `playerToDrop` is what opens it. */}
-      {canSwapPlayers ? (
-        <PlayerSearchDialog
-          label={
-            playerToDrop
-              ? t("PickReplacementFor", { playerName: playerToDrop.name })
-              : t("PickReplacement")
-          }
-          currentSeason={poolInfo.season}
-          open={playerToDrop !== null}
-          onOpenChange={(open) => {
-            if (!open) setPlayerToDrop(null);
-          }}
-          unavailableReason={swapUnavailableReason}
-          onPlayerSelect={onDropAddPlayer}
-        />
-      ) : null}
+      {canSwapPlayers ? <WaiverClaimDialog claim={waiverClaim} /> : null}
       {/* Mounted once rather than per row, the same way the swap dialog is:
           only one removal is ever being confirmed. */}
       {canManageRoster ? (
