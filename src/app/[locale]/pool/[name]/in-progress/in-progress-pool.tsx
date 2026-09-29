@@ -95,7 +95,10 @@ export default function InProgressPool() {
   return (
     <div className="items-center text-center">
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <div className="overflow-auto text-left">
+        {/* `relative` makes this scroller the containing block of the
+            `sr-only` tab labels (absolutely positioned). Without it they escape
+            the overflow clip and widen the page on narrow phones. */}
+        <div className="relative overflow-auto text-left">
           <TabsList>
             <TabsTrigger
               value={InProgressTabs.CUMULATIVE}

@@ -798,6 +798,7 @@
   "PlayerRowAction": "{action} {playerName}",
   "Actions": "Actions",
   "OpenMenu": "Open menu",
+  "PlaceOnWaivers": "Place on waivers",
   "RemoveFromRoster": "Remove from the roster",
   "AvailablePlayers": "Available players",
   "AddToReservists": "Add a player to the reservists",

@@ -78,15 +78,24 @@ All four roster tables carry the same one, so it is built here rather than
 copied per table: what differs is the chart the row opens, which the reservists
 have none of. Everything it acts on travels in `meta.props`, which is how the
 columns reach the screen that renders them.
+
+`isOnRoster` is false for a row kept only for the points it scored before being
+traded away: the player is no longer the pooler's, so there is nothing to place
+on waivers or remove.
 */
 const getActionsCell = <TData,>(
   playerId: number,
   table: Table<TData>,
   openChart: (() => void) | null,
+  isOnRoster: boolean,
 ) => {
   const meta = table.options.meta;
   const poolInfo = meta?.props?.poolInfo as Pool;
-  const player = poolInfo?.context?.players[playerId];
+  const player = isOnRoster ? poolInfo?.context?.players[playerId] : undefined;
+  // Why a claim would be refused right now (no claim left, season over), shown
+  // on the disabled item rather than left to fail once it is sent.
+  const waiverBlockedReason: string | null =
+    meta?.props?.waiverBlockedReason ?? null;
 
   return (
     <DropdownMenu>
@@ -109,6 +118,24 @@ const getActionsCell = <TData,>(
             onClick={() => meta?.props?.openTradeForPlayer?.(playerId)}
           >
             {meta?.t("FileTrade")}
+          </DropdownMenuItem>
+        ) : null}
+        {/* Waivers are the pooler's own tool as well as the owner's —
+            `canPlaceOnWaivers` is the rule the backend applies. The item only
+            opens the replacement search; nothing is filed until one is picked. */}
+        {meta?.props?.canPlaceOnWaivers && player !== undefined ? (
+          <DropdownMenuItem
+            disabled={waiverBlockedReason !== null}
+            onClick={() => meta?.props?.placeOnWaivers?.(player)}
+          >
+            <span className="flex flex-col">
+              {meta?.t("PlaceOnWaivers")}
+              {waiverBlockedReason !== null ? (
+                <span className="text-xs text-muted-foreground">
+                  {waiverBlockedReason}
+                </span>
+              ) : null}
+            </span>
           </DropdownMenuItem>
         ) : null}
         {/* Taking a player off the roster is the owner's to do, on a
@@ -214,12 +241,17 @@ export const ForwardColumn: ColumnDef<SkaterInfo>[] = [
     enableHiding: false,
     size: 48,
     cell: ({ table, row }) =>
-      getActionsCell(row.original.id, table, () => {
-        table.options.meta?.props?.setSelectedPlayerId(
-          row.original.id.toString(),
-        );
-        table.options.meta?.props?.setIsForwardChartOpen(true);
-      }),
+      getActionsCell(
+        row.original.id,
+        table,
+        () => {
+          table.options.meta?.props?.setSelectedPlayerId(
+            row.original.id.toString(),
+          );
+          table.options.meta?.props?.setIsForwardChartOpen(true);
+        },
+        row.original.status !== PlayerStatus.Traded,
+      ),
   },
 ];
 
@@ -302,12 +334,17 @@ export const DefenseColumn: ColumnDef<SkaterInfo>[] = [
     enableHiding: false,
     size: 48,
     cell: ({ table, row }) =>
-      getActionsCell(row.original.id, table, () => {
-        table.options.meta?.props?.setSelectedPlayerId(
-          row.original.id.toString(),
-        );
-        table.options.meta?.props?.setIsDefenderChartOpen(true);
-      }),
+      getActionsCell(
+        row.original.id,
+        table,
+        () => {
+          table.options.meta?.props?.setSelectedPlayerId(
+            row.original.id.toString(),
+          );
+          table.options.meta?.props?.setIsDefenderChartOpen(true);
+        },
+        row.original.status !== PlayerStatus.Traded,
+      ),
   },
 ];
 
@@ -394,12 +431,17 @@ export const GoalieColumn: ColumnDef<GoalieInfo>[] = [
     enableHiding: false,
     size: 48,
     cell: ({ table, row }) =>
-      getActionsCell(row.original.id, table, () => {
-        table.options.meta?.props?.setSelectedPlayerId(
-          row.original.id.toString(),
-        );
-        table.options.meta?.props?.setIsGoalieChartOpen(true);
-      }),
+      getActionsCell(
+        row.original.id,
+        table,
+        () => {
+          table.options.meta?.props?.setSelectedPlayerId(
+            row.original.id.toString(),
+          );
+          table.options.meta?.props?.setIsGoalieChartOpen(true);
+        },
+        row.original.status !== PlayerStatus.Traded,
+      ),
   },
 ];
 
@@ -464,6 +506,6 @@ export const ReservistColumn: ColumnDef<number>[] = [
     enableHiding: false,
     size: 48,
     // No chart: a reservist scores nothing to plot.
-    cell: ({ table, row }) => getActionsCell(row.original, table, null),
+    cell: ({ table, row }) => getActionsCell(row.original, table, null, true),
   },
 ];

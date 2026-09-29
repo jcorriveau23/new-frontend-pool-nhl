@@ -7,7 +7,8 @@ import { Player, Pool, Position } from "@/data/pool/model";
 import { NO_INJURIES, renderWithProviders, stubFetch } from "@/test/render";
 import { testPlayer, testPool, testSettings } from "@/test/pool-fixtures";
 
-import { ReservistColumn } from "./players-points-columns";
+import { ForwardColumn, ReservistColumn } from "./players-points-columns";
+import { PlayerStatus, SkaterInfo } from "./cumulative-calculation";
 
 const A_RESERVIST = testPlayer(5, "Calle Jarnkrok", Position.F, 2_100_000);
 
@@ -22,6 +23,7 @@ const poolWith = (player: Player): Pool =>
 
 const confirmPlayerRemoval = vi.fn();
 const openTradeForPlayer = vi.fn();
+const placeOnWaivers = vi.fn();
 
 // The reservists table, rendered the way the cumulative tab renders it: the row
 // menu reads everything it acts on out of `meta.props`.
@@ -39,6 +41,7 @@ const renderReservists = (
           poolInfo,
           openTradeForPlayer,
           confirmPlayerRemoval,
+          placeOnWaivers,
           ...props,
         },
         getRowStyles: () => null,
@@ -116,5 +119,75 @@ describe("ReservistColumn", () => {
     await user.click(await screen.findByText("FileTrade"));
 
     expect(openTradeForPlayer).toHaveBeenCalledWith(5);
+  });
+});
+
+describe("waivers from the row menu", () => {
+  it("opens the replacement search for the player of the row", async () => {
+    const user = userEvent.setup();
+    renderReservists({ canPlaceOnWaivers: true, waiverBlockedReason: null });
+
+    await user.click(screen.getByRole("button", { name: "OpenMenu" }));
+    await user.click(await screen.findByText("PlaceOnWaivers"));
+
+    expect(placeOnWaivers).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 5, name: "Calle Jarnkrok" }),
+    );
+  });
+
+  it("says why a claim cannot be filed, and files none", async () => {
+    const user = userEvent.setup();
+    renderReservists({
+      canPlaceOnWaivers: true,
+      waiverBlockedReason: "NoDropLeft",
+    });
+
+    await user.click(screen.getByRole("button", { name: "OpenMenu" }));
+    await user.click(await screen.findByText("PlaceOnWaivers"));
+
+    expect(screen.getByText("NoDropLeft")).toBeInTheDocument();
+    expect(placeOnWaivers).not.toHaveBeenCalled();
+  });
+
+  it("offers no claim to somebody without the rights", async () => {
+    const user = userEvent.setup();
+    renderReservists({ canPlaceOnWaivers: false });
+
+    await user.click(screen.getByRole("button", { name: "OpenMenu" }));
+
+    expect(await screen.findByText("Actions")).toBeInTheDocument();
+    expect(screen.queryByText("PlaceOnWaivers")).toBeNull();
+  });
+
+  it("offers neither a claim nor a removal on a player traded away", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <DataTable
+        data={[new SkaterInfo(A_RESERVIST.id, PlayerStatus.Traded)]}
+        columns={ForwardColumn}
+        initialState={undefined}
+        meta={{
+          props: {
+            poolInfo: poolWith(A_RESERVIST),
+            canManageRoster: true,
+            canPlaceOnWaivers: true,
+            waiverBlockedReason: null,
+            placeOnWaivers,
+            confirmPlayerRemoval,
+          },
+          getRowStyles: () => null,
+          onRowClick: () => null,
+          t: (key: string) => key,
+        }}
+        title={null}
+        tableFooter={null}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "OpenMenu" }));
+
+    expect(await screen.findByText("Chart")).toBeInTheDocument();
+    expect(screen.queryByText("PlaceOnWaivers")).toBeNull();
+    expect(screen.queryByText("RemoveFromRoster")).toBeNull();
   });
 });
