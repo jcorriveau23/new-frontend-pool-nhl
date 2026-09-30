@@ -17,19 +17,32 @@ describe("planScoreFetch", () => {
     });
   });
 
-  it("resumes from the last cached day rather than the season start", () => {
+  it("resumes near the last cached day rather than the season start", () => {
     const { range } = plan(["2025-10-07", "2025-10-08", "2025-12-31"]);
 
-    expect(range).toEqual({ start: "2025-12-31", end: TODAY });
+    expect(range).toEqual({ start: "2025-12-28", end: TODAY });
   });
 
-  it("re-fetches the last cached day instead of starting after it", () => {
-    // That day may have been cached while its games were still in progress, so
-    // its scores can still change. Starting the day after would freeze a
-    // half-played night into the standings permanently.
-    const { range } = plan(["2025-12-31"]);
+  it("re-fetches the days leading up to the last cached one", () => {
+    // Those days may have been cached while their scores could still change: a
+    // night the poller missed the end of, or a late scoring correction.
+    // Starting at the last cached day would freeze them into the standings as
+    // soon as the next day had been cached.
+    const { range } = plan(["2025-12-29", "2025-12-30", "2025-12-31"]);
 
-    expect(range?.start).toBe("2025-12-31");
+    expect(range?.start).toBe("2025-12-28");
+  });
+
+  it("reaches back across a month boundary", () => {
+    const { range } = plan(["2026-01-02"]);
+
+    expect(range?.start).toBe("2025-12-30");
+  });
+
+  it("does not reach back before the season start", () => {
+    const { range } = plan(["2025-10-07", "2025-10-08"]);
+
+    expect(range?.start).toBe(SEASON.seasonStart);
   });
 
   it("ignores cached days from a previous season", () => {
@@ -43,7 +56,7 @@ describe("planScoreFetch", () => {
     ]);
 
     expect(trustedCachedDates).toEqual(["2025-10-20"]);
-    expect(range).toEqual({ start: "2025-10-20", end: TODAY });
+    expect(range).toEqual({ start: "2025-10-17", end: TODAY });
   });
 
   it("ignores cached days in the future", () => {
@@ -52,7 +65,7 @@ describe("planScoreFetch", () => {
     const { range, trustedCachedDates } = plan(["2025-11-01", "2027-01-01"]);
 
     expect(trustedCachedDates).toEqual(["2025-11-01"]);
-    expect(range).toEqual({ start: "2025-11-01", end: TODAY });
+    expect(range).toEqual({ start: "2025-10-29", end: TODAY });
   });
 
   it("stops at the end of a season that is already over", () => {
@@ -87,7 +100,7 @@ describe("planScoreFetch", () => {
       "2025-11-05",
       "2025-12-01",
     ]);
-    expect(range?.start).toBe("2025-12-01");
+    expect(range?.start).toBe("2025-11-28");
   });
 
   it("never asks for a backwards range", () => {
