@@ -119,15 +119,15 @@ describe("fetchPoolInfo", () => {
       name: "my-pool",
       context: {
         score_by_day: {
-          ...scores("2026-10-07"),
-          ...scores("2026-10-08"),
+          ...scores("2026-10-19"),
+          ...scores("2026-10-20"),
         },
       },
     });
     apiGet.mockImplementation(async (path: string) =>
       path.startsWith("/pool/")
         ? { ok: true, data: testPool() }
-        : { ok: true, data: scores("2026-10-08") },
+        : { ok: true, data: scores("2026-10-20") },
     );
 
     const result = (await fetchPoolInfo("my-pool")) as Pool;
@@ -135,15 +135,14 @@ describe("fetchPoolInfo", () => {
     const scorePath = apiGet.mock.calls
       .map(([path]) => path as string)
       .find((path) => path.startsWith("/pool-scores/"))!;
-    // The last cached day is asked for again: it may have been stored while
-    // its games were still being played.
-    // From the last cached day (it may have been stored mid-game) to today.
+    // The last cached day and the few before it are asked for again: they may
+    // have been stored while their scores could still change.
     expect(scorePath).toBe(
-      "/pool-scores/my-pool/cumulative/2026-10-08/2026-12-01",
+      "/pool-scores/my-pool/cumulative/2026-10-17/2026-12-01",
     );
     expect(Object.keys(result.context!.score_by_day!).sort()).toEqual([
-      "2026-10-07",
-      "2026-10-08",
+      "2026-10-19",
+      "2026-10-20",
     ]);
     // The row id is carried over so the write updates in place.
     expect(result.id).toBe(7);

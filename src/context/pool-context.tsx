@@ -176,9 +176,9 @@ const fetchPoolInfoUncached = async (name: string): Promise<Pool | string> => {
   const poolDb: Pool = await db.pools.get({ name: name });
 
   // Scores are derived on demand server-side from the lineup events + daily
-  // stats, shaped the way the rest of the UI already reads them. Past days never change, so only fetch the days missing from the
-  // local cache; the last cached day is re-fetched since it may have been
-  // stored while its games were still in progress.
+  // stats, shaped the way the rest of the UI already reads them. Past days settle, so only fetch the days missing from the
+  // local cache; the last few cached days are re-fetched since they may have
+  // been stored while their scores could still change.
   if (data.context) {
     const cachedScores = poolDb?.context?.score_by_day ?? null;
     const { range, trustedCachedDates } = planScoreFetch({

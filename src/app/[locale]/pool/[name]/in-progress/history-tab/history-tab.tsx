@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Trade } from "@/data/pool/model";
+import { RosterTransaction } from "@/data/pool/model";
 import {
   Accordion,
   AccordionContent,
@@ -12,6 +12,8 @@ import {
   CalendarDays,
   ArrowLeftRight,
   History as HistoryIcon,
+  Repeat,
+  ArrowRight,
 } from "lucide-react";
 import PlayerLink from "@/components/player-link";
 import { PoolerNameText } from "@/components/pooler-name";
@@ -22,29 +24,22 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface DailyMovements {
-  // Daily movements for a specific date and pooler
-  participant: string;
-  addedPlayerIds: string[];
-  removedPlayerIds: string[];
-}
-
-interface DailyHistory {
-  // The full daily history. Contains all movements and trades for a specific date.
-  date: string;
-  dailyMovements: DailyMovements[];
-  dailyTrades: Trade[];
-}
+import {
+  DailyHistory,
+  DailyMovements,
+  TODAY,
+  addWaiversToHistory,
+} from "./history-calculation";
 
 export default function HistoryTab() {
-  const { poolInfo, lastFormatDate, userPoolUser } = usePoolContext();
+  const { poolInfo, lastFormatDate, userPoolUser, dictUsers } =
+    usePoolContext();
   const t = useTranslations();
   const format = useFormatter();
   const [history, setHistory] = React.useState<DailyHistory[] | null>(null);
 
   const formatDate = (date: string) =>
-    date === "Today"
+    date === TODAY
       ? t("Today")
       : format.dateTime(new Date(date + "T00:00:00"), {
           weekday: "short",
@@ -154,7 +149,12 @@ export default function HistoryTab() {
         }
 
         if (dailyMovements.length > 0 || dailyTrades.length > 0) {
-          historyTmp.unshift({ date: jDate, dailyMovements, dailyTrades });
+          historyTmp.unshift({
+            date: jDate,
+            dailyMovements,
+            dailyTrades,
+            dailyWaivers: [],
+          });
         }
       }
     }
@@ -178,10 +178,23 @@ export default function HistoryTab() {
     }
 
     if (dailyMovements.length > 0) {
-      historyTmp.unshift({ date: "Today", dailyMovements, dailyTrades: [] });
+      historyTmp.unshift({
+        date: TODAY,
+        dailyMovements,
+        dailyTrades: [],
+        dailyWaivers: [],
+      });
     }
 
-    setHistory(historyTmp);
+    // Waiver claims are listed as swaps rather than as a player that came
+    // and one that went.
+    setHistory(
+      addWaiversToHistory(
+        historyTmp,
+        poolInfo.context.roster_transactions ?? [],
+        (participantId) => dictUsers[participantId]?.name ?? participantId,
+      ),
+    );
   };
 
   React.useEffect(() => {
@@ -216,16 +229,54 @@ export default function HistoryTab() {
     );
   }
 
-  const PlayerRow = (playerId: string) => (
-    <PlayerLink
-      key={playerId}
-      name={`${poolInfo.context?.players[playerId].name} (${t(
-        poolInfo.context?.players[playerId].position ?? "",
-      )})`}
-      id={Number(playerId)}
-      textStyle="text-sm"
-    />
-  );
+  const PlayerRow = (playerId: string) => {
+    // A player picked up off waivers may be missing from the pool's players
+    // until the pool is refetched; the id still links to him.
+    const player = poolInfo.context?.players[playerId];
+    return (
+      <PlayerLink
+        key={playerId}
+        name={
+          player ? `${player.name} (${t(player.position)})` : `#${playerId}`
+        }
+        id={Number(playerId)}
+        textStyle="text-sm"
+      />
+    );
+  };
+
+  const WaiverClaimRow = (waiver: RosterTransaction) => {
+    const name = dictUsers[waiver.participant]?.name ?? waiver.participant;
+    return (
+      <div
+        key={`${waiver.participant}-${waiver.date_created}-${waiver.dropped_player_id}`}
+        className="rounded-lg border bg-muted/30 p-3"
+      >
+        <PoolerNameText
+          name={name}
+          isYou={waiver.participant === userPoolUser?.id}
+          className="mb-2 font-semibold"
+        />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-rose-600 dark:text-rose-400">
+              <BadgeMinus size={14} />
+              {t("PlacedOnWaivers")}
+            </div>
+            {PlayerRow(waiver.dropped_player_id.toString())}
+          </div>
+          <ArrowRight className="hidden size-4 shrink-0 text-muted-foreground sm:block" />
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+              <ShieldPlus size={14} />
+              {t("PickedUp")}
+            </div>
+            {PlayerRow(waiver.added_player_id.toString())}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const Movements = (movements: DailyMovements) => (
     <div
@@ -273,7 +324,9 @@ export default function HistoryTab() {
     <div className="flex flex-col gap-3">
       {history.map((dailyHistory) => {
         const changeCount =
-          dailyHistory.dailyMovements.length + dailyHistory.dailyTrades.length;
+          dailyHistory.dailyMovements.length +
+          dailyHistory.dailyTrades.length +
+          dailyHistory.dailyWaivers.length;
         return (
           <Card key={dailyHistory.date} className="overflow-hidden">
             <Accordion defaultValue={[dailyHistory.date]}>
@@ -291,6 +344,17 @@ export default function HistoryTab() {
                 </AccordionTrigger>
                 <AccordionContent className="px-4">
                   <div className="flex flex-col gap-3">
+                    {dailyHistory.dailyWaivers.length > 0 ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          <Repeat size={14} />
+                          {t("FreeAgency")}
+                        </div>
+                        {dailyHistory.dailyWaivers.map(WaiverClaimRow)}
+                      </div>
+                    ) : null}
+                    {dailyHistory.dailyWaivers.length > 0 &&
+                      dailyHistory.dailyMovements.length > 0 && <Separator />}
                     {dailyHistory.dailyMovements.map((movements) =>
                       Movements(movements),
                     )}

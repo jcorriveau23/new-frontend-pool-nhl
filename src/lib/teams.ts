@@ -27,7 +27,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: 19331934,
   },
   45: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/SLE_19341935_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/SLE_19341935_light.svg",
     fullName: "St. Louis Eagles",
     firstSeason: 19341935,
     lastSeason: 19341935,
@@ -45,7 +45,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: 19191920,
   },
   10: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/TOR_alt.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/TOR_light.svg",
     fullName: "Toronto Maple Leafs",
     firstSeason: 19271928,
     lastSeason: null,
@@ -57,19 +57,19 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: 19181919,
   },
   58: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/TSP_19261927_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/TSP_19261927_light.svg",
     fullName: "Toronto St. Patricks",
     firstSeason: 19191920,
     lastSeason: 19261927,
   },
   6: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/BOS_alt.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/BOS_light.svg",
     fullName: "Boston Bruins",
     firstSeason: 19241925,
     lastSeason: null,
   },
   43: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/MMR_19351936-19371938_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/MMR_19351936-19371938_light.svg",
     fullName: "Montreal Maroons",
     firstSeason: 19241925,
     lastSeason: 19371938,
@@ -93,25 +93,25 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: 19291930,
   },
   39: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/QUA_19301931_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/QUA_19301931_light.svg",
     fullName: "Philadelphia Quakers",
     firstSeason: 19301931,
     lastSeason: 19301931,
   },
   3: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/NYR_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/NYR_light.svg",
     fullName: "New York Rangers",
     firstSeason: 19261927,
     lastSeason: null,
   },
   16: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/CHI_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/CHI_light.svg",
     fullName: "Chicago Blackhawks",
     firstSeason: 19261927,
     lastSeason: null,
   },
   17: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/DET_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/DET_light.svg",
     fullName: "Detroit Red Wings",
     firstSeason: 19321933,
     lastSeason: null,
@@ -135,7 +135,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: 19691970,
   },
   49: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/CLE_19761977-19771978_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/CLE_19761977-19771978_light.svg",
     fullName: "Cleveland Barons",
     firstSeason: 19761977,
     lastSeason: 19771978,
@@ -165,7 +165,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: 19921993,
   },
   4: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/PHI_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/PHI_light.svg",
     fullName: "Philadelphia Flyers",
     firstSeason: 19671968,
     lastSeason: null,
@@ -177,7 +177,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: null,
   },
   19: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/STL_black.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/STL_light.svg",
     fullName: "St. Louis Blues",
     firstSeason: 19671968,
     lastSeason: null,
@@ -195,7 +195,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: null,
   },
   20: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/CGY_alt.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/CGY_light.svg",
     fullName: "Calgary Flames",
     firstSeason: 19801981,
     lastSeason: null,
@@ -225,7 +225,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: 19811982,
   },
   48: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/KCS_19741975-19761977_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/KCS_19741975-19761977_light.svg",
     fullName: "Kansas City Scouts",
     firstSeason: 19741975,
     lastSeason: 19751976,
@@ -237,7 +237,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: null,
   },
   22: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/EDM_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/EDM_light.svg",
     fullName: "Edmonton Oilers",
     firstSeason: 19791980,
     lastSeason: null,
@@ -249,7 +249,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: null,
   },
   34: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/HFD_19921993-19961997_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/HFD_19921993-19961997_light.svg",
     fullName: "Hartford Whalers",
     firstSeason: 19791980,
     lastSeason: 19961997,
@@ -303,7 +303,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: null,
   },
   24: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/ANA_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/ANA_light.svg",
     fullName: "Anaheim Ducks",
     firstSeason: 19931994,
     lastSeason: null,
@@ -315,7 +315,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: null,
   },
   18: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/NSH_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/NSH_light.svg",
     fullName: "Nashville Predators",
     firstSeason: 19981999,
     lastSeason: null,
@@ -339,7 +339,7 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: null,
   },
   30: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/MIN_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/MIN_light.svg",
     fullName: "Minnesota Wild",
     firstSeason: 20002001,
     lastSeason: null,
@@ -351,13 +351,13 @@ export const team_info: Record<number, TeamInfo> = {
     lastSeason: null,
   },
   55: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/SEA_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/SEA_light.svg",
     fullName: "Seattle Kraken",
     firstSeason: 20212022,
     lastSeason: null,
   },
   68: {
-    logo: "https://assets.nhle.com/logos/nhl/svg/UTA_dark.svg",
+    logo: "https://assets.nhle.com/logos/nhl/svg/UTA_light.svg",
     fullName: "Utah Mammoth",
     firstSeason: 20242025,
     lastSeason: null,
