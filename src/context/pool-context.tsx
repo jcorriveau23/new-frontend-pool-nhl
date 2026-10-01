@@ -251,18 +251,21 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
 }) => {
   const searchParams = useSearchParams();
   const [poolInfo, setPoolInfo] = useState<Pool>(pool);
-  const { currentDate, querySelectedDate } = useDateContext();
+  const { currentDate, querySelectedDate, score } = useDateContext();
   const [dailyPointsMade, setDailyPointsMade] =
     useState<DailyPoolPointsMade | null>(null);
 
   const lastFormatDate = findLastScoredDate(poolInfo);
 
+  // With no date selected, show the day of the game feed, but never past the
+  // last scored day (the off-season lands on the end of the pool).
+  let nowDate = lastFormatDate ?? format(currentDate, "yyyy-MM-dd");
+  if (score && score.currentDate < nowDate) {
+    nowDate = score.currentDate;
+  }
+
   const dateOfInterest =
-    querySelectedDate !== "now"
-      ? querySelectedDate
-      : lastFormatDate
-        ? lastFormatDate
-        : format(currentDate, "yyyy-MM-dd");
+    querySelectedDate !== "now" ? querySelectedDate : nowDate;
 
   // Now parse all the pool date from the start of the season to the current date.
   const poolStartDate = new Date(poolInfo.season_start + "T00:00:00");
