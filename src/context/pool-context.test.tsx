@@ -45,9 +45,35 @@ import {
   PoolContextProvider,
   usePoolContext,
 } from "@/context/pool-context";
+import { SCORE_CACHE_VERSION } from "@/lib/pool-score-cache";
 
 const scores = (day: string) => ({
   [day]: { "user-a": { roster: {}, points: 1 } },
+});
+
+// Every day from the fixture's season start to `to`, which is the shape the
+// cache actually takes: the derived-scores endpoint answers one entry per
+// calendar day of the range it is given, so a cache built from it has no gaps.
+const cachedThrough = (to: string) => {
+  const days: Record<string, unknown> = {};
+  for (let day = "2026-10-07"; day <= to;) {
+    Object.assign(days, scores(day));
+    const next = new Date(`${day}T00:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + 1);
+    day = next.toISOString().slice(0, 10);
+  }
+  return days;
+};
+
+// A Dexie row the current code wrote, which is the only kind its scores are
+// believed from.
+const cachedRow = (score_by_day: Record<string, unknown>) => ({
+  id: 7,
+  name: "my-pool",
+  season_start: "2026-10-07",
+  season_end: "2027-04-15",
+  score_cache_version: SCORE_CACHE_VERSION,
+  context: { score_by_day },
 });
 
 beforeEach(() => {
@@ -82,7 +108,36 @@ describe("fetchPoolInfo", () => {
 
     expect(result.name).toBe("my-pool");
     expect(apiGet).toHaveBeenCalledWith("/pool/my-pool");
-    expect(dbPut).toHaveBeenCalledWith(result, "name");
+
+    // What is written is stamped with the rule that chose its days, so a later
+    // build can tell which rows it may believe.
+    const [row] = dbPut.mock.calls[0];
+    expect(row.name).toBe("my-pool");
+    expect(row.score_cache_version).toBe(SCORE_CACHE_VERSION);
+  });
+
+  it("does not store the days it is going to re-derive anyway", async () => {
+    const pool = testPool();
+    apiGet.mockImplementation(async (path: string) =>
+      path.startsWith("/pool/")
+        ? { ok: true, data: pool }
+        : {
+            ok: true,
+            data: { ...scores("2026-11-20"), ...scores("2026-12-01") },
+          },
+    );
+
+    const result = (await fetchPoolInfo("my-pool")) as Pool;
+
+    // The tabs are shown every day that was derived...
+    expect(Object.keys(result.context!.score_by_day!).sort()).toEqual([
+      "2026-11-20",
+      "2026-12-01",
+    ]);
+    // ...but today's cannot be written: its games may not be over, and nothing
+    // would go back for it once it fell out of the re-derived tail.
+    const [row] = dbPut.mock.calls[0];
+    expect(Object.keys(row.context.score_by_day)).toEqual(["2026-11-20"]);
   });
 
   it("passes the pool name through without re-encoding it", async () => {
@@ -114,20 +169,11 @@ describe("fetchPoolInfo", () => {
   });
 
   it("asks only for the score days the local copy is missing", async () => {
-    dbGet.mockResolvedValue({
-      id: 7,
-      name: "my-pool",
-      context: {
-        score_by_day: {
-          ...scores("2026-10-19"),
-          ...scores("2026-10-20"),
-        },
-      },
-    });
+    dbGet.mockResolvedValue(cachedRow(cachedThrough("2026-11-25")));
     apiGet.mockImplementation(async (path: string) =>
       path.startsWith("/pool/")
         ? { ok: true, data: testPool() }
-        : { ok: true, data: scores("2026-10-20") },
+        : { ok: true, data: scores("2026-11-26") },
     );
 
     const result = (await fetchPoolInfo("my-pool")) as Pool;
@@ -135,25 +181,64 @@ describe("fetchPoolInfo", () => {
     const scorePath = apiGet.mock.calls
       .map(([path]) => path as string)
       .find((path) => path.startsWith("/pool-scores/"))!;
-    // The last cached day and the few before it are asked for again: they may
-    // have been stored while their scores could still change.
+    // Only what the cache cannot answer for: the days after the ones it holds.
     expect(scorePath).toBe(
-      "/pool-scores/my-pool/cumulative/2026-10-17/2026-12-01",
+      "/pool-scores/my-pool/cumulative/2026-11-26/2026-12-01",
     );
-    expect(Object.keys(result.context!.score_by_day!).sort()).toEqual([
-      "2026-10-19",
-      "2026-10-20",
-    ]);
+    expect(result.context!.score_by_day).toHaveProperty("2026-10-07");
+    expect(result.context!.score_by_day).toHaveProperty("2026-11-26");
     // The row id is carried over so the write updates in place.
     expect(result.id).toBe(7);
   });
 
-  it("keeps the days it had when the scores cannot be derived", async () => {
+  it("re-derives from the first day missing in the middle of the cache", async () => {
+    const holed = cachedThrough("2026-12-01");
+    delete holed["2026-10-20"];
+    dbGet.mockResolvedValue(cachedRow(holed));
+    apiGet.mockImplementation(async (path: string) =>
+      path.startsWith("/pool/")
+        ? { ok: true, data: testPool() }
+        : { ok: true, data: scores("2026-10-20") },
+    );
+
+    await fetchPoolInfo("my-pool");
+
+    // The standings sum the days `score_by_day` holds, so a hole is part of the
+    // season silently missing from them. Resuming from the latest cached day
+    // took everything below it on faith and never went back.
+    expect(
+      apiGet.mock.calls
+        .map(([path]) => path as string)
+        .find((path) => path.startsWith("/pool-scores/")),
+    ).toBe("/pool-scores/my-pool/cumulative/2026-10-20/2026-12-01");
+  });
+
+  it("discards the scores of a row written by an older rule", async () => {
+    // Rows from before `score_cache_version` cached days whose games had not
+    // been played and never revisited them, so they hold zeros for days the
+    // season has long since played.
     dbGet.mockResolvedValue({
       id: 7,
       name: "my-pool",
-      context: { score_by_day: scores("2026-10-07") },
+      context: { score_by_day: cachedThrough("2026-12-01") },
     });
+    apiGet.mockImplementation(async (path: string) =>
+      path.startsWith("/pool/")
+        ? { ok: true, data: testPool() }
+        : { ok: true, data: scores("2026-10-07") },
+    );
+
+    await fetchPoolInfo("my-pool");
+
+    expect(
+      apiGet.mock.calls
+        .map(([path]) => path as string)
+        .find((path) => path.startsWith("/pool-scores/")),
+    ).toBe("/pool-scores/my-pool/cumulative/2026-10-07/2026-12-01");
+  });
+
+  it("keeps the days it had when the scores cannot be derived", async () => {
+    dbGet.mockResolvedValue(cachedRow(scores("2026-10-07")));
     apiGet.mockImplementation(async (path: string) =>
       path.startsWith("/pool/")
         ? { ok: true, data: testPool() }

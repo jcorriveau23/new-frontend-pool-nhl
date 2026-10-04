@@ -12,7 +12,11 @@ import {
 } from "@/data/pool/model";
 import { MALFORMED_POOL, parsePool } from "@/data/pool/schema";
 import { apiGet } from "@/lib/client-api";
-import { planScoreFetch } from "@/lib/pool-score-cache";
+import {
+  planScoreFetch,
+  SCORE_CACHE_VERSION,
+  settledScoreDates,
+} from "@/lib/pool-score-cache";
 import {
   findLastScoredDate,
   getPlayersOwner,
@@ -137,16 +141,73 @@ const getPoolDictUsers = (pool: Pool) =>
 // module because that is where the rest of the app already imports it from.
 export { hasPoolPrivilege };
 
-const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
+/*
+Carries the derived days of the pool we hold onto the one replacing it.
+
+A mutation answers with the pool document, which does not carry them — they are
+assembled client-side — so without this every roster move, trade or settings
+change would blank the cumulative tab until the next full fetch. The source is
+the pool on screen rather than the Dexie row: the row deliberately leaves out
+the days that have not settled, and those are exactly the ones being looked at.
+*/
+const mergeScoreByDay = (mergedPoolInfo: Pool, previous: Pool) => {
   if (mergedPoolInfo.context === null) {
-    mergedPoolInfo.context = poolDb.context;
+    mergedPoolInfo.context = previous.context;
     return;
   }
 
   mergedPoolInfo.context.score_by_day = {
-    ...poolDb.context?.score_by_day,
+    ...previous.context?.score_by_day,
     ...mergedPoolInfo.context.score_by_day,
   };
+};
+
+/*
+The pool as IndexedDB holds it: the document, the Dexie row id, and the version
+of the rule that decided which days of `score_by_day` were allowed in.
+*/
+type CachedPool = Pool & { score_cache_version?: number };
+
+/*
+The cached days of a row, or null when they cannot be believed.
+
+A row written before `SCORE_CACHE_VERSION` was raised was allowed to cache days
+whose games had not been played yet, and nothing re-derives a day once it falls
+out of the trailing window — so such a row holds zeros for days the season has
+long since played. Its scores are dropped once, on the first load that reads it,
+and rebuilt from the backend.
+*/
+const cachedScoreDates = (poolDb: CachedPool | undefined) =>
+  poolDb?.score_cache_version === SCORE_CACHE_VERSION
+    ? (poolDb.context?.score_by_day ?? null)
+    : null;
+
+/*
+Writes the pool to IndexedDB, keeping only the days that have settled.
+
+The pool handed back to the caller keeps every day it assembled — the tabs read
+the current ones — but the row that outlives this page load must not, or a day
+stored while its scores could still change would be summed into the standings
+for the rest of the season.
+*/
+const cachePool = async (pool: Pool) => {
+  const row: CachedPool = {
+    ...pool,
+    context:
+      pool.context === null
+        ? null
+        : {
+            ...pool.context,
+            score_by_day: settledScoreDates(pool.context.score_by_day, {
+              seasonEnd: pool.season_end,
+              today: format(new Date(), "yyyy-MM-dd"),
+            }),
+          },
+    score_cache_version: SCORE_CACHE_VERSION,
+  };
+
+  // @ts-expect-error, Dexie is not typed.
+  await db.pools.put(row);
 };
 
 /*
@@ -173,14 +234,14 @@ const fetchPoolInfoUncached = async (name: string): Promise<Pool | string> => {
   // The locally cached copy of the pool (Dexie), used both to fetch only the
   // missing score days and to preserve the row id so the put() updates in place.
   // @ts-expect-error, Dexie is not typed.
-  const poolDb: Pool = await db.pools.get({ name: name });
+  const poolDb: CachedPool = await db.pools.get({ name: name });
 
   // Scores are derived on demand server-side from the lineup events + daily
-  // stats, shaped the way the rest of the UI already reads them. Past days settle, so only fetch the days missing from the
-  // local cache; the last few cached days are re-fetched since they may have
-  // been stored while their scores could still change.
+  // stats, shaped the way the rest of the UI already reads them. Past days
+  // settle, so only fetch the days the cache cannot answer for — the days it is
+  // missing, and the last few, which it is never trusted on.
   if (data.context) {
-    const cachedScores = poolDb?.context?.score_by_day ?? null;
+    const cachedScores = cachedScoreDates(poolDb);
     const { range, trustedCachedDates } = planScoreFetch({
       seasonStart: data.season_start,
       seasonEnd: data.season_end,
@@ -222,8 +283,7 @@ const fetchPoolInfoUncached = async (name: string): Promise<Pool | string> => {
   // Awaited so that a caller starting right after this one resolves reads the
   // days we just stored, instead of racing the write and re-deriving the whole
   // season.
-  // @ts-expect-error, Dexie is not typed.
-  await db.pools.put(data, "name");
+  await cachePool(data);
   return data;
 };
 
@@ -465,15 +525,14 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       return;
     }
 
+    mergeScoreByDay(newPoolInfo, poolInfoRef.current);
     poolInfoRef.current = newPoolInfo;
     // @ts-expect-error, dexie is not typed.
     db.pools.get({ name: newPoolInfo.name }).then((poolDb) => {
       if (poolDb) {
-        mergeScoreByDay(newPoolInfo, poolDb);
         newPoolInfo.id = poolDb.id;
       }
-      // @ts-expect-error, dexie is not typed.
-      db.pools.put(newPoolInfo, "name");
+      void cachePool(newPoolInfo);
       // Two picks landing back to back both reach this callback. Only the
       // newest may reach the state, otherwise the draft board flickers back to
       // the superseded pool — or stays on it, if the reads resolve out of order.
