@@ -69,6 +69,37 @@ describe("getDropBudget", () => {
     expect(budget.canDrop).toBe(false);
   });
 
+  it("counts a backdated swap against the budget of the month it counts for", () => {
+    const pool = makePool(monthlyBudget(1), [transaction("u1", "2025-11-03")]);
+
+    // Filed in December, so December's budget is untouched...
+    expect(getDropBudget(pool, "u1", at("2025-12-01", 9)).remaining).toBe(1);
+    // ...but dated back into November, it has to fit in the budget of the
+    // month it actually applies to, which is already spent.
+    const backdated = getDropBudget(
+      pool,
+      "u1",
+      at("2025-12-01", 9),
+      "2025-11-20",
+    );
+
+    expect(backdated.effectiveDate).toBe("2025-11-20");
+    expect(backdated.used).toBe(1);
+    expect(backdated.remaining).toBe(0);
+    expect(backdated.canDrop).toBe(false);
+  });
+
+  it("lands a swap backdated before opening night on the season start", () => {
+    const budget = getDropBudget(
+      makePool(seasonBudget(1)),
+      "u1",
+      at("2025-12-01", 9),
+      "2025-09-01",
+    );
+
+    expect(budget.effectiveDate).toBe(SEASON_START);
+  });
+
   it("counts every swap of the pooler against a season budget", () => {
     const budget = getDropBudget(
       makePool(seasonBudget(3), [
