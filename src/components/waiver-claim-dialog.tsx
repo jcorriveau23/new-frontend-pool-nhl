@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import EffectiveDatePicker from "@/components/effective-date-picker";
 import PlayerSearchDialog from "@/components/search-players";
 import { usePoolContext } from "@/context/pool-context";
 import { WaiverClaim } from "@/hooks/use-waiver-claim";
@@ -30,6 +31,18 @@ export default function WaiverClaimDialog({ claim }: { claim: WaiverClaim }) {
       }}
       unavailableReason={claim.replacementUnavailableReason}
       onPlayerSelect={claim.claim}
+      // Picking a result files the claim, so the day it counts from has to be
+      // settled before the search rather than after it.
+      beforeSearch={
+        claim.canBackdate ? (
+          <EffectiveDatePicker
+            range={claim.backdateRange}
+            value={claim.effectiveDate}
+            onChange={claim.setEffectiveDate}
+            disabled={claim.isClaiming}
+          />
+        ) : null
+      }
     />
   );
 }

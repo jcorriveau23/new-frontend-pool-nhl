@@ -31,6 +31,15 @@ const waiverClaim = (overrides: Partial<WaiverClaim> = {}): WaiverClaim => ({
   playerToDrop: null,
   setPlayerToDrop: vi.fn(),
   isClaiming: false,
+  backdateRange: {
+    defaultDate: "2026-10-04",
+    earliestDate: "2026-09-29",
+    latestDate: "2026-10-04",
+    canBackdate: true,
+  },
+  effectiveDate: "2026-10-04",
+  setEffectiveDate: vi.fn(),
+  canBackdate: false,
   replacementUnavailableReason: vi.fn(),
   claim: vi.fn(),
   ...overrides,
@@ -72,6 +81,18 @@ describe("WaiverClaimDialog", () => {
     expect(renderedProps().unavailableReason).toBe(
       claim.replacementUnavailableReason,
     );
+  });
+
+  it("offers the day the claim counts from to whoever may pick it", () => {
+    // Picking a result files the claim, so the date has to sit above the
+    // search rather than in a footer there is no room for.
+    const allowed = waiverClaim({ playerToDrop: DROPPED, canBackdate: true });
+    render(<WaiverClaimDialog claim={allowed} />);
+    expect(renderedProps().beforeSearch).not.toBeNull();
+
+    const refused = waiverClaim({ playerToDrop: DROPPED, canBackdate: false });
+    render(<WaiverClaimDialog claim={refused} />);
+    expect(renderedProps().beforeSearch).toBeNull();
   });
 
   it("drops the pending claim when closed", () => {

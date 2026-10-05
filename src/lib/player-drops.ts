@@ -46,18 +46,23 @@ The state of `participantId`'s drop budget as of now.
 The budget is counted on the transactions' effective dates, not on when they
 were filed: a swap filed on the last day of a month for the first of the next
 one spends the next month's budget, which is the month it actually applies to.
+
+`backdatedTo` is that same rule seen from the other end. A swap the owner dates
+back to November is a November swap, so it is November's budget it has to fit
+in — not the one of the day they happen to be filing it on.
 */
 export const getDropBudget = (
   pool: Pool,
   participantId: string,
   now: Date,
+  backdatedTo?: string,
 ): DropBudget => {
   // An API that predates free agency leaves the key out altogether, so the
   // absent case is undefined as often as it is null.
   const settings = pool.settings.player_drop_settings ?? null;
   // A swap made before opening night has no day of its own to apply to, so the
   // backend lands it on the season start; the budget is counted there too.
-  const filedDate = getEffectiveRosterDate(now);
+  const filedDate = backdatedTo ?? getEffectiveRosterDate(now);
   const effectiveDate =
     filedDate < pool.season_start ? pool.season_start : filedDate;
 
