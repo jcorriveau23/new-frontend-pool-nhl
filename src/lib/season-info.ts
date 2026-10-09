@@ -41,6 +41,22 @@ export const getSeasonInfo = cache(async (): Promise<SeasonInfo> => {
   return info ?? FALLBACK_SEASON_INFO;
 });
 
+/*
+Every season the backend holds data for, oldest first.
+
+The player table offers these as a choice: a draft held once the season is
+under way needs last season's numbers on the board, and the backend serves them
+through `GET /players?season=`. Falls back to the current season alone, which
+is the one shape every caller can always render.
+*/
+export const getSeasons = cache(async (): Promise<SeasonInfo[]> => {
+  const seasons = await fetchJson<SeasonInfo[]>(backendUrl("/seasons"), {
+    // Appended to at most once a year, like the constants above.
+    next: { revalidate: 86400 },
+  });
+  return seasons && seasons.length > 0 ? seasons : [await getSeasonInfo()];
+});
+
 // The current season id, e.g. "20252026".
 export const currentSeason = (info: SeasonInfo): string => String(info.season);
 

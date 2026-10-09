@@ -5,7 +5,9 @@ import { searchPlayersByName } from "@/lib/server-data/players";
 // Players matching a (partial) name. The backend matches on the name only; the
 // caller sorts and filters the result set.
 export async function GET(request: Request) {
-  const name = new URL(request.url).searchParams.get("name");
+  const params = new URL(request.url).searchParams;
+  const name = params.get("name");
+  const season = params.get("season");
 
   if (name === null || name.trim().length === 0) {
     return NextResponse.json(
@@ -14,7 +16,10 @@ export async function GET(request: Request) {
     );
   }
 
-  const players = await searchPlayersByName(name);
+  const players = await searchPlayersByName(
+    name,
+    season === null ? null : Number(season),
+  );
 
   if (players === null) {
     return NextResponse.json(

@@ -24,6 +24,26 @@ const player = (id: number, name: string, overrides: Partial<Player> = {}) =>
     ...overrides,
   }) as Player;
 
+// Two seasons on record, which is what turns the season picker on. The current
+// one is last, the way the backend orders them.
+const SEASONS = {
+  match: "/api/seasons",
+  json: [
+    {
+      start_season_date: "2025-10-07",
+      end_season_date: "2026-04-16",
+      season: 20252026,
+      trade_deadline_date: "2026-03-07",
+    },
+    {
+      start_season_date: "2026-09-29",
+      end_season_date: "2027-04-10",
+      season: 20262027,
+      trade_deadline_date: "2027-03-01",
+    },
+  ],
+};
+
 const props = {
   sortField: "points",
   skip: 0,
@@ -296,5 +316,99 @@ describe("PlayersTable", () => {
     // Goalie stats share no column with the skaters, so the sorted column
     // moves to the goalie default rather than staying on points.
     expect(routerMock.push.mock.calls.at(-1)?.[0]).toContain("sortField=wins");
+  });
+
+  describe("the season picker", () => {
+    it("is not offered when the backend has one season on record", async () => {
+      stubFetch([
+        NO_INJURIES,
+        { match: "/api/players?", json: [player(1, "Auston Matthews")] },
+      ]);
+
+      renderWithProviders(<PlayersTable {...props} />);
+      await screen.findByText("Auston Matthews");
+
+      // Only the position filter, so a fresh database does not show a picker
+      // with a single entry in it.
+      expect(screen.getAllByRole("combobox")).toHaveLength(1);
+    });
+
+    it("asks for the current season by default", async () => {
+      const stub = stubFetch([
+        NO_INJURIES,
+        SEASONS,
+        { match: "/api/players?", json: [player(1, "Auston Matthews")] },
+      ]);
+
+      renderWithProviders(<PlayersTable {...props} />);
+      await screen.findByText("Auston Matthews");
+
+      expect(stub.callsMatching("/api/players?")[0]).not.toContain("season=");
+    });
+
+    it("opens a draft board on the season that just ended", async () => {
+      // 4 October 2026, four games into a season that started 29 September:
+      // this season's numbers say nothing about who to pick.
+      vi.setSystemTime(new Date(2026, 9, 4));
+      const stub = stubFetch([
+        NO_INJURIES,
+        SEASONS,
+        { match: "/api/players?", json: [player(1, "Auston Matthews")] },
+      ]);
+
+      renderWithProviders(
+        <PlayersTable {...props} openOnLastCompletedSeason />,
+      );
+      await screen.findByText("Auston Matthews");
+
+      await waitFor(() =>
+        expect(stub.callsMatching("season=20252026")).not.toHaveLength(0),
+      );
+      vi.useRealTimers();
+    });
+
+    it("leaves a draft board on the current season before opening day", async () => {
+      // Nothing of the new season has been played, so its numbers are last
+      // season's finals and there is nothing to fall back from.
+      vi.setSystemTime(new Date(2026, 8, 15));
+      const stub = stubFetch([
+        NO_INJURIES,
+        SEASONS,
+        { match: "/api/players?", json: [player(1, "Auston Matthews")] },
+      ]);
+
+      renderWithProviders(
+        <PlayersTable {...props} openOnLastCompletedSeason />,
+      );
+      await screen.findByText("Auston Matthews");
+
+      expect(stub.callsMatching("season=")).toHaveLength(0);
+      vi.useRealTimers();
+    });
+
+    it("re-reads the table on the season picked", async () => {
+      const user = userEvent.setup();
+      const stub = stubFetch([
+        NO_INJURIES,
+        SEASONS,
+        { match: "/api/players?", json: [player(1, "Auston Matthews")] },
+      ]);
+
+      renderWithProviders(<PlayersTable {...props} />);
+      await screen.findByText("Auston Matthews");
+
+      // The position filter comes first in the toolbar, the season second.
+      const [, seasonPicker] = await screen.findAllByRole("combobox");
+      await user.click(seasonPicker);
+      await user.click(await screen.findByText("2025-26"));
+
+      await waitFor(() =>
+        expect(stub.callsMatching("season=20252026")).not.toHaveLength(0),
+      );
+      // And the choice is in the url, so the board can be shared on it.
+      expect(routerMock.push.mock.calls.at(-1)?.[0]).toContain(
+        "statsSeason=20252026",
+      );
+    });
   });
 });
