@@ -23,6 +23,9 @@ export interface PlayerQueryState {
   descendingOrder: boolean;
   skip: number;
   positions: string[];
+  // Whose season's numbers the table is showing. `null` is the current one,
+  // which is also what the backend serves when the parameter is left off.
+  statsSeason: number | null;
 }
 
 /*
@@ -99,6 +102,50 @@ export function filterByPositions(
         : (state.sortField ?? DEFAULT_SKATER_SORT),
     skip: 0,
   };
+}
+
+/*
+The season a draft board should open on.
+
+Before the season starts, this season: none of it has been played, so its
+numbers are last season's finals as far as anyone is concerned. Once games are
+in the books, the season that just ended -- four games of a new season say
+nothing about who to pick, and that is exactly when a late draft goes wrong.
+
+Returns null for "the current one", which is what the table falls back to. The
+argument is structural rather than the backend's `SeasonInfo` so this stays
+importable from a client component.
+*/
+export function draftStatsSeason(
+  seasons: readonly { season: number; start_season_date: string }[],
+  today: Date,
+): number | null {
+  const current = seasons[seasons.length - 1];
+  const previous = seasons[seasons.length - 2];
+  if (current === undefined || previous === undefined) return null;
+
+  // The backend has not always zero-padded these, and `new Date("2025-10-7")`
+  // is an Invalid Date, which compares false against everything and would
+  // silently leave the board on the current season.
+  const [year, month, day] = current.start_season_date.split("-").map(Number);
+  if (!year || !month || !day) return null;
+
+  return today >= new Date(year, month - 1, day) ? previous.season : null;
+}
+
+/*
+The season picker: which season's stats the table shows.
+
+Back to the first page, since the rows are re-ranked on the new season's
+numbers and page four of last season's scoring race has nothing to do with page
+four of this one. The sorted column is kept: every stat column exists in every
+season, unlike the skater/goalie split above.
+*/
+export function showSeason(
+  state: PlayerQueryState,
+  statsSeason: number | null,
+): PlayerQueryState {
+  return { ...state, statsSeason, skip: 0 };
 }
 
 // A search only runs once it is worth a request.

@@ -302,6 +302,7 @@ export default function Draft(props: DraftProps) {
                 selectLabel={t("Draft")}
                 playerLinksInNewTab
                 currentSeason={poolInfo.season}
+                openOnLastCompletedSeason
               />
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
