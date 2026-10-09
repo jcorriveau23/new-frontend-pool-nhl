@@ -104,12 +104,23 @@ const renderRoster = (
 };
 
 beforeEach(() => {
+  /*
+  The fixture season opens on 2026-10-07 and the lineup window is open until
+  then, so the day has to be pinned: on a real clock these tests passed until
+  opening night and then started failing on their own.
+
+  Only `Date` is faked. `userEvent` and `waitFor` need real timers to resolve,
+  which is the same reason the roster-move hooks pin the clock this way.
+  */
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-01T09:00:00"));
   stubFetch([NO_INJURIES]);
   socketValue.current = undefined;
   apiPost.mockResolvedValue({ ok: true, data: testPool() });
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.clearAllMocks();
 });

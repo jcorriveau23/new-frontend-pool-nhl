@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Trophy } from "lucide-react";
 import PageTitle from "@/components/page-title";
 import { backendUrl, fetchJson } from "@/lib/server-api";
+import { SurvivorPoolShort } from "@/data/survivor/model";
 import PoolList from "./pool-list";
+import SurvivorPoolList from "./survivor-pool-list";
 
 const FIRST_POOL_SEASON = 2021;
 
@@ -25,13 +27,26 @@ const getServersidePoolList = async (season: string) =>
     cache: "no-store",
   });
 
+// Survivor pools are their own collection, so they are their own request. A
+// null (the backend down, or no survivor pool yet) renders nothing rather than
+// taking the roster pools down with it.
+const getServersideSurvivorPoolList = async (season: string) =>
+  fetchJson<SurvivorPoolShort[]>(backendUrl(`/survivor-pools/${season}`), {
+    cache: "no-store",
+  });
+
 export default async function Pools(props: {
   params: Promise<{ season: string }>;
   searchParams: Promise<string[][] | Record<string, string> | string>;
 }) {
   const searchParams = await props.searchParams;
   const params = await props.params;
-  const pools = await getServersidePoolList(params.season);
+  // Two independent collections, so the two requests go out together rather
+  // than one waiting on the other.
+  const [pools, survivorPools] = await Promise.all([
+    getServersidePoolList(params.season),
+    getServersideSurvivorPoolList(params.season),
+  ]);
 
   const queryString = new URLSearchParams(searchParams).toString();
   const t = await getTranslations();
@@ -40,6 +55,7 @@ export default async function Pools(props: {
   // A failed request and an empty season both land on the same empty state,
   // the page has nothing else to show in either case.
   const hasPools = pools !== null && pools.length > 0;
+  const hasSurvivorPools = survivorPools !== null && survivorPools.length > 0;
 
   const seasonSelector = (
     <div className="flex items-center gap-2">
@@ -88,6 +104,10 @@ export default async function Pools(props: {
           queryString={queryString}
           seasonSelector={seasonSelector}
         />
+      ) : hasSurvivorPools ? (
+        // A season with survivor pools but no roster pool is not empty, so the
+        // season selector still needs somewhere to live.
+        <div className="flex justify-end">{seasonSelector}</div>
       ) : (
         <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed px-6 py-14 text-center">
           <div className="bg-muted rounded-full p-3">
@@ -107,6 +127,10 @@ export default async function Pools(props: {
           {createPoolButton}
         </div>
       )}
+
+      {hasSurvivorPools ? (
+        <SurvivorPoolList pools={survivorPools} queryString={queryString} />
+      ) : null}
     </div>
   );
 }

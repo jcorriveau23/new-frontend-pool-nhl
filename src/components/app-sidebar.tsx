@@ -14,6 +14,7 @@ import {
   ChevronUp,
   LogInIcon,
   Star,
+  Swords,
   X,
 } from "lucide-react";
 
@@ -70,6 +71,11 @@ export function AppSidebar({
       title: "CreatePool",
       url: "/create-pool",
       icon: PencilIcon,
+    },
+    {
+      title: "CreateSurvivorPool",
+      url: "/create-survivor-pool",
+      icon: Swords,
     },
   ];
 
