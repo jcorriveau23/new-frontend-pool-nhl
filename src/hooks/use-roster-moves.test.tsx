@@ -105,6 +105,65 @@ describe("useRosterMoves", () => {
     expect(toastSuccess).toHaveBeenCalledOnce();
   });
 
+  describe("backdating", () => {
+    // The fixture season runs from 2026-10-07, so the day the move is filed
+    // has to be pinned: a real date drifting past opening night would change
+    // what there is to pick.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-11-10T09:00:00"));
+      setPool();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("defaults to the day the move is filed and names no date", async () => {
+      const { result } = renderHook(() => useRosterMoves());
+
+      expect(result.current.effectiveDate).toBe("2026-11-10");
+      expect(result.current.backdateRange).toMatchObject({
+        earliestDate: "2026-10-07",
+        latestDate: "2026-11-10",
+        canBackdate: true,
+      });
+
+      await act(async () => {
+        await result.current.removePlayer("user-a", A_PLAYER);
+      });
+
+      // An ordinary removal sends the request it always sent.
+      expect(apiPost.mock.calls[0][1]).not.toHaveProperty("effective_date");
+    });
+
+    it("sends the picked day once the removal is backdated", async () => {
+      const { result } = renderHook(() => useRosterMoves());
+      act(() => result.current.setEffectiveDate("2026-10-07"));
+
+      await act(async () => {
+        await result.current.removePlayer("user-a", A_PLAYER);
+      });
+
+      expect(apiPost.mock.calls[0][1]).toMatchObject({
+        effective_date: "2026-10-07",
+      });
+    });
+
+    it("leaves an added player undated", async () => {
+      const { result } = renderHook(() => useRosterMoves());
+      act(() => result.current.setEffectiveDate("2026-10-07"));
+
+      await act(async () => {
+        await result.current.addPlayer("user-b", A_PLAYER);
+      });
+
+      // An added player lands on the bench, and a bench is not scored: there
+      // is no lineup event to date until somebody puts him in the lineup.
+      expect(apiPost.mock.calls[0][1]).not.toHaveProperty("effective_date");
+    });
+  });
+
   it("reports a refused move and leaves the pool alone", async () => {
     apiPost.mockResolvedValue({ ok: false, error: "this player is picked" });
     const { result } = renderHook(() => useRosterMoves());

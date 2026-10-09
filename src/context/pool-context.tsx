@@ -12,7 +12,11 @@ import {
 } from "@/data/pool/model";
 import { MALFORMED_POOL, parsePool } from "@/data/pool/schema";
 import { apiGet } from "@/lib/client-api";
-import { planScoreFetch } from "@/lib/pool-score-cache";
+import {
+  planScoreFetch,
+  SCORE_CACHE_VERSION,
+  settledScoreDates,
+} from "@/lib/pool-score-cache";
 import {
   findLastScoredDate,
   getPlayersOwner,
@@ -137,16 +141,109 @@ const getPoolDictUsers = (pool: Pool) =>
 // module because that is where the rest of the app already imports it from.
 export { hasPoolPrivilege };
 
-const mergeScoreByDay = (mergedPoolInfo: Pool, poolDb: Pool) => {
+/*
+Carries the derived days of the pool we hold onto the one replacing it.
+
+A mutation answers with the pool document, which does not carry them — they are
+assembled client-side — so without this every roster move, trade or settings
+change would blank the cumulative tab until the next full fetch. The source is
+the pool on screen rather than the Dexie row: the row deliberately leaves out
+the days that have not settled, and those are exactly the ones being looked at.
+*/
+const mergeScoreByDay = (mergedPoolInfo: Pool, previous: Pool) => {
   if (mergedPoolInfo.context === null) {
-    mergedPoolInfo.context = poolDb.context;
+    mergedPoolInfo.context = previous.context;
     return;
   }
 
   mergedPoolInfo.context.score_by_day = {
-    ...poolDb.context?.score_by_day,
+    ...previous.context?.score_by_day,
     ...mergedPoolInfo.context.score_by_day,
   };
+};
+
+type ScoreByDay = Record<string, Record<string, DailyRosterPoints>>;
+
+/*
+The pool as IndexedDB holds it: the document, the Dexie row id, and two stamps
+on the days in `context.score_by_day` — the version of the rule that decided
+which of them were allowed in, and the version of the pool they were derived
+from.
+*/
+type CachedPool = Pool & {
+  score_cache_version?: number;
+  score_date_updated?: number;
+};
+
+/*
+The days the derived scores were computed for, and the version of the pool they
+were computed from.
+
+The second half is what makes them droppable. The backend derives a day from the
+pool's lineup events and trades, and a trade may be backdated to any day of the
+season — see the effective-date picker in `create-trade-dialog` — so a pool
+write is allowed to rewrite days the cache already holds as settled. Nothing in
+their contents says so, and they are long past the window that gets re-derived
+on every load, so the pool version they came from is the only thing that can
+tell. `date_updated` is forced to strictly increase on every backend write,
+which is exactly the stamp needed.
+*/
+interface DerivedScores {
+  days: ScoreByDay | null;
+  derivedFrom: number;
+}
+
+/*
+The cached days of a row, or null when they cannot be believed.
+
+Two ways they cannot be. A row written before `SCORE_CACHE_VERSION` was raised
+was allowed to cache days whose games had not been played yet, and nothing
+re-derives a day once it falls out of the trailing window — so such a row holds
+zeros for days the season has long since played. And a row whose days were
+derived from an older version of the pool may be missing a backdated trade.
+Either way they are dropped once, on the first load that reads them, and the
+season is rebuilt from the backend.
+*/
+const cachedScoreDates = (
+  poolDb: CachedPool | undefined,
+  pool: Pool,
+): ScoreByDay | null =>
+  poolDb?.score_cache_version === SCORE_CACHE_VERSION &&
+  poolDb.score_date_updated === pool.date_updated
+    ? (poolDb.context?.score_by_day ?? null)
+    : null;
+
+/*
+Writes the pool to IndexedDB, keeping only the days that have settled.
+
+The pool handed back to the caller keeps every day it assembled — the tabs read
+the current ones — but the row that outlives this page load must not, or a day
+stored while its scores could still change would be summed into the standings
+for the rest of the season.
+
+`scores` is passed rather than read off `pool` because the two come apart: a
+mutation answers with a new pool document and no derived days at all, and the
+days the caller is still holding belong to the version before it.
+*/
+const cachePool = async (pool: Pool, scores: DerivedScores) => {
+  const row: CachedPool = {
+    ...pool,
+    context:
+      pool.context === null
+        ? null
+        : {
+            ...pool.context,
+            score_by_day: settledScoreDates(scores.days, {
+              seasonEnd: pool.season_end,
+              today: format(new Date(), "yyyy-MM-dd"),
+            }),
+          },
+    score_cache_version: SCORE_CACHE_VERSION,
+    score_date_updated: scores.derivedFrom,
+  };
+
+  // @ts-expect-error, Dexie is not typed.
+  await db.pools.put(row);
 };
 
 /*
@@ -170,17 +267,32 @@ const fetchPoolInfoUncached = async (name: string): Promise<Pool | string> => {
     return MALFORMED_POOL;
   }
 
-  // The locally cached copy of the pool (Dexie), used both to fetch only the
-  // missing score days and to preserve the row id so the put() updates in place.
+  /*
+  The locally cached copy of the pool (Dexie), used both to fetch only the
+  missing score days and to preserve the row id so the put() updates in place.
+
+  Looked up by the name the backend answered with rather than by the `name`
+  argument: that one is still percent-encoded, so a pool whose name holds a
+  space or an accent never matched its own row. It re-derived the whole season
+  on every load, and — the primary key being auto-incremented — the write
+  appended another row instead of updating the one already there.
+
+  Which is why this reads every row of that name and not just one. The newest
+  holds the most recent scores, so it is the one kept and written back to; the
+  rows a previous load stranded are dropped, since nothing else ever will.
+  */
   // @ts-expect-error, Dexie is not typed.
-  const poolDb: Pool = await db.pools.get({ name: name });
+  const rowsOfThisName = db.pools.where("name").equals(data.name);
+  const cachedRows: CachedPool[] = await rowsOfThisName.sortBy("id");
+  const poolDb = cachedRows.at(-1);
+  const strandedRowIds = cachedRows.slice(0, -1).map((row) => row.id);
 
   // Scores are derived on demand server-side from the lineup events + daily
-  // stats, shaped the way the rest of the UI already reads them. Past days settle, so only fetch the days missing from the
-  // local cache; the last few cached days are re-fetched since they may have
-  // been stored while their scores could still change.
+  // stats, shaped the way the rest of the UI already reads them. Past days
+  // settle, so only fetch the days the cache cannot answer for — the days it is
+  // missing, and the last few, which it is never trusted on.
   if (data.context) {
-    const cachedScores = poolDb?.context?.score_by_day ?? null;
+    const cachedScores = cachedScoreDates(poolDb, data);
     const { range, trustedCachedDates } = planScoreFetch({
       seasonStart: data.season_start,
       seasonEnd: data.season_end,
@@ -222,8 +334,16 @@ const fetchPoolInfoUncached = async (name: string): Promise<Pool | string> => {
   // Awaited so that a caller starting right after this one resolves reads the
   // days we just stored, instead of racing the write and re-deriving the whole
   // season.
-  // @ts-expect-error, Dexie is not typed.
-  await db.pools.put(data, "name");
+  await cachePool(data, {
+    days: data.context?.score_by_day ?? null,
+    derivedFrom: data.date_updated,
+  });
+
+  if (strandedRowIds.length > 0) {
+    // @ts-expect-error, Dexie is not typed.
+    await db.pools.bulkDelete(strandedRowIds);
+  }
+
   return data;
 };
 
@@ -465,15 +585,28 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       return;
     }
 
+    mergeScoreByDay(newPoolInfo, poolInfoRef.current);
     poolInfoRef.current = newPoolInfo;
     // @ts-expect-error, dexie is not typed.
-    db.pools.get({ name: newPoolInfo.name }).then((poolDb) => {
+    db.pools.get({ name: newPoolInfo.name }).then((poolDb: CachedPool) => {
       if (poolDb) {
-        mergeScoreByDay(newPoolInfo, poolDb);
         newPoolInfo.id = poolDb.id;
       }
-      // @ts-expect-error, dexie is not typed.
-      db.pools.put(newPoolInfo, "name");
+      /*
+      The row keeps the days it already had, still stamped with the pool version
+      they were derived from — never with this one. The answer to a mutation
+      carries no derived days, and the ones being carried onto it predate the
+      write: stamping them as this pool's would hide the very change that
+      invalidates them, and a backdated trade would never be picked up.
+
+      A socket reconnect comes through here too, right after `fetchPoolInfo`
+      re-derived and stored the season. Preserving the row's own stamp is what
+      keeps that work instead of dropping it on the way past.
+      */
+      void cachePool(newPoolInfo, {
+        days: poolDb?.context?.score_by_day ?? null,
+        derivedFrom: poolDb?.score_date_updated ?? 0,
+      });
       // Two picks landing back to back both reach this callback. Only the
       // newest may reach the state, otherwise the draft board flickers back to
       // the superseded pool — or stays on it, if the reads resolve out of order.

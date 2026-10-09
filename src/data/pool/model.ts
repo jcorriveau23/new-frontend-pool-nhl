@@ -178,6 +178,33 @@ export interface PoolContext {
   // `settings.player_drop_settings` is counted against. Null on a pool that
   // has never had one.
   roster_transactions: RosterTransaction[] | null;
+  /*
+  The pool's scoring history, one entry per starting-lineup change.
+
+  These are not a report of what happened, they are what the scoring reads: the
+  lineup on any day is the latest event on or before it. So an event recorded on
+  the wrong day is not a cosmetic mistake — the days between the one it should
+  have counted from and the one it carries are scored with the lineup it was
+  meant to replace, which is why the owner can re-date and drop them.
+
+  Null on a pool served by an API that predates them.
+  */
+  lineup_events: LineupEvent[] | null;
+}
+
+/*
+A participant's starting lineup taking effect on a day.
+
+Stored sparsely — one entry per change rather than one per day — so a season of
+scoring is a handful of entries instead of two hundred roster snapshots.
+*/
+export interface LineupEvent {
+  participant: string;
+  // "YYYY-MM-DD".
+  effective_date: string;
+  forwards: number[];
+  defense: number[];
+  goalies: number[];
 }
 
 export interface PoolerRoster {

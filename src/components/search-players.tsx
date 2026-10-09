@@ -41,6 +41,11 @@ interface PlayerSearchDialogProps {
   // Why a result cannot be picked, when it cannot. A row with a reason is
   // shown greyed out with it rather than left clickable to fail on submit.
   unavailableReason?: (player: Player) => string | null;
+
+  // Rendered above the search box, for what the caller needs settled before a
+  // result is picked — the day a waiver claim counts from, say. Picking a
+  // result files the move straight away, so there is no footer to put it in.
+  beforeSearch?: React.ReactNode;
 }
 
 export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
@@ -114,6 +119,7 @@ export default function PlayerSearchDialog(props: PlayerSearchDialogProps) {
           <DialogTitle>{props.label}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
+          {props.beforeSearch}
           <div className="relative">
             {isSearchActive && query.isFetching ? (
               <LoaderCircle className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />

@@ -2,9 +2,9 @@
 Placing a player on waivers and picking up the free agent replacing him.
 
 Filed from more than one screen — the lineup dialog and the row menu of the
-cumulative tab's roster tables — so the budget, the rights, the request and the
-toast it reports with live here instead of once per screen, where they would
-drift apart on who may claim or what a claim says.
+cumulative tab's roster tables — so the budget, the rights, the request, the day
+it counts from and the toast it reports with live here instead of once per
+screen, where they would drift apart on who may claim or what a claim says.
 */
 "use client";
 
@@ -23,6 +23,7 @@ import {
   getSwapLanding,
   isFreeAgent,
 } from "@/lib/player-drops";
+import { BackdateRange, getBackdateRange } from "@/lib/roster-modification";
 
 export interface WaiverClaim {
   budget: DropBudget;
@@ -38,6 +39,17 @@ export interface WaiverClaim {
   playerToDrop: Player | null;
   setPlayerToDrop: (player: Player | null) => void;
   isClaiming: boolean;
+  // The days the claim may be made to count from, and the one picked. A claim
+  // that should have gone through last week has to count from last week, or the
+  // days in between are scored with the player who was dropped.
+  backdateRange: BackdateRange;
+  effectiveDate: string;
+  setEffectiveDate: (date: string) => void;
+  // Whether the signed in user may move that day at all. Backdating rewrites
+  // days already scored, so it is the owner's and the assistants' to do — a
+  // pooler free to backdate their own claim could wait to see which free agent
+  // got hot and then claim him as of before he did.
+  canBackdate: boolean;
   // Why `player` cannot be the replacement, shown on the search result rather
   // than left to fail once the claim is sent.
   replacementUnavailableReason: (player: Player) => string | null;
@@ -56,11 +68,24 @@ export function useWaiverClaim(participantId: string): WaiverClaim {
   const [playerToDrop, setPlayerToDrop] = React.useState<Player | null>(null);
   const [isClaiming, setIsClaiming] = React.useState(false);
 
+  // Fixed for as long as the screen is open: a date that moved under the user
+  // between picking it and claiming would file the swap on a day they never
+  // chose.
+  const backdateRange = React.useMemo(
+    () => getBackdateRange(poolInfo, new Date()),
+    [poolInfo],
+  );
+  const [effectiveDate, setEffectiveDate] = React.useState(
+    backdateRange.defaultDate,
+  );
+
   // Unlike a lineup change, a claim is not tied to the pool's modification
-  // dates — it can be filed any day of the season.
+  // dates — it can be filed any day of the season. Backdated, it is counted
+  // against the budget of the period it counts for rather than the one it is
+  // filed in, which is the rule the backend applies.
   const budget = React.useMemo(
-    () => getDropBudget(poolInfo, participantId, new Date()),
-    [poolInfo, participantId],
+    () => getDropBudget(poolInfo, participantId, new Date(), effectiveDate),
+    [poolInfo, participantId, effectiveDate],
   );
 
   const canClaim =
@@ -68,6 +93,9 @@ export function useWaiverClaim(participantId: string): WaiverClaim {
     poolInfo.status === PoolState.InProgress &&
     (userData.info?.id === participantId ||
       hasPoolPrivilege(userData.info?.id, poolInfo));
+
+  const canBackdate =
+    backdateRange.canBackdate && hasPoolPrivilege(userData.info?.id, poolInfo);
 
   const blockedReason = budget.isSeasonOver
     ? t("FreeAgencyClosedForTheSeason")
@@ -115,6 +143,11 @@ export function useWaiverClaim(participantId: string): WaiverClaim {
           participant_id: participantId,
           dropped_player_id: dropped.id,
           added_player: replacement,
+          // Absent unless the claim is actually backdated, so an ordinary one
+          // sends the request it always sent.
+          ...(effectiveDate === backdateRange.defaultDate
+            ? {}
+            : { effective_date: effectiveDate }),
         },
         userSession.info?.jwt,
       );
@@ -154,6 +187,10 @@ export function useWaiverClaim(participantId: string): WaiverClaim {
     playerToDrop,
     setPlayerToDrop,
     isClaiming,
+    backdateRange,
+    effectiveDate,
+    setEffectiveDate,
+    canBackdate,
     replacementUnavailableReason,
     claim,
   };

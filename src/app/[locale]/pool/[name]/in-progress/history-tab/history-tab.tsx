@@ -10,9 +10,12 @@ import {
   ShieldPlus,
   BadgeMinus,
   CalendarDays,
+  CalendarClock,
   ArrowLeftRight,
   History as HistoryIcon,
+  LoaderCircle,
   Repeat,
+  Trash2,
   ArrowRight,
 } from "lucide-react";
 import PlayerLink from "@/components/player-link";
@@ -27,9 +30,29 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   DailyHistory,
   DailyMovements,
+  LineupEventChange,
   TODAY,
+  addLineupEventsToHistory,
   addWaiversToHistory,
 } from "./history-calculation";
+import { format as formatDateFns } from "date-fns";
+import { eventKey, useLineupEvents } from "@/hooks/use-lineup-events";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function HistoryTab() {
   const { poolInfo, lastFormatDate, userPoolUser, dictUsers } =
@@ -37,6 +60,13 @@ export default function HistoryTab() {
   const t = useTranslations();
   const format = useFormatter();
   const [history, setHistory] = React.useState<DailyHistory[] | null>(null);
+  const lineupEvents = useLineupEvents();
+  const [eventToDrop, setEventToDrop] =
+    React.useState<LineupEventChange | null>(null);
+
+  // The endpoints take a local day, not an instant, so a picked date is keyed
+  // the same way the pool spells its own dates.
+  const formatDateKey = (date: Date) => formatDateFns(date, "yyyy-MM-dd");
 
   const formatDate = (date: string) =>
     date === TODAY
@@ -154,6 +184,7 @@ export default function HistoryTab() {
             dailyMovements,
             dailyTrades,
             dailyWaivers: [],
+            dailyLineupEvents: [],
           });
         }
       }
@@ -183,23 +214,35 @@ export default function HistoryTab() {
         dailyMovements,
         dailyTrades: [],
         dailyWaivers: [],
+        dailyLineupEvents: [],
       });
     }
 
+    const participantName = (participantId: string) =>
+      dictUsers[participantId]?.name ?? participantId;
+
     // Waiver claims are listed as swaps rather than as a player that came
-    // and one that went.
+    // and one that went. The lineup changes the pool has on record go in last,
+    // since each one supersedes the movements derived for its day.
     setHistory(
-      addWaiversToHistory(
-        historyTmp,
-        poolInfo.context.roster_transactions ?? [],
-        (participantId) => dictUsers[participantId]?.name ?? participantId,
+      addLineupEventsToHistory(
+        addWaiversToHistory(
+          historyTmp,
+          poolInfo.context.roster_transactions ?? [],
+          participantName,
+        ),
+        poolInfo.context.lineup_events ?? [],
+        participantName,
       ),
     );
   };
 
+  // Rebuilt whenever the pool is written to, which is what re-dating or
+  // dropping an event does: `date_updated` is the version stamp every mutation
+  // bumps, so the list cannot go on showing the history that was just edited.
   React.useEffect(() => {
     GetAllHistory();
-  }, []);
+  }, [poolInfo.date_updated]);
 
   if (history === null) {
     return (
@@ -278,6 +321,131 @@ export default function HistoryTab() {
     );
   };
 
+  /*
+  One recorded lineup change.
+
+  Shown with the day the pool has on record for it, because that date is the
+  thing that can be wrong: the scoring reads the latest event on or before each
+  day, so an event a month late leaves a month scored with the old lineup. The
+  owner and the assistants can move it or take it back from here.
+  */
+  const LineupEventRow = (change: LineupEventChange) => {
+    const { event, isOpening } = change;
+    const name = dictUsers[event.participant]?.name ?? event.participant;
+    const key = eventKey(event.participant, event.effective_date);
+    const isPending = lineupEvents.pendingEvent === key;
+    // The opening lineup cannot be moved later or dropped without leaving the
+    // pooler unscored until their next change, which the backend refuses — so
+    // it is not offered.
+    const isEditable = lineupEvents.canEdit && !isOpening;
+
+    return (
+      <div key={key} className="rounded-lg border bg-muted/30 p-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <PoolerNameText
+            name={name}
+            isYou={event.participant === userPoolUser?.id}
+            className="font-semibold"
+          />
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <CalendarClock size={14} />
+            {isOpening
+              ? t("LineupEventOpening")
+              : t("LineupEventCountsFrom", {
+                  date: formatDate(event.effective_date),
+                })}
+          </span>
+        </div>
+
+        {isOpening ? (
+          <p className="text-sm text-muted-foreground">
+            {t("LineupEventOpeningDescription")}
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+                <ShieldPlus size={14} />
+                {t("IntoTheLineup")}
+              </div>
+              {change.addedPlayerIds.length > 0 ? (
+                change.addedPlayerIds.map(PlayerRow)
+              ) : (
+                <span className="text-sm text-muted-foreground">—</span>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-rose-600 dark:text-rose-400">
+                <BadgeMinus size={14} />
+                {t("OutOfTheLineup")}
+              </div>
+              {change.removedPlayerIds.length > 0 ? (
+                change.removedPlayerIds.map(PlayerRow)
+              ) : (
+                <span className="text-sm text-muted-foreground">—</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isEditable ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button variant="outline" size="sm" disabled={isPending} />
+                }
+              >
+                {isPending ? (
+                  <LoaderCircle className="animate-spin" />
+                ) : (
+                  <CalendarClock />
+                )}
+                {t("ChangeLineupEventDate")}
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={new Date(`${event.effective_date}T00:00:00`)}
+                  defaultMonth={new Date(`${event.effective_date}T00:00:00`)}
+                  onSelect={(date) => {
+                    if (!date) return;
+                    void lineupEvents.reDate(
+                      event.participant,
+                      event.effective_date,
+                      formatDateKey(date),
+                    );
+                  }}
+                  // Opening night through today: before it a lineup has no day
+                  // to apply to, after it there is no day scored yet.
+                  disabled={{
+                    before: new Date(
+                      `${lineupEvents.backdateRange.earliestDate}T00:00:00`,
+                    ),
+                    after: new Date(
+                      `${lineupEvents.backdateRange.latestDate}T00:00:00`,
+                    ),
+                  }}
+                  className="rounded-md border shadow-sm"
+                  required
+                />
+              </PopoverContent>
+            </Popover>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isPending}
+              onClick={() => setEventToDrop(change)}
+            >
+              <Trash2 />
+              {t("DropLineupEvent")}
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   const Movements = (movements: DailyMovements) => (
     <div
       key={movements.participant}
@@ -322,11 +490,63 @@ export default function HistoryTab() {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Mounted once rather than per row: only one event is ever being
+          dropped, and dropping one is not something to do by accident. */}
+      <AlertDialog
+        open={eventToDrop !== null}
+        onOpenChange={(open) => {
+          if (!open) setEventToDrop(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("DropLineupEventConfirmationTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {eventToDrop === null
+                ? null
+                : t("DropLineupEventConfirmationDescription", {
+                    userName:
+                      dictUsers[eventToDrop.event.participant]?.name ??
+                      eventToDrop.event.participant,
+                    date: formatDate(eventToDrop.event.effective_date),
+                  })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={lineupEvents.pendingEvent !== null}>
+              {t("Cancel")}
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={lineupEvents.pendingEvent !== null}
+              onClick={async () => {
+                if (eventToDrop === null) return;
+                if (
+                  await lineupEvents.drop(
+                    eventToDrop.event.participant,
+                    eventToDrop.event.effective_date,
+                  )
+                ) {
+                  setEventToDrop(null);
+                }
+              }}
+            >
+              {lineupEvents.pendingEvent !== null ? (
+                <LoaderCircle className="animate-spin" />
+              ) : null}
+              {t("DropLineupEvent")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {history.map((dailyHistory) => {
         const changeCount =
           dailyHistory.dailyMovements.length +
           dailyHistory.dailyTrades.length +
-          dailyHistory.dailyWaivers.length;
+          dailyHistory.dailyWaivers.length +
+          dailyHistory.dailyLineupEvents.length;
         return (
           <Card key={dailyHistory.date} className="overflow-hidden">
             <Accordion defaultValue={[dailyHistory.date]}>
@@ -344,6 +564,20 @@ export default function HistoryTab() {
                 </AccordionTrigger>
                 <AccordionContent className="px-4">
                   <div className="flex flex-col gap-3">
+                    {dailyHistory.dailyLineupEvents.length > 0 ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          <CalendarClock size={14} />
+                          {t("RecordedLineupChanges")}
+                        </div>
+                        {dailyHistory.dailyLineupEvents.map(LineupEventRow)}
+                      </div>
+                    ) : null}
+                    {dailyHistory.dailyLineupEvents.length > 0 &&
+                      (dailyHistory.dailyWaivers.length > 0 ||
+                        dailyHistory.dailyMovements.length > 0) && (
+                        <Separator />
+                      )}
                     {dailyHistory.dailyWaivers.length > 0 ? (
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">

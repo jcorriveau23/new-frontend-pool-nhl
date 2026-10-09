@@ -49,6 +49,7 @@ import PlayerSearchDialog from "./search-players";
 import WaiverClaimDialog from "./waiver-claim-dialog";
 import { useUser } from "@/context/useUserData";
 import { getRosterModificationWindow } from "@/lib/roster-modification";
+import EffectiveDatePicker from "@/components/effective-date-picker";
 import { useRosterMoves } from "@/hooks/use-roster-moves";
 import { useWaiverClaim } from "@/hooks/use-waiver-claim";
 import { isFreeAgent } from "@/lib/player-drops";
@@ -128,8 +129,15 @@ export default function StartingRoster(props: Props) {
     (isOwnRoster || hasPoolPrivilege(userData.info?.id, poolInfo));
   // Putting a player on the bench and taking one off the roster are the
   // owner's tools, shared with the cumulative tab's roster tables.
-  const { canManageRoster, pendingPlayerId, addPlayer, removePlayer } =
-    useRosterMoves();
+  const {
+    canManageRoster,
+    pendingPlayerId,
+    backdateRange,
+    effectiveDate,
+    setEffectiveDate,
+    addPlayer,
+    removePlayer,
+  } = useRosterMoves();
   const isMoveInFlight = pendingPlayerId !== null;
 
   // Shuffling players around costs nothing and is the whole point of looking at
@@ -632,6 +640,25 @@ export default function StartingRoster(props: Props) {
     </div>
   );
 
+  // Absent unless the move is actually backdated, so an ordinary one sends the
+  // request it always sent. `canManageRoster` is the backdating right here: it
+  // is already the owner-and-assistants check the backend applies.
+  const backdate = () =>
+    canManageRoster && effectiveDate !== backdateRange.defaultDate
+      ? { effective_date: effectiveDate }
+      : {};
+
+  const canPickEffectiveDate = canManageRoster && backdateRange.canBackdate;
+
+  const effectiveDateField = (disabled: boolean) => (
+    <EffectiveDatePicker
+      range={backdateRange}
+      value={effectiveDate}
+      onChange={setEffectiveDate}
+      disabled={disabled}
+    />
+  );
+
   const onModifyRoster = async () => {
     setIsSaving(true);
     try {
@@ -641,6 +668,7 @@ export default function StartingRoster(props: Props) {
         def_list: lineup.defense.map((p) => p.id),
         goal_list: lineup.goalies.map((p) => p.id),
         reserv_list: lineup.reservists.map((p) => p.id),
+        ...backdate(),
       };
 
       // During the draft the change has to reach everyone in the room, so it
@@ -721,6 +749,7 @@ export default function StartingRoster(props: Props) {
           pool_name: poolInfo.name,
           filled_spot_user_id: props.userRoster.user.id,
           player_id: player.id,
+          ...backdate(),
         },
         userSession.info?.jwt,
       );
@@ -827,6 +856,7 @@ export default function StartingRoster(props: Props) {
                   : null}
               </AlertDialogDescription>
             </AlertDialogHeader>
+            {canPickEffectiveDate ? effectiveDateField(isMoveInFlight) : null}
             <AlertDialogFooter>
               <AlertDialogCancel disabled={isMoveInFlight}>
                 {t("Cancel")}
@@ -879,6 +909,9 @@ export default function StartingRoster(props: Props) {
 
       {canMovePlayers ? (
         <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-2 border-t bg-background/95 py-3 backdrop-blur">
+          {canPickEffectiveDate && hasUnsavedChanges ? (
+            <div className="w-full">{effectiveDateField(isSaving)}</div>
+          ) : null}
           <div className="min-w-0 text-xs">
             {blockingIssue ? (
               <p className="flex items-center gap-1.5 font-medium text-destructive">

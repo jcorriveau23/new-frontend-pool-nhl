@@ -193,6 +193,79 @@ describe("useWaiverClaim", () => {
     });
   });
 
+  describe("backdating", () => {
+    it("defaults to the day the claim is filed and names no date", async () => {
+      const { result } = renderHook(() => useWaiverClaim("user-a"));
+      act(() => result.current.setPlayerToDrop(DROPPED));
+
+      // Past noon, so the swap counts for tomorrow — the same cutoff a lineup
+      // change uses.
+      expect(result.current.effectiveDate).toBe("2026-11-11");
+
+      await act(async () => {
+        await result.current.claim(FREE_AGENT);
+      });
+
+      // An ordinary claim sends the request it always sent.
+      expect(apiPost.mock.calls[0][1]).not.toHaveProperty("effective_date");
+    });
+
+    it("sends the picked day once the claim is backdated", async () => {
+      const { result } = renderHook(() => useWaiverClaim("user-a"));
+      act(() => result.current.setPlayerToDrop(DROPPED));
+      act(() => result.current.setEffectiveDate("2026-10-20"));
+
+      await act(async () => {
+        await result.current.claim(FREE_AGENT);
+      });
+
+      expect(apiPost.mock.calls[0][1]).toMatchObject({
+        effective_date: "2026-10-20",
+      });
+    });
+
+    it("is the owner's and the assistants' to do, not a pooler's", () => {
+      const owner = renderHook(() => useWaiverClaim("user-a"));
+      expect(owner.result.current.canBackdate).toBe(true);
+
+      // A pooler free to backdate their own claim could wait to see which free
+      // agent got hot and then claim him as of before he did.
+      userValue.current = "user-b";
+      const pooler = renderHook(() => useWaiverClaim("user-b"));
+      expect(pooler.result.current.canBackdate).toBe(false);
+    });
+
+    it("counts a backdated claim against the budget of the period it counts for", () => {
+      const pool = testPool();
+      setPool({
+        settings: testSettings({
+          player_drop_settings: { max_drops: 1, period: DropPeriod.MONTH },
+        }),
+        context: {
+          ...pool.context!,
+          roster_transactions: [
+            {
+              participant: "user-a",
+              effective_date: "2026-10-20",
+              dropped_player_id: 1,
+              added_player_id: 8,
+              date_created: 0,
+            },
+          ],
+        },
+      });
+      const { result } = renderHook(() => useWaiverClaim("user-a"));
+
+      // November is untouched...
+      expect(result.current.budget.remaining).toBe(1);
+
+      // ...but October's one swap is already spent.
+      act(() => result.current.setEffectiveDate("2026-10-25"));
+      expect(result.current.budget.remaining).toBe(0);
+      expect(result.current.blockedReason).not.toBeNull();
+    });
+  });
+
   describe("claim", () => {
     it("does nothing without a player to drop", async () => {
       const { result } = renderHook(() => useWaiverClaim("user-a"));
