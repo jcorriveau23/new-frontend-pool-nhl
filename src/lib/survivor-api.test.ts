@@ -7,6 +7,7 @@ import {
   WeekStatus,
 } from "@/data/survivor/model";
 import {
+  addSurvivorParticipant,
   createSurvivorPool,
   deleteSurvivorPool,
   fetchMyPicks,
@@ -62,6 +63,7 @@ const pool = {
       strikes: 0,
       eliminated_week: null,
       date_joined: 0,
+      is_owned: true,
     },
   ],
   weeks: [
@@ -268,6 +270,81 @@ describe("the authenticated reads", () => {
 
     expect(res.ok).toBe(false);
     expect(res.ok === false && res.error).toMatch(/could not be reached/);
+  });
+});
+
+describe("picking on somebody else's behalf", () => {
+  it("names the participant on the pick screen request", async () => {
+    const spy = mockFetch(() => json(pickOptions));
+
+    await fetchPickOptions("my-pool", 1, "the-token", "francis-id");
+
+    expect(spy.mock.calls[0][0]).toBe(
+      "/api-rust/survivor/my-pool/pick-options/1?participant_id=francis-id",
+    );
+  });
+
+  it("sends no participant at all when the screen is the caller's own", async () => {
+    const spy = mockFetch(() => json(pickOptions));
+
+    await fetchPickOptions("my-pool", 1, "the-token");
+
+    // Not `participant_id=undefined`, which the backend would read as a name.
+    expect(spy.mock.calls[0][0]).toBe(
+      "/api-rust/survivor/my-pool/pick-options/1",
+    );
+  });
+
+  it("escapes a participant id rather than pasting it into the query", async () => {
+    const spy = mockFetch(() => json(pickOptions));
+
+    await fetchPickOptions("my-pool", 1, "the-token", "a id/with&chars");
+
+    expect(spy.mock.calls[0][0]).toContain(
+      `participant_id=${encodeURIComponent("a id/with&chars")}`,
+    );
+  });
+
+  it("names the participant when filing their pick", async () => {
+    const spy = mockFetch(() => json(pickOptions));
+
+    await makeSurvivorPick("my-pool", 2, 10, "the-token", "francis-id");
+
+    expect(JSON.parse(spy.mock.calls[0][1]!.body as string)).toEqual({
+      pool_name: "my-pool",
+      week: 2,
+      team_id: 10,
+      participant_id: "francis-id",
+    });
+  });
+
+  it("omits the participant entirely when filing the caller's own", async () => {
+    const spy = mockFetch(() => json(pickOptions));
+
+    await makeSurvivorPick("my-pool", 2, 10, "the-token");
+
+    // The key is absent rather than null: the backend defaults a missing one
+    // to the caller, and a null would deserialize to "nobody".
+    expect(JSON.parse(spy.mock.calls[0][1]!.body as string)).toEqual({
+      pool_name: "my-pool",
+      week: 2,
+      team_id: 10,
+    });
+  });
+
+  it("adds a managed participant by name, never by id", async () => {
+    const spy = mockFetch(() => json(pool));
+
+    const res = await addSurvivorParticipant("my-pool", "Francis", "the-token");
+
+    expect(spy.mock.calls[0][0]).toBe("/api-rust/add-survivor-participant");
+    // No id: the backend generates one, so a pool cannot be attached to an
+    // account the organiser merely names.
+    expect(JSON.parse(spy.mock.calls[0][1]!.body as string)).toEqual({
+      pool_name: "my-pool",
+      participant_name: "Francis",
+    });
+    expect(res.ok).toBe(true);
   });
 });
 

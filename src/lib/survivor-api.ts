@@ -84,11 +84,19 @@ export async function fetchPickOptions(
   name: string,
   week: number,
   jwt: string | null | undefined,
+  // Whose screen to build. Omitted means the caller's own; only the owner and
+  // the assistants may name somebody else.
+  participantId?: string,
 ): Promise<ApiResult<SurvivorPickOptions>> {
+  const query =
+    participantId === undefined
+      ? ""
+      : `?participant_id=${encodeURIComponent(participantId)}`;
+
   // A GET, but it carries the bearer token, so it goes through apiPost's
   // sibling rather than apiGet — which sends none.
   return checked(
-    await authedGet(`${poolPath(name)}/pick-options/${week}`, jwt),
+    await authedGet(`${poolPath(name)}/pick-options/${week}${query}`, jwt),
     parseSurvivorPickOptions,
   );
 }
@@ -179,10 +187,37 @@ export function makeSurvivorPick(
   week: number,
   teamId: number,
   jwt: string | null | undefined,
+  // Whose pick to file. Omitted means the caller's own, which is what a
+  // participant sends; the owner and the assistants may name anybody, which is
+  // the only way a managed spot gets played.
+  participantId?: string,
 ): Promise<ApiResult<SurvivorPickOptions>> {
   return apiPost<SurvivorPickOptions>(
     "/survivor-pick",
-    { pool_name: poolName, week, team_id: teamId },
+    {
+      pool_name: poolName,
+      week,
+      team_id: teamId,
+      ...(participantId === undefined ? {} : { participant_id: participantId }),
+    },
+    jwt,
+  );
+}
+
+/*
+Add a spot the organiser keeps on somebody's behalf.
+
+No id is sent: the backend generates one, so a pool cannot be attached to an
+account the organiser merely names.
+*/
+export function addSurvivorParticipant(
+  poolName: string,
+  participantName: string,
+  jwt: string | null | undefined,
+): Promise<ApiResult<SurvivorPool>> {
+  return apiPost<SurvivorPool>(
+    "/add-survivor-participant",
+    { pool_name: poolName, participant_name: participantName },
     jwt,
   );
 }

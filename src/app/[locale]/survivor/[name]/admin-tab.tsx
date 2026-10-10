@@ -15,12 +15,14 @@ job later without this page changing.
 */
 
 import * as React from "react";
-import { Flag, Lock, Trash2 } from "lucide-react";
+import { Flag, Lock, Trash2, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -39,6 +41,7 @@ import { useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
 import { SurvivorPool, WeekStatus } from "@/data/survivor/model";
 import {
+  addSurvivorParticipant,
   deleteSurvivorPool,
   lockSurvivorWeek,
   settleSurvivorWeek,
@@ -64,6 +67,35 @@ export default function AdminTab(props: Props) {
     firstUnsettled?.week ?? null,
   );
   const [isWorking, setIsWorking] = React.useState(false);
+  const [newParticipant, setNewParticipant] = React.useState("");
+
+  /*
+  Add a spot the organiser keeps on somebody's behalf.
+
+  For the pool of a few friends where one person enters everybody: the
+  participant this creates has no account, so the organiser files its picks
+  from the pick screen too.
+  */
+  const addParticipant = async () => {
+    setIsWorking(true);
+    const res = await addSurvivorParticipant(
+      pool.name,
+      newParticipant.trim(),
+      jwt,
+    );
+    setIsWorking(false);
+
+    if (!res.ok) {
+      toast.error(res.error, { duration: 5000 });
+      return;
+    }
+
+    onPoolChange(res.data);
+    toast.success(
+      t("SurvivorParticipantAdded", { name: newParticipant.trim() }),
+    );
+    setNewParticipant("");
+  };
 
   const week =
     pool.weeks.find((candidate) => candidate.week === selectedWeek) ?? null;
@@ -168,6 +200,44 @@ export default function AdminTab(props: Props) {
               {t("SurvivorSettleExplanation")}
             </AlertDescription>
           </Alert>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("SurvivorAddParticipant")}</CardTitle>
+          <CardDescription>
+            {t("SurvivorAddParticipantDescription")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="survivor-new-participant">
+                {t("SurvivorParticipantName")}
+              </Label>
+              <Input
+                id="survivor-new-participant"
+                value={newParticipant}
+                maxLength={32}
+                onChange={(event) => setNewParticipant(event.target.value)}
+              />
+            </div>
+            <Button
+              variant="outline"
+              disabled={isWorking || newParticipant.trim().length === 0}
+              onClick={() => void addParticipant()}
+            >
+              <UserPlus className="size-4" />
+              {t("SurvivorAdd")}
+            </Button>
+          </div>
+          <p className="text-muted-foreground text-sm">
+            {t("SurvivorParticipantCountLabel", {
+              count: pool.participants.length,
+              max: pool.settings.max_participants,
+            })}
+          </p>
         </CardContent>
       </Card>
 

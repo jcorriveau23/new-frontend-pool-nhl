@@ -29,9 +29,21 @@ import {
   SurvivorUser,
   SurvivorWeek,
 } from "@/data/survivor/model";
-import { pickBlockedReasonKey, splitTeamChoices } from "@/lib/survivor";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  hasSurvivorPrivilege,
+  pickBlockedReasonKey,
+  splitTeamChoices,
+} from "@/lib/survivor";
 import { fetchPickOptions, makeSurvivorPick } from "@/lib/survivor-api";
 import { useSession } from "@/context/useSessionData";
+import { useUser } from "@/context/useUserData";
 
 interface Props {
   pool: SurvivorPool;
@@ -95,11 +107,24 @@ export default function PickTab(props: Props) {
   const userSession = useSession();
   const jwt = userSession.info?.jwt;
 
+  const userData = useUser();
+  const canPickForOthers = hasSurvivorPrivilege(pool, userData.info?.id);
+
   const [options, setOptions] = React.useState<SurvivorPickOptions | null>(
     null,
   );
   const [isLoading, setIsLoading] = React.useState(true);
   const [pickingTeam, setPickingTeam] = React.useState<number | null>(null);
+
+  /*
+  Whose pick the screen is filing.
+
+  The organiser's own spot by default. They switch to one of the spots they
+  keep on somebody's behalf — those people have no account, so this is the only
+  way those picks ever get made. Null means "mine", so a plain participant
+  never sends a participant id at all.
+  */
+  const [pickingFor, setPickingFor] = React.useState<string | null>(null);
 
   const loadOptions = React.useCallback(async () => {
     if (!jwt) {
@@ -107,7 +132,12 @@ export default function PickTab(props: Props) {
       return;
     }
     setIsLoading(true);
-    const res = await fetchPickOptions(pool.name, week.week, jwt);
+    const res = await fetchPickOptions(
+      pool.name,
+      week.week,
+      jwt,
+      pickingFor ?? undefined,
+    );
     setIsLoading(false);
 
     if (!res.ok) {
@@ -119,7 +149,7 @@ export default function PickTab(props: Props) {
       return;
     }
     setOptions(res.data);
-  }, [jwt, pool.name, week.week, participant, t]);
+  }, [jwt, pool.name, week.week, pickingFor, participant, t]);
 
   React.useEffect(() => {
     void loadOptions();
@@ -127,7 +157,13 @@ export default function PickTab(props: Props) {
 
   const pick = async (teamId: number) => {
     setPickingTeam(teamId);
-    const res = await makeSurvivorPick(pool.name, week.week, teamId, jwt);
+    const res = await makeSurvivorPick(
+      pool.name,
+      week.week,
+      teamId,
+      jwt,
+      pickingFor ?? undefined,
+    );
     setPickingTeam(null);
 
     if (!res.ok) {
@@ -143,10 +179,20 @@ export default function PickTab(props: Props) {
     toast.success(t("SurvivorPickSaved", { team: teamName(teamId) }));
   };
 
+  // The teams playing come from the pick endpoint, which resolves them against
+  // the league's schedule. The pool's own copy of the week is only filled in
+  // once the date is locked, so it would read as "no games" on every open one.
+  // The spot being filed for, which is the organiser's own unless they have
+  // switched. Its standing is what decides whether a pick can be made.
+  const subject =
+    pickingFor === null
+      ? participant
+      : (pool.participants.find((p) => p.id === pickingFor) ?? null);
+
   const blockedKey = pickBlockedReasonKey(
-    pool,
     week,
-    participant,
+    subject,
+    options?.eligible_team_ids ?? null,
     options?.is_blocked ?? false,
   );
 
@@ -183,6 +229,35 @@ export default function PickTab(props: Props) {
 
   return (
     <div className="space-y-4 text-left">
+      {canPickForOthers && pool.participants.length > 1 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground text-sm">
+            {t("SurvivorPickingFor")}
+          </span>
+          <Select
+            value={pickingFor ?? "__me__"}
+            onValueChange={(value) =>
+              setPickingFor(value === "__me__" ? null : value)
+            }
+          >
+            <SelectTrigger className="w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__me__">{t("SurvivorMyself")}</SelectItem>
+              {pool.participants
+                .filter((person) => person.id !== participant?.id)
+                .map((person) => (
+                  <SelectItem key={person.id} value={person.id}>
+                    {person.name}
+                    {person.is_owned ? "" : ` ${t("SurvivorManagedSuffix")}`}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="outline">
           {t("SurvivorWeekLabel", { week: week.week })}

@@ -52,6 +52,9 @@ const participant = (
   strikes: 0,
   eliminated_week: null,
   date_joined: 0,
+  // Somebody who signed themselves up; a spot the organiser keeps overrides
+  // this to false.
+  is_owned: true,
   ...overrides,
 });
 
@@ -293,14 +296,34 @@ describe("strikesRemaining", () => {
 });
 
 describe("pickBlockedReasonKey", () => {
+  /*
+  The shape an open date actually has in production: the pool's own copy of the
+  week carries no teams, because the read path does not write it back, and the
+  teams come from the pick endpoint instead. The fixtures used to default the
+  week's list to a populated one — a state an open date never reaches — which
+  is how the bug below went unnoticed.
+  */
+  const openWeek = () => week(1, WeekStatus.Open, []);
+
   it("is null when the participant may pick", () => {
     expect(
-      pickBlockedReasonKey(pool(), week(1), participant("a"), false),
+      pickBlockedReasonKey(openWeek(), participant("a"), [8, 10, 6], false),
+    ).toBeNull();
+  });
+
+  /*
+  Regression: the reason used to be read off `week.eligible_team_ids`, which is
+  empty on every open date, so the screen announced "no games that day" over a
+  full grid of teams and disabled every one of them.
+  */
+  it("does not call an open date gameless just because the pool has no copy of its teams", () => {
+    expect(
+      pickBlockedReasonKey(openWeek(), participant("a"), [8, 10, 6], false),
     ).toBeNull();
   });
 
   it("tells somebody who is not in the pool so first", () => {
-    expect(pickBlockedReasonKey(pool(), week(1), null, false)).toBe(
+    expect(pickBlockedReasonKey(openWeek(), null, [8, 10], false)).toBe(
       "SurvivorNotAParticipant",
     );
   });
@@ -312,43 +335,54 @@ describe("pickBlockedReasonKey", () => {
     });
 
     expect(
-      pickBlockedReasonKey(pool(), week(1, WeekStatus.Locked), out, false),
+      pickBlockedReasonKey(week(1, WeekStatus.Locked), out, [8, 10], false),
     ).toBe("SurvivorYouAreEliminated");
   });
 
   it("tells a settled date apart from a locked one", () => {
     expect(
       pickBlockedReasonKey(
-        pool(),
         week(1, WeekStatus.Settled),
         participant("a"),
+        [8, 10],
         false,
       ),
     ).toBe("SurvivorWeekSettled");
 
     expect(
       pickBlockedReasonKey(
-        pool(),
         week(1, WeekStatus.Locked),
         participant("a"),
+        [8, 10],
         false,
       ),
     ).toBe("SurvivorWeekLocked");
   });
 
   it("says so when the league scheduled nothing that day", () => {
-    expect(
-      pickBlockedReasonKey(
-        pool(),
-        week(1, WeekStatus.Open, []),
-        participant("a"),
-        true,
-      ),
-    ).toBe("SurvivorNoGamesThatDay");
+    expect(pickBlockedReasonKey(openWeek(), participant("a"), [], true)).toBe(
+      "SurvivorNoGamesThatDay",
+    );
   });
 
   it("says so when every team playing is one they have used", () => {
-    expect(pickBlockedReasonKey(pool(), week(1), participant("a"), true)).toBe(
+    expect(
+      pickBlockedReasonKey(openWeek(), participant("a"), [8, 10, 6], true),
+    ).toBe("SurvivorNoTeamLeftThisWeek");
+  });
+
+  /*
+  The pick screen failed to load, so how many teams play that day is unknown.
+  Guessing "no games" there is what produced the bug above, so an unknown list
+  reports nothing about the schedule.
+  */
+  it("says nothing about the schedule when the teams are not known", () => {
+    expect(
+      pickBlockedReasonKey(openWeek(), participant("a"), null, false),
+    ).toBeNull();
+
+    // A blocked flag still stands on its own.
+    expect(pickBlockedReasonKey(openWeek(), participant("a"), null, true)).toBe(
       "SurvivorNoTeamLeftThisWeek",
     );
   });
