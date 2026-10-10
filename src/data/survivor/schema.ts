@@ -28,6 +28,9 @@ const survivorUserSchema = z.looseObject({
   status: z.enum(ParticipantStatus),
   strikes: z.number(),
   eliminated_week: z.number().nullable(),
+  // Defaulted rather than required: the backend only started sending it when
+  // managed spots arrived, and a pool created before that carries no flag.
+  is_owned: z.boolean().optional().default(true),
 });
 
 const survivorWeekSchema = z.looseObject({

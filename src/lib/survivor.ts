@@ -146,9 +146,9 @@ Ordered the way a participant would ask: am I out, is it too late, is there
 anything left to pick.
 */
 export function pickBlockedReasonKey(
-  pool: SurvivorPool,
   week: SurvivorWeek,
   participant: SurvivorUser | null,
+  eligibleTeamIds: number[] | null,
   isBlocked: boolean,
 ): string | null {
   if (participant === null) {
@@ -163,7 +163,7 @@ export function pickBlockedReasonKey(
   if (week.status === WeekStatus.Locked) {
     return "SurvivorWeekLocked";
   }
-  if (week.eligible_team_ids.length === 0) {
+  if (eligibleTeamIds !== null && eligibleTeamIds.length === 0) {
     return "SurvivorNoGamesThatDay";
   }
   if (isBlocked) {

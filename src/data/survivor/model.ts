@@ -63,6 +63,10 @@ export interface SurvivorUser {
   strikes: number;
   eliminated_week: number | null;
   date_joined: number;
+  // Whether this is somebody signed in under their own account, or a spot the
+  // organiser keeps on their behalf. A managed spot has no account, so the
+  // organiser files its picks too.
+  is_owned: boolean;
 }
 
 export interface SurvivorWeek {

@@ -904,5 +904,14 @@
   "SurvivorWeekSettledToast": "La semaine {week} a été réglée.",
   "SurvivorSettleExplanation": "Les résultats proviennent du tableau de la ligue, jamais de cette page. Le règlement ne peut s'exécuter qu'une fois tous les matchs de la date terminés, et le relancer ne change rien.",
   "SurvivorNoSurvivorPools": "Aucun pool survivant pour cette saison.",
-  "SurvivorParticipantCount": "{count} sur {max}"
+  "SurvivorParticipantCount": "{count} sur {max}",
+  "SurvivorPickingFor": "Choix pour",
+  "SurvivorMyself": "Moi-même",
+  "SurvivorManagedSuffix": "(vous choisissez)",
+  "SurvivorAddParticipant": "Ajouter un participant",
+  "SurvivorAddParticipantDescription": "Pour quelqu'un sans compte. Vous faites ses choix depuis l'onglet Choix. Ceux qui ont un compte peuvent s'inscrire eux-mêmes via le lien de partage.",
+  "SurvivorParticipantName": "Nom",
+  "SurvivorAdd": "Ajouter",
+  "SurvivorParticipantAdded": "{name} a été ajouté au pool.",
+  "SurvivorParticipantCountLabel": "{count} participants sur {max}"
 }

@@ -904,5 +904,14 @@
   "SurvivorWeekSettledToast": "Week {week} has been settled.",
   "SurvivorSettleExplanation": "Results come from the league's own scoreboard, never from this page. Settling can only run once every game of the date is over, and running it twice changes nothing.",
   "SurvivorNoSurvivorPools": "No survivor pool for this season yet.",
-  "SurvivorParticipantCount": "{count} of {max}"
+  "SurvivorParticipantCount": "{count} of {max}",
+  "SurvivorPickingFor": "Picking for",
+  "SurvivorMyself": "Myself",
+  "SurvivorManagedSuffix": "(you pick)",
+  "SurvivorAddParticipant": "Add a participant",
+  "SurvivorAddParticipantDescription": "For somebody with no account. You make their picks from the Pick tab. Anybody with an account can join by themselves through the share link instead.",
+  "SurvivorParticipantName": "Name",
+  "SurvivorAdd": "Add",
+  "SurvivorParticipantAdded": "{name} has been added to the pool.",
+  "SurvivorParticipantCountLabel": "{count} of {max} participants"
 }
