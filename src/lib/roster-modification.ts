@@ -10,6 +10,17 @@ import { Pool } from "@/data/pool/model";
 // Past noon, a roster change is counted for the next day by the backend.
 export const ROSTER_MODIFICATION_CUTOFF_HOUR = 12;
 
+/*
+The zone that noon is measured in, matching the backend's `clock.rs`.
+
+The pooler's own clock cannot stand in for it. The NHL schedules on Eastern time
+and so do the pool's rules, so a laptop set to Pacific reading 10:00 is already
+past the cutoff as far as the backend is concerned — and a laptop set to Eastern
+reading 11:00 is not, which is the whole point: the two sides have to name the
+same zone or the date shown here is not the date the move lands on.
+*/
+export const POOL_TIME_ZONE = "America/Toronto";
+
 export interface RosterModificationWindow {
   // Day the modification would apply to, formatted as "YYYY-MM-DD".
   effectiveDate: string;
@@ -20,20 +31,43 @@ export interface RosterModificationWindow {
   upcomingDates: string[];
 }
 
-const toDateKey = (date: Date): string =>
-  `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(
-    2,
-    "0",
-  )}-${`${date.getDate()}`.padStart(2, "0")}`;
+const poolClock = new Intl.DateTimeFormat("en-CA", {
+  timeZone: POOL_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  hourCycle: "h23",
+});
+
+// What a clock on the wall in the pool's zone reads at `now`: the day and the
+// hour the cutoff is about to be compared against.
+const readPoolClock = (now: Date): { dateKey: string; hour: number } => {
+  const parts = poolClock.formatToParts(now);
+  const valueOf = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  return {
+    dateKey: `${valueOf("year")}-${valueOf("month")}-${valueOf("day")}`,
+    hour: Number(valueOf("hour")),
+  };
+};
+
+// Date keys are plain ISO days, so the day is stepped in UTC, where no offset
+// and no daylight-saving jump can land it on the wrong one.
+const nextDateKey = (dateKey: string): string => {
+  const day = new Date(`${dateKey}T00:00:00Z`);
+  day.setUTCDate(day.getUTCDate() + 1);
+
+  return day.toISOString().slice(0, 10);
+};
 
 export const getEffectiveRosterDate = (now: Date): string => {
-  const effectiveDate = new Date(now);
+  const { dateKey, hour } = readPoolClock(now);
 
-  if (now.getHours() >= ROSTER_MODIFICATION_CUTOFF_HOUR) {
-    effectiveDate.setDate(effectiveDate.getDate() + 1);
-  }
-
-  return toDateKey(effectiveDate);
+  return hour >= ROSTER_MODIFICATION_CUTOFF_HOUR
+    ? nextDateKey(dateKey)
+    : dateKey;
 };
 
 export interface BackdateRange {

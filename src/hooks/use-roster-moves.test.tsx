@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Player, PoolState, Position } from "@/data/pool/model";
+import { poolClockAt } from "@/test/pool-clock";
 import { poolUser, testPlayer, testPool } from "@/test/pool-fixtures";
 
 const apiPost = vi.fn();
@@ -111,7 +112,7 @@ describe("useRosterMoves", () => {
     // what there is to pick.
     beforeEach(() => {
       vi.useFakeTimers({ toFake: ["Date"] });
-      vi.setSystemTime(new Date("2026-11-10T09:00:00"));
+      vi.setSystemTime(poolClockAt("2026-11-10", 9));
       setPool();
     });
 

@@ -11,8 +11,8 @@ page people reload all Saturday evening. This module only renders them.
 Only revealed dates have columns, and only up to the one in view. An open date
 is absent rather than blank, and not by omission here: the backend leaves its
 picks out of the payload entirely, because one that carried them would reveal
-them to whoever read the response. The screen says so rather than leaving a
-gap nobody can explain.
+them to whoever read the response. The screen says so rather than leaving a gap
+nobody can explain.
 */
 
 import * as React from "react";

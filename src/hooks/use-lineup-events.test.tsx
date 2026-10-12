@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PoolState } from "@/data/pool/model";
+import { poolClockAt } from "@/test/pool-clock";
 import { poolUser, testPool } from "@/test/pool-fixtures";
 
 const apiPost = vi.fn();
@@ -59,7 +60,7 @@ beforeEach(() => {
   // The fixture season runs from 2026-10-07, so the day has to be pinned: a
   // real date drifting past opening night would change the range on offer.
   vi.useFakeTimers({ toFake: ["Date"] });
-  vi.setSystemTime(new Date("2026-11-10T09:00:00"));
+  vi.setSystemTime(poolClockAt("2026-11-10", 9));
   userValue.current = "user-a";
   setPool();
   apiPost.mockResolvedValue({ ok: true, data: testPool() });

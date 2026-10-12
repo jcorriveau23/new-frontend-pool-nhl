@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { Pool } from "@/data/pool/model";
+import { poolClockAt as at } from "@/test/pool-clock";
+
 import {
   getBackdateRange,
   getEffectiveRosterDate,
@@ -13,9 +15,6 @@ const makePool = (modificationDates: string[]): Pool =>
     settings: { roster_modification_date: modificationDates },
   }) as Pool;
 
-const at = (date: string, hour: number) =>
-  new Date(`${date}T${`${hour}`.padStart(2, "0")}:00:00`);
-
 describe("getEffectiveRosterDate", () => {
   it("applies a morning change to the same day", () => {
     expect(getEffectiveRosterDate(at("2025-12-01", 9))).toBe("2025-12-01");
@@ -24,6 +23,50 @@ describe("getEffectiveRosterDate", () => {
   it("applies a change made at noon or later to the next day", () => {
     expect(getEffectiveRosterDate(at("2025-12-01", 12))).toBe("2025-12-02");
     expect(getEffectiveRosterDate(at("2025-12-31", 20))).toBe("2026-01-01");
+  });
+
+  /*
+  Noon is noon in the pool's zone, not on the clock of whoever is asking. These
+  instants are written in UTC so they mean the same thing on every machine: the
+  backend used to read 15:00Z as "past noon" because the container it runs in
+  has no timezone at all, and dated an 11:00 Montreal waiver claim to the next
+  day — on a screen that had just promised it would count for that day.
+  */
+  it("measures noon in the pool's zone rather than the caller's", () => {
+    // 11:00 and 11:59 in Montreal.
+    expect(getEffectiveRosterDate(new Date("2026-10-12T15:00:00Z"))).toBe(
+      "2026-10-12",
+    );
+    expect(getEffectiveRosterDate(new Date("2026-10-12T15:59:00Z"))).toBe(
+      "2026-10-12",
+    );
+    // Noon in Montreal, the first minute that belongs to the next day.
+    expect(getEffectiveRosterDate(new Date("2026-10-12T16:00:00Z"))).toBe(
+      "2026-10-13",
+    );
+  });
+
+  // The offset the zone is at moves with daylight saving; the hour the cutoff
+  // falls on does not, which is why the zone is named instead of an offset.
+  it("keeps the cutoff at noon on both sides of daylight saving", () => {
+    // EST, UTC-5: noon in Montreal is 17:00Z.
+    expect(getEffectiveRosterDate(new Date("2027-01-12T16:59:00Z"))).toBe(
+      "2027-01-12",
+    );
+    expect(getEffectiveRosterDate(new Date("2027-01-12T17:00:00Z"))).toBe(
+      "2027-01-13",
+    );
+  });
+
+  // Past the cutoff on the last day of a month, year or leap February, the day
+  // the move counts from is in the next one.
+  it("rolls over the end of a month", () => {
+    expect(getEffectiveRosterDate(at("2026-02-28", 15))).toBe("2026-03-01");
+    expect(getEffectiveRosterDate(at("2028-02-28", 15))).toBe("2028-02-29");
+  });
+
+  it("keeps a move filed just after midnight on the day it was filed", () => {
+    expect(getEffectiveRosterDate(at("2025-12-01", 0))).toBe("2025-12-01");
   });
 });
 

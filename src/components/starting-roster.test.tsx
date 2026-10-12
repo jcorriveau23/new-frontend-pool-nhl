@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Pool, Position } from "@/data/pool/model";
+import { poolClockAt } from "@/test/pool-clock";
 import { NO_INJURIES, renderWithProviders, stubFetch } from "@/test/render";
 import {
   poolUser,
@@ -113,7 +114,7 @@ beforeEach(() => {
   which is the same reason the roster-move hooks pin the clock this way.
   */
   vi.useFakeTimers({ toFake: ["Date"] });
-  vi.setSystemTime(new Date("2026-10-01T09:00:00"));
+  vi.setSystemTime(poolClockAt("2026-10-01", 9));
   stubFetch([NO_INJURIES]);
   socketValue.current = undefined;
   apiPost.mockResolvedValue({ ok: true, data: testPool() });

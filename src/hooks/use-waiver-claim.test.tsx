@@ -44,6 +44,7 @@ vi.mock("sonner", () => ({
 }));
 
 import { useWaiverClaim } from "@/hooks/use-waiver-claim";
+import { poolClockAt } from "@/test/pool-clock";
 
 const ONE_DROP_A_SEASON = { max_drops: 1, period: DropPeriod.SEASON };
 
@@ -70,7 +71,7 @@ const FREE_AGENT: Player = testPlayer(9, "Matias Maccelli", Position.F);
 beforeEach(() => {
   // Mid-season, so the effective date is tomorrow and inside the season.
   vi.useFakeTimers({ toFake: ["Date"] });
-  vi.setSystemTime(new Date("2026-11-10T12:00:00"));
+  vi.setSystemTime(poolClockAt("2026-11-10", 12));
   userValue.current = "user-a";
   setPool();
   apiPost.mockResolvedValue({ ok: true, data: testPool() });
@@ -143,7 +144,7 @@ describe("useWaiverClaim", () => {
     });
 
     it("says so once the season is over", () => {
-      vi.setSystemTime(new Date("2027-05-01T12:00:00"));
+      vi.setSystemTime(poolClockAt("2027-05-01", 12));
       const { result } = renderHook(() => useWaiverClaim("user-a"));
 
       expect(result.current.blockedReason).toBe("FreeAgencyClosedForTheSeason");

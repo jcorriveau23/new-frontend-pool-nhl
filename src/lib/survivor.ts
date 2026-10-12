@@ -260,23 +260,42 @@ export function matchupsCoverTeams(
 }
 
 /*
-The date's games, the ones with something still to pick first.
+The date's games: the one you are backing first, then the ones with something
+still to pick, then the rest.
 
-The same reasoning the flat grid is ordered by: a participant deep into a
-season has most of the board closed to them, and the few games they can still
-act on should not be scattered among the ones they cannot.
+Pinning your own game to the top is what keeps the list still. Filing a pick
+moves that team from `available_team_ids` into the used list, so without the
+pin its game loses its "something to pick here" rank and drops away down the
+page the instant you click it — the list reshuffling under the cursor, which
+is what it did before.
+
+The rest is the same reasoning the flat grid is ordered by: a participant deep
+into a season has most of the board closed to them, and the few games they can
+still act on should not be scattered among the ones they cannot.
+
+The sort is stable, so games of equal rank keep the order the league gave them.
 */
 export function orderMatchups(
   games: SurvivorGame[],
   availableTeamIds: number[],
+  currentPick: number | null,
 ): SurvivorGame[] {
   const open = new Set(availableTeamIds);
-  const hasOpenTeam = (game: SurvivorGame) =>
-    open.has(game.away_team_id) || open.has(game.home_team_id);
 
-  return [...games].sort(
-    (left, right) => Number(hasOpenTeam(right)) - Number(hasOpenTeam(left)),
-  );
+  const rank = (game: SurvivorGame): number => {
+    if (
+      currentPick !== null &&
+      (game.away_team_id === currentPick || game.home_team_id === currentPick)
+    ) {
+      return 0;
+    }
+    if (open.has(game.away_team_id) || open.has(game.home_team_id)) {
+      return 1;
+    }
+    return 2;
+  };
+
+  return [...games].sort((left, right) => rank(left) - rank(right));
 }
 
 /*
@@ -413,10 +432,6 @@ How a pick date reads wherever it is named.
 The number alone is not enough — "3" in a dropdown tells somebody nothing about
 which Saturday they are picking for — so the date is part of the label, and a
 settled date says so.
-
-Shared between the dropdown's closed state and its list on purpose: Base UI
-renders the selected value, not the chosen item's markup, so the two are
-written separately and would otherwise drift.
 */
 export function weekLabel(t: Translator, week: SurvivorWeek): string {
   const name = `${t("SurvivorWeekLabel", { week: week.week })} — ${week.pick_date}`;
@@ -465,9 +480,9 @@ export function weekOptions(
 The spots the caller may file a pick for: their own, then anybody else in the
 pool.
 
-Their own spot is a sentinel rather than their id, so a plain participant
-sends no participant id at all. They are dropped from the rest of the list
-because they are already its first entry.
+Their own spot is a sentinel rather than their id, so a plain participant sends
+no participant id at all. They are dropped from the rest of the list because
+they are already its first entry.
 */
 export function pickingForOptions(
   t: Translator,
