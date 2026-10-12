@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   ParticipantStatus,
   PickOutcome,
+  SurvivorGame,
+  SurvivorGameState,
   SurvivorPool,
   SurvivorStandingRow,
   SurvivorState,
@@ -16,6 +18,13 @@ import {
   canJoin,
   currentWeek,
   defaultWeek,
+  displayScore,
+  gameStatus,
+  hasLiveGame,
+  isGameLive,
+  matchupsCoverTeams,
+  orderMatchups,
+  hasSettledWeek,
   hasSurvivorPrivilege,
   isOwner,
   isParticipant,
@@ -26,6 +35,7 @@ import {
   spotsLeft,
   strikesRemaining,
   weekByNumber,
+  winnerOf,
 } from "./survivor";
 
 const OWNER = "owner-id";
@@ -418,5 +428,250 @@ describe("PICK_OUTCOME_TONE", () => {
     expect(PICK_OUTCOME_TONE[PickOutcome.Void]).toBe("void");
     expect(PICK_OUTCOME_TONE[PickOutcome.Won]).toBe("won");
     expect(PICK_OUTCOME_TONE[PickOutcome.Lost]).toBe("lost");
+  });
+});
+
+describe("hasSettledWeek", () => {
+  it("is false while every date is still to be played", () => {
+    expect(hasSettledWeek(pool())).toBe(false);
+  });
+
+  it("is false for a date that is only locked", () => {
+    // Locking reveals the picks; nothing has been scored yet, so the settings
+    // that decide what a pick costs are still the owner's to change.
+    expect(
+      hasSettledWeek(pool({ weeks: [week(1, WeekStatus.Locked), week(2)] })),
+    ).toBe(false);
+  });
+
+  it("is true once any date has been settled", () => {
+    expect(
+      hasSettledWeek(pool({ weeks: [week(1), week(2, WeekStatus.Settled)] })),
+    ).toBe(true);
+  });
+});
+
+const game = (
+  home: number,
+  away: number,
+  overrides: Partial<SurvivorGame> = {},
+): SurvivorGame => ({
+  home_team_id: home,
+  away_team_id: away,
+  home_score: null,
+  away_score: null,
+  state: SurvivorGameState.Upcoming,
+  start_time_utc: null,
+  period: null,
+  period_type: null,
+  time_remaining: null,
+  in_intermission: false,
+  ...overrides,
+});
+
+const finished = (
+  home: number,
+  away: number,
+  homeScore: number,
+  awayScore: number,
+  overrides: Partial<SurvivorGame> = {},
+): SurvivorGame =>
+  game(home, away, {
+    home_score: homeScore,
+    away_score: awayScore,
+    state: SurvivorGameState.Final,
+    period: 3,
+    period_type: "REG",
+    ...overrides,
+  });
+
+const live = (
+  home: number,
+  away: number,
+  homeScore: number,
+  awayScore: number,
+  overrides: Partial<SurvivorGame> = {},
+): SurvivorGame =>
+  game(home, away, {
+    home_score: homeScore,
+    away_score: awayScore,
+    state: SurvivorGameState.Live,
+    period: 2,
+    period_type: "REG",
+    time_remaining: "12:34",
+    ...overrides,
+  });
+
+describe("matchupsCoverTeams", () => {
+  it("is false when the backend sent no games", () => {
+    // A backend older than the matchups. The screen falls back to the grid
+    // rather than showing an empty date over a playable one.
+    expect(matchupsCoverTeams(undefined, [8, 10])).toBe(false);
+    expect(matchupsCoverTeams([], [8, 10])).toBe(false);
+  });
+
+  it("is true when the games account for exactly the eligible teams", () => {
+    expect(matchupsCoverTeams([game(10, 8), game(6, 14)], [6, 8, 10, 14])).toBe(
+      true,
+    );
+  });
+
+  it("is false when a game names a team that cannot be picked", () => {
+    // A locked date takes its legal teams from the pool document while the
+    // games come from the league's feed; a game moved since would show a tile
+    // the backend would refuse.
+    expect(matchupsCoverTeams([game(10, 8), game(6, 14)], [8, 10])).toBe(false);
+  });
+
+  it("is false when a team that can be picked is in no game", () => {
+    expect(matchupsCoverTeams([game(10, 8)], [6, 8, 10])).toBe(false);
+  });
+});
+
+describe("orderMatchups", () => {
+  it("puts the games with something still to pick first", () => {
+    const closed = game(10, 8);
+    const open = game(6, 14);
+
+    expect(orderMatchups([closed, open], [14])).toEqual([open, closed]);
+  });
+
+  it("keeps the league's order among games that are alike", () => {
+    const first = game(10, 8);
+    const second = game(6, 14);
+
+    expect(orderMatchups([first, second], [8, 14])).toEqual([first, second]);
+    expect(orderMatchups([first, second], [])).toEqual([first, second]);
+  });
+
+  it("does not mutate what it was given", () => {
+    const games = [game(10, 8), game(6, 14)];
+    orderMatchups(games, [14]);
+
+    expect(games[0].home_team_id).toBe(10);
+  });
+});
+
+describe("displayScore", () => {
+  it("is the score of a finished game", () => {
+    expect(displayScore(finished(10, 8, 5, 2))).toEqual({ home: 5, away: 2 });
+  });
+
+  it("is the score of a game under way, which is the point of it", () => {
+    expect(displayScore(live(10, 8, 2, 1))).toEqual({ home: 2, away: 1 });
+  });
+
+  it("is null for a game that has not started", () => {
+    expect(displayScore(game(10, 8))).toBeNull();
+  });
+
+  it("is null for a game the league called off", () => {
+    expect(
+      displayScore(game(10, 8, { state: SurvivorGameState.Abandoned })),
+    ).toBeNull();
+  });
+
+  it("is null when the league reported no score", () => {
+    expect(
+      displayScore(game(10, 8, { state: SurvivorGameState.Final })),
+    ).toBeNull();
+  });
+});
+
+describe("winnerOf", () => {
+  it("is the side that scored more", () => {
+    expect(winnerOf(finished(10, 8, 5, 2))).toBe(10);
+    expect(winnerOf(finished(10, 8, 1, 4))).toBe(8);
+  });
+
+  it("is null while the game is still being played", () => {
+    // The score is shown, and the leader is not called the winner: the pool
+    // has settled nothing, and saying otherwise is how somebody is told they
+    // survived a date they went out on.
+    expect(winnerOf(live(10, 8, 2, 1))).toBeNull();
+    expect(displayScore(live(10, 8, 2, 1))).not.toBeNull();
+  });
+
+  it("is null for a finished game the feed left level", () => {
+    // Hockey settles a tie in overtime or a shootout, so this is a feed not
+    // telling the whole story rather than a draw — the same conclusion the
+    // backend reaches before it eliminates anybody.
+    expect(winnerOf(finished(10, 8, 2, 2))).toBeNull();
+  });
+
+  it("is null for a game that was called off", () => {
+    expect(
+      winnerOf(finished(10, 8, 3, 1, { state: SurvivorGameState.Abandoned })),
+    ).toBeNull();
+  });
+});
+
+describe("isGameLive and hasLiveGame", () => {
+  it("find a game being played", () => {
+    expect(isGameLive(live(10, 8, 1, 1))).toBe(true);
+    expect(isGameLive(finished(10, 8, 1, 0))).toBe(false);
+    expect(isGameLive(game(10, 8))).toBe(false);
+  });
+
+  it("report a date with one live game among finished ones", () => {
+    // What the screen polls on: one game still on is reason enough to keep
+    // refetching the date.
+    expect(hasLiveGame([finished(10, 8, 4, 1), live(6, 14, 0, 0)])).toBe(true);
+  });
+
+  it("report nothing to watch on a date that is over or not started", () => {
+    expect(hasLiveGame([finished(10, 8, 4, 1)])).toBe(false);
+    expect(hasLiveGame([game(10, 8)])).toBe(false);
+    expect(hasLiveGame([])).toBe(false);
+    expect(hasLiveGame(undefined)).toBe(false);
+  });
+});
+
+describe("gameStatus", () => {
+  it("carries the clock and the period of a live game", () => {
+    expect(gameStatus(live(10, 8, 2, 1))).toEqual({
+      kind: "live",
+      period: 2,
+      timeRemaining: "12:34",
+      inIntermission: false,
+    });
+  });
+
+  it("says when a live game's clock is counting down an intermission", () => {
+    // The clock is on the break, not the period, so a screen that did not
+    // distinguish them would show "P1 15:00" during the first intermission.
+    const status = gameStatus(live(10, 8, 1, 1, { in_intermission: true }));
+
+    expect(status).toMatchObject({ kind: "live", inIntermission: true });
+  });
+
+  it("says a finished game went past regulation", () => {
+    expect(gameStatus(finished(10, 8, 3, 2, { period_type: "OT" }))).toEqual({
+      kind: "final",
+      wentPastRegulation: "OT",
+    });
+    expect(gameStatus(finished(10, 8, 3, 2, { period_type: "SO" }))).toEqual({
+      kind: "final",
+      wentPastRegulation: "SO",
+    });
+  });
+
+  it("does not dress up a game that ended in regulation", () => {
+    expect(gameStatus(finished(10, 8, 3, 2))).toEqual({
+      kind: "final",
+      wentPastRegulation: null,
+    });
+  });
+
+  it("carries the start time of a game still to come", () => {
+    expect(
+      gameStatus(game(10, 8, { start_time_utc: "2026-10-10T23:00:00Z" })),
+    ).toEqual({ kind: "upcoming", startTimeUtc: "2026-10-10T23:00:00Z" });
+  });
+
+  it("reports a game the league called off", () => {
+    expect(
+      gameStatus(game(10, 8, { state: SurvivorGameState.Abandoned })),
+    ).toEqual({ kind: "abandoned" });
   });
 });

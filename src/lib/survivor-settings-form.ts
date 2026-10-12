@@ -52,20 +52,70 @@ export const DEFAULT_SURVIVOR_FORM_VALUES = {
 
 export type SurvivorFormValues = typeof DEFAULT_SURVIVOR_FORM_VALUES;
 
-export function buildSurvivorFormSchema(t: Translator) {
-  const bounded = (
-    bounds: { min: number; max: number },
-    wholeNumberKey: string,
-    minKey: string,
-    maxKey: string,
-  ) =>
-    z
-      .number()
-      .int({ error: t(wholeNumberKey) })
-      .min(bounds.min, { error: t(minKey, { value: bounds.min }) })
-      .max(bounds.max, { error: t(maxKey, { value: bounds.max }) });
+/*
+The same values minus the two a creation needs: an existing pool's name is in
+the URL and cannot change, and its owner joined it when they made it.
+*/
+export type SurvivorSettingsFormValues = Omit<
+  SurvivorFormValues,
+  "poolName" | "participantName"
+>;
 
+const bounded = (
+  t: Translator,
+  bounds: { min: number; max: number },
+  wholeNumberKey: string,
+  minKey: string,
+  maxKey: string,
+) =>
+  z
+    .number()
+    .int({ error: t(wholeNumberKey) })
+    .min(bounds.min, { error: t(minKey, { value: bounds.min }) })
+    .max(bounds.max, { error: t(maxKey, { value: bounds.max }) });
+
+/*
+The settings themselves, without the two fields that only a creation names.
+
+Split out because an existing pool's settings are edited with the same bounds
+it was created under, and only this half of the form is on that screen: the
+name is in the URL and the owner already has a participant.
+
+`minParticipants` is the floor the cap may be lowered to. It is the bound on a
+creation, and the number of people already in on an edit — the backend refuses
+a cap below its own participant list, and this is what lets the form say so
+before the request goes out.
+*/
+export function buildSurvivorSettingsSchema(
+  t: Translator,
+  minParticipants: number = SURVIVOR_BOUNDS.maxParticipants.min,
+) {
   return z.object({
+    maxParticipants: bounded(
+      t,
+      { min: minParticipants, max: SURVIVOR_BOUNDS.maxParticipants.max },
+      "SurvivorMaxParticipantsWholeNumberValidation",
+      "SurvivorMaxParticipantsMinValidation",
+      "SurvivorMaxParticipantsMaxValidation",
+    ),
+    strikesAllowed: bounded(
+      t,
+      SURVIVOR_BOUNDS.strikesAllowed,
+      "SurvivorStrikesWholeNumberValidation",
+      "SurvivorStrikesMinValidation",
+      "SurvivorStrikesMaxValidation",
+    ),
+    missedPickIsStrike: z.boolean(),
+    allowPickChange: z.boolean(),
+  });
+}
+
+export type SurvivorSettingsSchema = ReturnType<
+  typeof buildSurvivorSettingsSchema
+>;
+
+export function buildSurvivorFormSchema(t: Translator) {
+  return buildSurvivorSettingsSchema(t).extend({
     poolName: z
       .string()
       .trim()
@@ -88,20 +138,6 @@ export function buildSurvivorFormSchema(t: Translator) {
           value: SURVIVOR_PARTICIPANT_NAME_MAX_LENGTH,
         }),
       }),
-    maxParticipants: bounded(
-      SURVIVOR_BOUNDS.maxParticipants,
-      "SurvivorMaxParticipantsWholeNumberValidation",
-      "SurvivorMaxParticipantsMinValidation",
-      "SurvivorMaxParticipantsMaxValidation",
-    ),
-    strikesAllowed: bounded(
-      SURVIVOR_BOUNDS.strikesAllowed,
-      "SurvivorStrikesWholeNumberValidation",
-      "SurvivorStrikesMinValidation",
-      "SurvivorStrikesMaxValidation",
-    ),
-    missedPickIsStrike: z.boolean(),
-    allowPickChange: z.boolean(),
   });
 }
 
@@ -126,6 +162,41 @@ export function toSurvivorSettings(
     missed_pick_is_strike: values.missedPickIsStrike,
     allow_pick_change: values.allowPickChange,
     league_team_count: LEAGUE_TEAM_COUNT,
+  };
+}
+
+/*
+The settings an existing pool is updated to.
+
+Built by spreading what the pool already has rather than from the form alone,
+which is the whole difference from `toSurvivorSettings`. Two of the six fields
+are on no screen — `assistants`, which the owner manages elsewhere, and
+`league_team_count`, which is the league's size in the season the pool opened —
+and a payload assembled from the form's four would quietly reset both. The
+pool document is also read through a loose schema, so a field the backend added
+ahead of this frontend survives an edit for the same reason.
+*/
+export function mergeSurvivorSettings(
+  current: SurvivorSettings,
+  values: SurvivorSettingsFormValues,
+): SurvivorSettings {
+  return {
+    ...current,
+    max_participants: values.maxParticipants,
+    strikes_allowed: values.strikesAllowed,
+    missed_pick_is_strike: values.missedPickIsStrike,
+    allow_pick_change: values.allowPickChange,
+  };
+}
+
+export function toSurvivorSettingsFormValues(
+  settings: SurvivorSettings,
+): SurvivorSettingsFormValues {
+  return {
+    maxParticipants: settings.max_participants,
+    strikesAllowed: settings.strikes_allowed,
+    missedPickIsStrike: settings.missed_pick_is_strike,
+    allowPickChange: settings.allow_pick_change,
   };
 }
 

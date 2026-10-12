@@ -113,6 +113,45 @@ them, and the pick they already have in.
 itself is validated against, so the greyed-out teams and the refusals cannot
 disagree.
 */
+export enum SurvivorGameState {
+  // Not started.
+  Upcoming = "Upcoming",
+  // Being played. Its score is worth showing and decides nothing yet.
+  Live = "Live",
+  // Over. Its score will not change.
+  Final = "Final",
+  // Postponed or cancelled. Costs whoever picked either side nothing.
+  Abandoned = "Abandoned",
+}
+
+/*
+One of the date's games.
+
+Display only. Who beat whom is decided inside the backend from the league's own
+feed, and a locked date's legal teams come from the pool's own copy of the
+fixture list — this is here so somebody picking can see who a team is up
+against, how the game is going, and who won once it is over.
+*/
+export interface SurvivorGame {
+  home_team_id: number;
+  away_team_id: number;
+  // As the league reported it. Null for a game still to come, and real but not
+  // yet meaning anything while the game is live: `state` is what tells those
+  // apart, and nothing is decided until it is Final.
+  home_score: number | null;
+  away_score: number | null;
+  state: SurvivorGameState;
+  // When the puck drops, RFC 3339, for a game still to come.
+  start_time_utc: string | null;
+  // The period being played, or the one a finished game ended in.
+  period: number | null;
+  // REG, OT or SO, so a game settled past regulation can say so.
+  period_type: string | null;
+  // Left in the period. Only meaningful while the game is live.
+  time_remaining: string | null;
+  in_intermission: boolean;
+}
+
 export interface SurvivorPickOptions {
   week: number;
   pick_date: string;
@@ -124,6 +163,14 @@ export interface SurvivorPickOptions {
   // nothing.
   is_blocked: boolean;
   can_pick: boolean;
+  /*
+  The date's games.
+
+  Optional, and not because the field is: a backend older than the matchups
+  does not send it, and the deployed one can be behind this frontend. Absent
+  and the screen falls back to the plain grid of teams.
+  */
+  games?: SurvivorGame[];
 }
 
 export interface SurvivorPickView {
