@@ -906,6 +906,7 @@
   "SurvivorWins": "Wins",
   "SurvivorOutInWeek": "(out week {week})",
   "SurvivorNothingRevealedYet": "No date has been locked yet, so nobody's picks are public.",
+  "SurvivorWeekStillOpen": "Week {week} is still open, so its picks stay private until the date is locked.",
   "SurvivorOutcomeWon": "Won",
   "SurvivorOutcomeLost": "Lost",
   "SurvivorOutcomeVoid": "No result",

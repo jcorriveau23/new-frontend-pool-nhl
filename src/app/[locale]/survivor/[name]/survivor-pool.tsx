@@ -36,7 +36,6 @@ import {
   SurvivorPool,
   SurvivorStandings,
   SurvivorState,
-  WeekStatus,
 } from "@/data/survivor/model";
 import {
   canJoin,
@@ -45,6 +44,7 @@ import {
   participantOf,
   spotsLeft,
   weekByNumber,
+  weekOptions,
 } from "@/lib/survivor";
 import { fetchSurvivorStandings, joinSurvivorPool } from "@/lib/survivor-api";
 import AdminTab from "./admin-tab";
@@ -151,6 +151,13 @@ export default function SurvivorPoolPage(props: Props) {
 
   const week = selectedWeek === null ? null : weekByNumber(pool, selectedWeek);
 
+  // One list for the dropdown's closed state and for its rows, so the two
+  // cannot disagree.
+  const weeks = React.useMemo(
+    () => weekOptions(t, pool.weeks),
+    [t, pool.weeks],
+  );
+
   const statusBadge = (() => {
     if (pool.status === SurvivorState.Final) {
       return <Badge variant="secondary">{t("SurvivorPoolOver")}</Badge>;
@@ -217,19 +224,22 @@ export default function SurvivorPoolPage(props: Props) {
             ) : null}
           </TabsList>
 
+          {/*
+          `items` is what makes the closed trigger read "Week 3 — 2026-10-17"
+          rather than the bare value it holds, which is "3".
+          */}
           <Select
             value={selectedWeek === null ? "" : String(selectedWeek)}
+            items={weeks}
             onValueChange={(value) => setSelectedWeek(Number(value))}
           >
-            <SelectTrigger className="ml-auto w-56">
+            <SelectTrigger className="ml-auto w-64">
               <SelectValue placeholder={t("SurvivorSelectWeek")} />
             </SelectTrigger>
             <SelectContent>
-              {pool.weeks.map((candidate) => (
-                <SelectItem key={candidate.week} value={String(candidate.week)}>
-                  {t("SurvivorWeekLabel", { week: candidate.week })} —{" "}
-                  {candidate.pick_date}
-                  {candidate.status === WeekStatus.Settled ? " ✓" : ""}
+              {weeks.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -250,7 +260,11 @@ export default function SurvivorPoolPage(props: Props) {
           {standings === null ? (
             <TableSkeleton />
           ) : (
-            <StandingsTab pool={pool} standings={standings} />
+            <StandingsTab
+              pool={pool}
+              standings={standings}
+              selectedWeek={selectedWeek}
+            />
           )}
         </TabsContent>
 

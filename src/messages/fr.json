@@ -906,6 +906,7 @@
   "SurvivorWins": "Victoires",
   "SurvivorOutInWeek": "(éliminé semaine {week})",
   "SurvivorNothingRevealedYet": "Aucune date n'est encore verrouillée, les choix de chacun restent donc privés.",
+  "SurvivorWeekStillOpen": "La semaine {week} est encore ouverte : les choix restent privés jusqu'au verrouillage de la date.",
   "SurvivorOutcomeWon": "Gagné",
   "SurvivorOutcomeLost": "Perdu",
   "SurvivorOutcomeVoid": "Aucun résultat",

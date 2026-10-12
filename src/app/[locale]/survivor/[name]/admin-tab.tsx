@@ -43,7 +43,7 @@ import { useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
 import { SurvivorPool, WeekStatus } from "@/data/survivor/model";
-import { isOwner } from "@/lib/survivor";
+import { isOwner, weekOptions } from "@/lib/survivor";
 import {
   addSurvivorParticipant,
   lockSurvivorWeek,
@@ -110,6 +110,11 @@ export default function AdminTab(props: Props) {
   const week =
     pool.weeks.find((candidate) => candidate.week === selectedWeek) ?? null;
 
+  const weeks = React.useMemo(
+    () => weekOptions(t, pool.weeks),
+    [t, pool.weeks],
+  );
+
   const run = async (
     action: (
       poolName: string,
@@ -149,19 +154,16 @@ export default function AdminTab(props: Props) {
           <div className="flex flex-wrap items-end gap-2">
             <Select
               value={selectedWeek === null ? "" : String(selectedWeek)}
+              items={weeks}
               onValueChange={(value) => setSelectedWeek(Number(value))}
             >
               <SelectTrigger className="w-64">
                 <SelectValue placeholder={t("SurvivorSelectWeek")} />
               </SelectTrigger>
               <SelectContent>
-                {pool.weeks.map((candidate) => (
-                  <SelectItem
-                    key={candidate.week}
-                    value={String(candidate.week)}
-                  >
-                    {t("SurvivorWeekLabel", { week: candidate.week })} —{" "}
-                    {candidate.pick_date}
+                {weeks.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>

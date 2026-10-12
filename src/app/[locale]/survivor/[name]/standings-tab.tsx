@@ -8,8 +8,11 @@ The rows arrive already counted and already sorted — a pool of hundreds would
 otherwise ship every pick of every date for the browser to aggregate, on the
 page people reload all Saturday evening. This module only renders them.
 
-Only revealed dates have columns. An open date is absent rather than blank: a
-payload that carried its picks would reveal them to whoever read the response.
+Only revealed dates have columns, and only up to the one in view. An open date
+is absent rather than blank, and not by omission here: the backend leaves its
+picks out of the payload entirely, because one that carried them would reveal
+them to whoever read the response. The screen says so rather than leaving a
+gap nobody can explain.
 */
 
 import * as React from "react";
@@ -39,11 +42,16 @@ import {
   SurvivorPool,
   SurvivorStandingRow,
   SurvivorStandings,
+  WeekStatus,
 } from "@/data/survivor/model";
+import { revealedWeeksUpTo, weekByNumber } from "@/lib/survivor";
 
 interface Props {
   pool: SurvivorPool;
   standings: SurvivorStandings;
+  // The date in view, shared with the pick screen. The grid stops there, so
+  // reading back through the season is a matter of moving the selector.
+  selectedWeek: number | null;
 }
 
 // How an outcome reads in a cell. A date still to be settled and a game that
@@ -95,10 +103,18 @@ function PickCell({ row, week }: { row: SurvivorStandingRow; week: number }) {
 }
 
 export default function StandingsTab(props: Props) {
-  const { pool, standings } = props;
+  const { pool, standings, selectedWeek } = props;
   const t = useTranslations();
 
   const winners = new Set(standings.winners ?? []);
+  const columns = revealedWeeksUpTo(standings.revealed_weeks, selectedWeek);
+
+  // The date in view when its picks are not public yet, which is the question
+  // the grid otherwise leaves somebody asking.
+  const selected =
+    selectedWeek === null ? null : weekByNumber(pool, selectedWeek);
+  const selectedIsHidden =
+    selected !== null && selected.status === WeekStatus.Open;
 
   return (
     <div className="space-y-4 text-left">
@@ -124,6 +140,12 @@ export default function StandingsTab(props: Props) {
         </p>
       ) : null}
 
+      {selectedIsHidden ? (
+        <p className="text-muted-foreground text-sm">
+          {t("SurvivorWeekStillOpen", { week: selected.week })}
+        </p>
+      ) : null}
+
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -137,11 +159,23 @@ export default function StandingsTab(props: Props) {
                 </TableHead>
               ) : null}
               <TableHead className="text-center">{t("SurvivorWins")}</TableHead>
-              {standings.revealed_weeks.map((week) => (
-                <TableHead key={week} className="text-center">
-                  {week}
-                </TableHead>
-              ))}
+              {columns.map((week) => {
+                // The number alone does not say which Saturday it was.
+                const entry = weekByNumber(pool, week);
+                return (
+                  <TableHead
+                    key={week}
+                    className="text-center whitespace-nowrap"
+                  >
+                    <div>{t("SurvivorWeekLabel", { week })}</div>
+                    {entry !== null ? (
+                      <div className="text-muted-foreground text-[10px] font-normal">
+                        {entry.pick_date}
+                      </div>
+                    ) : null}
+                  </TableHead>
+                );
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -172,7 +206,7 @@ export default function StandingsTab(props: Props) {
                     <TableCell className="text-center">{row.strikes}</TableCell>
                   ) : null}
                   <TableCell className="text-center">{row.wins}</TableCell>
-                  {standings.revealed_weeks.map((week) => (
+                  {columns.map((week) => (
                     <PickCell key={week} row={row} week={week} />
                   ))}
                 </TableRow>

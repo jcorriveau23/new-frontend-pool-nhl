@@ -387,3 +387,117 @@ export function gameStatus(game: SurvivorGame): GameStatus {
       return { kind: "upcoming", startTimeUtc: orNull(game.start_time_utc) };
   }
 }
+
+/*
+The value the "picking for" dropdown uses for the caller's own spot.
+
+A sentinel rather than null because a select's value is a string. It never
+leaves the screen: `pickingFor` is turned back into undefined before the
+request, so a plain participant sends no participant id at all.
+*/
+export const MY_OWN_SPOT = "__me__";
+
+/*
+The subset of next-intl's `t` these labels need, taken as a parameter for the
+same reason the settings form does it: the wording stays translated by the
+caller's translator, and the rules stay testable without rendering anything.
+*/
+export type Translator = (
+  key: string,
+  values?: Record<string, number | string>,
+) => string;
+
+/*
+How a pick date reads wherever it is named.
+
+The number alone is not enough — "3" in a dropdown tells somebody nothing about
+which Saturday they are picking for — so the date is part of the label, and a
+settled date says so.
+
+Shared between the dropdown's closed state and its list on purpose: Base UI
+renders the selected value, not the chosen item's markup, so the two are
+written separately and would otherwise drift.
+*/
+export function weekLabel(t: Translator, week: SurvivorWeek): string {
+  const name = `${t("SurvivorWeekLabel", { week: week.week })} — ${week.pick_date}`;
+
+  return week.status === WeekStatus.Settled ? `${name} ✓` : name;
+}
+
+/*
+How a participant reads in the "picking for" dropdown.
+
+A managed spot is marked, because the organiser filing for one is doing
+something different from filing their own and the dropdown is the only place
+that says so.
+*/
+export function participantLabel(t: Translator, person: SurvivorUser): string {
+  return person.is_owned
+    ? person.name
+    : `${person.name} ${t("SurvivorManagedSuffix")}`;
+}
+
+/*
+An option in one of the survivor dropdowns.
+
+Base UI needs the same label in two places — `items` on the root, which is what
+the closed trigger renders, and the `SelectItem` that renders the row — so the
+screens build one list and use it for both. Written out separately they drift,
+and the way that shows up is a trigger reading `__me__` while the list below it
+looks right.
+*/
+export interface SurvivorOption {
+  value: string;
+  label: string;
+}
+
+export function weekOptions(
+  t: Translator,
+  weeks: SurvivorWeek[],
+): SurvivorOption[] {
+  return weeks.map((week) => ({
+    value: String(week.week),
+    label: weekLabel(t, week),
+  }));
+}
+
+/*
+The spots the caller may file a pick for: their own, then anybody else in the
+pool.
+
+Their own spot is a sentinel rather than their id, so a plain participant
+sends no participant id at all. They are dropped from the rest of the list
+because they are already its first entry.
+*/
+export function pickingForOptions(
+  t: Translator,
+  participants: SurvivorUser[],
+  ownId: string | null | undefined,
+): SurvivorOption[] {
+  return [
+    { value: MY_OWN_SPOT, label: t("SurvivorMyself") },
+    ...participants
+      .filter((person) => person.id !== ownId)
+      .map((person) => ({
+        value: person.id,
+        label: participantLabel(t, person),
+      })),
+  ];
+}
+
+/*
+The dates whose picks the standings should show, given the one in view.
+
+Everything revealed up to and including it: a date further on is either still
+open — and showing it would hand somebody the field before they pick — or
+simply not what is being looked at.
+*/
+export function revealedWeeksUpTo(
+  revealedWeeks: number[],
+  selectedWeek: number | null,
+): number[] {
+  if (selectedWeek === null) {
+    return revealedWeeks;
+  }
+  return revealedWeeks.filter((week) => week <= selectedWeek);
+}
