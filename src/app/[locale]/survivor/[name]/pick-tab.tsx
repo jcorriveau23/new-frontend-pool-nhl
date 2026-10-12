@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/select";
 import {
   GameStatus,
+  MY_OWN_SPOT,
   displayScore,
   gameStatus,
   hasLiveGame,
@@ -55,6 +56,7 @@ import {
   matchupsCoverTeams,
   orderMatchups,
   pickBlockedReasonKey,
+  pickingForOptions,
   splitTeamChoices,
   winnerOf,
 } from "@/lib/survivor";
@@ -307,6 +309,7 @@ export default function PickTab(props: Props) {
   const t = useTranslations();
   const userSession = useSession();
   const jwt = userSession.info?.jwt;
+  const isSessionResolved = userSession.isResolved;
 
   const userData = useUser();
   const canPickForOthers = hasSurvivorPrivilege(pool, userData.info?.id);
@@ -328,6 +331,27 @@ export default function PickTab(props: Props) {
   const [pickingFor, setPickingFor] = React.useState<string | null>(null);
 
   /*
+  The spots this screen may file for, built once and used twice: as `items`,
+  which is what the closed trigger renders, and as the rows below it. The
+  value a row holds is a participant id — a uuid in a managed pool — so
+  without `items` the trigger would show that.
+  */
+  const spots = React.useMemo(
+    () => pickingForOptions(t, pool.participants, participant?.id),
+    [t, pool.participants, participant?.id],
+  );
+
+  /*
+  Read only to decide whether a refusal is worth a toast. Held in a ref so
+  that the user resolving — null to a participant on the first paint — does not
+  re-run the load below for an answer that does not depend on it.
+  */
+  const participantRef = React.useRef(participant);
+  React.useEffect(() => {
+    participantRef.current = participant;
+  }, [participant]);
+
+  /*
   Load the screen.
 
   `silent` is for the refresh that follows a live game: no skeleton, because
@@ -338,7 +362,13 @@ export default function PickTab(props: Props) {
   const loadOptions = React.useCallback(
     async ({ silent }: { silent?: boolean } = {}) => {
       if (!jwt) {
-        setIsLoading(false);
+        /*
+        Nothing to ask for without a token. The skeleton stays up while the
+        session is still being read: dropping it would tell somebody who is in
+        the pool that they are not a participant, and take it back a moment
+        later once the token landed.
+        */
+        setIsLoading(!isSessionResolved);
         return;
       }
       if (!silent) {
@@ -357,14 +387,14 @@ export default function PickTab(props: Props) {
       if (!res.ok) {
         // A visitor who is not in the pool gets a refusal here, which is not
         // worth a toast — the screen already says they are not a participant.
-        if (participant !== null && silent !== true) {
+        if (participantRef.current !== null && silent !== true) {
           toast.error(t("SurvivorCouldNotLoadPicks", { error: res.error }));
         }
         return;
       }
       setOptions(res.data);
     },
-    [jwt, pool.name, week.week, pickingFor, participant, t],
+    [jwt, isSessionResolved, pool.name, week.week, pickingFor, t],
   );
 
   React.useEffect(() => {
@@ -489,24 +519,21 @@ export default function PickTab(props: Props) {
             {t("SurvivorPickingFor")}
           </span>
           <Select
-            value={pickingFor ?? "__me__"}
+            value={pickingFor ?? MY_OWN_SPOT}
+            items={spots}
             onValueChange={(value) =>
-              setPickingFor(value === "__me__" ? null : value)
+              setPickingFor(value === MY_OWN_SPOT ? null : value)
             }
           >
             <SelectTrigger className="w-64">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__me__">{t("SurvivorMyself")}</SelectItem>
-              {pool.participants
-                .filter((person) => person.id !== participant?.id)
-                .map((person) => (
-                  <SelectItem key={person.id} value={person.id}>
-                    {person.name}
-                    {person.is_owned ? "" : ` ${t("SurvivorManagedSuffix")}`}
-                  </SelectItem>
-                ))}
+              {spots.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

@@ -1,18 +1,19 @@
 "use client"; //Only for NextJS App Router
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback } from "react";
 import { useRouter } from "@/i18n/routing";
-import { register, Hanko } from "@teamhanko/hanko-elements";
+import { register } from "@teamhanko/hanko-elements";
 import { useLocale } from "next-intl";
 import { en } from "@teamhanko/hanko-elements/i18n/en";
 import { fr } from "@teamhanko/hanko-elements/i18n/fr";
 import "./hanko.css";
 
+import { getHanko } from "@/context/hanko";
 import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
+import { getHankoApi } from "@/lib/env-variables";
 
-//@ts-expect-error, known environment variable type.
-const hankoApi: string = process.env.NEXT_PUBLIC_HANKO_API_URL;
+const hankoApi = getHankoApi();
 
 interface Props {
   redirect: string;
@@ -21,11 +22,9 @@ interface Props {
 export default function HankoAuth(props: Props) {
   const router = useRouter();
 
-  const [hanko, setHanko] = useState<Hanko>();
   const locale = useLocale();
   const userSession = useSession();
   const userData = useUser();
-  useEffect(() => setHanko(new Hanko(hankoApi)), []);
 
   const redirectAfterLogin = useCallback(() => {
     // successfully logged in, redirect to a page in your application
@@ -37,10 +36,10 @@ export default function HankoAuth(props: Props) {
 
   useEffect(
     () =>
-      hanko?.onSessionCreated(() => {
+      getHanko().onSessionCreated(() => {
         redirectAfterLogin();
       }),
-    [hanko, redirectAfterLogin],
+    [redirectAfterLogin],
   );
 
   useEffect(() => {

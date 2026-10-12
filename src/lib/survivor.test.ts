@@ -22,8 +22,14 @@ import {
   gameStatus,
   hasLiveGame,
   isGameLive,
+  MY_OWN_SPOT,
   matchupsCoverTeams,
   orderMatchups,
+  participantLabel,
+  pickingForOptions,
+  revealedWeeksUpTo,
+  weekLabel,
+  weekOptions,
   hasSettledWeek,
   hasSurvivorPrivilege,
   isOwner,
@@ -673,5 +679,120 @@ describe("gameStatus", () => {
     expect(
       gameStatus(game(10, 8, { state: SurvivorGameState.Abandoned })),
     ).toEqual({ kind: "abandoned" });
+  });
+});
+
+// The real translator interpolates; echoing the key and its values is enough
+// to tell one message from another.
+const tr = (key: string, values?: Record<string, number | string>) =>
+  key === "SurvivorWeekLabel" ? `Week ${values?.week}` : key;
+
+describe("weekLabel", () => {
+  it("names the date, not just its number", () => {
+    // "3" in a dropdown says nothing about which Saturday is being picked for.
+    expect(weekLabel(tr, week(3))).toBe("Week 3 — 2026-10-17");
+  });
+
+  it("marks a date that has been settled", () => {
+    expect(weekLabel(tr, week(1, WeekStatus.Settled))).toMatch(/✓$/);
+  });
+
+  it("does not mark one that is merely locked", () => {
+    // Locked means the picks are public, not that the date is done with.
+    expect(weekLabel(tr, week(1, WeekStatus.Locked))).not.toMatch(/✓$/);
+  });
+});
+
+describe("participantLabel", () => {
+  it("is the name for somebody who signed themselves up", () => {
+    expect(participantLabel(tr, participant("Raph"))).toBe("Raph");
+  });
+
+  it("marks a spot the organiser keeps on somebody's behalf", () => {
+    const managed = participant("Davis", { is_owned: false });
+
+    expect(participantLabel(tr, managed)).toBe("Davis SurvivorManagedSuffix");
+  });
+});
+
+describe("weekOptions", () => {
+  it("pairs each date's value with the label the trigger shows", () => {
+    /*
+    The value and the label are handed to Base UI separately — the value to
+    `items` and to the row, the label to both — so they are built together
+    here. Written out twice in the markup they drift, and what that looks like
+    is a trigger reading "3" over a list reading "Week 3 — 2026-10-17".
+    */
+    expect(weekOptions(tr, [week(1, WeekStatus.Settled), week(2)])).toEqual([
+      { value: "1", label: "Week 1 — 2026-10-03 ✓" },
+      { value: "2", label: "Week 2 — 2026-10-10" },
+    ]);
+  });
+
+  it("keys on the week number, which is what the pick carries", () => {
+    expect(weekOptions(tr, [week(7)])[0].value).toBe("7");
+  });
+});
+
+describe("pickingForOptions", () => {
+  const people = [participant("Raph"), participant("Davis")];
+
+  it("offers the caller's own spot first", () => {
+    const options = pickingForOptions(tr, people, "Raph");
+
+    expect(options[0]).toEqual({
+      value: MY_OWN_SPOT,
+      label: "SurvivorMyself",
+    });
+  });
+
+  it("names the others rather than listing their ids", () => {
+    // The value stays the id — a uuid in a managed pool — and only the label
+    // is for reading.
+    expect(pickingForOptions(tr, people, "Raph")[1]).toEqual({
+      value: "Davis",
+      label: "Davis",
+    });
+  });
+
+  it("does not list the caller twice", () => {
+    const options = pickingForOptions(tr, people, "Raph");
+
+    expect(options).toHaveLength(2);
+    expect(options.map((option) => option.value)).not.toContain("Raph");
+  });
+
+  it("offers everybody to somebody who is not in the pool", () => {
+    // An owner who never joined their own pool still files for the spots they
+    // keep on other people's behalf.
+    expect(pickingForOptions(tr, people, undefined)).toHaveLength(3);
+  });
+
+  it("marks a managed spot in the list", () => {
+    const managed = [participant("Davis", { is_owned: false })];
+
+    expect(pickingForOptions(tr, managed, "Raph")[1].label).toBe(
+      "Davis SurvivorManagedSuffix",
+    );
+  });
+});
+
+describe("revealedWeeksUpTo", () => {
+  it("stops at the date in view", () => {
+    expect(revealedWeeksUpTo([1, 2, 3], 2)).toEqual([1, 2]);
+  });
+
+  it("includes the date in view when its picks are public", () => {
+    expect(revealedWeeksUpTo([1, 2, 3], 3)).toEqual([1, 2, 3]);
+  });
+
+  it("shows everything revealed when no date is in view", () => {
+    expect(revealedWeeksUpTo([1, 2, 3], null)).toEqual([1, 2, 3]);
+  });
+
+  it("never invents a date the backend withheld", () => {
+    // Week 3 is open, so the backend left it out of the payload entirely.
+    // Selecting it must not conjure a column.
+    expect(revealedWeeksUpTo([1, 2], 3)).toEqual([1, 2]);
   });
 });
