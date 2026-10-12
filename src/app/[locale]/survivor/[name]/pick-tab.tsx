@@ -27,6 +27,16 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TeamLogo } from "@/components/team-logo";
@@ -119,7 +129,7 @@ function TeamTile({
             : name
       }
       className={cn(
-        "relative flex flex-col items-center gap-2 rounded-lg border p-3 transition-colors",
+        "relative flex flex-col items-center justify-start gap-2 rounded-lg border p-2 transition-colors sm:p-3",
         "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
         state === "picked" && "border-primary bg-primary/10",
         state === "open" && "hover:bg-accent cursor-pointer",
@@ -139,7 +149,13 @@ function TeamTile({
       title={state === "used" ? t("SurvivorTeamAlreadyUsed") : name}
     >
       <TeamLogo teamId={teamId} width={40} height={40} alt={name} />
-      <span className="line-clamp-2 text-xs leading-tight">{name}</span>
+      {/*
+      Two lines' worth of room whether the name needs it or not, so tiles do
+      not come out different heights down the list.
+      */}
+      <span className="line-clamp-2 min-h-8 text-center text-xs leading-tight">
+        {name}
+      </span>
       {state === "picked" ? (
         <Check className="text-primary absolute top-1 right-1 size-4" />
       ) : null}
@@ -257,21 +273,21 @@ function MatchupRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-lg border p-2",
+        "flex items-center gap-2 rounded-lg border p-2 sm:gap-3",
         status.kind === "live" && "border-red-600/30 bg-red-600/5",
       )}
     >
-      <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+      <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-stretch gap-1 sm:gap-2">
         <TeamTile
           teamId={game.away_team_id}
           state={stateOf(game.away_team_id)}
           result={resultOf(game.away_team_id)}
           onPick={() => onPick(game.away_team_id)}
           disabled={disabled}
-          className="w-24 shrink-0"
+          className="w-full max-w-32 justify-self-end"
         />
         <span
-          className="text-muted-foreground shrink-0 text-xs"
+          className="text-muted-foreground shrink-0 self-center text-xs"
           // The glyph carries the home side, which the labels do not.
           aria-label={t("SurvivorAwayAtHome", {
             away: teamName(game.away_team_id),
@@ -286,11 +302,11 @@ function MatchupRow({
           result={resultOf(game.home_team_id)}
           onPick={() => onPick(game.home_team_id)}
           disabled={disabled}
-          className="w-24 shrink-0"
+          className="w-full max-w-32 justify-self-start"
         />
       </div>
 
-      <div className="w-24 shrink-0 text-right">
+      <div className="w-16 shrink-0 text-right sm:w-24">
         {score !== null ? (
           <div className="text-sm tabular-nums">
             <span className={scoreTone(game.away_team_id)}>{score.away}</span>
@@ -422,7 +438,32 @@ export default function PickTab(props: Props) {
     return () => clearInterval(timer);
   }, [watchingLiveGames, loadOptions]);
 
+  /*
+  The team a click is proposing, which is not yet a request.
+
+  Every tile is one tap away from a write, the screen refetches itself while a
+  game is live, and a survivor pick is the one thing in the pool somebody
+  cannot take back once a date locks. So a click opens this and the request
+  waits for an answer.
+  */
+  const [pendingTeam, setPendingTeam] = React.useState<number | null>(null);
+
+  /*
+  What a tile click does.
+
+  Re-picking the team already on file is dropped here rather than confirmed
+  and sent: the backend answers it with the screen unchanged, so it is a
+  request that can only ever be a no-op.
+  */
+  const proposePick = (teamId: number) => {
+    if (options?.current_pick === teamId) {
+      return;
+    }
+    setPendingTeam(teamId);
+  };
+
   const pick = async (teamId: number) => {
+    setPendingTeam(null);
     setPickingTeam(teamId);
     const res = await makeSurvivorPick(
       pool.name,
@@ -508,7 +549,11 @@ export default function PickTab(props: Props) {
   // backend sends none, and a locked date's list comes from the pool document
   // rather than the feed.
   const matchups = matchupsCoverTeams(options.games, options.eligible_team_ids)
-    ? orderMatchups(options.games ?? [], options.available_team_ids)
+    ? orderMatchups(
+        options.games ?? [],
+        options.available_team_ids,
+        options.current_pick,
+      )
     : null;
 
   return (
@@ -518,6 +563,10 @@ export default function PickTab(props: Props) {
           <span className="text-muted-foreground text-sm">
             {t("SurvivorPickingFor")}
           </span>
+          {/*
+          `items` is what makes the closed trigger read the name: the value it
+          holds is a participant id, which is a uuid in a managed pool.
+          */}
           <Select
             value={pickingFor ?? MY_OWN_SPOT}
             items={spots}
@@ -575,7 +624,7 @@ export default function PickTab(props: Props) {
               game={game}
               stateOf={stateOf}
               disabled={tilesDisabled}
-              onPick={(teamId) => void pick(teamId)}
+              onPick={proposePick}
             />
           ))}
         </div>
@@ -586,7 +635,7 @@ export default function PickTab(props: Props) {
               key={teamId}
               teamId={teamId}
               state={stateOf(teamId)}
-              onPick={() => void pick(teamId)}
+              onPick={() => proposePick(teamId)}
               disabled={tilesDisabled}
             />
           ))}
@@ -598,6 +647,45 @@ export default function PickTab(props: Props) {
           {t("SurvivorUsedTeamsExplanation")}
         </p>
       ) : null}
+
+      <AlertDialog
+        open={pendingTeam !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingTeam(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("SurvivorConfirmPickTitle", {
+                team: pendingTeam === null ? "" : teamName(pendingTeam),
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                pool.settings.allow_pick_change
+                  ? "SurvivorConfirmPickDescription"
+                  : "SurvivorConfirmPickFinalDescription",
+                { week: week.week, date: week.pick_date },
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingTeam !== null) {
+                  void pick(pendingTeam);
+                }
+              }}
+            >
+              {t("Confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

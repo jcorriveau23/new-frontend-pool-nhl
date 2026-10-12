@@ -73,6 +73,14 @@ export default defineConfig({
             functions: 65,
             lines: 68,
           },
+        // Waiver claims: the rights, the budget and the request, filed from
+        // both the lineup dialog and the cumulative tab's row menus.
+        "src/{hooks/use-waiver-claim.ts,components/waiver-claim-dialog.tsx}": {
+          statements: 95,
+          branches: 95,
+          functions: 95,
+          lines: 95,
+        },
         "src/context/socket-context.tsx": {
           statements: 80,
           branches: 60,

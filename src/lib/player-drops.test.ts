@@ -9,6 +9,7 @@ import {
   Position,
   RosterTransaction,
 } from "@/data/pool/model";
+import { poolClockAt as at } from "@/test/pool-clock";
 import { getDropBudget, getSwapLanding, isFreeAgent } from "./player-drops";
 
 const SEASON_START = "2025-10-07";
@@ -35,9 +36,6 @@ const makePool = (
     settings: { player_drop_settings: dropSettings },
     context: { roster_transactions: transactions },
   }) as Pool;
-
-const at = (date: string, hour: number) =>
-  new Date(`${date}T${`${hour}`.padStart(2, "0")}:00:00`);
 
 const seasonBudget = (maxDrops: number): PlayerDropSettings => ({
   max_drops: maxDrops,

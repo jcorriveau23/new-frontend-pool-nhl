@@ -539,22 +539,72 @@ describe("orderMatchups", () => {
     const closed = game(10, 8);
     const open = game(6, 14);
 
-    expect(orderMatchups([closed, open], [14])).toEqual([open, closed]);
+    expect(orderMatchups([closed, open], [14], null)).toEqual([open, closed]);
   });
 
   it("keeps the league's order among games that are alike", () => {
     const first = game(10, 8);
     const second = game(6, 14);
 
-    expect(orderMatchups([first, second], [8, 14])).toEqual([first, second]);
-    expect(orderMatchups([first, second], [])).toEqual([first, second]);
+    expect(orderMatchups([first, second], [8, 14], null)).toEqual([
+      first,
+      second,
+    ]);
+    expect(orderMatchups([first, second], [], null)).toEqual([first, second]);
   });
 
   it("does not mutate what it was given", () => {
     const games = [game(10, 8), game(6, 14)];
-    orderMatchups(games, [14]);
+    orderMatchups(games, [14], null);
 
     expect(games[0].home_team_id).toBe(10);
+  });
+
+  describe("the game you are backing", () => {
+    it("comes first, ahead of games with teams still open", () => {
+      const open = game(6, 14);
+      const mine = game(10, 8);
+
+      expect(orderMatchups([open, mine], [6, 14], 10)).toEqual([mine, open]);
+    });
+
+    it("stays first once picking has closed it off", () => {
+      /*
+      The regression this exists for. Filing a pick moves that team out of
+      `available_team_ids`, so its game used to lose its rank and drop down
+      the page the moment it was clicked — the list reshuffling under the
+      cursor. Pinned, it does not move.
+      */
+      const mine = game(10, 8);
+      const other = game(6, 14);
+      const ordered = [other, mine];
+
+      // Before the pick: both games have an open team, league order holds.
+      expect(orderMatchups(ordered, [6, 14, 10, 8], null)).toEqual([
+        other,
+        mine,
+      ]);
+      // After it: 10 is spent and 8 was already, so the game ranks last on
+      // openness alone — and is first anyway.
+      expect(orderMatchups(ordered, [6, 14], 10)).toEqual([mine, other]);
+    });
+
+    it("is found whether it is the home side or the away one", () => {
+      const home = game(10, 8);
+      const away = game(6, 14);
+
+      expect(orderMatchups([home, away], [], 14)[0]).toBe(away);
+      expect(orderMatchups([away, home], [], 10)[0]).toBe(home);
+    });
+
+    it("changes nothing when the pick is not among these games", () => {
+      // A locked date whose fixture list came from the pool document while
+      // the games came from the feed, and the league moved one.
+      const first = game(10, 8);
+      const second = game(6, 14);
+
+      expect(orderMatchups([first, second], [8], 99)).toEqual([first, second]);
+    });
   });
 });
 
