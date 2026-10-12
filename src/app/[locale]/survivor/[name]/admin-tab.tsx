@@ -1,7 +1,8 @@
 "use client";
 
 /*
-The owner's controls: close a date to picks, and settle it.
+The owner's controls: close a date to picks, settle it, edit the settings, and
+delete the pool.
 
 The two are deliberately separate buttons. Locking belongs at the first puck
 drop — it is what reveals the picks, which is most of what people come to the
@@ -37,15 +38,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import DeleteSurvivorPoolDialog from "@/components/delete-survivor-pool-dialog";
 import { useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
+import { useUser } from "@/context/useUserData";
 import { SurvivorPool, WeekStatus } from "@/data/survivor/model";
+import { isOwner } from "@/lib/survivor";
 import {
   addSurvivorParticipant,
-  deleteSurvivorPool,
   lockSurvivorWeek,
   settleSurvivorWeek,
 } from "@/lib/survivor-api";
+import SettingsCard from "./settings-card";
 
 interface Props {
   pool: SurvivorPool;
@@ -58,6 +62,12 @@ export default function AdminTab(props: Props) {
   const router = useRouter();
   const userSession = useSession();
   const jwt = userSession.info?.jwt;
+
+  // The assistants settle dates, but editing the settings and deleting the
+  // pool are the owner's alone — which is the rule the backend applies, so
+  // showing either to an assistant would only earn them a refusal.
+  const userData = useUser();
+  const ownsPool = isOwner(pool, userData.info?.id);
 
   // The date the controls act on: whatever is being played, so the common case
   // takes no selection at all.
@@ -124,20 +134,6 @@ export default function AdminTab(props: Props) {
 
     onPoolChange(res.data);
     toast.success(t(successKey, { week: week.week }));
-  };
-
-  const remove = async () => {
-    setIsWorking(true);
-    const res = await deleteSurvivorPool(pool.name, jwt);
-    setIsWorking(false);
-
-    if (!res.ok) {
-      toast.error(res.error, { duration: 5000 });
-      return;
-    }
-
-    toast.success(t("SuccessDeletePool", { name: pool.name }));
-    router.push(`/pools/${pool.season}`);
   };
 
   return (
@@ -241,18 +237,36 @@ export default function AdminTab(props: Props) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("DeletePool")}</CardTitle>
-          <CardDescription>{t("DeletePoolDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="destructive" disabled={isWorking} onClick={remove}>
-            <Trash2 className="size-4" />
-            {t("DeletePoolLabel", { pool: pool.name })}
-          </Button>
-        </CardContent>
-      </Card>
+      {ownsPool ? (
+        <SettingsCard pool={pool} onPoolChange={onPoolChange} />
+      ) : null}
+
+      {ownsPool ? (
+        <Card className="border-destructive/50">
+          <CardHeader>
+            <CardTitle className="text-destructive">
+              {t("DangerZone")}
+            </CardTitle>
+            <CardDescription>
+              {t("DeleteSurvivorPoolDescription")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DeleteSurvivorPoolDialog
+              poolName={pool.name}
+              // The page it was deleted from no longer exists; its own season
+              // list is the closest place left to land on.
+              onDeleted={() => router.push(`/pools/${pool.season}`)}
+              trigger={
+                <Button variant="destructive" disabled={isWorking}>
+                  <Trash2 className="size-4" />
+                  {t("DeletePoolLabel", { pool: pool.name })}
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

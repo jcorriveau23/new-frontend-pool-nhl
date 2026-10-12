@@ -10,6 +10,8 @@ model; these decide what to render, never what is allowed.
 import {
   ParticipantStatus,
   PickOutcome,
+  SurvivorGame,
+  SurvivorGameState,
   SurvivorPool,
   SurvivorStandingRow,
   SurvivorState,
@@ -85,6 +87,20 @@ export function isOwner(
 }
 
 /*
+Whether any date has been settled yet.
+
+Two rules turn on it. Joining stays open until one has, since a latecomer
+before that has missed nothing. And the backend refuses to change what a pick
+costs — the losses allowed, whether a missed pick costs one — once one has,
+because the strikes already recorded were counted under the old rules; the
+settings form reads this to disable those fields rather than let the owner
+submit an edit that comes back refused.
+*/
+export function hasSettledWeek(pool: SurvivorPool): boolean {
+  return pool.weeks.some((week) => week.status === WeekStatus.Settled);
+}
+
+/*
 Whether somebody who is not in the pool can still sign themselves up.
 
 Joining is self-serve and stays open until a date has actually been settled: a
@@ -103,7 +119,7 @@ export function canJoin(
   if (pool.participants.length >= pool.settings.max_participants) {
     return false;
   }
-  return !pool.weeks.some((week) => week.status === WeekStatus.Settled);
+  return !hasSettledWeek(pool);
 }
 
 export function spotsLeft(pool: SurvivorPool): number {
@@ -210,4 +226,164 @@ export function splitTeamChoices(
     available: eligibleTeamIds.filter((teamId) => open.has(teamId)),
     used: eligibleTeamIds.filter((teamId) => !open.has(teamId)),
   };
+}
+
+/*
+Whether the date's games can be shown as matchups rather than as a plain grid
+of teams.
+
+Only when they account for exactly the teams the backend says are eligible.
+Two things can make them disagree, and in both the eligible list is the one to
+trust: a backend older than the matchups sends no games at all, and a locked
+date takes its legal teams from the pool's own copy of the fixture list while
+the games come from the league's feed, which may have moved one since. Showing
+a game whose team cannot be picked, or hiding a team that can be, would both be
+worse than the grid.
+*/
+export function matchupsCoverTeams(
+  games: SurvivorGame[] | undefined,
+  eligibleTeamIds: number[],
+): boolean {
+  if (games === undefined || games.length === 0) {
+    return false;
+  }
+
+  const inGames = new Set(
+    games.flatMap((game) => [game.away_team_id, game.home_team_id]),
+  );
+  const eligible = new Set(eligibleTeamIds);
+
+  return (
+    inGames.size === eligible.size &&
+    [...eligible].every((teamId) => inGames.has(teamId))
+  );
+}
+
+/*
+The date's games, the ones with something still to pick first.
+
+The same reasoning the flat grid is ordered by: a participant deep into a
+season has most of the board closed to them, and the few games they can still
+act on should not be scattered among the ones they cannot.
+*/
+export function orderMatchups(
+  games: SurvivorGame[],
+  availableTeamIds: number[],
+): SurvivorGame[] {
+  const open = new Set(availableTeamIds);
+  const hasOpenTeam = (game: SurvivorGame) =>
+    open.has(game.away_team_id) || open.has(game.home_team_id);
+
+  return [...games].sort(
+    (left, right) => Number(hasOpenTeam(right)) - Number(hasOpenTeam(left)),
+  );
+}
+
+/*
+The score to put on screen, or null when there is none worth showing.
+
+A live game's score counts: it is what somebody watching wants, and it is the
+reason the pick screen refetches while a game is on. What it must never do is
+read as a result — that is `winnerOf`'s job, and it answers for finished games
+only.
+*/
+export function displayScore(
+  game: SurvivorGame,
+): { home: number; away: number } | null {
+  const showsAScore =
+    game.state === SurvivorGameState.Live ||
+    game.state === SurvivorGameState.Final;
+
+  if (!showsAScore || game.home_score === null || game.away_score === null) {
+    return null;
+  }
+  return { home: game.home_score, away: game.away_score };
+}
+
+/*
+Which team won, or null while that is not yet a question with an answer.
+
+Null for anything but a finished game, and null for a finished one the feed
+left level — hockey settles a tie in overtime or a shootout, so that is a feed
+not telling the whole story rather than a draw. The backend reaches the same
+conclusion from the same rule before it eliminates anybody; this only decides
+what the screen marks.
+*/
+export function winnerOf(game: SurvivorGame): number | null {
+  if (game.state !== SurvivorGameState.Final) {
+    return null;
+  }
+
+  const score = displayScore(game);
+  if (score === null || score.home === score.away) {
+    return null;
+  }
+  return score.home > score.away ? game.home_team_id : game.away_team_id;
+}
+
+export function isGameLive(game: SurvivorGame): boolean {
+  return game.state === SurvivorGameState.Live;
+}
+
+/*
+Whether anything on the date is being played.
+
+What the pick screen polls on: a live score that is only fetched once is not a
+live score, and a date with nothing on has no reason to be refetched.
+*/
+export function hasLiveGame(games: SurvivorGame[] | undefined): boolean {
+  return (games ?? []).some(isGameLive);
+}
+
+/*
+What a game's status line has to say, as a shape rather than a string.
+
+The wording and the translation belong to the component; which of the four
+cases applies, and from which fields, is a rule — a live game's clock is
+counting down the intermission half the time, and a finished game that went to
+overtime should say so.
+*/
+export type GameStatus =
+  | { kind: "upcoming"; startTimeUtc: string | null }
+  | {
+      kind: "live";
+      period: number | null;
+      timeRemaining: string | null;
+      inIntermission: boolean;
+    }
+  | { kind: "final"; wentPastRegulation: string | null }
+  | { kind: "abandoned" };
+
+/*
+Normalised to null, because a field the backend simply left out arrives as
+undefined and the shapes above promise null. The pick-options schema requires
+nothing of a game but its two team ids, so this is the ordinary case rather
+than a defensive one.
+*/
+const orNull = <T>(value: T | null | undefined): T | null => value ?? null;
+
+export function gameStatus(game: SurvivorGame): GameStatus {
+  switch (game.state) {
+    case SurvivorGameState.Live:
+      return {
+        kind: "live",
+        period: orNull(game.period),
+        timeRemaining: orNull(game.time_remaining),
+        inIntermission: game.in_intermission === true,
+      };
+    case SurvivorGameState.Final:
+      return {
+        kind: "final",
+        // Only OT and SO are worth saying; a game that ended in regulation is
+        // just "Final".
+        wentPastRegulation:
+          game.period_type === "OT" || game.period_type === "SO"
+            ? game.period_type
+            : null,
+      };
+    case SurvivorGameState.Abandoned:
+      return { kind: "abandoned" };
+    default:
+      return { kind: "upcoming", startTimeUtc: orNull(game.start_time_utc) };
+  }
 }

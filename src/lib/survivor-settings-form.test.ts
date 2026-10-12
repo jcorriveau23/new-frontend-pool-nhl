@@ -7,10 +7,14 @@ import {
   SURVIVOR_POOL_NAME_MAX_LENGTH,
   SURVIVOR_POOL_NAME_MIN_LENGTH,
   SurvivorFormValues,
+  SurvivorSettingsFormValues,
   buildSurvivorFormSchema,
+  buildSurvivorSettingsSchema,
+  mergeSurvivorSettings,
   numberOrNull,
   toSurvivorFormValues,
   toSurvivorSettings,
+  toSurvivorSettingsFormValues,
 } from "./survivor-settings-form";
 
 // The real translator interpolates; the key and its values are all these tests
@@ -220,5 +224,134 @@ describe("numberOrNull", () => {
   it("is the number otherwise", () => {
     expect(numberOrNull("250")).toBe(250);
     expect(numberOrNull("0")).toBe(0);
+  });
+});
+
+describe("buildSurvivorSettingsSchema", () => {
+  const settingsValues = (
+    overrides: Partial<SurvivorSettingsFormValues> = {},
+  ): SurvivorSettingsFormValues => ({
+    maxParticipants: 100,
+    strikesAllowed: 0,
+    missedPickIsStrike: true,
+    allowPickChange: true,
+    ...overrides,
+  });
+
+  it("asks for nothing a creation needs", () => {
+    // The name is in the URL of the pool being edited and the owner already
+    // has a participant, so neither is on this form — and the schema must not
+    // refuse values that leave them out.
+    expect(
+      buildSurvivorSettingsSchema(t).safeParse(settingsValues()).success,
+    ).toBe(true);
+  });
+
+  it("applies the same bounds the pool was created under", () => {
+    const schema = buildSurvivorSettingsSchema(t);
+
+    expect(
+      schema.safeParse(settingsValues({ maxParticipants: 1 })).success,
+    ).toBe(false);
+    expect(
+      schema.safeParse(
+        settingsValues({
+          strikesAllowed: SURVIVOR_BOUNDS.strikesAllowed.max + 1,
+        }),
+      ).success,
+    ).toBe(false);
+  });
+
+  describe("the floor the cap may be lowered to", () => {
+    // The backend refuses a cap below the pool's own participant list; the
+    // form is given that number so it says so before the request goes out.
+    const schema = buildSurvivorSettingsSchema(t, 6);
+
+    it("refuses a cap below the people already in", () => {
+      const result = schema.safeParse(settingsValues({ maxParticipants: 5 }));
+
+      expect(result.success).toBe(false);
+      expect(
+        result.success
+          ? undefined
+          : result.error.issues.find(
+              (issue) => issue.path[0] === "maxParticipants",
+            )?.message,
+      ).toContain("SurvivorMaxParticipantsMinValidation");
+    });
+
+    it("accepts a cap down to exactly the people already in", () => {
+      expect(
+        schema.safeParse(settingsValues({ maxParticipants: 6 })).success,
+      ).toBe(true);
+    });
+
+    it("still refuses a cap above the ceiling", () => {
+      expect(
+        schema.safeParse(
+          settingsValues({
+            maxParticipants: SURVIVOR_BOUNDS.maxParticipants.max + 1,
+          }),
+        ).success,
+      ).toBe(false);
+    });
+  });
+});
+
+describe("mergeSurvivorSettings", () => {
+  const current = {
+    assistants: ["helper-id"],
+    max_participants: 100,
+    strikes_allowed: 0,
+    missed_pick_is_strike: true,
+    allow_pick_change: true,
+    league_team_count: 31,
+  };
+
+  const edited = {
+    maxParticipants: 250,
+    strikesAllowed: 1,
+    missedPickIsStrike: false,
+    allowPickChange: false,
+  };
+
+  it("takes the four fields the form shows from the form", () => {
+    expect(mergeSurvivorSettings(current, edited)).toMatchObject({
+      max_participants: 250,
+      strikes_allowed: 1,
+      missed_pick_is_strike: false,
+      allow_pick_change: false,
+    });
+  });
+
+  it("keeps the assistants, which are managed elsewhere", () => {
+    // Assembling the payload from the form alone would send an empty list and
+    // quietly strip the pool's assistants.
+    expect(mergeSurvivorSettings(current, edited).assistants).toEqual([
+      "helper-id",
+    ]);
+  });
+
+  it("keeps the pool's own league size rather than today's", () => {
+    // A pool that opened in a season with 31 teams keeps that number: it is
+    // what decides when a participant has been through them all.
+    expect(mergeSurvivorSettings(current, edited).league_team_count).toBe(31);
+    expect(LEAGUE_TEAM_COUNT).not.toBe(31);
+  });
+
+  it("carries through a field this frontend does not model", () => {
+    // The pool is parsed with a loose schema, so the backend can be ahead of
+    // the frontend; an edit must not drop what it sent.
+    const withUnknown = { ...current, future_setting: "kept" };
+
+    expect(mergeSurvivorSettings(withUnknown, edited)).toMatchObject({
+      future_setting: "kept",
+    });
+  });
+
+  it("round-trips through the form values unchanged", () => {
+    expect(
+      mergeSurvivorSettings(current, toSurvivorSettingsFormValues(current)),
+    ).toEqual(current);
   });
 });

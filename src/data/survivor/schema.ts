@@ -15,6 +15,7 @@ import { z } from "zod";
 import {
   ParticipantStatus,
   PickOutcome,
+  SurvivorGameState,
   SurvivorPickOptions,
   SurvivorPool,
   SurvivorStandings,
@@ -60,9 +61,36 @@ export const survivorPoolSchema = z.looseObject({
   season: z.number(),
 });
 
+/*
+A game on the pick screen.
+
+Only the two team ids are required, and on purpose. Everything else is how the
+game is *described* — the score, the clock, where it stands — and the screen
+copes with any of it missing: a game with no recognised state reads as not
+started, and one with no score shows none. A backend whose game shape differs
+from this frontend's should cost the date its scores, not take the pick screen
+down, and this schema gates the whole of `pick-options`.
+*/
+const survivorGameSchema = z.looseObject({
+  home_team_id: z.number(),
+  away_team_id: z.number(),
+  home_score: z.number().nullish(),
+  away_score: z.number().nullish(),
+  state: z.enum(SurvivorGameState).nullish(),
+  start_time_utc: z.string().nullish(),
+  period: z.number().nullish(),
+  period_type: z.string().nullish(),
+  time_remaining: z.string().nullish(),
+  in_intermission: z.boolean().nullish(),
+});
+
 export const survivorPickOptionsSchema = z.looseObject({
   week: z.number(),
   pick_date: z.string(),
+  // Optional because a backend older than the matchups does not send it. Not
+  // defaulted: the parsers below answer with the value they were handed, so a
+  // default would never reach a caller anyway.
+  games: z.array(survivorGameSchema).optional(),
   eligible_team_ids: z.array(z.number()),
   available_team_ids: z.array(z.number()),
   used_team_ids: z.array(z.number()),
