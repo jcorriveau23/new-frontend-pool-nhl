@@ -84,9 +84,7 @@ const POOL = {
 const skeletons = () => document.querySelectorAll('[data-slot="skeleton"]');
 
 function renderTab() {
-  return render(
-    <PickTab pool={POOL} week={WEEK} participant={PARTICIPANT} />,
-  );
+  return render(<PickTab pool={POOL} week={WEEK} participant={PARTICIPANT} />);
 }
 
 beforeEach(() => {

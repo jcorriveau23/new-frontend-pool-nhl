@@ -63,7 +63,9 @@ export const UserSessionProvider: React.FC<UserSessionProviderProps> = ({
     const hanko = getHanko();
     const cleanups = [
       hanko.onSessionCreated(() => refreshSession()),
-      hanko.onSessionExpired(() => setSessionState({ jwt: "", isValid: false })),
+      hanko.onSessionExpired(() =>
+        setSessionState({ jwt: "", isValid: false }),
+      ),
       hanko.onUserLoggedOut(() => setSessionState({ jwt: "", isValid: false })),
     ];
 
