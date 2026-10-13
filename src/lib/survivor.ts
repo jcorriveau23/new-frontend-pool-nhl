@@ -129,12 +129,27 @@ export function spotsLeft(pool: SurvivorPool): number {
 /*
 Whether a date's picks are public.
 
-An open date shows a participant nothing but their own pick: knowing what the
+A date past its deadline always is: its picks are in and can no longer change.
+An open one shows a participant nothing but their own, because knowing what the
 field is on before you pick is the one thing that would take the guesswork, and
-so the game, out of a survivor pool.
+so the game, out of a survivor pool — unless the owner turned `public_picks` on,
+which is the pools that would rather watch each other all Saturday.
+
+That setting reveals the date being played and no other: any open date may be
+picked for, so somebody can be a month ahead, and their plans stay their own
+until that date is the one in play.
+
+The backend decides this too, with the same rule, and the standings payload
+simply leaves a hidden date out. This is what lets the screen say why.
 */
-export function arePicksRevealed(week: SurvivorWeek): boolean {
-  return week.status !== WeekStatus.Open;
+export function arePicksRevealed(
+  pool: SurvivorPool,
+  week: SurvivorWeek,
+): boolean {
+  if (week.status !== WeekStatus.Open) {
+    return true;
+  }
+  return pool.settings.public_picks && currentWeek(pool)?.week === week.week;
 }
 
 export const aliveRows = (rows: SurvivorStandingRow[]) =>

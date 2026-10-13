@@ -70,6 +70,7 @@ const POOL = {
     strikes_allowed: 0,
     missed_pick_is_strike: true,
     allow_pick_change: true,
+    public_picks: false,
     league_team_count: 32,
   },
   participants: [PARTICIPANT],

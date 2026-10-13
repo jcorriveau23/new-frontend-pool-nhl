@@ -70,6 +70,7 @@ export default function PoolStatus() {
       <PoolStateIcon status={poolInfo.status} />
       <FavoritePoolButton
         poolName={poolInfo.name}
+        kind="pool"
         season={poolInfo.season}
         className="-my-1"
       />

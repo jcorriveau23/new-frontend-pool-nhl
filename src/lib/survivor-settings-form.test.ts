@@ -174,6 +174,7 @@ describe("toSurvivorSettings", () => {
         strikesAllowed: 1,
         missedPickIsStrike: false,
         allowPickChange: false,
+        publicPicks: true,
       }),
     );
 
@@ -183,6 +184,7 @@ describe("toSurvivorSettings", () => {
       strikes_allowed: 1,
       missed_pick_is_strike: false,
       allow_pick_change: false,
+      public_picks: true,
       league_team_count: LEAGUE_TEAM_COUNT,
     });
   });
@@ -235,6 +237,7 @@ describe("buildSurvivorSettingsSchema", () => {
     strikesAllowed: 0,
     missedPickIsStrike: true,
     allowPickChange: true,
+    publicPicks: false,
     ...overrides,
   });
 
@@ -305,6 +308,7 @@ describe("mergeSurvivorSettings", () => {
     strikes_allowed: 0,
     missed_pick_is_strike: true,
     allow_pick_change: true,
+    public_picks: false,
     league_team_count: 31,
   };
 
@@ -313,14 +317,16 @@ describe("mergeSurvivorSettings", () => {
     strikesAllowed: 1,
     missedPickIsStrike: false,
     allowPickChange: false,
+    publicPicks: true,
   };
 
-  it("takes the four fields the form shows from the form", () => {
+  it("takes the five fields the form shows from the form", () => {
     expect(mergeSurvivorSettings(current, edited)).toMatchObject({
       max_participants: 250,
       strikes_allowed: 1,
       missed_pick_is_strike: false,
       allow_pick_change: false,
+      public_picks: true,
     });
   });
 
@@ -347,6 +353,18 @@ describe("mergeSurvivorSettings", () => {
     expect(mergeSurvivorSettings(withUnknown, edited)).toMatchObject({
       future_setting: "kept",
     });
+  });
+
+  it("reads a pool older than the setting as playing its picks private", () => {
+    // The pool document is handed back as it arrived, so a backend older than
+    // `public_picks` leaves the field undefined however the type reads. The
+    // form must not put its switch in an indeterminate state over it.
+    const { public_picks, ...older } = current;
+    expect(public_picks).toBe(false);
+
+    const asFormValues = toSurvivorSettingsFormValues(older as typeof current);
+
+    expect(asFormValues.publicPicks).toBe(false);
   });
 
   it("round-trips through the form values unchanged", () => {

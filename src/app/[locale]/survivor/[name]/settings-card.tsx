@@ -3,7 +3,7 @@
 /*
 The owner editing a running pool's settings.
 
-The same four fields the pool was created under, and the same bounds, so this
+The same five fields the pool was created under, and the same bounds, so this
 is the creation form's schema minus the two fields a creation needs. What is
 different is that people are already in and dates may already have been
 settled, which closes two of the fields:
@@ -218,6 +218,28 @@ export default function SettingsCard(props: Props) {
                     <FormLabel>{t("SurvivorAllowPickChange")}</FormLabel>
                     <FormDescription>
                       {t("SurvivorAllowPickChangeDescription")}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isSaving}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="publicPicks"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between gap-3 space-y-0">
+                  <div className="space-y-1">
+                    <FormLabel>{t("SurvivorPublicPicks")}</FormLabel>
+                    <FormDescription>
+                      {t("SurvivorPublicPicksDescription")}
                     </FormDescription>
                   </div>
                   <FormControl>

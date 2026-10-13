@@ -10,11 +10,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useFavoritePools } from "@/hooks/use-favorite-pools";
+import { PoolKind, useFavoritePools } from "@/hooks/use-favorite-pools";
 import { cn } from "@/lib/utils";
 
 interface Props {
   poolName: string;
+  // Which game the pool is, since a survivor pool and a roster pool may share a
+  // name and are on different pages.
+  kind: PoolKind;
   season?: number;
   className?: string;
 }
@@ -23,21 +26,22 @@ interface Props {
 // give it a shortcut in the sidebar.
 export default function FavoritePoolButton({
   poolName,
+  kind,
   season,
   className,
 }: Props) {
   const t = useTranslations();
   const { isFavorite, toggleFavorite, recordSeason } = useFavoritePools();
 
-  const favorite = isFavorite(poolName);
+  const favorite = isFavorite(kind, poolName);
 
   // Favorites saved before the season was stored, or from a page that did not
   // know it, get it filled in the first time such a page renders them.
   React.useEffect(() => {
     if (season !== undefined) {
-      recordSeason(poolName, season);
+      recordSeason(kind, poolName, season);
     }
-  }, [poolName, season, recordSeason]);
+  }, [kind, poolName, season, recordSeason]);
 
   // Doubles as the accessible name, the star alone says nothing.
   const label = t(favorite ? "RemoveFromFavorites" : "AddToFavorites", {
@@ -54,7 +58,7 @@ export default function FavoritePoolButton({
             className={cn("size-8 shrink-0", className)}
             aria-pressed={favorite}
             aria-label={label}
-            onClick={() => toggleFavorite(poolName, season)}
+            onClick={() => toggleFavorite(kind, poolName, season)}
           />
         }
       >

@@ -86,7 +86,9 @@ export default function PoolList({
   const visibleStatuses = POOL_STATUS_ORDER.filter(
     (status) => totalCountPerStatus[status] > 0,
   );
-  const hasFavorites = visiblePools.some((pool) => isFavorite(pool.name));
+  const hasFavorites = visiblePools.some((pool) =>
+    isFavorite("pool", pool.name),
+  );
   // A single status makes the "all" tab a duplicate of it.
   const tabs: TabValue[] = [
     ...(hasFavorites ? ([FAVORITES_TAB] as const) : []),
@@ -104,7 +106,7 @@ export default function PoolList({
     // the backend happens to return.
     return [...matching].sort((a, b) => {
       const favoriteDelta =
-        Number(isFavorite(b.name)) - Number(isFavorite(a.name));
+        Number(isFavorite("pool", b.name)) - Number(isFavorite("pool", a.name));
       return favoriteDelta !== 0 ? favoriteDelta : a.name.localeCompare(b.name);
     });
   }, [visiblePools, search, isFavorite]);
@@ -117,7 +119,7 @@ export default function PoolList({
   const poolsForTab = (tab: TabValue) => {
     switch (tab) {
       case FAVORITES_TAB:
-        return filteredPools.filter((pool) => isFavorite(pool.name));
+        return filteredPools.filter((pool) => isFavorite("pool", pool.name));
       case ALL_TAB:
         return filteredPools;
       default:
@@ -182,7 +184,11 @@ export default function PoolList({
           </span>
         ) : null}
         <div className="relative -mr-2 flex shrink-0 items-center">
-          <FavoritePoolButton poolName={pool.name} season={season} />
+          <FavoritePoolButton
+            poolName={pool.name}
+            kind="pool"
+            season={season}
+          />
           {pool.owner === userData.info?.id ? (
             <DeletePoolDialog
               poolName={pool.name}

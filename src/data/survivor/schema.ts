@@ -46,8 +46,24 @@ const survivorSettingsSchema = z.looseObject({
   strikes_allowed: z.number(),
   missed_pick_is_strike: z.boolean(),
   allow_pick_change: z.boolean(),
+  // Defaulted rather than required, like `is_owned` above: a pool created before
+  // the setting existed carries no flag, and false is how it has been playing.
+  public_picks: z.boolean().optional().default(false),
   league_team_count: z.number(),
   assistants: z.array(z.string()),
+});
+
+/*
+A pending account link.
+
+Required of nothing but the two fields the screens act on: the spot it stands
+on, and the hash the invitee recognises it by. The hint is the owner's own
+display, so a backend that worded it differently should not cost the page.
+*/
+const pendingParticipantLinkSchema = z.looseObject({
+  participant_id: z.string(),
+  email_hash: z.string(),
+  email_hint: z.string().nullish(),
 });
 
 export const survivorPoolSchema = z.looseObject({
@@ -58,6 +74,9 @@ export const survivorPoolSchema = z.looseObject({
   participants: z.array(survivorUserSchema),
   weeks: z.array(survivorWeekSchema),
   winners: z.array(z.string()).nullable(),
+  // Absent on a pool that never had one filed, and on a backend older than the
+  // flow — which is most of them until this deploys.
+  pending_participant_links: z.array(pendingParticipantLinkSchema).nullish(),
   season: z.number(),
 });
 

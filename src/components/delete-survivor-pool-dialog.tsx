@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import ConfirmByNameDialog from "@/components/confirm-by-name-dialog";
 import { useSession } from "@/context/useSessionData";
+import { useFavoritePools } from "@/hooks/use-favorite-pools";
 import { deleteSurvivorPool } from "@/lib/survivor-api";
 
 interface Props {
@@ -32,6 +33,7 @@ export default function DeleteSurvivorPoolDialog({
 }: Props) {
   const t = useTranslations();
   const userSession = useSession();
+  const { isFavorite, toggleFavorite } = useFavoritePools();
 
   const onConfirm = async () => {
     const res = await deleteSurvivorPool(poolName, userSession.info?.jwt);
@@ -42,6 +44,12 @@ export default function DeleteSurvivorPoolDialog({
         { duration: 5000 },
       );
       return false;
+    }
+
+    // The pool is gone, its favorite entry would only leave a dead shortcut in
+    // the sidebar.
+    if (isFavorite("survivor", poolName)) {
+      toggleFavorite("survivor", poolName);
     }
 
     toast.success(t("SuccessDeletePool", { name: poolName }), {

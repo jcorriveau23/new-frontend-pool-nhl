@@ -7,8 +7,11 @@ import {
   WeekStatus,
 } from "@/data/survivor/model";
 import {
+  acceptSurvivorParticipantLink,
   addSurvivorParticipant,
+  cancelSurvivorParticipantLink,
   createSurvivorPool,
+  declineSurvivorParticipantLink,
   deleteSurvivorPool,
   fetchMyPicks,
   fetchPickOptions,
@@ -20,6 +23,7 @@ import {
   leaveSurvivorPool,
   lockSurvivorWeek,
   makeSurvivorPick,
+  requestSurvivorParticipantLink,
   settleSurvivorWeek,
   updateSurvivorSettings,
 } from "./survivor-api";
@@ -45,6 +49,7 @@ const settings = {
   strikes_allowed: 0,
   missed_pick_is_strike: true,
   allow_pick_change: true,
+  public_picks: false,
   league_team_count: 32,
 };
 
@@ -478,5 +483,62 @@ describe("the mutations", () => {
       error: "unauthenticated",
     });
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("the account links", () => {
+  it("files an invitation against an address", async () => {
+    const spy = mockFetch(() => json(pool));
+
+    await requestSurvivorParticipantLink(
+      "my-pool",
+      "spot-id",
+      "vincent@example.com",
+      "the-token",
+    );
+
+    expect(spy.mock.calls[0][0]).toBe(
+      "/api-rust/request-survivor-participant-link",
+    );
+    expect(JSON.parse(spy.mock.calls[0][1]!.body as string)).toEqual({
+      pool_name: "my-pool",
+      participant_id: "spot-id",
+      email: "vincent@example.com",
+    });
+  });
+
+  it("sends no address on the other three", async () => {
+    // The backend takes it from the caller's own JWT, which is what keeps one
+    // invitee from accepting another's.
+    for (const [call, path] of [
+      [cancelSurvivorParticipantLink, "cancel-survivor-participant-link"],
+      [acceptSurvivorParticipantLink, "accept-survivor-participant-link"],
+      [declineSurvivorParticipantLink, "decline-survivor-participant-link"],
+    ] as const) {
+      const spy = mockFetch(() => json(pool));
+
+      await call("my-pool", "spot-id", "the-token");
+
+      expect(spy.mock.calls[0][0]).toBe(`/api-rust/${path}`);
+      expect(JSON.parse(spy.mock.calls[0][1]!.body as string)).toEqual({
+        pool_name: "my-pool",
+        participant_id: "spot-id",
+      });
+    }
+  });
+
+  it("reports a refusal rather than throwing", async () => {
+    mockFetch(
+      () => new Response("Only the owner can do this.", { status: 403 }),
+    );
+
+    const res = await requestSurvivorParticipantLink(
+      "my-pool",
+      "spot-id",
+      "vincent@example.com",
+      "the-token",
+    );
+
+    expect(res).toEqual({ ok: false, error: "Only the owner can do this." });
   });
 });

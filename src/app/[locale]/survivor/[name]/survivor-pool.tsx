@@ -29,7 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import PageTitle from "@/components/page-title";
+import FavoritePoolButton from "@/components/favorite-pool-button";
 import SharePoolButton from "@/components/share-pool-button";
+import SurvivorParticipantLinkInvitation from "@/components/survivor-participant-link-invitation";
 import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
 import {
@@ -183,6 +185,12 @@ export default function SurvivorPoolPage(props: Props) {
         titleAdornment={
           <>
             {statusBadge}
+            <FavoritePoolButton
+              poolName={pool.name}
+              kind="survivor"
+              season={pool.season}
+              className="-my-1"
+            />
             <SharePoolButton poolName={pool.name} className="-my-1" />
           </>
         }
@@ -198,6 +206,8 @@ export default function SurvivorPoolPage(props: Props) {
           </AlertTitle>
         </Alert>
       ) : null}
+
+      <SurvivorParticipantLinkInvitation pool={pool} onPoolChange={setPool} />
 
       {canJoin(pool, userId) ? (
         <div className="mb-4">

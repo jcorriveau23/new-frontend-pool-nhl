@@ -16,7 +16,7 @@ job later without this page changing.
 */
 
 import * as React from "react";
-import { Flag, Lock, Trash2, UserPlus } from "lucide-react";
+import { Flag, Link2, Lock, Trash2, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -38,7 +38,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import DeleteSurvivorPoolDialog from "@/components/delete-survivor-pool-dialog";
+import LinkSurvivorParticipantDialog from "@/components/link-survivor-participant-dialog";
 import { useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
@@ -236,6 +238,58 @@ export default function AdminTab(props: Props) {
               max: pool.settings.max_participants,
             })}
           </p>
+          <ul className="divide-y rounded-md border">
+            {pool.participants.map((participant) => {
+              const pendingLink =
+                pool.pending_participant_links?.find(
+                  (pending) => pending.participant_id === participant.id,
+                ) ?? null;
+
+              return (
+                <li
+                  key={participant.id}
+                  className="flex flex-wrap items-center gap-2 px-3 py-2"
+                >
+                  <span className="font-medium">{participant.name}</span>
+                  {participant.is_owned ? (
+                    <Badge variant="outline">{t("SurvivorHasAccount")}</Badge>
+                  ) : (
+                    <Badge variant="secondary">
+                      {t("SurvivorOrganiserRun")}
+                    </Badge>
+                  )}
+                  {pendingLink !== null ? (
+                    <Badge variant="outline">
+                      {t("SurvivorLinkPending", {
+                        email: pendingLink.email_hint ?? "***",
+                      })}
+                    </Badge>
+                  ) : null}
+                  {ownsPool ? (
+                    <LinkSurvivorParticipantDialog
+                      poolName={pool.name}
+                      participant={participant}
+                      pendingLink={pendingLink}
+                      onUpdated={onPoolChange}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto"
+                          disabled={isWorking}
+                        >
+                          <Link2 className="size-4" />
+                          {pendingLink !== null
+                            ? t("SurvivorLinkPendingAction")
+                            : t("SurvivorLinkAccount")}
+                        </Button>
+                      }
+                    />
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
         </CardContent>
       </Card>
 
