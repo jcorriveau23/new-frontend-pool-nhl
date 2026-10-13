@@ -43,7 +43,7 @@ export default function DailyStatsContent() {
     playersOwner,
     dailyPointsMade,
   } = usePoolContext();
-  const { dailyLeaders } = useDailyLeadersContext();
+  const { dailyLeaders, isDailyLeadersPending } = useDailyLeadersContext();
 
   const SkatersTable = (
     skaters: SkaterDailyInfo[],
@@ -298,7 +298,17 @@ export default function DailyStatsContent() {
           <TableSkeleton />
         )}
       </div>
-      {dailyLeaders ? (
+      {!dailyLeaders ? (
+        // A finished read with nothing in it is not a load that is still
+        // going: saying so beats a skeleton that sits there forever.
+        isDailyLeadersPending ? (
+          <TableSkeleton label={t("DailyScoringLeaders")} />
+        ) : (
+          <p className="text-muted-foreground rounded-lg border border-dashed px-6 py-10 text-center text-sm">
+            {t("DailyLeadersUnavailable")}
+          </p>
+        )
+      ) : (
         <Tabs defaultValue="scoringLeaders">
           <TabsList>
             <TabsTrigger value={"scoringLeaders"}>
@@ -321,8 +331,6 @@ export default function DailyStatsContent() {
             )}
           </TabsContent>
         </Tabs>
-      ) : (
-        <TableSkeleton />
       )}
     </div>
   );

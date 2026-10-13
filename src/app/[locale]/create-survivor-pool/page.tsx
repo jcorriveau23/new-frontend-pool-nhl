@@ -113,6 +113,9 @@ export default function CreateSurvivorPoolPage() {
               <CardDescription>
                 {t("SurvivorSettingsDescription")}
               </CardDescription>
+              <p className="text-muted-foreground text-sm">
+                {t("SurvivorFirstWeekNote")}
+              </p>
             </CardHeader>
             <CardContent className="space-y-6">
               <FormField
