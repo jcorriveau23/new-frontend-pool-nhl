@@ -11,8 +11,6 @@ import {
 } from "@/components/ui/accordion";
 import { TotalPreviewColumn } from "./preview-columns";
 import { useTranslations } from "next-intl";
-import { useDateContext } from "@/context/date-context";
-import { format } from "date-fns";
 import { usePoolContext } from "@/context/pool-context";
 import { Row } from "@tanstack/react-table";
 
@@ -50,7 +48,6 @@ export class PreviewTotal {
 export default function DailyPreviewContent() {
   const t = useTranslations();
   const { playingAgainst } = useGamesNightContext();
-  const { currentDate, selectedDate } = useDateContext();
   const {
     poolInfo,
     selectedParticipant,
@@ -157,7 +154,7 @@ export default function DailyPreviewContent() {
     />
   );
 
-  const PreviewPlayersTable = (players: PreviewPlayer[], title: string) => (
+  const PreviewPlayersTable = (players: PreviewPlayer[]) => (
     <DataTable
       data={players}
       columns={PlayerPreviewColumn}
@@ -176,19 +173,10 @@ export default function DailyPreviewContent() {
         onRowClick: () => null,
         t: t,
       }}
-      title={title}
+      title={null}
       tableFooter={null}
     />
   );
-
-  const getFormatedRankingTableTitle = (title: string) =>
-    `${t(title)} (${format(selectedDate ?? currentDate, "yyyy-MM-dd")})`;
-
-  const getFormatedDateTitle = (participant: string, title: string) =>
-    `${t(title)} ${participant} (${format(
-      selectedDate ?? currentDate,
-      "yyyy-MM-dd",
-    )})`;
 
   React.useEffect(() => {
     getPreviewInfo();
@@ -221,10 +209,7 @@ export default function DailyPreviewContent() {
     <div className="space-y-6 py-4">
       <div>
         {totalPreview
-          ? PreviewTotalTable(
-              totalPreview,
-              getFormatedRankingTableTitle("PreviewPlayersPlaying"),
-            )
+          ? PreviewTotalTable(totalPreview, t("PreviewPlayersPlaying"))
           : null}
       </div>
       <div>
@@ -239,39 +224,21 @@ export default function DailyPreviewContent() {
               t("Forwards"),
               countPlaying(forwardsPreview[selectedPoolUser.id]),
               poolInfo.settings.number_forwards,
-              PreviewPlayersTable(
-                forwardsPreview[selectedPoolUser.id],
-                getFormatedDateTitle(
-                  selectedPoolUser.name,
-                  "ListOfForwardsPlayingFor",
-                ),
-              ),
+              PreviewPlayersTable(forwardsPreview[selectedPoolUser.id]),
             )}
             {PreviewSection(
               "defense",
               t("Defense"),
               countPlaying(defensePreview[selectedPoolUser.id]),
               poolInfo.settings.number_defenders,
-              PreviewPlayersTable(
-                defensePreview[selectedPoolUser.id],
-                getFormatedDateTitle(
-                  selectedPoolUser.name,
-                  "ListOfDefensemanPlayingFor",
-                ),
-              ),
+              PreviewPlayersTable(defensePreview[selectedPoolUser.id]),
             )}
             {PreviewSection(
               "goalies",
               t("Goalies"),
               countPlaying(goaliesPreview[selectedPoolUser.id]),
               poolInfo.settings.number_goalies,
-              PreviewPlayersTable(
-                goaliesPreview[selectedPoolUser.id],
-                getFormatedDateTitle(
-                  selectedPoolUser.name,
-                  "ListOfGoaliesPlayingFor",
-                ),
-              ),
+              PreviewPlayersTable(goaliesPreview[selectedPoolUser.id]),
             )}
           </Accordion>
         ) : null}

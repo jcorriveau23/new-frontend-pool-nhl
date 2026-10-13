@@ -214,10 +214,23 @@ export const getDailySkaterStatsWithCumulative = (
   return skaterDailyStats;
 };
 
+/*
+Whether the goalie's game has handed out its decision yet, by player id.
+
+The derived day only carries the won/overtime/shutout flags, so a game still
+being played looks exactly like a loss: all three are false until the nhl feed
+publishes a decision, which it only does once the game is over. Without this
+every goalie of a live game was shown an "L" the game had not awarded.
+*/
+export type HasGameEnded = (playerId: number) => boolean;
+
+const gameAlwaysEnded: HasGameEnded = () => true;
+
 export const getDailyGoalieStatsWithCumulative = (
   goaliePoints: GoaliePoints | null,
   playerId: string,
   settings: GoaliesSettings,
+  hasGameEnded: HasGameEnded = gameAlwaysEnded,
 ): GoalieDailyInfo => {
   // Build the daily display info from the per-player breakdown derived by the server.
   if (goaliePoints === null) {
@@ -234,7 +247,9 @@ export const getDailyGoalieStatsWithCumulative = (
     goalieDailyStats.status = GoalieGameStatus.Shutout;
   } else if (goaliePoints.W) {
     goalieDailyStats.status = GoalieGameStatus.Win;
-  } else {
+  } else if (hasGameEnded(goalieDailyStats.id)) {
+    // Only once the game is over does the absence of the other decisions mean
+    // the goalie took the loss; until then the decision is simply not in yet.
     goalieDailyStats.status = GoalieGameStatus.Losses;
   }
   goalieDailyStats.poolPoints = goalieDailyStats.getTotalPoolPts(settings);
@@ -258,8 +273,14 @@ export const getDailySkatersStatsWithCumulative = (
 export const getDailyGoaliesStatsWithCumulative = (
   rosterInfo: Record<string, GoaliePoints | null>,
   settings: GoaliesSettings,
+  hasGameEnded: HasGameEnded = gameAlwaysEnded,
 ): GoalieDailyInfo[] =>
   // The per-player breakdown derived by the server, turned into display totals.
   Object.keys(rosterInfo).map((key) => {
-    return getDailyGoalieStatsWithCumulative(rosterInfo[key], key, settings);
+    return getDailyGoalieStatsWithCumulative(
+      rosterInfo[key],
+      key,
+      settings,
+      hasGameEnded,
+    );
   });
