@@ -49,6 +49,15 @@ export default function InProgressPool() {
   const { poolInfo, updateSelectedParticipant } = usePoolContext();
   const searchParams = useSearchParams();
 
+  // The History tab lists roster movements, trades, waiver claims and recorded
+  // lineup changes, so it is worth showing as soon as the pool has any way of
+  // producing one of those — free agency included, which a pool can have
+  // without being a dynasty and without opening its lineups on set dates.
+  const hasHistory =
+    poolInfo.settings.dynasty_settings !== null ||
+    (poolInfo.settings.player_drop_settings ?? null) !== null ||
+    poolInfo.settings.roster_modification_date.length > 0;
+
   // The active tab is read straight off the URL rather than mirrored into
   // state: `useSearchParams` already re-renders on a back/forward navigation,
   // so going back to an entry that names no tab falls back to Cumulative
@@ -123,8 +132,7 @@ export default function InProgressPool() {
                 <TabLabel>{t("Trade")}</TabLabel>
               </TabsTrigger>
             ) : null}
-            {poolInfo.settings.dynasty_settings ||
-            poolInfo.settings.roster_modification_date.length > 0 ? (
+            {hasHistory ? (
               <TabsTrigger
                 value={InProgressTabs.HISTORY}
                 className="group gap-2"
@@ -161,8 +169,7 @@ export default function InProgressPool() {
             <TradeList />
           </TabsContent>
         ) : null}
-        {poolInfo.settings.dynasty_settings ||
-        poolInfo.settings.roster_modification_date.length > 0 ? (
+        {hasHistory ? (
           <TabsContent value={InProgressTabs.HISTORY}>
             <HistoryTab />
           </TabsContent>
