@@ -23,7 +23,9 @@ import { ColumnDef } from "@tanstack/react-table";
 import { usePoolContext } from "@/context/pool-context";
 import {
   GoalieDailyInfo,
+  GoaliesDailyTotalPoints,
   SkaterDailyInfo,
+  SkatersDailyTotalPoints,
   TotalDailyPoints,
 } from "@/lib/scoring";
 import { Row } from "@tanstack/react-table";
@@ -31,6 +33,13 @@ import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useDailyLeadersContext } from "@/context/daily-leaders-context";
 import { GameStatePopover } from "@/components/game-state-popover";
 import { GamesNightStatus } from "@/context/games-night-context";
+
+/*
+Pool point settings carry fractions (half a point per assist, and so on), so a
+sum lands on values like 2.8000000000000003. Trim that noise without forcing
+decimals onto the whole numbers most pools produce.
+*/
+const formatPoints = (points: number) => Number(points.toFixed(3));
 
 export default function DailyStatsContent() {
   const t = useTranslations();
@@ -45,10 +54,20 @@ export default function DailyStatsContent() {
   } = usePoolContext();
   const { dailyLeaders, isDailyLeadersPending } = useDailyLeadersContext();
 
+  /*
+  The daily ranking already carries the selected pooler's per-position totals,
+  so the footer rows and the section headers below read them from there rather
+  than summing the same players a second time. Keyed by name, not by id: that
+  is what `TotalDailyPoints` carries as its participant.
+  */
+  const selectedUserTotals = dailyPointsMade?.totalDailyPoints.find(
+    (entry) => entry.participant === selectedPoolUser.name,
+  );
+
   const SkatersTable = (
     skaters: SkaterDailyInfo[],
     columns: ColumnDef<SkaterDailyInfo>[],
-    title: string,
+    total: SkatersDailyTotalPoints | undefined,
   ) => (
     <DataTable
       data={skaters}
@@ -68,12 +87,30 @@ export default function DailyStatsContent() {
         onRowClick: () => null,
         t: t,
       }}
-      title={title}
+      title={null}
       tableFooter={null}
+      footerCells={
+        total
+          ? {
+              player: <span className="font-semibold">{t("Total")}</span>,
+              goals: total.goals,
+              assists: total.assists,
+              shootoutGoals: total.shootoutGoals,
+              poolPoints: (
+                <span className="font-semibold">
+                  {formatPoints(total.totalPoolPoints)}
+                </span>
+              ),
+            }
+          : null
+      }
     />
   );
 
-  const GoaliesTable = (goalies: GoalieDailyInfo[], title: string) => (
+  const GoaliesTable = (
+    goalies: GoalieDailyInfo[],
+    total: GoaliesDailyTotalPoints | undefined,
+  ) => (
     <DataTable
       data={goalies}
       columns={GoaliesColumn}
@@ -92,15 +129,57 @@ export default function DailyStatsContent() {
         onRowClick: () => null,
         t: t,
       }}
-      title={title}
+      title={null}
       tableFooter={null}
+      footerCells={
+        total
+          ? {
+              player: <span className="font-semibold">{t("Total")}</span>,
+              goals: total.goals,
+              assists: total.assists,
+              poolPoints: (
+                <span className="font-semibold">
+                  {formatPoints(total.totalPoolPoints)}
+                </span>
+              ),
+            }
+          : null
+      }
     />
+  );
+
+  /*
+  The section stays worth reading while collapsed: the games played and the
+  points the position brought in are the two numbers the table below is opened
+  for, so they sit in the header next to the position name.
+  */
+  const PositionSection = (
+    value: string,
+    label: string,
+    total: SkatersDailyTotalPoints | GoaliesDailyTotalPoints | undefined,
+    table: React.ReactNode,
+  ) => (
+    <AccordionItem value={value} className="border-b-0">
+      <AccordionTrigger className="py-2 font-semibold hover:no-underline">
+        <span className="flex items-center gap-2">
+          {label}
+          {total ? (
+            <span className="text-xs font-normal tabular-nums text-muted-foreground">
+              {total.numberOfGame} {t("GP")}
+              <span className="ml-2 font-semibold text-foreground">
+                {formatPoints(total.totalPoolPoints)} {t("Pts")}
+              </span>
+            </span>
+          ) : null}
+        </span>
+      </AccordionTrigger>
+      <AccordionContent className="pb-2">{table}</AccordionContent>
+    </AccordionItem>
   );
 
   const TotalDailyRankTable = (
     totalDailyPoints: TotalDailyPoints[],
     columns: ColumnDef<TotalDailyPoints>[],
-    title: string,
   ) => (
     <DataTable
       data={totalDailyPoints}
@@ -127,12 +206,12 @@ export default function DailyStatsContent() {
         t: t,
       }}
       rowClickable
-      title={title}
+      title={null}
       tableFooter={null}
     />
   );
 
-  const DailyScoringLeadersTable = (skaters: DailySkater[], title: string) => (
+  const DailyScoringLeadersTable = (skaters: DailySkater[]) => (
     <DataTable
       data={skaters}
       columns={DailyScoringLeadersColumn}
@@ -151,12 +230,12 @@ export default function DailyStatsContent() {
         onRowClick: () => null,
         t: t,
       }}
-      title={title}
+      title={null}
       tableFooter={null}
     />
   );
 
-  const DailyGoaliesLeadersTable = (goalies: DailyGoalie[], title: string) => (
+  const DailyGoaliesLeadersTable = (goalies: DailyGoalie[]) => (
     <DataTable
       data={goalies}
       columns={DailyGoaliesLeadersColumn}
@@ -175,16 +254,10 @@ export default function DailyStatsContent() {
         onRowClick: () => null,
         t: t,
       }}
-      title={title}
+      title={null}
       tableFooter={null}
     />
   );
-
-  const getFormatedRankingTableTitle = (title: string) =>
-    `${t(title)} (${dailyPointsMade?.dateOfInterest})`;
-
-  const getFormatedDateTitle = (participant: string, title: string) =>
-    `${t(title)} ${participant} (${dailyPointsMade?.dateOfInterest})`;
 
   return (
     <div className="space-y-6 py-4">
@@ -212,28 +285,24 @@ export default function DailyStatsContent() {
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 TotalDailyColumn,
-                getFormatedRankingTableTitle("DailyRanking"),
               )}
             </TabsContent>
             <TabsContent value="forwardRanking">
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 ForwardsDailyTotalColumn,
-                getFormatedRankingTableTitle("ForwardDailyRanking"),
               )}
             </TabsContent>
             <TabsContent value="defenseRanking">
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 DefensesDailyTotalColumn,
-                getFormatedRankingTableTitle("DefenseDailyRanking"),
               )}
             </TabsContent>
             <TabsContent value="goaliesRanking">
               {TotalDailyRankTable(
                 dailyPointsMade.totalDailyPoints,
                 GoaliesDailyTotalColumn,
-                getFormatedRankingTableTitle("GoaliesDailyRanking"),
               )}
             </TabsContent>
           </Tabs>
@@ -249,50 +318,35 @@ export default function DailyStatsContent() {
             defaultValue={["forwards", "defense", "goalies"]}
             className="flex flex-col gap-2"
           >
-            <AccordionItem value="forwards" className="border-b-0">
-              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
-                {t("Forwards")}
-              </AccordionTrigger>
-              <AccordionContent className="pb-2">
-                {SkatersTable(
-                  dailyPointsMade.forwardsDailyStats[selectedPoolUser.id],
-                  SkaterDailyColumn,
-                  getFormatedDateTitle(
-                    selectedPoolUser.name,
-                    "DailyPointsMadeByForwardsFor",
-                  ),
-                )}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="defense" className="border-b-0">
-              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
-                {t("Defense")}
-              </AccordionTrigger>
-              <AccordionContent className="pb-2">
-                {SkatersTable(
-                  dailyPointsMade.defendersDailyStats[selectedPoolUser.id],
-                  SkaterDailyColumn,
-                  getFormatedDateTitle(
-                    selectedPoolUser.name,
-                    "DailyPointsMadeByDefenseFor",
-                  ),
-                )}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="goalies" className="border-b-0">
-              <AccordionTrigger className="py-2 font-semibold hover:no-underline">
-                {t("Goalies")}
-              </AccordionTrigger>
-              <AccordionContent className="pb-2">
-                {GoaliesTable(
-                  dailyPointsMade.goaliesDailyStats[selectedPoolUser.id],
-                  getFormatedDateTitle(
-                    selectedPoolUser.name,
-                    "DailyPointsMadeByGoaliesFor",
-                  ),
-                )}
-              </AccordionContent>
-            </AccordionItem>
+            {PositionSection(
+              "forwards",
+              t("Forwards"),
+              selectedUserTotals?.forwards,
+              SkatersTable(
+                dailyPointsMade.forwardsDailyStats[selectedPoolUser.id],
+                SkaterDailyColumn,
+                selectedUserTotals?.forwards,
+              ),
+            )}
+            {PositionSection(
+              "defense",
+              t("Defense"),
+              selectedUserTotals?.defense,
+              SkatersTable(
+                dailyPointsMade.defendersDailyStats[selectedPoolUser.id],
+                SkaterDailyColumn,
+                selectedUserTotals?.defense,
+              ),
+            )}
+            {PositionSection(
+              "goalies",
+              t("Goalies"),
+              selectedUserTotals?.goalies,
+              GoaliesTable(
+                dailyPointsMade.goaliesDailyStats[selectedPoolUser.id],
+                selectedUserTotals?.goalies,
+              ),
+            )}
           </Accordion>
         ) : (
           <TableSkeleton />
@@ -319,16 +373,10 @@ export default function DailyStatsContent() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="scoringLeaders">
-            {DailyScoringLeadersTable(
-              dailyLeaders.skaters,
-              t("DailyScoringLeaders"),
-            )}
+            {DailyScoringLeadersTable(dailyLeaders.skaters)}
           </TabsContent>
           <TabsContent value="goaliesLeaders">
-            {DailyGoaliesLeadersTable(
-              dailyLeaders.goalies,
-              t("DailyGoaliesLeaders"),
-            )}
+            {DailyGoaliesLeadersTable(dailyLeaders.goalies)}
           </TabsContent>
         </Tabs>
       )}

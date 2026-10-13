@@ -45,11 +45,13 @@ import { useSearchParams } from "next/navigation";
 import { useUser } from "./useUserData";
 import {
   GoalieDailyInfo,
+  HasGameEnded,
   SkaterDailyInfo,
   TotalDailyPoints,
   getDailyGoaliesStatsWithCumulative,
   getDailySkatersStatsWithCumulative,
 } from "@/lib/scoring";
+import { GameState } from "@/data/nhl/game";
 
 export interface DailyPoolPointsMade {
   // Daily pool information.
@@ -507,6 +509,43 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
     [poolInfo.participants, poolInfo.name, searchParams, router],
   );
 
+  /*
+  The state of each team's game on the day the game feed holds, keyed by team.
+
+  The score is fetched for one day at a time, so it only answers for that day:
+  the pool can be showing an earlier one (it stops on the last scored day), and
+  a goalie can have been traded since the day on screen. Both come out as a
+  team with no game here, which is read as nothing to wait for rather than as a
+  game still running — the day being shown has already been scored.
+  */
+  const gameStateByTeam = React.useMemo(() => {
+    const states: Record<number, GameState> = {};
+    for (const game of score?.games ?? []) {
+      states[game.awayTeam.id] = game.gameState;
+      states[game.homeTeam.id] = game.gameState;
+    }
+    return states;
+  }, [score]);
+
+  // A goalie's win/overtime/shutout flags are all false while their game is
+  // still being played, which reads exactly like a loss — so the daily stats
+  // ask here before calling one.
+  const hasGameEnded = useCallback<HasGameEnded>(
+    (playerId) => {
+      const team = poolInfo.context?.players[playerId]?.team;
+      if (team === null || team === undefined) {
+        return true;
+      }
+      const gameState = gameStateByTeam[team];
+      return (
+        gameState === undefined ||
+        gameState === GameState.OFF ||
+        gameState === GameState.FINAL
+      );
+    },
+    [gameStateByTeam, poolInfo],
+  );
+
   React.useEffect(() => {
     const dayInfo = poolInfo.context?.score_by_day?.[dateOfInterest];
 
@@ -535,6 +574,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
         goaliesDailyStatsTemp[user.id] = getDailyGoaliesStatsWithCumulative(
           dayInfo[user.id].roster.G,
           poolInfo.settings.goalies_settings,
+          hasGameEnded,
         );
       } else {
         // No derived scores for this day yet (e.g. previewing a future roster).
@@ -560,7 +600,7 @@ export const PoolContextProvider: React.FC<PoolContextProviderProps> = ({
       goaliesDailyStats: goaliesDailyStatsTemp,
       totalDailyPoints: totalDailyPointsTemp,
     });
-  }, [dateOfInterest, poolInfo]);
+  }, [dateOfInterest, poolInfo, hasGameEnded]);
 
   // The always-current pool, and the reason it exists twice.
   //

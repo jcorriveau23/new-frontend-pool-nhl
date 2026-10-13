@@ -8,6 +8,7 @@ import {
   SkatersDailyTotalPoints,
   TotalDailyPoints,
   getDailyGoalieStatsWithCumulative,
+  getDailyGoaliesStatsWithCumulative,
   getDailySkaterStatsWithCumulative,
 } from "./scoring";
 import {
@@ -172,6 +173,66 @@ describe("getDailyGoalieStatsWithCumulative", () => {
       goaliesSettings,
     );
     expect(goalie.status).toBe(expected);
+  });
+
+  it("leaves the status empty while the game is still being played", () => {
+    // No decision is published until the game ends, so the flags of a live
+    // game look exactly like a loss — it must not be read as one.
+    const goalie = getDailyGoalieStatsWithCumulative(
+      { G: 0, A: 1, OT: false, SO: false, W: false },
+      "1",
+      goaliesSettings,
+      () => false,
+    );
+    expect(goalie.played).toBe(true);
+    expect(goalie.status).toBeNull();
+    expect(goalie.poolPoints).toBe(1);
+  });
+
+  it.each([
+    [{ OT: true, SO: false, W: false }, GoalieGameStatus.OverTime],
+    [{ OT: false, SO: true, W: true }, GoalieGameStatus.Shutout],
+    [{ OT: false, SO: false, W: true }, GoalieGameStatus.Win],
+  ])(
+    "keeps the decision %o a live game already handed out",
+    (flags, expected) => {
+      // The nhl feed only publishes these once the game is decided, so they
+      // stand on their own whatever the game state says.
+      const goalie = getDailyGoalieStatsWithCumulative(
+        { G: 0, A: 0, ...flags },
+        "1",
+        goaliesSettings,
+        () => false,
+      );
+      expect(goalie.status).toBe(expected);
+    },
+  );
+
+  it("calls the loss once the game is over", () => {
+    const goalie = getDailyGoalieStatsWithCumulative(
+      { G: 0, A: 0, OT: false, SO: false, W: false },
+      "1",
+      goaliesSettings,
+      () => true,
+    );
+    expect(goalie.status).toBe(GoalieGameStatus.Losses);
+  });
+});
+
+describe("getDailyGoaliesStatsWithCumulative", () => {
+  it("asks about each goalie's own game", () => {
+    const goalies = getDailyGoaliesStatsWithCumulative(
+      {
+        "1": { G: 0, A: 0, OT: false, SO: false, W: false },
+        "2": { G: 0, A: 0, OT: false, SO: false, W: false },
+      },
+      goaliesSettings,
+      (playerId) => playerId === 1,
+    );
+    expect(goalies.find((g) => g.id === 1)?.status).toBe(
+      GoalieGameStatus.Losses,
+    );
+    expect(goalies.find((g) => g.id === 2)?.status).toBeNull();
   });
 });
 
