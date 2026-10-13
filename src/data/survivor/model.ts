@@ -51,6 +51,9 @@ export interface SurvivorSettings {
   // Whether failing to pick costs a strike, or eliminates outright.
   missed_pick_is_strike: boolean;
   allow_pick_change: boolean;
+  // Whether the date being played shows everybody's pick or only your own.
+  // False is the classic game: a date's picks stay private until it locks.
+  public_picks: boolean;
   // Teams in the league, which decides when a participant has been through them
   // all and their used list resets.
   league_team_count: number;
@@ -80,6 +83,30 @@ export interface SurvivorWeek {
   settled_at: number | null;
 }
 
+/*
+An invitation, filed by the pool owner, for whoever signs in with a given email
+address to take one of the pool's spots over.
+
+The counterpart of `PendingPoolerLink` on the roster pool, and for the same
+reason: a spot the organiser entered by hand has no account behind it, so the
+person it stands for cannot pick for themselves. The owner cannot attach an
+account alone either — the app has no user directory to resolve an address
+with, and taking a spot over is the taker's call.
+
+The address itself is never in the pool, which anybody in it can read. The hash
+is, so recognising an invitation as yours means hashing the address you signed
+in with and comparing.
+*/
+export interface PendingParticipantLink {
+  participant_id: string;
+  email_hash: string;
+  // A redacted address ("vi***t@example.com"), for the owner to recognise what
+  // they filed.
+  email_hint: string;
+  requested_by: string;
+  date_requested: number;
+}
+
 export interface SurvivorPool {
   name: string;
   owner: string;
@@ -90,6 +117,9 @@ export interface SurvivorPool {
   // Whoever was left when the pool ended. More than one when a date took out
   // everybody still standing — they share it.
   winners: string[] | null;
+  // Invitations waiting on the person they name to sign in and accept them.
+  // Absent on every pool that has never had one filed.
+  pending_participant_links?: PendingParticipantLink[] | null;
   date_updated: number;
   season: number;
   season_start: string;

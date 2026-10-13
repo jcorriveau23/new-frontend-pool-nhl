@@ -43,7 +43,11 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import LogoutMenuItem from "./hanko/logout-button";
-import { useFavoritePools } from "@/hooks/use-favorite-pools";
+import {
+  FavoritePool,
+  poolHref,
+  useFavoritePools,
+} from "@/hooks/use-favorite-pools";
 import { seasonFormat } from "@/app/utils/formating";
 
 export function AppSidebar({
@@ -111,14 +115,20 @@ export function AppSidebar({
   const user = useUser();
   const { favorites, toggleFavorite } = useFavoritePools();
 
+  // Grouped by season, newest first, and the whole favorite is carried through
+  // rather than its name: a shortcut needs the kind to know which page it goes
+  // to, and two kinds may hold a pool of the same name.
   const favoritesBySeason = React.useMemo(() => {
-    const groups = new Map<number | null, string[]>();
-    for (const { name, season } of favorites) {
-      groups.set(season, [...(groups.get(season) ?? []), name]);
+    const groups = new Map<number | null, FavoritePool[]>();
+    for (const favorite of favorites) {
+      groups.set(favorite.season, [
+        ...(groups.get(favorite.season) ?? []),
+        favorite,
+      ]);
     }
-    return Array.from(groups, ([season, poolNames]) => ({
+    return Array.from(groups, ([season, pools]) => ({
       season,
-      poolNames: poolNames.sort((a, b) => a.localeCompare(b)),
+      pools: pools.sort((a, b) => a.name.localeCompare(b.name)),
     })).sort((a, b) => (b.season ?? 0) - (a.season ?? 0));
   }, [favorites]);
   const router = useRouter();
@@ -222,7 +232,7 @@ export function AppSidebar({
           <SidebarGroup>
             <SidebarGroupLabel>{t("Favorites")}</SidebarGroupLabel>
             <SidebarGroupContent>
-              {favoritesBySeason.map(({ season, poolNames }) => (
+              {favoritesBySeason.map(({ season, pools }) => (
                 <div key={season ?? "unknown-season"}>
                   {season !== null ? (
                     <div className="text-muted-foreground/70 px-2 pb-0.5 pt-1 text-xs font-medium">
@@ -230,26 +240,30 @@ export function AppSidebar({
                     </div>
                   ) : null}
                   <SidebarMenu>
-                    {poolNames.map((poolName) => (
-                      <SidebarMenuItem key={poolName}>
+                    {pools.map((favorite) => (
+                      <SidebarMenuItem
+                        key={`${favorite.kind}:${favorite.name}`}
+                      >
                         <SidebarMenuButton
-                          isActive={isActive(`/pool/${poolName}`)}
+                          isActive={isActive(poolHref(favorite))}
                           render={
                             <Link
-                              href={`/pool/${poolName}`}
+                              href={poolHref(favorite)}
                               onClick={closeOnMobile}
                             />
                           }
                         >
-                          <Star />
-                          <span className="truncate">{poolName}</span>
+                          {favorite.kind === "survivor" ? <Swords /> : <Star />}
+                          <span className="truncate">{favorite.name}</span>
                         </SidebarMenuButton>
                         <SidebarMenuAction
                           showOnHover
                           aria-label={t("RemoveFromFavorites", {
-                            pool: poolName,
+                            pool: favorite.name,
                           })}
-                          onClick={() => toggleFavorite(poolName)}
+                          onClick={() =>
+                            toggleFavorite(favorite.kind, favorite.name)
+                          }
                         >
                           <X />
                         </SidebarMenuAction>

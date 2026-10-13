@@ -222,6 +222,66 @@ export function addSurvivorParticipant(
   );
 }
 
+/*
+Hand one of the pool's spots to an account.
+
+The four of them are the survivor pool's half of the roster pool's pooler-link
+flow: the owner files an invitation against an address, and the person signing
+in with that address turns it into the link. Nothing is emailed — the owner
+already has a way to reach the person they are inviting.
+
+Only `request` carries an address. For the other three the backend takes it from
+the caller's own JWT, which is what keeps one invitee from accepting another's.
+*/
+export function requestSurvivorParticipantLink(
+  poolName: string,
+  participantId: string,
+  email: string,
+  jwt: string | null | undefined,
+): Promise<ApiResult<SurvivorPool>> {
+  return apiPost<SurvivorPool>(
+    "/request-survivor-participant-link",
+    { pool_name: poolName, participant_id: participantId, email },
+    jwt,
+  );
+}
+
+export function cancelSurvivorParticipantLink(
+  poolName: string,
+  participantId: string,
+  jwt: string | null | undefined,
+): Promise<ApiResult<SurvivorPool>> {
+  return apiPost<SurvivorPool>(
+    "/cancel-survivor-participant-link",
+    { pool_name: poolName, participant_id: participantId },
+    jwt,
+  );
+}
+
+export function acceptSurvivorParticipantLink(
+  poolName: string,
+  participantId: string,
+  jwt: string | null | undefined,
+): Promise<ApiResult<SurvivorPool>> {
+  return apiPost<SurvivorPool>(
+    "/accept-survivor-participant-link",
+    { pool_name: poolName, participant_id: participantId },
+    jwt,
+  );
+}
+
+export function declineSurvivorParticipantLink(
+  poolName: string,
+  participantId: string,
+  jwt: string | null | undefined,
+): Promise<ApiResult<SurvivorPool>> {
+  return apiPost<SurvivorPool>(
+    "/decline-survivor-participant-link",
+    { pool_name: poolName, participant_id: participantId },
+    jwt,
+  );
+}
+
 export function lockSurvivorWeek(
   poolName: string,
   week: number,

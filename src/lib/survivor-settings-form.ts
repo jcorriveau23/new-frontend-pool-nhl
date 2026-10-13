@@ -48,6 +48,7 @@ export const DEFAULT_SURVIVOR_FORM_VALUES = {
   strikesAllowed: 0,
   missedPickIsStrike: true,
   allowPickChange: true,
+  publicPicks: false,
 };
 
 export type SurvivorFormValues = typeof DEFAULT_SURVIVOR_FORM_VALUES;
@@ -107,6 +108,7 @@ export function buildSurvivorSettingsSchema(
     ),
     missedPickIsStrike: z.boolean(),
     allowPickChange: z.boolean(),
+    publicPicks: z.boolean(),
   });
 }
 
@@ -161,6 +163,7 @@ export function toSurvivorSettings(
     strikes_allowed: values.strikesAllowed,
     missed_pick_is_strike: values.missedPickIsStrike,
     allow_pick_change: values.allowPickChange,
+    public_picks: values.publicPicks,
     league_team_count: LEAGUE_TEAM_COUNT,
   };
 }
@@ -169,10 +172,10 @@ export function toSurvivorSettings(
 The settings an existing pool is updated to.
 
 Built by spreading what the pool already has rather than from the form alone,
-which is the whole difference from `toSurvivorSettings`. Two of the six fields
+which is the whole difference from `toSurvivorSettings`. Two of the seven fields
 are on no screen — `assistants`, which the owner manages elsewhere, and
 `league_team_count`, which is the league's size in the season the pool opened —
-and a payload assembled from the form's four would quietly reset both. The
+and a payload assembled from the form's five would quietly reset both. The
 pool document is also read through a loose schema, so a field the backend added
 ahead of this frontend survives an edit for the same reason.
 */
@@ -186,9 +189,18 @@ export function mergeSurvivorSettings(
     strikes_allowed: values.strikesAllowed,
     missed_pick_is_strike: values.missedPickIsStrike,
     allow_pick_change: values.allowPickChange,
+    public_picks: values.publicPicks,
   };
 }
 
+/*
+`?? false` on `publicPicks`, here and in `toSurvivorFormValues`, because the
+field can genuinely be missing however the type reads: a pool document is
+handed back as it arrived rather than rebuilt from the schema, so a backend
+older than the setting leaves it undefined. Feeding that to the form would put
+the switch in an indeterminate state and fail the `z.boolean()` on submit, and
+false is the game every such pool has been playing.
+*/
 export function toSurvivorSettingsFormValues(
   settings: SurvivorSettings,
 ): SurvivorSettingsFormValues {
@@ -197,6 +209,7 @@ export function toSurvivorSettingsFormValues(
     strikesAllowed: settings.strikes_allowed,
     missedPickIsStrike: settings.missed_pick_is_strike,
     allowPickChange: settings.allow_pick_change,
+    publicPicks: settings.public_picks ?? false,
   };
 }
 
@@ -212,6 +225,7 @@ export function toSurvivorFormValues(
     strikesAllowed: settings.strikes_allowed,
     missedPickIsStrike: settings.missed_pick_is_strike,
     allowPickChange: settings.allow_pick_change,
+    publicPicks: settings.public_picks ?? false,
   };
 }
 

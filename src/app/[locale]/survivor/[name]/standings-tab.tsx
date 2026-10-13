@@ -8,11 +8,16 @@ The rows arrive already counted and already sorted — a pool of hundreds would
 otherwise ship every pick of every date for the browser to aggregate, on the
 page people reload all Saturday evening. This module only renders them.
 
-Only revealed dates have columns, and only up to the one in view. An open date
+Only revealed dates have columns, and only up to the one in view. A hidden date
 is absent rather than blank, and not by omission here: the backend leaves its
 picks out of the payload entirely, because one that carried them would reveal
 them to whoever read the response. The screen says so rather than leaving a gap
 nobody can explain.
+
+Which dates are hidden is the pool's own setting. In a pool with `public_picks`
+on, the date being played is in the grid before its deadline — that is what the
+owner turned it on for — so the screen says that too, or a column of picks for
+a date still open would read as a deadline that has already passed.
 */
 
 import * as React from "react";
@@ -44,7 +49,11 @@ import {
   SurvivorStandings,
   WeekStatus,
 } from "@/data/survivor/model";
-import { revealedWeeksUpTo, weekByNumber } from "@/lib/survivor";
+import {
+  arePicksRevealed,
+  revealedWeeksUpTo,
+  weekByNumber,
+} from "@/lib/survivor";
 
 interface Props {
   pool: SurvivorPool;
@@ -114,7 +123,13 @@ export default function StandingsTab(props: Props) {
   const selected =
     selectedWeek === null ? null : weekByNumber(pool, selectedWeek);
   const selectedIsHidden =
-    selected !== null && selected.status === WeekStatus.Open;
+    selected !== null && !arePicksRevealed(pool, selected);
+  // And the other way round: an open date whose picks are in the grid because
+  // this pool plays with them public.
+  const selectedIsOpenAndPublic =
+    selected !== null &&
+    selected.status === WeekStatus.Open &&
+    arePicksRevealed(pool, selected);
 
   return (
     <div className="space-y-4 text-left">
@@ -143,6 +158,12 @@ export default function StandingsTab(props: Props) {
       {selectedIsHidden ? (
         <p className="text-muted-foreground text-sm">
           {t("SurvivorWeekStillOpen", { week: selected.week })}
+        </p>
+      ) : null}
+
+      {selectedIsOpenAndPublic ? (
+        <p className="text-muted-foreground text-sm">
+          {t("SurvivorWeekPicksArePublic", { week: selected.week })}
         </p>
       ) : null}
 

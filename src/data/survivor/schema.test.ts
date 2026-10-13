@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { SurvivorGameState } from "@/data/survivor/model";
-import { parseSurvivorPickOptions } from "@/data/survivor/schema";
+import {
+  parseSurvivorPickOptions,
+  parseSurvivorPool,
+} from "@/data/survivor/schema";
 import { displayScore, gameStatus, matchupsCoverTeams } from "@/lib/survivor";
 
 /*
@@ -93,5 +96,45 @@ describe("parseSurvivorPickOptions", () => {
     expect(eligible_team_ids).toBeDefined();
 
     expect(parseSurvivorPickOptions(withoutTeams)).toBeNull();
+  });
+});
+
+describe("parseSurvivorPool", () => {
+  const poolDocument = (settings: Record<string, unknown> = {}) => ({
+    name: "survivor",
+    owner: "owner-id",
+    status: "InProgress",
+    settings: {
+      assistants: [],
+      max_participants: 100,
+      strikes_allowed: 0,
+      missed_pick_is_strike: true,
+      allow_pick_change: true,
+      league_team_count: 32,
+      ...settings,
+    },
+    participants: [],
+    weeks: [],
+    winners: null,
+    season: 20262027,
+  });
+
+  it("reads a pool that plays its picks public", () => {
+    const parsed = parseSurvivorPool(poolDocument({ public_picks: true }));
+
+    expect(parsed?.settings.public_picks).toBe(true);
+  });
+
+  it("accepts a pool created before the setting existed", () => {
+    // A backend older than `public_picks` sends no such field, and refusing
+    // the document for it would take the page down over an additive change.
+    // Note what this does *not* do: these parsers hand back the document that
+    // came in rather than the parsed copy, so the schema's default is an
+    // allowance and not a fill-in — the field is still absent here, and the
+    // code that reads it treats that as the private pool it has always been.
+    const parsed = parseSurvivorPool(poolDocument());
+
+    expect(parsed).not.toBeNull();
+    expect(parsed?.settings.public_picks).toBeUndefined();
   });
 });

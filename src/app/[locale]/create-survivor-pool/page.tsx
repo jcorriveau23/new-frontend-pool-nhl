@@ -247,6 +247,27 @@ export default function CreateSurvivorPoolPage() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="publicPicks"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between gap-3 space-y-0">
+                    <div className="space-y-1">
+                      <FormLabel>{t("SurvivorPublicPicks")}</FormLabel>
+                      <FormDescription>
+                        {t("SurvivorPublicPicksDescription")}
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 

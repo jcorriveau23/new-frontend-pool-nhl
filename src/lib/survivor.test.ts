@@ -87,6 +87,7 @@ const pool = (overrides: Partial<SurvivorPool> = {}): SurvivorPool =>
       strikes_allowed: 0,
       missed_pick_is_strike: true,
       allow_pick_change: true,
+      public_picks: false,
       league_team_count: 32,
     },
     participants: [participant(OWNER)],
@@ -268,10 +269,56 @@ describe("spotsLeft", () => {
 });
 
 describe("arePicksRevealed", () => {
+  // The pool's three weeks with the first `settled` of them settled, so the
+  // date being played is the one after.
+  const poolPlaying = (settled: number, publicPicks: boolean) =>
+    pool({
+      settings: { ...pool().settings, public_picks: publicPicks },
+      weeks: [1, 2, 3].map((number) =>
+        week(number, number <= settled ? WeekStatus.Settled : WeekStatus.Open),
+      ),
+    });
+
   it("hides an open date's picks and reveals the rest", () => {
-    expect(arePicksRevealed(week(1, WeekStatus.Open))).toBe(false);
-    expect(arePicksRevealed(week(1, WeekStatus.Locked))).toBe(true);
-    expect(arePicksRevealed(week(1, WeekStatus.Settled))).toBe(true);
+    const privatePool = poolPlaying(0, false);
+
+    expect(arePicksRevealed(privatePool, week(1, WeekStatus.Open))).toBe(false);
+    expect(arePicksRevealed(privatePool, week(1, WeekStatus.Locked))).toBe(
+      true,
+    );
+    expect(arePicksRevealed(privatePool, week(1, WeekStatus.Settled))).toBe(
+      true,
+    );
+  });
+
+  it("reveals the date being played in a pool that plays them public", () => {
+    const publicPool = poolPlaying(1, true);
+
+    expect(arePicksRevealed(publicPool, week(2, WeekStatus.Open))).toBe(true);
+  });
+
+  it("keeps a pick filed ahead private, public pool or not", () => {
+    // Any open date may be picked for, so somebody can be weeks ahead of the
+    // one being played. Revealing those would hand the field their plans.
+    const publicPool = poolPlaying(1, true);
+
+    expect(arePicksRevealed(publicPool, week(3, WeekStatus.Open))).toBe(false);
+  });
+
+  it("reveals nothing open in a pool that has not started", () => {
+    // Week 1 is the date being played, and in a private pool it stays hidden.
+    expect(arePicksRevealed(poolPlaying(0, false), week(1))).toBe(false);
+    expect(arePicksRevealed(poolPlaying(0, true), week(1))).toBe(true);
+  });
+
+  it("hides an open date in a pool whose every date is settled", () => {
+    // No date is being played, so `public_picks` has nothing to reveal.
+    const over = pool({
+      settings: { ...pool().settings, public_picks: true },
+      weeks: [week(1, WeekStatus.Settled)],
+    });
+
+    expect(arePicksRevealed(over, week(2, WeekStatus.Open))).toBe(false);
   });
 });
 

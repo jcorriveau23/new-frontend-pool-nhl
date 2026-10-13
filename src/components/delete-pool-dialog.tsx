@@ -59,8 +59,8 @@ export default function DeletePoolDialog({
 
     // The pool is gone, its favorite entry would only leave a dead shortcut in
     // the sidebar.
-    if (isFavorite(poolName)) {
-      toggleFavorite(poolName);
+    if (isFavorite("pool", poolName)) {
+      toggleFavorite("pool", poolName);
     }
 
     toast.success(t("SuccessDeletePool", { name: poolName }), {
