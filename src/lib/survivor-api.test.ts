@@ -23,6 +23,7 @@ import {
   leaveSurvivorPool,
   lockSurvivorWeek,
   makeSurvivorPick,
+  renameSurvivorParticipant,
   requestSurvivorParticipantLink,
   settleSurvivorWeek,
   updateSurvivorSettings,
@@ -483,6 +484,44 @@ describe("the mutations", () => {
       error: "unauthenticated",
     });
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("renaming a participant", () => {
+  it("sends the id and the new name, and nothing else", async () => {
+    const spy = mockFetch(() => json(pool));
+
+    const res = await renameSurvivorParticipant(
+      "my-pool",
+      "spot-id",
+      "Raph",
+      "the-token",
+    );
+
+    expect(spy.mock.calls[0][0]).toBe("/api-rust/rename-survivor-participant");
+    // The id is what the picks, the strikes and the standings row are keyed by,
+    // so it travels untouched and only the display name changes.
+    expect(JSON.parse(spy.mock.calls[0][1]!.body as string)).toEqual({
+      pool_name: "my-pool",
+      participant_id: "spot-id",
+      new_name: "Raph",
+    });
+    expect(res.ok).toBe(true);
+  });
+
+  it("reports a refusal rather than throwing", async () => {
+    mockFetch(
+      () => new Response("Only the owner can do this.", { status: 403 }),
+    );
+
+    const res = await renameSurvivorParticipant(
+      "my-pool",
+      "spot-id",
+      "Raph",
+      "the-token",
+    );
+
+    expect(res).toEqual({ ok: false, error: "Only the owner can do this." });
   });
 });
 

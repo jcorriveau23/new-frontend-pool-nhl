@@ -194,7 +194,7 @@ export default function LinkSurvivorParticipantDialog({
               </DialogDescription>
             </DialogHeader>
 
-            <DialogFooter>
+            <DialogFooter className="gap-2">
               <Button
                 type="button"
                 variant="outline"
@@ -251,7 +251,7 @@ export default function LinkSurvivorParticipantDialog({
               </p>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="gap-2">
               <Button
                 type="button"
                 variant="outline"

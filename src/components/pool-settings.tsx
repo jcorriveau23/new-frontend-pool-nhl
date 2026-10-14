@@ -54,7 +54,7 @@ import InformationIcon from "./information-box";
 import { useSearchParams } from "next/navigation";
 import { salaryFormat } from "@/app/utils/formating";
 import {
-  LinkIcon,
+  Link2Icon,
   LockIcon,
   PencilIcon,
   PlusIcon,
@@ -63,6 +63,10 @@ import {
 } from "lucide-react";
 import { useUser } from "@/context/useUserData";
 import DeletePoolDialog from "./delete-pool-dialog";
+import {
+  ParticipantAdminList,
+  ParticipantAdminRow,
+} from "./participant-admin-list";
 import RenamePoolerDialog from "./rename-pooler-dialog";
 import LinkPoolerAccountDialog from "./link-pooler-account-dialog";
 
@@ -861,14 +865,17 @@ export default function PoolSettingsComponent(props: Props) {
         <CardDescription>{t("PoolerSettingsDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ul className="divide-y">
-          {(props.participants ?? []).map((participant) => (
-            <li
-              key={participant.id}
-              className="flex items-center justify-between gap-2 py-2"
-            >
-              <PoolerNameText name={participant.name} />
-              <div className="flex shrink-0 items-center gap-1">
+        <ParticipantAdminList>
+          {(props.participants ?? []).map((participant) => {
+            const pendingLink = pendingLinkOf(participant.id);
+
+            return (
+              <ParticipantAdminRow
+                key={participant.id}
+                name={participant.name}
+                isOwned={participant.is_owned}
+                pendingLink={pendingLink}
+              >
                 <RenamePoolerDialog
                   poolName={props.poolName}
                   pooler={participant}
@@ -877,46 +884,41 @@ export default function PoolSettingsComponent(props: Props) {
                   trigger={
                     <Button
                       variant="ghost"
-                      size="icon"
-                      aria-label={t("RenamePoolerLabel", {
+                      size="sm"
+                      aria-label={t("RenameParticipantLabel", {
                         name: participant.name,
                       })}
                     >
                       <PencilIcon className="size-4" />
+                      {t("Rename")}
                     </Button>
                   }
                 />
                 <LinkPoolerAccountDialog
                   poolName={props.poolName}
                   pooler={participant}
-                  pendingLink={pendingLinkOf(participant.id)}
+                  pendingLink={pendingLink}
                   onUpdated={(pool) => props.onUpdated?.(pool)}
                   trigger={
                     <Button
                       variant="ghost"
-                      size="icon"
+                      size="sm"
                       aria-label={t(
-                        pendingLinkOf(participant.id)
-                          ? "PendingPoolerLinkLabel"
-                          : "LinkPoolerAccountLabel",
+                        pendingLink ? "PendingLinkLabel" : "LinkAccountLabel",
                         { name: participant.name },
                       )}
-                      // An invitation already waiting on this pooler is the one
-                      // thing about it that is not visible from the row, and it
-                      // is what the button does next (withdraw it, not file
-                      // another).
-                      className={
-                        pendingLinkOf(participant.id) ? "text-primary" : ""
-                      }
                     >
-                      <LinkIcon className="size-4" />
+                      <Link2Icon className="size-4" />
+                      {pendingLink
+                        ? t("LinkInvitationSentAction")
+                        : t("LinkAccountAction")}
                     </Button>
                   }
                 />
-              </div>
-            </li>
-          ))}
-        </ul>
+              </ParticipantAdminRow>
+            );
+          })}
+        </ParticipantAdminList>
       </CardContent>
     </Card>
   );

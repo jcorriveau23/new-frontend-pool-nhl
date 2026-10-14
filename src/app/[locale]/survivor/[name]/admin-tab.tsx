@@ -16,7 +16,7 @@ job later without this page changing.
 */
 
 import * as React from "react";
-import { Flag, Link2, Lock, Trash2, UserPlus } from "lucide-react";
+import { Flag, Link2, Lock, Pencil, Trash2, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -38,9 +38,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import DeleteSurvivorPoolDialog from "@/components/delete-survivor-pool-dialog";
+import {
+  ParticipantAdminList,
+  ParticipantAdminRow,
+} from "@/components/participant-admin-list";
 import LinkSurvivorParticipantDialog from "@/components/link-survivor-participant-dialog";
+import RenameSurvivorParticipantDialog from "@/components/rename-survivor-participant-dialog";
 import { useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
@@ -153,13 +157,13 @@ export default function AdminTab(props: Props) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-end gap-2">
+          <div className="space-y-2 sm:flex sm:flex-wrap sm:items-end sm:gap-2 sm:space-y-0">
             <Select
               value={selectedWeek === null ? "" : String(selectedWeek)}
               items={weeks}
               onValueChange={(value) => setSelectedWeek(Number(value))}
             >
-              <SelectTrigger className="w-64">
+              <SelectTrigger className="w-full sm:w-64">
                 <SelectValue placeholder={t("SurvivorSelectWeek")} />
               </SelectTrigger>
               <SelectContent>
@@ -171,28 +175,37 @@ export default function AdminTab(props: Props) {
               </SelectContent>
             </Select>
 
-            <Button
-              variant="outline"
-              disabled={
-                isWorking || week === null || week.status !== WeekStatus.Open
-              }
-              onClick={() => void run(lockSurvivorWeek, "SurvivorWeekLocked")}
-            >
-              <Lock className="size-4" />
-              {t("SurvivorLockWeek")}
-            </Button>
+            {/* The two share the row when they fit and take one each when they
+            do not: a button label never shrinks, and "Verrouiller la date" on
+            a 320px screen does not leave room for both. */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 sm:flex-none"
+                disabled={
+                  isWorking || week === null || week.status !== WeekStatus.Open
+                }
+                onClick={() => void run(lockSurvivorWeek, "SurvivorWeekLocked")}
+              >
+                <Lock className="size-4" />
+                {t("SurvivorLockWeek")}
+              </Button>
 
-            <Button
-              disabled={
-                isWorking || week === null || week.status === WeekStatus.Settled
-              }
-              onClick={() =>
-                void run(settleSurvivorWeek, "SurvivorWeekSettledToast")
-              }
-            >
-              <Flag className="size-4" />
-              {t("SurvivorSettleWeek")}
-            </Button>
+              <Button
+                className="flex-1 sm:flex-none"
+                disabled={
+                  isWorking ||
+                  week === null ||
+                  week.status === WeekStatus.Settled
+                }
+                onClick={() =>
+                  void run(settleSurvivorWeek, "SurvivorWeekSettledToast")
+                }
+              >
+                <Flag className="size-4" />
+                {t("SurvivorSettleWeek")}
+              </Button>
+            </div>
           </div>
 
           <Alert>
@@ -211,8 +224,8 @@ export default function AdminTab(props: Props) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="space-y-1">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="w-full space-y-1 sm:w-64">
               <Label htmlFor="survivor-new-participant">
                 {t("SurvivorParticipantName")}
               </Label>
@@ -225,6 +238,7 @@ export default function AdminTab(props: Props) {
             </div>
             <Button
               variant="outline"
+              className="w-full sm:w-auto"
               disabled={isWorking || newParticipant.trim().length === 0}
               onClick={() => void addParticipant()}
             >
@@ -238,7 +252,7 @@ export default function AdminTab(props: Props) {
               max: pool.settings.max_participants,
             })}
           </p>
-          <ul className="divide-y rounded-md border">
+          <ParticipantAdminList>
             {pool.participants.map((participant) => {
               const pendingLink =
                 pool.pending_participant_links?.find(
@@ -246,50 +260,63 @@ export default function AdminTab(props: Props) {
                 ) ?? null;
 
               return (
-                <li
+                <ParticipantAdminRow
                   key={participant.id}
-                  className="flex flex-wrap items-center gap-2 px-3 py-2"
+                  name={participant.name}
+                  isOwned={participant.is_owned}
+                  pendingLink={pendingLink}
                 >
-                  <span className="font-medium">{participant.name}</span>
-                  {participant.is_owned ? (
-                    <Badge variant="outline">{t("SurvivorHasAccount")}</Badge>
-                  ) : (
-                    <Badge variant="secondary">
-                      {t("SurvivorOrganiserRun")}
-                    </Badge>
-                  )}
-                  {pendingLink !== null ? (
-                    <Badge variant="outline">
-                      {t("SurvivorLinkPending", {
-                        email: pendingLink.email_hint ?? "***",
-                      })}
-                    </Badge>
-                  ) : null}
                   {ownsPool ? (
-                    <LinkSurvivorParticipantDialog
-                      poolName={pool.name}
-                      participant={participant}
-                      pendingLink={pendingLink}
-                      onUpdated={onPoolChange}
-                      trigger={
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="ml-auto"
-                          disabled={isWorking}
-                        >
-                          <Link2 className="size-4" />
-                          {pendingLink !== null
-                            ? t("SurvivorLinkPendingAction")
-                            : t("SurvivorLinkAccount")}
-                        </Button>
-                      }
-                    />
+                    <>
+                      <RenameSurvivorParticipantDialog
+                        poolName={pool.name}
+                        participant={participant}
+                        participants={pool.participants}
+                        onUpdated={onPoolChange}
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isWorking}
+                            aria-label={t("RenameParticipantLabel", {
+                              name: participant.name,
+                            })}
+                          >
+                            <Pencil className="size-4" />
+                            {t("Rename")}
+                          </Button>
+                        }
+                      />
+                      <LinkSurvivorParticipantDialog
+                        poolName={pool.name}
+                        participant={participant}
+                        pendingLink={pendingLink}
+                        onUpdated={onPoolChange}
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isWorking}
+                            aria-label={t(
+                              pendingLink !== null
+                                ? "PendingLinkLabel"
+                                : "LinkAccountLabel",
+                              { name: participant.name },
+                            )}
+                          >
+                            <Link2 className="size-4" />
+                            {pendingLink !== null
+                              ? t("LinkInvitationSentAction")
+                              : t("LinkAccountAction")}
+                          </Button>
+                        }
+                      />
+                    </>
                   ) : null}
-                </li>
+                </ParticipantAdminRow>
               );
             })}
-          </ul>
+          </ParticipantAdminList>
         </CardContent>
       </Card>
 
@@ -314,9 +341,15 @@ export default function AdminTab(props: Props) {
               // list is the closest place left to land on.
               onDeleted={() => router.push(`/pools/${pool.season}`)}
               trigger={
-                <Button variant="destructive" disabled={isWorking}>
+                <Button
+                  variant="destructive"
+                  className="w-full sm:w-auto"
+                  disabled={isWorking}
+                >
                   <Trash2 className="size-4" />
-                  {t("DeletePoolLabel", { pool: pool.name })}
+                  <span className="truncate">
+                    {t("DeletePoolLabel", { pool: pool.name })}
+                  </span>
                 </Button>
               }
             />

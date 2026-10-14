@@ -120,7 +120,7 @@ export default function ConfirmByNameDialog({
             />
           </div>
 
-          <AlertDialogFooter>
+          <AlertDialogFooter className="gap-2">
             <AlertDialogCancel disabled={isWorking}>
               {t("Cancel")}
             </AlertDialogCancel>
