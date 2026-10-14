@@ -33,6 +33,13 @@ interface DateProviderProps {
   children: ReactNode;
 }
 
+/*
+Mounted by `main-layout.tsx` on the routes that show NHL data, and left out of
+the content-only ones — it reads `useSearchParams`, which is what would stop
+those pages prerendering. `useDateContext` therefore throws on those four
+routes by design: nothing there displays a date, and a throw says so at once
+rather than quietly reading a date nobody set.
+*/
 export const DateProvider: React.FC<DateProviderProps> = ({ children }) => {
   const router = useRouter();
   const pathName = usePathname();

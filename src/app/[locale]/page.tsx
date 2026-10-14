@@ -1,6 +1,6 @@
 import Image from "next/image";
-import { Link } from "@/i18n/routing";
-import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
+import { Link, routing } from "@/i18n/routing";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { currentSeason, getSeasonInfo } from "@/lib/season-info";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,8 +25,23 @@ const PREVIEW_STANDINGS = [
   { name: "Charlie", points: 381, today: 0 },
 ];
 
-export default async function Home() {
-  const locale = await getLocale();
+/*
+Prerendered, one copy per locale. `generateStaticParams` sits on the page
+rather than on the `[locale]` layout on purpose: on the layout it would ask
+Next to prerender every route in the app, and the hockey screens cannot be —
+they mount `DateProvider`, which reads the request's search params. Opting in
+page by page keeps those dynamic and costs this page nothing.
+*/
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export default async function Home(props: {
+  params: Promise<{ locale: string }>;
+}) {
+  // From the route segment, not `getLocale()`: this page prerenders, so there
+  // is no request to read the locale from.
+  const { locale } = await props.params;
 
   setRequestLocale(locale);
   const t = await getTranslations();

@@ -33,6 +33,7 @@ export default function DailyGameFeed() {
           disabled={!score}
           variant="outline"
           size="icon"
+          aria-label={t("PreviousDay")}
           onClick={() => (score ? changeDate(score.prevDate) : null)}
         >
           <ChevronLeftIcon className="size-4" />
@@ -48,6 +49,7 @@ export default function DailyGameFeed() {
           disabled={!score}
           variant="outline"
           size="icon"
+          aria-label={t("NextDay")}
           onClick={() => (score ? changeDate(score.nextDate) : null)}
         >
           <ChevronRightIcon className="size-4" />

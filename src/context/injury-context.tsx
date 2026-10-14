@@ -25,6 +25,12 @@ const fetchInjuredPlayers = async (): Promise<
   return response.json();
 };
 
+/*
+Mounted by `main-layout.tsx` on the routes that show NHL data. Only
+`PlayerLink` reads it, so the pages that list no players — the landing page,
+the legal pages, the sign-in screen — were downloading the whole injury report
+to display none of it.
+*/
 export const InjuredPlayersProvider = ({
   children,
 }: {

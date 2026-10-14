@@ -30,7 +30,7 @@ import {
 } from "@/lib/scoring";
 import { Row } from "@tanstack/react-table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { useDailyLeadersContext } from "@/context/daily-leaders-context";
+import { useDailyLeaders } from "@/hooks/use-daily-leaders";
 import { GameStatePopover } from "@/components/game-state-popover";
 import { GamesNightStatus } from "@/context/games-night-context";
 
@@ -52,7 +52,7 @@ export default function DailyStatsContent() {
     playersOwner,
     dailyPointsMade,
   } = usePoolContext();
-  const { dailyLeaders, isDailyLeadersPending } = useDailyLeadersContext();
+  const { dailyLeaders, isDailyLeadersPending } = useDailyLeaders();
 
   /*
   The daily ranking already carries the selected pooler's per-position totals,
