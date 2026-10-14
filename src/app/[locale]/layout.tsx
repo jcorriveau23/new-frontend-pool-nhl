@@ -1,5 +1,5 @@
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages, setRequestLocale } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import React from "react";
 import MainLayout from "./main-layout";
 import Providers from "./providers";
@@ -90,11 +90,13 @@ export const viewport: Viewport = {
 export default async function LocaleLayout(
   props: Readonly<{
     children: React.ReactNode;
+    params: Promise<{ locale: string }>;
   }>,
 ) {
-  const locale = await getLocale();
-
   const { children } = props;
+  // Read from the route segment rather than with `getLocale()`: that reads the
+  // incoming request, which is exactly what a prerender has no access to.
+  const { locale } = await props.params;
 
   setRequestLocale(locale);
   const messages = await getMessages();

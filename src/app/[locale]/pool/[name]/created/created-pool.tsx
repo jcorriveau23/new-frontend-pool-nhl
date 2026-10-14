@@ -130,7 +130,12 @@ export default function CreatedPool() {
       <Tooltip>
         <TooltipTrigger
           render={
-            <Button variant="outline" size="icon" onClick={copyRoomUrl} />
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={t("CopyLink")}
+              onClick={copyRoomUrl}
+            />
           }
         >
           <CopyIcon className="size-4" />
@@ -155,7 +160,11 @@ export default function CreatedPool() {
 
   const CreateUserDialog = () => (
     <Dialog open={open} onOpenChange={onCreateUserDialogOpenChange}>
-      <DialogTrigger render={<Button variant="ghost" size="icon" />}>
+      <DialogTrigger
+        render={
+          <Button variant="ghost" size="icon" aria-label={t("CreateUser")} />
+        }
+      >
         <PlusCircleIcon className="size-4" />
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -225,7 +234,15 @@ export default function CreatedPool() {
 
   const PoolSettingsDialog = () => (
     <Dialog modal={true}>
-      <DialogTrigger render={<Button variant="outline" size="icon" />}>
+      <DialogTrigger
+        render={
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t("PoolSettings")}
+          />
+        }
+      >
         <SettingsIcon />
       </DialogTrigger>
       <DialogContent className="flex max-h-[90dvh] flex-col gap-0 p-0 sm:max-w-3xl">
@@ -298,6 +315,9 @@ export default function CreatedPool() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label={t("RemoveUserNamed", {
+                      name: users[userId].name,
+                    })}
                     onClick={() => RemoveUser(userId)}
                   >
                     <MinusCircleIcon className="size-4" />

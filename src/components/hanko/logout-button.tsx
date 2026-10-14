@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "@/i18n/routing";
 import { Hanko } from "@teamhanko/hanko-elements";
 import { toast } from "sonner";
-import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
@@ -13,7 +12,6 @@ const hankoApi: string = process.env.NEXT_PUBLIC_HANKO_API_URL;
 
 export default function LogoutMenuItem() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [hanko, setHanko] = useState<Hanko>();
   const t = useTranslations();
 
@@ -22,7 +20,8 @@ export default function LogoutMenuItem() {
   const logout = async () => {
     try {
       await hanko?.logout();
-      router.push(`/login?${searchParams.toString()}`);
+      const query = window.location.search.replace(/^\?/, "");
+      router.push(query ? `/login?${query}` : "/login");
       router.refresh();
       return;
     } catch (error) {

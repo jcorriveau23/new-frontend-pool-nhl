@@ -2,11 +2,30 @@
  The privacy/policy page.
 */
 
-import { useTranslations } from "next-intl";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { routing } from "@/i18n/routing";
 import PageTitle from "@/components/page-title";
 
-export default function PrivacyPolicy() {
-  const t = useTranslations();
+/*
+Prerendered, one copy per locale. `generateStaticParams` sits on the page
+rather than on the `[locale]` layout on purpose: on the layout it would ask
+Next to prerender every route in the app, and the hockey screens cannot be —
+they mount `DateProvider`, which reads the request's search params. Opting in
+page by page keeps those dynamic and costs this page nothing.
+*/
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export default async function PrivacyPolicy(props: {
+  params: Promise<{ locale: string }>;
+}) {
+  // Static page: the locale comes from the route segment so it can
+  // prerender, rather than from the incoming request.
+  const { locale } = await props.params;
+
+  setRequestLocale(locale);
+  const t = await getTranslations();
 
   return (
     <main>

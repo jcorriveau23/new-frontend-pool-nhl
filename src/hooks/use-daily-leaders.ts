@@ -1,13 +1,27 @@
 "use client";
 
-import { fetchDailyLeaders } from "@/lib/client-data";
-import { DailyLeaders } from "@/data/dailyLeaders/model";
-import { useQuery } from "@tanstack/react-query";
-import { createContext, useContext } from "react";
-import { format } from "date-fns";
-import { useDateContext } from "./date-context";
+/*
+The day's scoring leaders, read for the one screen that shows them.
 
-interface DailyLeadersContextProps {
+This was a provider mounted in the app shell, which meant every route in the
+app fetched the leaders on load while exactly one component — the daily tab's
+stats table — ever read them. A hook puts the read where the consumer is:
+react-query is already the shared cache, so a provider bought nothing that the
+query key does not, and dropping it means the fetch happens when the tab opens
+rather than when the app does.
+
+The query key and stale time are unchanged, so an entry cached by the old
+provider is still a hit here.
+*/
+
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+
+import { useDateContext } from "@/context/date-context";
+import { DailyLeaders } from "@/data/dailyLeaders/model";
+import { fetchDailyLeaders } from "@/lib/client-data";
+
+export interface DailyLeadersRead {
   dailyLeaders: DailyLeaders | null | undefined;
   // Whether the read is still in flight. Without it `null` (the read failed or
   // the day has no leaders) is indistinguishable from "not here yet", which
@@ -15,25 +29,7 @@ interface DailyLeadersContextProps {
   isDailyLeadersPending: boolean;
 }
 
-const DailyLeadersContext = createContext<DailyLeadersContextProps | undefined>(
-  undefined,
-);
-
-export const useDailyLeadersContext = (): DailyLeadersContextProps => {
-  const context = useContext(DailyLeadersContext);
-  if (!context) {
-    throw new Error(
-      "useDailyLeadersContext must be used within a DailyLeadersProvider",
-    );
-  }
-  return context;
-};
-
-export function DailyLeadersProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function useDailyLeaders(): DailyLeadersRead {
   const { querySelectedDate, score } = useDateContext();
   // The Rust backend doesn't understand the "now" keyword (unlike the NHL
   // score API), so resolve it to a day ourselves — the same day the rest of
@@ -52,14 +48,8 @@ export function DailyLeadersProvider({
     staleTime: 1000 * 60 * 3, // 3 minutes in ms
   });
 
-  const contextValue: DailyLeadersContextProps = {
+  return {
     dailyLeaders: query.data,
     isDailyLeadersPending: query.isPending,
   };
-
-  return (
-    <DailyLeadersContext.Provider value={contextValue}>
-      {children}
-    </DailyLeadersContext.Provider>
-  );
 }
