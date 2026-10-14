@@ -171,7 +171,7 @@ export default function RenamePoolerDialog({
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               type="button"
               variant="outline"

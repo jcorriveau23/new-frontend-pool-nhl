@@ -189,7 +189,7 @@ export default function LinkPoolerAccountDialog({
               </DialogDescription>
             </DialogHeader>
 
-            <DialogFooter>
+            <DialogFooter className="gap-2">
               <Button
                 type="button"
                 variant="outline"
@@ -244,7 +244,7 @@ export default function LinkPoolerAccountDialog({
               </p>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="gap-2">
               <Button
                 type="button"
                 variant="outline"

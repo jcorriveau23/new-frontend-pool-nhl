@@ -223,6 +223,27 @@ export function addSurvivorParticipant(
 }
 
 /*
+Rename one of the pool's participants.
+
+Display name only. Everything the pool is read with is keyed by the
+participant's id — the picks in their own collection, the standings rows, a
+pending link — so this moves one string and no pick has to be re-keyed, which is
+why the backend allows it after a date has settled.
+*/
+export function renameSurvivorParticipant(
+  poolName: string,
+  participantId: string,
+  newName: string,
+  jwt: string | null | undefined,
+): Promise<ApiResult<SurvivorPool>> {
+  return apiPost<SurvivorPool>(
+    "/rename-survivor-participant",
+    { pool_name: poolName, participant_id: participantId, new_name: newName },
+    jwt,
+  );
+}
+
+/*
 Hand one of the pool's spots to an account.
 
 The four of them are the survivor pool's half of the roster pool's pooler-link
