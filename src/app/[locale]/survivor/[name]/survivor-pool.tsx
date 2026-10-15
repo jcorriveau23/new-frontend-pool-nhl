@@ -31,6 +31,7 @@ import {
 import PageTitle from "@/components/page-title";
 import FavoritePoolButton from "@/components/favorite-pool-button";
 import SharePoolButton from "@/components/share-pool-button";
+import ExportButton from "@/components/export-button";
 import SurvivorParticipantLinkInvitation from "@/components/survivor-participant-link-invitation";
 import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
@@ -48,6 +49,7 @@ import {
   weekByNumber,
   weekOptions,
 } from "@/lib/survivor";
+import { buildSurvivorExport } from "@/lib/survivor-export";
 import { fetchSurvivorStandings, joinSurvivorPool } from "@/lib/survivor-api";
 import AdminTab from "./admin-tab";
 import PickTab from "./pick-tab";
@@ -192,6 +194,18 @@ export default function SurvivorPoolPage(props: Props) {
               className="-my-1"
             />
             <SharePoolButton poolName={pool.name} className="-my-1" />
+            {/*
+            The standings are what carry the picks, so the export is only
+            worth offering once they are in — before that it would hand
+            somebody a schedule and call it the pool.
+            */}
+            {standings === null ? null : (
+              <ExportButton
+                build={() => buildSurvivorExport({ pool, standings, t })}
+                baseName={pool.name}
+                className="-my-1"
+              />
+            )}
           </>
         }
       />
