@@ -15,6 +15,7 @@ export async function GET(request: Request) {
   const descending = params.get("descending");
   const skip = params.get("skip");
   const limit = params.get("limit");
+  const season = params.get("season");
 
   const players = await getServerSidePlayers(
     positions.length > 0 ? positions : null,
@@ -22,6 +23,7 @@ export async function GET(request: Request) {
     descending === null ? null : descending === "true",
     skip === null ? null : Number(skip),
     limit === null ? null : Number(limit),
+    season === null ? null : Number(season),
   );
 
   if (players === null) {

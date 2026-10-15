@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { fetchPlayers, searchPlayers } from "@/lib/client-data";
+import { fetchPlayers, fetchSeasons, searchPlayers } from "@/lib/client-data";
 import { Player } from "@/data/pool/model";
 import {
   comparePlayersBy,
@@ -19,9 +19,12 @@ import {
   MINIMUM_SEARCH_CHARACTERS,
   PlayerQueryState,
   SEARCH_DEBOUNCE_MS,
+  draftStatsSeason,
   showGoalieColumns,
+  showSeason,
   sortByColumn,
 } from "@/lib/player-table-query";
+import { seasonFormat } from "@/app/utils/formating";
 import PlayerLink from "./player-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,6 +86,11 @@ interface PlayersTableProps {
   // Season being played, in the 20252026 format. Turns a contract expiration
   // into a remaining term on the cap hit; omitted, only the amount shows.
   currentSeason?: number;
+  // Open on the last completed season rather than the current one, for a
+  // draft board: four games into a season, this season's numbers say nothing
+  // about who to pick. Before the season starts it changes nothing, since the
+  // current season's numbers are then last season's finals.
+  openOnLastCompletedSeason?: boolean;
 }
 
 interface PlayerColumn {
@@ -105,6 +113,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   selectLabel,
   playerLinksInNewTab,
   currentSeason,
+  openOnLastCompletedSeason,
 }) => {
   const searchParams = useSearchParams();
   const queryParams = new URLSearchParams(searchParams.toString());
@@ -122,6 +131,18 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
   const [selectedPositions, setSelectedPositions] = useState<string[]>(
     positionsParams.length ? positionsParams : ["F", "D"],
   );
+  // `undefined` is "the user has not picked one", which is what lets the
+  // default below apply; `null` is an explicit "the current season". The url
+  // is read first so a link to the board keeps the season it was shared on,
+  // and spells "current" out rather than leaving the key off, since it has to
+  // be able to override a default of last season.
+  const [pickedSeason, setPickedSeason] = useState<number | null | undefined>(
+    () => {
+      const fromUrl = queryParams.get("statsSeason");
+      if (fromUrl === null) return undefined;
+      return fromUrl === "current" ? null : Number(fromUrl);
+    },
+  );
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   // The player whose selection is in flight. Picking one is not something to
@@ -135,11 +156,29 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
 
   const pageSize = initialLimit ?? DEFAULT_PAGE_SIZE;
 
+  // Appended to at most once a year, so this is as close to static as a read
+  // gets; it is fetched rather than passed down because the table is opened
+  // from inside client components the season never reaches.
+  const seasonsQuery = useQuery({
+    queryKey: ["seasons"],
+    queryFn: fetchSeasons,
+    staleTime: Infinity,
+  });
+  const seasons = useMemo(() => seasonsQuery.data ?? [], [seasonsQuery.data]);
+
+  const statsSeason =
+    pickedSeason !== undefined
+      ? pickedSeason
+      : openOnLastCompletedSeason
+        ? draftStatsSeason(seasons, new Date())
+        : null;
+
   const queryState: PlayerQueryState = {
     sortField,
     descendingOrder,
     skip,
     positions: selectedPositions,
+    statsSeason,
   };
 
   // Debounced so typing a name does not fire a request per keystroke.
@@ -162,6 +201,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       descendingOrder,
       skip,
       pageSize,
+      statsSeason,
     ],
     queryFn: () =>
       fetchPlayers({
@@ -170,14 +210,15 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
         descending: descendingOrder,
         skip,
         limit: pageSize,
+        season: statsSeason,
       }),
     enabled: !searchActive,
     placeholderData: keepPreviousData,
   });
 
   const searchQuery = useQuery({
-    queryKey: ["players-search", searchTerm],
-    queryFn: () => searchPlayers(searchTerm),
+    queryKey: ["players-search", searchTerm, statsSeason],
+    queryFn: () => searchPlayers(searchTerm, statsSeason),
     enabled: searchActive,
     placeholderData: keepPreviousData,
   });
@@ -222,6 +263,7 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     setDescendingOrder(next.descendingOrder);
     setSkip(next.skip);
     setSelectedPositions(next.positions);
+    setPickedSeason(next.statsSeason);
 
     // An absent column is dropped from the URL rather than written as an empty
     // value, which would be read back as a column named "" on the next load.
@@ -235,6 +277,10 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     queryParams.delete("positions");
     next.positions.forEach((position) =>
       queryParams.append("positions", position),
+    );
+    queryParams.set(
+      "statsSeason",
+      next.statsSeason === null ? "current" : next.statsSeason.toString(),
     );
 
     router.push(`${pushUrl}/?${queryParams.toString()}`);
@@ -252,6 +298,9 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
 
   const handlePositionFilter = (newPositions: string[]) =>
     applyQueryState(filterByPositions(queryState, newPositions));
+
+  const handleSeasonChange = (newSeason: number | null) =>
+    applyQueryState(showSeason(queryState, newSeason));
 
   const clearSearch = () => {
     setSearchInput("");
@@ -603,6 +652,36 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
     />
   );
 
+  /*
+  The season whose numbers are on the table.
+
+  Only rendered when the backend has more than one season on record, so a fresh
+  database shows a table rather than a picker with one entry in it. The current
+  season carries the "current" value rather than its own id: it is the one the
+  table falls back to, and spelling it out keeps the url readable.
+  */
+  const PlayerSeasonFilter = () => {
+    if (seasons.length < 2) return null;
+
+    const latest = seasons[seasons.length - 1].season;
+
+    return (
+      <Combobox
+        selections={[...seasons].reverse().map(({ season }) => ({
+          value: season === latest ? "current" : season.toString(),
+          label: seasonFormat(season, 0),
+        }))}
+        defaultSelectedValue={
+          statsSeason === null ? "current" : statsSeason.toString()
+        }
+        emptyText={t("Season")}
+        onSelect={(newValue) =>
+          handleSeasonChange(newValue === "current" ? null : Number(newValue))
+        }
+      />
+    );
+  };
+
   const PlayersToolbar = () => (
     <div className="flex flex-col gap-2 p-2 sm:flex-row sm:items-center">
       <div className="relative w-full sm:max-w-xs">
@@ -641,6 +720,9 @@ const PlayersTable: React.FC<PlayersTableProps> = ({
       {/* The filter is not applied to a name search, so it would only be
           misleading while one is running. */}
       {searchActive ? null : PlayerPositionFilter()}
+      {/* The season does apply to a search: the five matches come back with
+          that season's numbers on them, so the picker stays. */}
+      {PlayerSeasonFilter()}
       <p
         aria-live="polite"
         className="text-xs text-muted-foreground sm:ml-auto"

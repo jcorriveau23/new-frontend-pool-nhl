@@ -10,6 +10,7 @@ what the react-query callers report as an error rather than as "no data".
 import { DailyLeaders } from "@/data/dailyLeaders/model";
 import { Player } from "@/data/pool/model";
 import { Score } from "@/data/nhl/game";
+import type { SeasonInfo } from "@/lib/season-info";
 import { fetchRouteJson } from "@/lib/route-api";
 
 // `date` is a yyyy-MM-dd day or "now", which the nhl api resolves itself.
@@ -27,6 +28,8 @@ export interface PlayersQuery {
   descending: boolean | null;
   skip: number | null;
   limit: number | null;
+  // Whose season's stats to show. `null` is the current one.
+  season: number | null;
 }
 
 export function fetchPlayers(query: PlayersQuery): Promise<Player[] | null> {
@@ -46,11 +49,28 @@ export function fetchPlayers(query: PlayersQuery): Promise<Player[] | null> {
   if (query.limit !== null) {
     params.set("limit", String(query.limit));
   }
+  if (query.season !== null) {
+    params.set("season", String(query.season));
+  }
 
   return fetchRouteJson<Player[]>(`/api/players?${params.toString()}`);
 }
 
-export const searchPlayers = (name: string): Promise<Player[] | null> =>
+/*
+The seasons the player table can show, oldest first.
+
+Never null: the route falls back to the current season alone, so the table
+always has something to render even with the backend down.
+*/
+export const fetchSeasons = (): Promise<SeasonInfo[] | null> =>
+  fetchRouteJson<SeasonInfo[]>("/api/seasons");
+
+export const searchPlayers = (
+  name: string,
+  season: number | null = null,
+): Promise<Player[] | null> =>
   fetchRouteJson<Player[]>(
-    `/api/players/search?name=${encodeURIComponent(name)}`,
+    `/api/players/search?name=${encodeURIComponent(name)}${
+      season === null ? "" : `&season=${season}`
+    }`,
   );

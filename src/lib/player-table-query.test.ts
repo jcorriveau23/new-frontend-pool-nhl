@@ -8,6 +8,7 @@ import {
   movePage,
   PlayerQueryState,
   showGoalieColumns,
+  showSeason,
   sortByColumn,
 } from "./player-table-query";
 
@@ -18,6 +19,7 @@ const state = (
   descendingOrder: true,
   skip: 0,
   positions: ["F", "D"],
+  statsSeason: null,
   ...overrides,
 });
 
@@ -142,5 +144,39 @@ describe("comparePlayersBy", () => {
     expect(
       [...players].sort(comparePlayersBy(null, true)).map((p) => p.id),
     ).toEqual([2, 4, 1, 3]);
+  });
+});
+
+describe("showSeason", () => {
+  it("goes back to the first page, since the ranking is a different one", () => {
+    expect(showSeason(state({ skip: 300 }), 20252026)).toMatchObject({
+      statsSeason: 20252026,
+      skip: 0,
+    });
+  });
+
+  it("keeps the sorted column, which exists in every season", () => {
+    expect(
+      showSeason(
+        state({ sortField: "goals", descendingOrder: false }),
+        20242025,
+      ),
+    ).toMatchObject({
+      sortField: "goals",
+      descendingOrder: false,
+      statsSeason: 20242025,
+    });
+  });
+
+  it("keeps the position filter", () => {
+    expect(showSeason(state({ positions: ["G"] }), 20252026)).toMatchObject({
+      positions: ["G"],
+    });
+  });
+
+  it("goes back to the current season on null", () => {
+    expect(showSeason(state({ statsSeason: 20252026 }), null)).toMatchObject({
+      statsSeason: null,
+    });
   });
 });
