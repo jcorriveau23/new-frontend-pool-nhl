@@ -1,6 +1,12 @@
 import * as React from "react";
 import { Player } from "@/data/pool/model";
 import {
+  buildDraftBoard,
+  draftedPlayerAt,
+  DraftRound,
+  picksMade,
+} from "@/lib/draft-board";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -35,226 +41,31 @@ import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 import PlayersTable from "./player-table";
 import { useUser } from "@/context/useUserData";
 
-interface Pick {
-  drafter: string;
-  from: string | null;
-  done?: boolean | null;
-}
-
-interface Round {
-  round: number;
-
-  // from first to last
-  picks: Pick[];
-}
-
-interface Draft {
-  rounds: Round[];
-
-  // The user that should draft, null if draft done.
-  currentDrafter: string | null;
-  currentRound: number | null;
-
-  // Total number of picks of the whole draft.
-  totalPicks: number;
-}
-
 interface DraftProps {
   onPlayerSelect: ((player: Player) => Promise<boolean>) | null;
 }
 
 export default function Draft(props: DraftProps) {
-  const [draftInfo, setDraftInfo] = React.useState<Draft | null>(null);
   const { dictUsers, poolInfo, playersOwner } = usePoolContext();
   const userData = useUser();
   const t = useTranslations();
 
-  // The max number of players per pooler is always the number of players minus the number of players protected
-  // (only dynasty pool as a players protected !== 0)
-  const numberPlayersToDraft =
-    poolInfo.settings.number_forwards +
-    poolInfo.settings.number_defenders +
-    poolInfo.settings.number_goalies +
-    poolInfo.settings.number_reservists -
-    (poolInfo.settings.dynasty_settings?.next_season_number_players_protected ??
-      0);
+  /*
+  The board is derived rather than held in state.
 
-  const numberOfPickPerRound = poolInfo.settings.number_poolers;
-
-  const isDraftDone = (
-    draftedPlayerCountDictPerPooler: Map<string, number>,
-    participants: string[],
-  ) => {
-    for (let i = 0; i < participants.length; i += 1) {
-      if (
-        (draftedPlayerCountDictPerPooler.get(participants[i]) ?? 0) <
-        numberPlayersToDraft
-      ) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  // Return the drafted player info for a specific draft index.
-  const getDraftedPlayer = (draftIndex: number): Player | null =>
-    poolInfo.context?.players[
-      poolInfo.context?.players_name_drafted[draftIndex]
-    ] ?? null;
-
-  const getCurrentRoundIndex = (): number | null => {
-    // Return the current round. will be null if the draft is completed/
-    const totalPlayerDrafted =
-      poolInfo.context?.players_name_drafted.length ?? 0;
-
-    if (totalPlayerDrafted >= numberOfPickPerRound * numberPlayersToDraft) {
-      return null;
-    }
-
-    return Math.floor(totalPlayerDrafted / numberOfPickPerRound);
-  };
-
-  const getCurrentDrafter = (rounds: Round[]): string | null => {
-    // Return the current drafter. Will be null if the draft is completed.
-    const totalPlayerDrafted =
-      poolInfo.context?.players_name_drafted.length ?? 0;
-
-    const currentRoundIndex = getCurrentRoundIndex();
-    if (currentRoundIndex === null) {
-      return null;
-    }
-
-    return rounds[currentRoundIndex].picks[
-      totalPlayerDrafted % numberOfPickPerRound
-    ].drafter;
-  };
-
-  const getDynastyRoundDrafters = (
-    draftedPlayerCountDictPerPooler: Map<string, number>,
-    draftOrder: string[],
-    roundIndex: number,
-  ): Pick[] => {
-    const drafters: Pick[] = [];
-    if (!poolInfo.context) {
-      return drafters;
-    }
-
-    for (let i = 0; i < draftOrder.length; i += 1) {
-      if (
-        poolInfo.context.past_tradable_picks &&
-        roundIndex < poolInfo.context.past_tradable_picks.length
-      ) {
-        // we use tradable picks to find to process the next drafter, we are in the list of tradable picks right now.
-        const nextDrafter = draftOrder[i];
-
-        const realNextDrafter =
-          poolInfo.context.past_tradable_picks[roundIndex][nextDrafter];
-
-        draftedPlayerCountDictPerPooler.set(
-          realNextDrafter,
-          (draftedPlayerCountDictPerPooler.get(realNextDrafter) ?? 0) + 1,
-        );
-
-        drafters.push({
-          drafter: realNextDrafter,
-          from: realNextDrafter === nextDrafter ? null : nextDrafter,
-        });
-      } else {
-        // the next drafter comes from draft order directly.
-        const nextDrafter = draftOrder[i];
-        draftedPlayerCountDictPerPooler.set(
-          nextDrafter,
-          (draftedPlayerCountDictPerPooler.get(nextDrafter) ?? 0) + 1,
-        );
-
-        drafters.push({
-          drafter: nextDrafter,
-          from: null,
-          done:
-            (draftedPlayerCountDictPerPooler.get(nextDrafter) ?? 0) >
-            numberPlayersToDraft,
-        });
-      }
-    }
-
-    return drafters;
-  };
-
-  const getRegularRoundDrafters = (
-    draftedPlayerCountDictPerPooler: Map<string, number>,
-    participants: string[],
-    roundIndex: number,
-    isSnakeDraft: boolean,
-  ): Pick[] => {
-    const drafters: Pick[] = [];
-    for (let j = 0; j < participants.length; j += 1) {
-      // Snake draft, reverse draft order each round else always uses participants order.
-      const nextDrafter =
-        roundIndex % 2 || !isSnakeDraft
-          ? participants[participants.length - 1 - j]
-          : participants[j];
-
-      drafters.push({ drafter: nextDrafter, from: null });
-
-      draftedPlayerCountDictPerPooler.set(
-        nextDrafter,
-        (draftedPlayerCountDictPerPooler.get(nextDrafter) ?? 0) + 1,
-      );
-    }
-
-    return drafters;
-  };
-
-  const getRounds = (): Round[] => {
-    if (poolInfo.draft_order === null || poolInfo.context === null) {
-      return [];
-    }
-
-    // 1) Initialize the participants roster count dict to either 0 or
-    // to the number of protected players for dynasty type pools.
-    const draftedPlayerCountDictPerPooler: Map<string, number> = new Map();
-
-    // 2) Parse the pool draft settings to looping until the draft is done.
-    const rounds: Round[] = [];
-    let roundIndex = 0; // roundIndex + 1 = round #
-
-    while (
-      !isDraftDone(draftedPlayerCountDictPerPooler, poolInfo.draft_order)
-    ) {
-      // The drafters for this round
-      let drafters: Pick[] = [];
-
-      // The list of drafters for the specific round.
-      if (
-        poolInfo.settings.dynasty_settings &&
-        poolInfo.context?.past_tradable_picks
-      ) {
-        // This comes from a dynasty draft.
-        drafters = getDynastyRoundDrafters(
-          draftedPlayerCountDictPerPooler,
-          poolInfo.draft_order,
-          roundIndex,
-        );
-      } else {
-        // This is logic is for new drafts.
-        drafters = getRegularRoundDrafters(
-          draftedPlayerCountDictPerPooler,
-          poolInfo.draft_order,
-          roundIndex,
-          true,
-        );
-      }
-
-      rounds.push({ round: roundIndex + 1, picks: drafters });
-      roundIndex += 1;
-    }
-
-    return rounds;
-  };
+  It used to be computed in an effect and stored, which rendered the whole
+  draft as a skeleton once on every pick before rendering with the board — and
+  it was keyed on the list of drafted players alone, so a pick traded during
+  the draft moved the order on the backend and not on screen. It depends on the
+  whole pool for that reason: `past_tradable_picks` and the draft order are as
+  much a part of the board as the picks already made. The derivation itself
+  lives in `@/lib/draft-board`.
+  */
+  const draftInfo = React.useMemo(() => buildDraftBoard(poolInfo), [poolInfo]);
 
   const DraftContent = (draftIndex: number) => {
-    const teamLogo = team_info[getDraftedPlayer(draftIndex)?.team ?? -1]?.logo;
-    const player = getDraftedPlayer(draftIndex);
+    const player = draftedPlayerAt(poolInfo, draftIndex);
+    const teamLogo = team_info[player?.team ?? -1]?.logo;
 
     return player ? (
       <>
@@ -319,7 +130,7 @@ export default function Draft(props: DraftProps) {
     );
   };
 
-  const RoundTable = (round: Round) => (
+  const RoundTable = (round: DraftRound) => (
     <Table className="border-t">
       <TableHeader>
         <TableRow className="hover:bg-transparent">
@@ -394,7 +205,7 @@ export default function Draft(props: DraftProps) {
     </Table>
   );
 
-  const RenderRound = (round: Round, currentRound: number | null) => {
+  const RenderRound = (round: DraftRound, currentRound: number | null) => {
     const firstPick = (round.round - 1) * round.picks.length + 1;
     const lastPick = firstPick + round.picks.length - 1;
 
@@ -429,40 +240,25 @@ export default function Draft(props: DraftProps) {
     );
   };
 
-  React.useEffect(() => {
-    const rounds = getRounds();
-    const roundIndex = getCurrentRoundIndex();
-
-    setDraftInfo({
-      rounds,
-      currentDrafter: getCurrentDrafter(rounds),
-      currentRound: roundIndex !== null ? roundIndex + 1 : null,
-      totalPicks: rounds.reduce(
-        (total, round) =>
-          total + round.picks.filter((pick) => !pick.done).length,
-        0,
-      ),
-    });
-    // The three helpers are re-created on every render; the draft board only
-    // needs recomputing when a pick is made.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poolInfo.context?.players_name_drafted]);
-
-  if (draftInfo === null) {
+  // The board is empty until the pool carries a draft order and a context to
+  // read the picks from, which is the only state worth a skeleton: an empty
+  // board once they are there is a pool with nothing to draft, not a pool
+  // still loading.
+  if (poolInfo.draft_order === null || poolInfo.context === null) {
     return <TableSkeleton rows={8} label={t("LoadingDraftInfo")} />;
   }
   return (
     <div className="space-y-4 py-2">
       <DraftStatus
         round={draftInfo.currentRound}
-        pickNumber={(poolInfo.context?.players_name_drafted.length ?? 0) + 1}
+        pickNumber={picksMade(poolInfo) + 1}
         currentDrafter={
           draftInfo.currentDrafter
             ? dictUsers[draftInfo.currentDrafter ?? ""]?.name
             : null
         }
         isUserTurn={draftInfo.currentDrafter === userData.info?.id}
-        completedPicks={poolInfo.context?.players_name_drafted.length ?? 0}
+        completedPicks={picksMade(poolInfo)}
         totalPicks={draftInfo.totalPicks}
       />
       <Accordion

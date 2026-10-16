@@ -427,3 +427,31 @@ export const abbrevToTeamId: Record<string, number> = {
 };
 
 export default team_info;
+
+/*
+The other direction, derived rather than written out again: a list of sixty-odd
+pairs kept by hand drifts the first time a franchise moves, and this one is
+already the authority.
+*/
+export const teamIdToAbbrev: Record<number, string> = Object.fromEntries(
+  Object.entries(abbrevToTeamId).map(([abbrev, teamId]) => [teamId, abbrev]),
+);
+
+/*
+How a team reads outside of the app, where there is no logo to show.
+
+The three letter code, which is what hockey is written in and what fits the
+narrow column of an exported table. Null for a player with no team at all — a
+free agent, or one the league feed has not placed yet.
+
+The franchise name is a fallback and not a second case: the two lists above
+cover exactly the same teams today, and nothing but a test holds them to it, so
+a team added to one and not the other reads as its full name rather than as a
+blank cell.
+*/
+export const teamLabel = (teamId: number | null | undefined): string | null => {
+  if (teamId === null || teamId === undefined) {
+    return null;
+  }
+  return teamIdToAbbrev[teamId] ?? team_info[teamId]?.fullName ?? null;
+};

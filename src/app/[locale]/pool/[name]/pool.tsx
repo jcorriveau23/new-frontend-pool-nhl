@@ -13,7 +13,10 @@ import { useTranslations } from "next-intl";
 import PageTitle from "@/components/page-title";
 import FavoritePoolButton from "@/components/favorite-pool-button";
 import SharePoolButton from "@/components/share-pool-button";
+import ExportButton from "@/components/export-button";
 import PoolerLinkInvitation from "@/components/pooler-link-invitation";
+import { buildPoolExport, canScorePool } from "@/lib/pool-export";
+import { calculatePoolStats } from "./in-progress/cumulative-tab/cumulative-calculation";
 import { useSession } from "@/context/useSessionData";
 import {
   Tooltip,
@@ -61,9 +64,46 @@ function PoolStateIcon({ status }: { status: PoolState }) {
 }
 
 export default function PoolStatus() {
-  const { poolInfo } = usePoolContext();
+  const t = useTranslations();
+  const {
+    poolInfo,
+    poolStartDate,
+    poolSelectedEndDate,
+    dailyPointsMade,
+    dateOfInterest,
+  } = usePoolContext();
 
   const userSession = useSession();
+
+  /*
+  The export document, built when a format is picked rather than here.
+
+  It needs the same standings pass the cumulative tab makes, which walks every
+  scored day of the season — so it runs on the click. The pass is the tab's own
+  function and not a second implementation of it: an exported standing that
+  disagrees with the one on screen would be worse than no export.
+  */
+  const buildExport = () => {
+    // Skipped rather than guarded inside: the pass reads every participant's
+    // roster without checking there is one, so a pool still in the lobby has
+    // to be kept out of it entirely.
+    const [playerStats, ranking] = canScorePool(poolInfo)
+      ? calculatePoolStats(
+          poolInfo,
+          poolStartDate,
+          poolSelectedEndDate,
+          dailyPointsMade,
+        )
+      : [null, null];
+
+    return buildPoolExport({
+      poolInfo,
+      playerStats,
+      ranking,
+      asOf: dateOfInterest,
+      t,
+    });
+  };
 
   const titleAdornment = (
     <>
@@ -75,6 +115,11 @@ export default function PoolStatus() {
         className="-my-1"
       />
       <SharePoolButton poolName={poolInfo.name} className="-my-1" />
+      <ExportButton
+        build={buildExport}
+        baseName={poolInfo.name}
+        className="-my-1"
+      />
     </>
   );
 
