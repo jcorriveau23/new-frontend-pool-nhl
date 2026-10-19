@@ -139,16 +139,25 @@ export default function DailyTab() {
     case GamesNightStatus.NOT_STARTED:
     case GamesNightStatus.COMPLETED:
     case GamesNightStatus.LIVE: {
+      /*
+      A day's points only mean something once a puck has dropped. The backend
+      seeds `score_by_day` with a zeroed entry as soon as the day exists, so
+      that entry alone would send a night that has not started to a standings
+      table full of zeros. The night's status decides instead, and the entry
+      only matters once the games are under way.
+      */
+      const showPreview =
+        gamesNightStatus === GamesNightStatus.NOT_STARTED ||
+        !poolInfo.context?.score_by_day?.[
+          dailyPointsMade?.dateOfInterest ?? ""
+        ];
+
       return (
         <>
-          <PoolerUserGlobalSelector entries={poolerEntries} />
-          {poolInfo.context?.score_by_day?.[
-            dailyPointsMade?.dateOfInterest ?? ""
-          ] ? (
-            <DailyStatsContent />
-          ) : (
-            <DailyPreviewContent />
-          )}
+          <PoolerUserGlobalSelector
+            entries={showPreview ? undefined : poolerEntries}
+          />
+          {showPreview ? <DailyPreviewContent /> : <DailyStatsContent />}
         </>
       );
     }

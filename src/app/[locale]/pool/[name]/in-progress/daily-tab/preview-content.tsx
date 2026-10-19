@@ -1,8 +1,10 @@
+"use client";
 import { DataTable } from "@/components/ui/data-table";
 import { useGamesNightContext } from "@/context/games-night-context";
+import { Game } from "@/data/nhl/game";
 import { Player } from "@/data/pool/model";
 import React from "react";
-import { PlayerPreviewColumn } from "./preview-columns";
+import { GameTime, PlayerPreviewColumn } from "./preview-columns";
 import {
   Accordion,
   AccordionContent,
@@ -13,18 +15,29 @@ import { TotalPreviewColumn } from "./preview-columns";
 import { useTranslations } from "next-intl";
 import { usePoolContext } from "@/context/pool-context";
 import { Row } from "@tanstack/react-table";
+import { cn } from "@/lib/utils";
 
 export class PreviewPlayer {
-  constructor(player: Player, playingAgainst: Record<number, number>) {
+  constructor(player: Player, gameByTeam: Record<number, Game>) {
+    const game = player.team ? (gameByTeam[player.team] ?? null) : null;
+
     this.name = player.name;
     this.id = player.id;
     this.team = player.team;
-    this.playingAgainst = player.team ? playingAgainst[player.team] : null;
+    this.playingAgainst = game
+      ? game.homeTeam.id === player.team
+        ? game.awayTeam.id
+        : game.homeTeam.id
+      : null;
+    this.isHome = game ? game.homeTeam.id === player.team : null;
+    this.startTimeUTC = game?.startTimeUTC ?? null;
   }
   name: string;
   id: number;
   team: number | null;
   playingAgainst: number | null;
+  isHome: boolean | null;
+  startTimeUTC: string | null;
 }
 
 export class PreviewTotal {
@@ -35,9 +48,9 @@ export class PreviewTotal {
     goalies: PreviewPlayer[],
   ) {
     this.participant = participant;
-    this.forwardsPlaying = forwards.filter((p) => p.playingAgainst).length;
-    this.defensePlaying = defense.filter((p) => p.playingAgainst).length;
-    this.goaliesPlaying = goalies.filter((p) => p.playingAgainst).length;
+    this.forwardsPlaying = countPlaying(forwards);
+    this.defensePlaying = countPlaying(defense);
+    this.goaliesPlaying = countPlaying(goalies);
   }
   participant: string;
   forwardsPlaying: number;
@@ -45,83 +58,100 @@ export class PreviewTotal {
   goaliesPlaying: number;
 }
 
+const countPlaying = (players: PreviewPlayer[]) =>
+  players.filter((p) => p.playingAgainst !== null).length;
+
+/*
+The order a pooler reads the evening in: whoever is in action first, earliest
+puck drop leading, and the players with no game at the bottom.
+*/
+const byPuckDrop = (a: PreviewPlayer, b: PreviewPlayer) => {
+  if ((a.startTimeUTC === null) !== (b.startTimeUTC === null)) {
+    return a.startTimeUTC === null ? 1 : -1;
+  }
+  const byTime = (a.startTimeUTC ?? "").localeCompare(b.startTimeUTC ?? "");
+  return byTime !== 0 ? byTime : a.name.localeCompare(b.name);
+};
+
+const rosterPreview = (
+  playerIds: number[] | undefined,
+  players: Record<number, Player> | undefined,
+  gameByTeam: Record<number, Game>,
+) =>
+  (playerIds ?? [])
+    .map((playerId) => players?.[playerId])
+    .filter((player): player is Player => player !== undefined)
+    .map((player) => new PreviewPlayer(player, gameByTeam))
+    .sort(byPuckDrop);
+
 export default function DailyPreviewContent() {
   const t = useTranslations();
-  const { playingAgainst } = useGamesNightContext();
+  const { gameByTeam } = useGamesNightContext();
   const {
     poolInfo,
     selectedParticipant,
     selectedPoolUser,
     updateSelectedParticipant,
   } = usePoolContext();
-  const [forwardsPreview, setForwardsPreview] = React.useState<Record<
-    string,
-    PreviewPlayer[]
-  > | null>(null);
-  const [defensePreview, setDefensePreview] = React.useState<Record<
-    string,
-    PreviewPlayer[]
-  > | null>(null);
-  const [goaliesPreview, setGoaliesPreview] = React.useState<Record<
-    string,
-    PreviewPlayer[]
-  > | null>(null);
-  const [totalPreview, setTotalPreview] = React.useState<PreviewTotal[] | null>(
-    null,
-  );
 
-  const getPreviewInfo = () => {
-    if (poolInfo.participants === null) {
-      return;
-    }
+  const preview = React.useMemo(() => {
+    const forwards: Record<string, PreviewPlayer[]> = {};
+    const defense: Record<string, PreviewPlayer[]> = {};
+    const goalies: Record<string, PreviewPlayer[]> = {};
+    const totals: PreviewTotal[] = [];
 
-    const forwardsPreviewTemp: Record<string, PreviewPlayer[]> = {};
-    const defensePreviewTemp: Record<string, PreviewPlayer[]> = {};
-    const goaliesPreviewTemp: Record<string, PreviewPlayer[]> = {};
-    const totalPreviewTemp = [];
-    // First create a table for all players for each poolers
-    for (let i = 0; i < poolInfo.participants.length; i += 1) {
-      const user = poolInfo.participants[i];
+    for (const user of poolInfo.participants ?? []) {
+      const roster = poolInfo.context?.pooler_roster[user.id];
+      const players = poolInfo.context?.players;
 
-      // @ts-expect-error, player should always be in the list.
-      forwardsPreviewTemp[user.id] = poolInfo.context!.pooler_roster[
-        user.id
-      ]?.chosen_forwards.map((playerId) => {
-        const player = poolInfo.context?.players[playerId];
-        if (player) return new PreviewPlayer(player, playingAgainst);
-      });
-
-      // @ts-expect-error, player should always be in the list.
-      defensePreviewTemp[user.id] = poolInfo.context!.pooler_roster[
-        user.id
-      ].chosen_defenders.map((playerId) => {
-        const player = poolInfo.context?.players[playerId];
-        if (player) return new PreviewPlayer(player, playingAgainst);
-      });
-
-      // @ts-expect-error, player should always be in the list.
-      goaliesPreviewTemp[user.id] = poolInfo.context!.pooler_roster[
-        user.id
-      ].chosen_goalies.map((playerId) => {
-        const player = poolInfo.context?.players[playerId];
-        if (player) return new PreviewPlayer(player, playingAgainst);
-      });
-
-      totalPreviewTemp.push(
-        new PreviewTotal(
-          user.name,
-          forwardsPreviewTemp[user.id],
-          defensePreviewTemp[user.id],
-          goaliesPreviewTemp[user.id],
-        ),
+      forwards[user.id] = rosterPreview(
+        roster?.chosen_forwards,
+        players,
+        gameByTeam,
+      );
+      defense[user.id] = rosterPreview(
+        roster?.chosen_defenders,
+        players,
+        gameByTeam,
+      );
+      goalies[user.id] = rosterPreview(
+        roster?.chosen_goalies,
+        players,
+        gameByTeam,
       );
 
-      setForwardsPreview(forwardsPreviewTemp);
-      setDefensePreview(defensePreviewTemp);
-      setGoaliesPreview(goaliesPreviewTemp);
-      setTotalPreview(totalPreviewTemp);
+      totals.push(
+        new PreviewTotal(
+          user.name,
+          forwards[user.id],
+          defense[user.id],
+          goalies[user.id],
+        ),
+      );
     }
-  };
+
+    return { forwards, defense, goalies, totals };
+  }, [poolInfo.participants, poolInfo.context, gameByTeam]);
+
+  const selectedRoster = React.useMemo(() => {
+    const forwards = preview.forwards[selectedPoolUser.id] ?? [];
+    const defense = preview.defense[selectedPoolUser.id] ?? [];
+    const goalies = preview.goalies[selectedPoolUser.id] ?? [];
+    const all = [...forwards, ...defense, ...goalies];
+
+    return {
+      forwards,
+      defense,
+      goalies,
+      playing: countPlaying(all),
+      total: all.length,
+      // The first of the pooler's own games to start, which is when their
+      // night actually begins.
+      firstPuckDrop:
+        all.find((player) => player.startTimeUTC !== null)?.startTimeUTC ??
+        null,
+    };
+  }, [preview, selectedPoolUser.id]);
 
   const PreviewTotalTable = (row: PreviewTotal[], title: string) => (
     <DataTable
@@ -159,17 +189,14 @@ export default function DailyPreviewContent() {
       data={players}
       columns={PlayerPreviewColumn}
       initialState={{
-        sorting: [
-          {
-            id: "playingAgainst",
-            desc: true,
-          },
-        ],
         columnPinning: { left: ["ranking", "name"] },
       }}
       meta={{
         props: {},
-        getRowStyles: () => null,
+        // A player with no game tonight is still on the roster, but nothing
+        // they do can move the pooler's night — so they read as background.
+        getRowStyles: (row: Row<PreviewPlayer>) =>
+          row.original.playingAgainst === null ? "text-muted-foreground" : null,
         onRowClick: () => null,
         t: t,
       }}
@@ -177,10 +204,6 @@ export default function DailyPreviewContent() {
       tableFooter={null}
     />
   );
-
-  React.useEffect(() => {
-    getPreviewInfo();
-  }, [playingAgainst]);
 
   const PreviewSection = (
     value: string,
@@ -193,7 +216,12 @@ export default function DailyPreviewContent() {
       <AccordionTrigger className="py-2 font-semibold hover:no-underline">
         <span className="flex items-center gap-2">
           {label}
-          <span className="text-xs font-normal tabular-nums text-muted-foreground">
+          <span
+            className={cn(
+              "text-xs font-normal tabular-nums",
+              playing === 0 ? "text-muted-foreground" : "text-primary",
+            )}
+          >
             {playing}/{total}
           </span>
         </span>
@@ -202,46 +230,54 @@ export default function DailyPreviewContent() {
     </AccordionItem>
   );
 
-  const countPlaying = (players: PreviewPlayer[]) =>
-    players.filter((p) => p.playingAgainst !== null).length;
-
   return (
     <div className="space-y-6 py-4">
-      <div>
-        {totalPreview
-          ? PreviewTotalTable(totalPreview, t("PreviewPlayersPlaying"))
-          : null}
-      </div>
-      <div>
-        {forwardsPreview && defensePreview && goaliesPreview ? (
-          <Accordion
-            key={selectedPoolUser.id}
-            defaultValue={["forwards", "defense", "goalies"]}
-            className="space-y-2"
-          >
-            {PreviewSection(
-              "forwards",
-              t("Forwards"),
-              countPlaying(forwardsPreview[selectedPoolUser.id]),
-              poolInfo.settings.number_forwards,
-              PreviewPlayersTable(forwardsPreview[selectedPoolUser.id]),
-            )}
-            {PreviewSection(
-              "defense",
-              t("Defense"),
-              countPlaying(defensePreview[selectedPoolUser.id]),
-              poolInfo.settings.number_defenders,
-              PreviewPlayersTable(defensePreview[selectedPoolUser.id]),
-            )}
-            {PreviewSection(
-              "goalies",
-              t("Goalies"),
-              countPlaying(goaliesPreview[selectedPoolUser.id]),
-              poolInfo.settings.number_goalies,
-              PreviewPlayersTable(goaliesPreview[selectedPoolUser.id]),
-            )}
-          </Accordion>
-        ) : null}
+      <div>{PreviewTotalTable(preview.totals, t("PreviewPlayersPlaying"))}</div>
+      <div className="space-y-2">
+        <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          <span>
+            {t("PreviewPlayersInAction", {
+              playing: selectedRoster.playing,
+              total: selectedRoster.total,
+            })}
+          </span>
+          {selectedRoster.firstPuckDrop !== null ? (
+            <>
+              <span aria-hidden>·</span>
+              <span className="flex items-center gap-1">
+                {t("PreviewFirstPuckDrop")}
+                <GameTime startTimeUTC={selectedRoster.firstPuckDrop} />
+              </span>
+            </>
+          ) : null}
+        </div>
+        <Accordion
+          key={selectedPoolUser.id}
+          defaultValue={["forwards", "defense", "goalies"]}
+          className="space-y-2"
+        >
+          {PreviewSection(
+            "forwards",
+            t("Forwards"),
+            countPlaying(selectedRoster.forwards),
+            poolInfo.settings.number_forwards,
+            PreviewPlayersTable(selectedRoster.forwards),
+          )}
+          {PreviewSection(
+            "defense",
+            t("Defense"),
+            countPlaying(selectedRoster.defense),
+            poolInfo.settings.number_defenders,
+            PreviewPlayersTable(selectedRoster.defense),
+          )}
+          {PreviewSection(
+            "goalies",
+            t("Goalies"),
+            countPlaying(selectedRoster.goalies),
+            poolInfo.settings.number_goalies,
+            PreviewPlayersTable(selectedRoster.goalies),
+          )}
+        </Accordion>
       </div>
     </div>
   );

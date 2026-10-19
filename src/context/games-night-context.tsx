@@ -19,6 +19,9 @@ export enum GamesNightStatus {
 export interface GamesNightContextProps {
   gamesNightStatus: GamesNightStatus | null;
   playingAgainst: Record<number, number>;
+  // The game each team plays on the selected date, keyed by team id. Carries
+  // what `playingAgainst` leaves out: who is at home and when the puck drops.
+  gameByTeam: Record<number, Game>;
 }
 
 const GamesNightContext = createContext<GamesNightContextProps | undefined>(
@@ -46,6 +49,7 @@ export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
   const [playingAgainst, setPlayingAgainst] = React.useState<
     Record<number, number>
   >({});
+  const [gameByTeam, setGameByTeam] = React.useState<Record<number, Game>>({});
 
   const updateGamesNightContext = (games: Game[]) => {
     if (games?.length === 0) {
@@ -75,12 +79,16 @@ export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
     }
 
     const playingAgainst: Record<number, number> = {};
+    const gameByTeam: Record<number, Game> = {};
     games.map((g) => {
       playingAgainst[g.awayTeam.id] = g.homeTeam.id;
       playingAgainst[g.homeTeam.id] = g.awayTeam.id;
+      gameByTeam[g.awayTeam.id] = g;
+      gameByTeam[g.homeTeam.id] = g;
     });
 
     setPlayingAgainst(playingAgainst);
+    setGameByTeam(gameByTeam);
   };
   // Update the selected date based on the query parameter.
   useEffect(() => {
@@ -90,6 +98,7 @@ export const GamesNightProvider: React.FC<GamesNightProviderProps> = ({
   const contextValue: GamesNightContextProps = {
     gamesNightStatus,
     playingAgainst,
+    gameByTeam,
   };
 
   return (
