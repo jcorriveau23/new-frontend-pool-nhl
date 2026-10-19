@@ -61,8 +61,15 @@ export interface Goal {
   teamAbbrev: { default: string };
   headshot: string;
   highlightClipSharingUrl: string;
+  highlightClipSharingUrlFr?: string;
+  // Brightcove video ids. `highlightClip` is the broadcast highlight with the
+  // commentary around it; `discreteClip` is the short cut of the goal alone,
+  // which is the one worth playing inline. The `Fr` variants carry the French
+  // call of the same goal.
   highlightClip: number;
+  highlightClipFr?: number;
   discreteClip: number;
+  discreteClipFr?: number;
   goalsToDate: number;
   awayScore: number;
   homeScore: number;
