@@ -35,9 +35,15 @@ export enum PickOutcome {
 }
 
 export enum WeekStatus {
-  // Still accepting picks, and showing nobody anybody else's.
+  // Not settled yet. Whether it is still taking picks is a question for the
+  // clock rather than for this field: a team can be picked until its own game
+  // starts, so the date closes when the last of its games does. The backend
+  // answers that with `pick_window_closed` on the pick screen, and by leaving
+  // a date out of the standings' `revealed_weeks` until it has passed.
   Open = "Open",
-  // Past its deadline: picks are revealed and no longer change.
+  // Closed to picks by the owner, back when that was a button on the admin
+  // screen. Nothing produces it any more; pools played under the old rule
+  // carry it, and it still means what it meant — closed, picks public.
   Locked = "Locked",
   // Results are in and eliminations have been applied.
   Settled = "Settled",
@@ -188,11 +194,28 @@ export interface SurvivorPickOptions {
   eligible_team_ids: number[];
   available_team_ids: number[];
   used_team_ids: number[];
+  /*
+  Of the teams playing, the ones whose game has already started.
+
+  Closed to a pick however much of this participant's own list is still open,
+  and kept apart from `used_team_ids` because the screen has to say which of
+  the two reasons applies: a used team is closed for the rest of the cycle, a
+  started one was closed by the clock.
+
+  Optional for the same reason `games` is — a backend older than the deadline
+  does not send it — and absent reads as "none", which is how the screen
+  behaved before.
+  */
+  started_team_ids?: number[];
   current_pick: number | null;
   // True when nothing is open to them, in which case the date costs them
-  // nothing.
+  // nothing. The used-team rule only: having let the deadline pass is not the
+  // same as having had nothing to pick, and only the second is forgiven.
   is_blocked: boolean;
   can_pick: boolean;
+  // True once every game of the date has started, so nothing is left to pick
+  // and the date's picks are public. Optional like `started_team_ids`.
+  pick_window_closed?: boolean;
   /*
   The date's games.
 
@@ -222,8 +245,8 @@ export interface SurvivorStandingRow {
   strikes: number;
   eliminated_week: number | null;
   wins: number;
-  // Their pick per revealed date, keyed by week number. An open date is absent
-  // rather than blank: a payload carrying it would reveal it.
+  // Their pick per revealed date, keyed by week number. A date still taking
+  // picks is absent rather than blank: a payload carrying it would reveal it.
   picks: Record<string, RevealedPick>;
 }
 

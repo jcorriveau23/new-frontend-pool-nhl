@@ -19,10 +19,16 @@ grid — see `matchupsCoverTeams`.
 A live game shows its score and refetches while it is on. It is deliberately
 never marked with a winner: the leader after two periods is not a result, and
 the pool has settled nothing until the game is over.
+
+A team can be picked until its own game starts, so the same refresh is what
+closes the tiles as the afternoon goes on. Which teams those are comes from the
+backend, not from reading the clock here: the deadline is enforced where the
+pick is, and a screen left open since the morning would otherwise offer a game
+that kicked off an hour ago.
 */
 
 import * as React from "react";
-import { Check, Lock, TriangleAlert, Trophy } from "lucide-react";
+import { Check, Clock, Lock, TriangleAlert, Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -59,6 +65,7 @@ import {
 import {
   GameStatus,
   MY_OWN_SPOT,
+  TeamPickState,
   displayScore,
   gameStatus,
   hasLiveGame,
@@ -68,6 +75,7 @@ import {
   pickBlockedReasonKey,
   pickingForOptions,
   splitTeamChoices,
+  teamPickStates,
   winnerOf,
 } from "@/lib/survivor";
 import { fetchPickOptions, makeSurvivorPick } from "@/lib/survivor-api";
@@ -104,7 +112,7 @@ function TeamTile({
   className,
 }: {
   teamId: number;
-  state: "picked" | "open" | "used";
+  state: TeamPickState;
   // Whether the team won or lost its game. Set only once the game is over —
   // a team leading at the second intermission has won nothing.
   result?: "won" | "lost" | null;
@@ -114,28 +122,37 @@ function TeamTile({
 }) {
   const t = useTranslations();
   const name = teamName(teamId);
+  // Two different reasons a tile cannot be tapped, and the labels below keep
+  // them apart: a team spent earlier in the cycle, and one whose game is
+  // already under way.
+  const isClosed = state === "used" || state === "started";
 
   return (
     <button
       type="button"
       onClick={onPick}
-      disabled={disabled || state === "used"}
+      disabled={disabled || isClosed}
       aria-pressed={state === "picked"}
       aria-label={
         result === "won"
           ? t("SurvivorTeamWonLabel", { team: name })
           : state === "used"
             ? t("SurvivorTeamUsedLabel", { team: name })
-            : name
+            : state === "started"
+              ? t("SurvivorTeamStartedLabel", { team: name })
+              : name
       }
       className={cn(
         "relative flex flex-col items-center justify-start gap-2 rounded-lg border p-2 transition-colors sm:p-3",
         "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
         state === "picked" && "border-primary bg-primary/10",
         state === "open" && "hover:bg-accent cursor-pointer",
-        // A used team stays legible but visibly out of play, and says why on
-        // hover rather than vanishing from the grid.
+        // A team out of play stays legible but visibly so, and says why on
+        // hover rather than vanishing from the grid. A started one is held at
+        // a lighter fade than a used one: its game is the thing on screen
+        // worth reading, and its score sits right beside it.
         state === "used" && "cursor-not-allowed opacity-40",
+        state === "started" && "cursor-not-allowed opacity-60",
         disabled && state !== "picked" && "cursor-not-allowed opacity-60",
         // The team that won a finished game, which is not the same as the team
         // this participant picked — hence a ring rather than the picked border.
@@ -146,7 +163,13 @@ function TeamTile({
         result === "lost" && "opacity-50 grayscale",
         className,
       )}
-      title={state === "used" ? t("SurvivorTeamAlreadyUsed") : name}
+      title={
+        state === "used"
+          ? t("SurvivorTeamAlreadyUsed")
+          : state === "started"
+            ? t("SurvivorTeamGameStarted")
+            : name
+      }
     >
       <TeamLogo teamId={teamId} width={40} height={40} alt={name} />
       {/*
@@ -161,6 +184,10 @@ function TeamTile({
       ) : null}
       {state === "used" ? (
         <Lock className="text-muted-foreground absolute top-1 right-1 size-3" />
+      ) : null}
+      {/* A clock rather than the padlock: this one reopens next Saturday. */}
+      {state === "started" ? (
+        <Clock className="text-muted-foreground absolute top-1 right-1 size-3" />
       ) : null}
       {result === "won" ? (
         <span className="absolute -top-2 -right-2 flex items-center gap-1 rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-semibold text-white shadow-sm">
@@ -245,7 +272,7 @@ function MatchupRow({
   onPick,
 }: {
   game: SurvivorGame;
-  stateOf: (teamId: number) => "picked" | "open" | "used";
+  stateOf: (teamId: number) => TeamPickState;
   disabled: boolean;
   onPick: (teamId: number) => void;
 }) {
@@ -497,12 +524,13 @@ export default function PickTab(props: Props) {
       ? participant
       : (pool.participants.find((p) => p.id === pickingFor) ?? null);
 
-  const blockedKey = pickBlockedReasonKey(
+  const blockedKey = pickBlockedReasonKey({
     week,
-    subject,
-    options?.eligible_team_ids ?? null,
-    options?.is_blocked ?? false,
-  );
+    participant: subject,
+    eligibleTeamIds: options?.eligible_team_ids ?? null,
+    isBlocked: options?.is_blocked ?? false,
+    pickWindowClosed: options?.pick_window_closed ?? false,
+  });
 
   if (isLoading) {
     return (
@@ -531,22 +559,20 @@ export default function PickTab(props: Props) {
     options.available_team_ids,
   );
   // Used teams go last, so the ones that can be acted on are not spread out
-  // among the ones that cannot.
+  // among the ones that cannot. Teams whose game has started are left where
+  // they are: their game is still the thing worth reading on the page, with a
+  // live score on it, and moving a row out from under somebody halfway through
+  // an afternoon is worse than a row they cannot tap.
   const ordered = [...available, ...used];
-  const openTeams = new Set(available);
 
-  const stateOf = (teamId: number): "picked" | "open" | "used" => {
-    if (options.current_pick === teamId) {
-      return "picked";
-    }
-    return openTeams.has(teamId) ? "open" : "used";
-  };
+  const stateOf = teamPickStates(options);
+
   const tilesDisabled =
     !options.can_pick || blockedKey !== null || pickingTeam !== null;
 
   // The games are shown as games when they account for exactly the teams the
   // backend called eligible, and as a plain grid when they cannot — an older
-  // backend sends none, and a locked date's list comes from the pool document
+  // backend sends none, and a settled date's list comes from the pool document
   // rather than the feed.
   const matchups = matchupsCoverTeams(options.games, options.eligible_team_ids)
     ? orderMatchups(
@@ -641,6 +667,18 @@ export default function PickTab(props: Props) {
           ))}
         </div>
       )}
+
+      {/*
+      The deadline, said once where the picking happens. It is the rule people
+      most need told: there is no announced cutoff for the date, each game
+      simply closes as it starts. Dropped once the whole date is shut, where
+      the alert above has already said so in the past tense.
+      */}
+      {blockedKey === null ? (
+        <p className="text-muted-foreground text-xs">
+          {t("SurvivorPickDeadlineExplanation")}
+        </p>
+      ) : null}
 
       {used.length > 0 ? (
         <p className="text-muted-foreground text-xs">

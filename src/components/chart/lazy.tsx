@@ -70,3 +70,12 @@ export const ContractValueChart = dynamic(
   () => import("./contract-value-chart").then((m) => m.ContractValueChart),
   { loading: chartFallback("h-[200px]"), ssr: false },
 );
+
+// Also row-counted, and behind the survivor standings' week dialog. Its legend
+// lives in its own module and is imported directly: it is on screen as soon as
+// the dialog opens, and reaching it through here would pull Recharts with it.
+export const SurvivorWeekPicksChart = dynamic(
+  () =>
+    import("./survivor-week-picks-chart").then((m) => m.SurvivorWeekPicksChart),
+  { loading: chartFallback("h-[200px]"), ssr: false },
+);

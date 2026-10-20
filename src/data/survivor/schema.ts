@@ -113,6 +113,11 @@ export const survivorPickOptionsSchema = z.looseObject({
   eligible_team_ids: z.array(z.number()),
   available_team_ids: z.array(z.number()),
   used_team_ids: z.array(z.number()),
+  // The deadline. Optional, like `games` above: a backend older than it sends
+  // neither, and the screen reads an absent list as "no game has started" —
+  // which is how it behaved when closing a date was the owner's button.
+  started_team_ids: z.array(z.number()).optional(),
+  pick_window_closed: z.boolean().optional(),
   current_pick: z.number().nullable(),
   is_blocked: z.boolean(),
   can_pick: z.boolean(),

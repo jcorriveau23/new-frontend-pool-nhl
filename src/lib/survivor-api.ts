@@ -104,8 +104,8 @@ export async function fetchPickOptions(
 /*
 A date's picks.
 
-Answers with nothing but the caller's own while the date is still open — the
-backend decides that, not this module.
+Answers with nothing but the caller's own until the date's last game has
+started — the backend decides that, not this module.
 */
 export function fetchWeekPicks(
   name: string,
@@ -177,10 +177,11 @@ export function leaveSurvivorPool(
 }
 
 /*
-Name the team you are backing.
+Name the team you are backing, which stands until that team's game starts.
 
 Answers with the pick screen as it now stands, so the caller does not re-derive
-what is left open to them — the backend already knows.
+what is left open to them — the backend already knows, and it is the only side
+that knows whether the puck has dropped.
 */
 export function makeSurvivorPick(
   poolName: string,
@@ -303,18 +304,14 @@ export function declineSurvivorParticipantLink(
   );
 }
 
-export function lockSurvivorWeek(
-  poolName: string,
-  week: number,
-  jwt: string | null | undefined,
-): Promise<ApiResult<SurvivorPool>> {
-  return apiPost<SurvivorPool>(
-    "/lock-survivor-week",
-    { pool_name: poolName, week },
-    jwt,
-  );
-}
+/*
+Close a date and apply what the games did.
 
+The one date-level action. Closing a date to picks used to be a second one,
+pressed at the first puck drop to reveal the picks; the deadline is each game's
+own start time now, read from the schedule, so there is nothing left for a
+client to announce.
+*/
 export function settleSurvivorWeek(
   poolName: string,
   week: number,

@@ -21,7 +21,6 @@ import {
   fetchWeekPicks,
   joinSurvivorPool,
   leaveSurvivorPool,
-  lockSurvivorWeek,
   makeSurvivorPick,
   renameSurvivorParticipant,
   requestSurvivorParticipantLink,
@@ -454,22 +453,19 @@ describe("the mutations", () => {
     });
   });
 
-  // Neither carries a result: who won is read from the league's scoreboard
-  // inside the backend.
-  it("locks and settles a date by name and number only", async () => {
+  // It carries no result: who won is read from the league's scoreboard inside
+  // the backend. And there is no companion call closing a date to picks — that
+  // deadline is each game's own start time, so there is nothing to announce.
+  it("settles a date by name and number only", async () => {
     const spy = mockFetch(() => json(pool));
 
-    await lockSurvivorWeek("my-pool", 4, "the-token");
     await settleSurvivorWeek("my-pool", 4, "the-token");
 
-    expect(spy.mock.calls[0][0]).toBe("/api-rust/lock-survivor-week");
-    expect(spy.mock.calls[1][0]).toBe("/api-rust/settle-survivor-week");
-    for (const call of spy.mock.calls) {
-      expect(JSON.parse(call[1]!.body as string)).toEqual({
-        pool_name: "my-pool",
-        week: 4,
-      });
-    }
+    expect(spy.mock.calls[0][0]).toBe("/api-rust/settle-survivor-week");
+    expect(JSON.parse(spy.mock.calls[0][1]!.body as string)).toEqual({
+      pool_name: "my-pool",
+      week: 4,
+    });
   });
 
   it.each([

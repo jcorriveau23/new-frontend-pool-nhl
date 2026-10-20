@@ -1,11 +1,15 @@
 /*
-The pick screen's loading gate.
+The pick screen's loading gate, and the deadline it renders.
 
-This is where the reload flicker was visible: the screen dropped its skeleton
-as soon as it saw no token, which on a signed-in reload meant it painted "you
-are not a participant" to somebody who is one, then put the skeleton back and
-finally the grid once the token arrived. The session now says whether it has
-been read, and the skeleton waits on that.
+The gate is where the reload flicker was visible: the screen dropped its
+skeleton as soon as it saw no token, which on a signed-in reload meant it
+painted "you are not a participant" to somebody who is one, then put the
+skeleton back and finally the grid once the token arrived. The session now says
+whether it has been read, and the skeleton waits on that.
+
+The deadline is per game — a team can be picked until it takes the ice — so the
+second half of this file is about a screen that has to show three different
+reasons a tile cannot be tapped at the same time.
 */
 
 import * as React from "react";
@@ -147,5 +151,105 @@ describe("PickTab loading gate", () => {
     expect(
       screen.queryByText("SurvivorNotAParticipant"),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("PickTab deadline", () => {
+  // The screen, loaded with a given pick payload over the week's two teams.
+  const loadWith = async (
+    options: Partial<{
+      available_team_ids: number[];
+      started_team_ids: number[];
+      pick_window_closed: boolean;
+      can_pick: boolean;
+      current_pick: number | null;
+    }>,
+  ) => {
+    session.isResolved = true;
+    session.info = { jwt: "a-jwt" };
+    fetchPickOptions.mockResolvedValue({
+      ok: true,
+      data: {
+        week: 1,
+        pick_date: "2026-10-17",
+        eligible_team_ids: [1, 2],
+        available_team_ids: [1, 2],
+        used_team_ids: [],
+        current_pick: null,
+        is_blocked: false,
+        can_pick: true,
+        ...options,
+      },
+    });
+
+    renderTab();
+    await vi.waitFor(() => expect(skeletons()).toHaveLength(0));
+  };
+
+  /*
+  The week's two teams, and how the screen labels their tiles.
+
+  A tile that cannot be tapped says why in its accessible name, which is what
+  these assert on — the test translator renders a key with its values as
+  `Key:{"team":"…"}`, so the names are matched by prefix. An open tile is just
+  the team's name, which is how the ids below come to be spelled out.
+  */
+  const STARTED_TEAM = 1;
+  const OPEN_TEAM = 2;
+  const OPEN_TEAM_NAME = "New York Islanders";
+
+  const closedTile = (key: string) =>
+    screen.queryByRole("button", { name: new RegExp(`^${key}:`) });
+
+  it("closes the tile of a team whose game has started and leaves the other", async () => {
+    await loadWith({ started_team_ids: [STARTED_TEAM] });
+
+    expect(closedTile("SurvivorTeamStartedLabel")).toBeDisabled();
+    // The other game has not started, so the date is still being picked for
+    // and its tile is live. This is the whole of what a per-game deadline buys.
+    expect(screen.getByRole("button", { name: OPEN_TEAM_NAME })).toBeEnabled();
+    expect(
+      screen.getByText("SurvivorPickDeadlineExplanation"),
+    ).toBeInTheDocument();
+  });
+
+  it("says a team they have spent is used, not that its game started", async () => {
+    // Both are true of it. The lasting reason is the one worth reading: a
+    // started team reopens next Saturday, a used one does not.
+    await loadWith({
+      available_team_ids: [OPEN_TEAM],
+      started_team_ids: [STARTED_TEAM],
+    });
+
+    expect(closedTile("SurvivorTeamUsedLabel")).toBeDisabled();
+    expect(closedTile("SurvivorTeamStartedLabel")).toBeNull();
+  });
+
+  it("says the date is closed once every game of it has started", async () => {
+    await loadWith({
+      started_team_ids: [STARTED_TEAM, OPEN_TEAM],
+      pick_window_closed: true,
+      can_pick: false,
+    });
+
+    expect(screen.getByText("SurvivorPicksClosedForDate")).toBeInTheDocument();
+    // And it drops the "you have until the game starts" line, which would be
+    // telling somebody about a deadline that has already gone.
+    expect(
+      screen.queryByText("SurvivorPickDeadlineExplanation"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("leaves the whole date open on a backend that sends no deadline", async () => {
+    // Neither field is sent by a backend older than the rule, and absent has
+    // to read as "nothing has started" — the alternative is a screen that
+    // greys out every tile of a pool that is still playing fine.
+    await loadWith({});
+
+    expect(
+      screen.queryByText("SurvivorPicksClosedForDate"),
+    ).not.toBeInTheDocument();
+    expect(closedTile("SurvivorTeamStartedLabel")).toBeNull();
+    expect(screen.getByRole("button", { name: OPEN_TEAM_NAME })).toBeEnabled();
   });
 });

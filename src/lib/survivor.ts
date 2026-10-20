@@ -129,27 +129,23 @@ export function spotsLeft(pool: SurvivorPool): number {
 /*
 Whether a date's picks are public.
 
-A date past its deadline always is: its picks are in and can no longer change.
-An open one shows a participant nothing but their own, because knowing what the
-field is on before you pick is the one thing that would take the guesswork, and
-so the game, out of a survivor pool — unless the owner turned `public_picks` on,
-which is the pools that would rather watch each other all Saturday.
+Read from the standings' own `revealed_weeks` rather than re-derived here, and
+that is a change of approach worth stating. The rule itself is the backend's:
+a date is public once its last game has started — nothing can change, so there
+is nothing left for the secrecy to protect — and a pool whose owner turned
+`public_picks` on also shows the date being played before then.
 
-That setting reveals the date being played and no other: any open date may be
-picked for, so somebody can be a month ahead, and their plans stay their own
-until that date is the one in play.
-
-The backend decides this too, with the same rule, and the standings payload
-simply leaves a hidden date out. This is what lets the screen say why.
+The first half of that depends on the league's schedule, which the browser does
+not hold. A copy of the rule here could only guess at it, and a guess that said
+"still private" over a revealed date, or the reverse, would have the screen
+explaining the opposite of what the grid shows. So the payload decides and this
+reads it; what is left here is the wording.
 */
 export function arePicksRevealed(
-  pool: SurvivorPool,
+  revealedWeeks: number[],
   week: SurvivorWeek,
 ): boolean {
-  if (week.status !== WeekStatus.Open) {
-    return true;
-  }
-  return pool.settings.public_picks && currentWeek(pool)?.week === week.week;
+  return revealedWeeks.includes(week.week);
 }
 
 export const aliveRows = (rows: SurvivorStandingRow[]) =>
@@ -170,18 +166,31 @@ export function strikesRemaining(
 }
 
 /*
-Why a participant cannot pick for a date, as a message key, or null when they
-can.
+Why a participant cannot pick for a date at all, as a message key, or null when
+they can.
 
 Ordered the way a participant would ask: am I out, is it too late, is there
 anything left to pick.
+
+"Too late" is now two questions rather than one. `pickWindowClosed` is the
+deadline the pool actually runs on — every game of the date has started, so
+there is nothing left to pick — and `WeekStatus.Locked` is only reachable in a
+pool whose owner closed a date by hand before that was the rule.
+
+This answers for the whole date. A single team whose game has started is not in
+here: the rest of the date is still open, and that tile says so for itself —
+see `isTeamClosedByClock`.
 */
-export function pickBlockedReasonKey(
-  week: SurvivorWeek,
-  participant: SurvivorUser | null,
-  eligibleTeamIds: number[] | null,
-  isBlocked: boolean,
-): string | null {
+export function pickBlockedReasonKey(args: {
+  week: SurvivorWeek;
+  participant: SurvivorUser | null;
+  eligibleTeamIds: number[] | null;
+  isBlocked: boolean;
+  pickWindowClosed: boolean;
+}): string | null {
+  const { week, participant, eligibleTeamIds, isBlocked, pickWindowClosed } =
+    args;
+
   if (participant === null) {
     return "SurvivorNotAParticipant";
   }
@@ -192,7 +201,12 @@ export function pickBlockedReasonKey(
     return "SurvivorWeekSettled";
   }
   if (week.status === WeekStatus.Locked) {
-    return "SurvivorWeekLocked";
+    return "SurvivorWeekClosed";
+  }
+  // Before "no games that day": a date whose games are all over has games, and
+  // telling somebody there were none would be plainly wrong.
+  if (pickWindowClosed) {
+    return "SurvivorPicksClosedForDate";
   }
   if (eligibleTeamIds !== null && eligibleTeamIds.length === 0) {
     return "SurvivorNoGamesThatDay";
@@ -221,6 +235,21 @@ export const PICK_OUTCOME_TONE: Record<
 };
 
 /*
+How an outcome is worded, wherever it is named.
+
+One list, because three places name them — the standings cell, the week's chart
+legend and its table view — and an outcome worded two ways in one screen reads
+as two different things. It is also what keeps the chart's colours from being
+the only channel that says which way a pick went.
+*/
+export const PICK_OUTCOME_LABEL_KEY: Record<PickOutcome, string> = {
+  [PickOutcome.Won]: "SurvivorOutcomeWon",
+  [PickOutcome.Lost]: "SurvivorOutcomeLost",
+  [PickOutcome.Void]: "SurvivorOutcomeVoid",
+  [PickOutcome.Pending]: "SurvivorOutcomePending",
+};
+
+/*
 The teams playing a date, split into the ones open to this participant and the
 ones their own earlier picks have closed.
 
@@ -240,6 +269,47 @@ export function splitTeamChoices(
   return {
     available: eligibleTeamIds.filter((teamId) => open.has(teamId)),
     used: eligibleTeamIds.filter((teamId) => !open.has(teamId)),
+  };
+}
+
+/*
+How one team's tile reads.
+
+Four states, because there are four different things to tell somebody, and
+three of them look like "you cannot have this":
+
+- `picked`  — their pick for the date.
+- `used`    — spent earlier in this pass through the league, and closed until
+              they have been through the rest of it.
+- `started`  — its game has begun. Open to them in every other sense, and shut
+              by the clock. This is the state the per-game deadline added, and
+              it is kept apart from `used` because the two are undone by
+              completely different things.
+- `open`    — pickable.
+
+`used` is checked before `started` where a team is both: having spent a team is
+the lasting reason and the one that answers "why can I never pick Toronto".
+*/
+export type TeamPickState = "picked" | "open" | "used" | "started";
+
+export function teamPickStates(options: {
+  current_pick: number | null;
+  available_team_ids: number[];
+  started_team_ids?: number[];
+}): (teamId: number) => TeamPickState {
+  const open = new Set(options.available_team_ids);
+  // Absent on a backend older than the deadline, which read as nothing having
+  // started — the behaviour before a date closed itself.
+  const started = new Set(options.started_team_ids ?? []);
+
+  return (teamId: number) => {
+    if (options.current_pick === teamId) {
+      return "picked";
+    }
+    if (!open.has(teamId)) {
+      return "used";
+    }
+    return started.has(teamId) ? "started" : "open";
   };
 }
 

@@ -38,6 +38,7 @@ import {
   pickBlockedReasonKey,
   PICK_OUTCOME_TONE,
   splitTeamChoices,
+  teamPickStates,
   spotsLeft,
   strikesRemaining,
   weekByNumber,
@@ -269,56 +270,29 @@ describe("spotsLeft", () => {
 });
 
 describe("arePicksRevealed", () => {
-  // The pool's three weeks with the first `settled` of them settled, so the
-  // date being played is the one after.
-  const poolPlaying = (settled: number, publicPicks: boolean) =>
-    pool({
-      settings: { ...pool().settings, public_picks: publicPicks },
-      weeks: [1, 2, 3].map((number) =>
-        week(number, number <= settled ? WeekStatus.Settled : WeekStatus.Open),
-      ),
-    });
-
-  it("hides an open date's picks and reveals the rest", () => {
-    const privatePool = poolPlaying(0, false);
-
-    expect(arePicksRevealed(privatePool, week(1, WeekStatus.Open))).toBe(false);
-    expect(arePicksRevealed(privatePool, week(1, WeekStatus.Locked))).toBe(
-      true,
-    );
-    expect(arePicksRevealed(privatePool, week(1, WeekStatus.Settled))).toBe(
-      true,
-    );
+  /*
+  The rule itself is the backend's — a date goes public once its last game has
+  started, which needs the league's schedule — so what is left to check here is
+  that the screen reads the answer it was sent rather than guessing at it. That
+  is the whole point of the function: an earlier version re-derived it from the
+  week's status, which cannot see a deadline that has passed on a date still
+  marked as taking picks.
+  */
+  it("reads the dates the standings reported as revealed", () => {
+    expect(arePicksRevealed([1, 2], week(1, WeekStatus.Open))).toBe(true);
+    expect(arePicksRevealed([1, 2], week(3, WeekStatus.Open))).toBe(false);
   });
 
-  it("reveals the date being played in a pool that plays them public", () => {
-    const publicPool = poolPlaying(1, true);
-
-    expect(arePicksRevealed(publicPool, week(2, WeekStatus.Open))).toBe(true);
+  it("does not second-guess the payload from the week's status", () => {
+    // A settled date left out of the list stays out, and a date still taking
+    // picks that is in it is shown. Either disagreement is the backend's to
+    // have, and the grid is built from the same list.
+    expect(arePicksRevealed([], week(1, WeekStatus.Settled))).toBe(false);
+    expect(arePicksRevealed([1], week(1, WeekStatus.Open))).toBe(true);
   });
 
-  it("keeps a pick filed ahead private, public pool or not", () => {
-    // Any open date may be picked for, so somebody can be weeks ahead of the
-    // one being played. Revealing those would hand the field their plans.
-    const publicPool = poolPlaying(1, true);
-
-    expect(arePicksRevealed(publicPool, week(3, WeekStatus.Open))).toBe(false);
-  });
-
-  it("reveals nothing open in a pool that has not started", () => {
-    // Week 1 is the date being played, and in a private pool it stays hidden.
-    expect(arePicksRevealed(poolPlaying(0, false), week(1))).toBe(false);
-    expect(arePicksRevealed(poolPlaying(0, true), week(1))).toBe(true);
-  });
-
-  it("hides an open date in a pool whose every date is settled", () => {
-    // No date is being played, so `public_picks` has nothing to reveal.
-    const over = pool({
-      settings: { ...pool().settings, public_picks: true },
-      weeks: [week(1, WeekStatus.Settled)],
-    });
-
-    expect(arePicksRevealed(over, week(2, WeekStatus.Open))).toBe(false);
+  it("reveals nothing when no date has been revealed", () => {
+    expect(arePicksRevealed([], week(1))).toBe(false);
   });
 });
 
@@ -368,27 +342,34 @@ describe("pickBlockedReasonKey", () => {
   */
   const openWeek = () => week(1, WeekStatus.Open, []);
 
+  // The common case, so each test below names only what it is changing.
+  const reason = (
+    overrides: Partial<Parameters<typeof pickBlockedReasonKey>[0]> = {},
+  ) =>
+    pickBlockedReasonKey({
+      week: openWeek(),
+      participant: participant("a"),
+      eligibleTeamIds: [8, 10, 6],
+      isBlocked: false,
+      pickWindowClosed: false,
+      ...overrides,
+    });
+
   it("is null when the participant may pick", () => {
-    expect(
-      pickBlockedReasonKey(openWeek(), participant("a"), [8, 10, 6], false),
-    ).toBeNull();
+    expect(reason()).toBeNull();
   });
 
   /*
   Regression: the reason used to be read off `week.eligible_team_ids`, which is
-  empty on every open date, so the screen announced "no games that day" over a
-  full grid of teams and disabled every one of them.
+  empty on every date still taking picks, so the screen announced "no games
+  that day" over a full grid of teams and disabled every one of them.
   */
   it("does not call an open date gameless just because the pool has no copy of its teams", () => {
-    expect(
-      pickBlockedReasonKey(openWeek(), participant("a"), [8, 10, 6], false),
-    ).toBeNull();
+    expect(reason()).toBeNull();
   });
 
   it("tells somebody who is not in the pool so first", () => {
-    expect(pickBlockedReasonKey(openWeek(), null, [8, 10], false)).toBe(
-      "SurvivorNotAParticipant",
-    );
+    expect(reason({ participant: null })).toBe("SurvivorNotAParticipant");
   });
 
   it("tells an eliminated participant before anything about the date", () => {
@@ -397,41 +378,50 @@ describe("pickBlockedReasonKey", () => {
       eliminated_week: 1,
     });
 
-    expect(
-      pickBlockedReasonKey(week(1, WeekStatus.Locked), out, [8, 10], false),
-    ).toBe("SurvivorYouAreEliminated");
+    expect(reason({ participant: out, pickWindowClosed: true })).toBe(
+      "SurvivorYouAreEliminated",
+    );
   });
 
-  it("tells a settled date apart from a locked one", () => {
-    expect(
-      pickBlockedReasonKey(
-        week(1, WeekStatus.Settled),
-        participant("a"),
-        [8, 10],
-        false,
-      ),
-    ).toBe("SurvivorWeekSettled");
+  it("tells a settled date apart from one closed by hand under the old rule", () => {
+    expect(reason({ week: week(1, WeekStatus.Settled) })).toBe(
+      "SurvivorWeekSettled",
+    );
 
-    expect(
-      pickBlockedReasonKey(
-        week(1, WeekStatus.Locked),
-        participant("a"),
-        [8, 10],
-        false,
-      ),
-    ).toBe("SurvivorWeekLocked");
+    expect(reason({ week: week(1, WeekStatus.Locked) })).toBe(
+      "SurvivorWeekClosed",
+    );
+  });
+
+  it("says so once every game of the date has started", () => {
+    // The deadline the pool actually runs on, and the only thing that closes a
+    // date now: nothing on the week itself changed.
+    expect(reason({ pickWindowClosed: true })).toBe(
+      "SurvivorPicksClosedForDate",
+    );
+  });
+
+  it("calls a closed date closed rather than gameless", () => {
+    /*
+    A date whose games are all over still has games. The eligible list arrives
+    full, so the order of these two checks is what keeps the screen from saying
+    the league scheduled nothing on a Saturday it played a full card on — but
+    the far more visible version is the other way round: an empty list on a
+    closed date would otherwise win.
+    */
+    expect(reason({ eligibleTeamIds: [], pickWindowClosed: true })).toBe(
+      "SurvivorPicksClosedForDate",
+    );
   });
 
   it("says so when the league scheduled nothing that day", () => {
-    expect(pickBlockedReasonKey(openWeek(), participant("a"), [], true)).toBe(
+    expect(reason({ eligibleTeamIds: [], isBlocked: true })).toBe(
       "SurvivorNoGamesThatDay",
     );
   });
 
   it("says so when every team playing is one they have used", () => {
-    expect(
-      pickBlockedReasonKey(openWeek(), participant("a"), [8, 10, 6], true),
-    ).toBe("SurvivorNoTeamLeftThisWeek");
+    expect(reason({ isBlocked: true })).toBe("SurvivorNoTeamLeftThisWeek");
   });
 
   /*
@@ -440,14 +430,62 @@ describe("pickBlockedReasonKey", () => {
   reports nothing about the schedule.
   */
   it("says nothing about the schedule when the teams are not known", () => {
-    expect(
-      pickBlockedReasonKey(openWeek(), participant("a"), null, false),
-    ).toBeNull();
+    expect(reason({ eligibleTeamIds: null })).toBeNull();
 
     // A blocked flag still stands on its own.
-    expect(pickBlockedReasonKey(openWeek(), participant("a"), null, true)).toBe(
+    expect(reason({ eligibleTeamIds: null, isBlocked: true })).toBe(
       "SurvivorNoTeamLeftThisWeek",
     );
+  });
+});
+
+describe("teamPickStates", () => {
+  const states = (overrides: {
+    current_pick?: number | null;
+    available_team_ids?: number[];
+    started_team_ids?: number[];
+  }) =>
+    teamPickStates({
+      current_pick: null,
+      available_team_ids: [8, 10, 6],
+      ...overrides,
+    });
+
+  it("marks the pick on file, whatever else is true of it", () => {
+    // Including once its own game has started, which is the usual state of
+    // somebody's pick by Saturday evening.
+    const stateOf = states({ current_pick: 8, started_team_ids: [8] });
+
+    expect(stateOf(8)).toBe("picked");
+  });
+
+  it("closes a team whose game has started and leaves the rest open", () => {
+    // The per-game deadline: the afternoon game has gone, the evening one has
+    // not, and the screen has to show the two differently.
+    const stateOf = states({ started_team_ids: [8] });
+
+    expect(stateOf(8)).toBe("started");
+    expect(stateOf(10)).toBe("open");
+  });
+
+  it("calls a team they have spent used rather than started", () => {
+    // Both are true of it, and the lasting reason is the one worth reading:
+    // "started" reopens next Saturday, "used" does not.
+    const stateOf = states({
+      available_team_ids: [10, 6],
+      started_team_ids: [8],
+    });
+
+    expect(stateOf(8)).toBe("used");
+  });
+
+  it("reads an absent started list as nothing having started", () => {
+    // A backend older than the deadline sends none, and the screen behaves the
+    // way it did before the rule existed rather than closing every tile.
+    const stateOf = states({});
+
+    expect(stateOf(8)).toBe("open");
+    expect(stateOf(10)).toBe("open");
   });
 });
 
