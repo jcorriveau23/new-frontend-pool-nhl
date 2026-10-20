@@ -1,22 +1,23 @@
 "use client";
 
 /*
-The owner's controls: close a date to picks, settle it, edit the settings, and
-delete the pool.
+The owner's controls: settle a date, edit the settings, and delete the pool.
 
-The two are deliberately separate buttons. Locking belongs at the first puck
-drop — it is what reveals the picks, which is most of what people come to the
-page for. Settling belongs hours later, once the last game is over, and is what
-eliminates people.
+Settling used to have a companion button that closed a date to picks, pressed
+at the first puck drop because that is what revealed them. The deadline is each
+game's own start time now — a team can be picked until it takes the ice — so
+closing a date is nothing anybody has to remember to do, and the reveal follows
+the last puck drop whether or not the owner is at their desk.
 
-Neither carries a result. Who won is read from the league's own scoreboard
-inside the backend: a screen that could report a result could report its own
-win. That also makes both idempotent, so the same calls would suit a scheduled
-job later without this page changing.
+What settling does is the half no clock can derive: read the results and
+eliminate whoever ran out of strikes. It does not carry one. Who won is read
+from the league's own scoreboard inside the backend, because a screen that
+could report a result could report its own win — which also makes it
+idempotent, so it would suit a scheduled job later without this page changing.
 */
 
 import * as React from "react";
-import { Flag, Link2, Lock, Pencil, Trash2, UserPlus } from "lucide-react";
+import { Flag, Link2, Pencil, Trash2, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -50,11 +51,7 @@ import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
 import { SurvivorPool, WeekStatus } from "@/data/survivor/model";
 import { isOwner, weekOptions } from "@/lib/survivor";
-import {
-  addSurvivorParticipant,
-  lockSurvivorWeek,
-  settleSurvivorWeek,
-} from "@/lib/survivor-api";
+import { addSurvivorParticipant, settleSurvivorWeek } from "@/lib/survivor-api";
 import SettingsCard from "./settings-card";
 
 interface Props {
@@ -121,21 +118,12 @@ export default function AdminTab(props: Props) {
     [t, pool.weeks],
   );
 
-  const run = async (
-    action: (
-      poolName: string,
-      week: number,
-      jwt: string | null | undefined,
-    ) => Promise<
-      { ok: true; data: SurvivorPool } | { ok: false; error: string }
-    >,
-    successKey: string,
-  ) => {
+  const settle = async () => {
     if (week === null) {
       return;
     }
     setIsWorking(true);
-    const res = await action(pool.name, week.week, jwt);
+    const res = await settleSurvivorWeek(pool.name, week.week, jwt);
     setIsWorking(false);
 
     if (!res.ok) {
@@ -144,7 +132,7 @@ export default function AdminTab(props: Props) {
     }
 
     onPoolChange(res.data);
-    toast.success(t(successKey, { week: week.week }));
+    toast.success(t("SurvivorWeekSettledToast", { week: week.week }));
   };
 
   return (
@@ -175,37 +163,16 @@ export default function AdminTab(props: Props) {
               </SelectContent>
             </Select>
 
-            {/* The two share the row when they fit and take one each when they
-            do not: a button label never shrinks, and "Verrouiller la date" on
-            a 320px screen does not leave room for both. */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 sm:flex-none"
-                disabled={
-                  isWorking || week === null || week.status !== WeekStatus.Open
-                }
-                onClick={() => void run(lockSurvivorWeek, "SurvivorWeekLocked")}
-              >
-                <Lock className="size-4" />
-                {t("SurvivorLockWeek")}
-              </Button>
-
-              <Button
-                className="flex-1 sm:flex-none"
-                disabled={
-                  isWorking ||
-                  week === null ||
-                  week.status === WeekStatus.Settled
-                }
-                onClick={() =>
-                  void run(settleSurvivorWeek, "SurvivorWeekSettledToast")
-                }
-              >
-                <Flag className="size-4" />
-                {t("SurvivorSettleWeek")}
-              </Button>
-            </div>
+            <Button
+              className="w-full sm:w-auto"
+              disabled={
+                isWorking || week === null || week.status === WeekStatus.Settled
+              }
+              onClick={() => void settle()}
+            >
+              <Flag className="size-4" />
+              {t("SurvivorSettleWeek")}
+            </Button>
           </div>
 
           <Alert>

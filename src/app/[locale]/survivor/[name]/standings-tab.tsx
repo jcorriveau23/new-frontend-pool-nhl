@@ -14,14 +14,17 @@ picks out of the payload entirely, because one that carried them would reveal
 them to whoever read the response. The screen says so rather than leaving a gap
 nobody can explain.
 
-Which dates are hidden is the pool's own setting. In a pool with `public_picks`
-on, the date being played is in the grid before its deadline — that is what the
-owner turned it on for — so the screen says that too, or a column of picks for
-a date still open would read as a deadline that has already passed.
+Which dates those are is the backend's call, taken from `revealed_weeks`
+rather than worked out again here: a date goes public once its last game has
+started, and the browser holds none of the league's schedule to know when that
+was. In a pool with `public_picks` on, the date being played is in the grid
+before then — that is what the owner turned it on for — so the screen says
+that too, or a column of picks for a date still taking them would read as a
+deadline already passed.
 */
 
 import * as React from "react";
-import { Skull, Trophy } from "lucide-react";
+import { ChartColumnBig, Skull, Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -50,10 +53,13 @@ import {
   WeekStatus,
 } from "@/data/survivor/model";
 import {
+  PICK_OUTCOME_LABEL_KEY,
   arePicksRevealed,
+  currentWeek,
   revealedWeeksUpTo,
   weekByNumber,
 } from "@/lib/survivor";
+import WeekStatsDialog from "./week-stats-dialog";
 
 interface Props {
   pool: SurvivorPool;
@@ -73,13 +79,6 @@ const OUTCOME_STYLE: Record<PickOutcome, string> = {
   [PickOutcome.Pending]: "",
 };
 
-const OUTCOME_LABEL_KEY: Record<PickOutcome, string> = {
-  [PickOutcome.Won]: "SurvivorOutcomeWon",
-  [PickOutcome.Lost]: "SurvivorOutcomeLost",
-  [PickOutcome.Void]: "SurvivorOutcomeVoid",
-  [PickOutcome.Pending]: "SurvivorOutcomePending",
-};
-
 function PickCell({ row, week }: { row: SurvivorStandingRow; week: number }) {
   const t = useTranslations();
   const pick = row.picks[String(week)];
@@ -92,7 +91,7 @@ function PickCell({ row, week }: { row: SurvivorStandingRow; week: number }) {
   }
 
   const name = team_info[pick.team_id]?.fullName ?? `#${pick.team_id}`;
-  const outcome = t(OUTCOME_LABEL_KEY[pick.outcome]);
+  const outcome = t(PICK_OUTCOME_LABEL_KEY[pick.outcome]);
 
   return (
     <TableCell className={cn("text-center", OUTCOME_STYLE[pick.outcome])}>
@@ -123,13 +122,17 @@ export default function StandingsTab(props: Props) {
   const selected =
     selectedWeek === null ? null : weekByNumber(pool, selectedWeek);
   const selectedIsHidden =
-    selected !== null && !arePicksRevealed(pool, selected);
-  // And the other way round: an open date whose picks are in the grid because
-  // this pool plays with them public.
+    selected !== null && !arePicksRevealed(standings.revealed_weeks, selected);
+  // And the other way round: a date still taking picks whose picks are in the
+  // grid because this pool plays with them public. A date revealed by its own
+  // deadline is not this case — nothing is left to pick on it — so it is told
+  // apart by the pool's setting rather than by the week's status alone.
   const selectedIsOpenAndPublic =
     selected !== null &&
     selected.status === WeekStatus.Open &&
-    arePicksRevealed(pool, selected);
+    pool.settings.public_picks &&
+    currentWeek(pool)?.week === selected.week &&
+    arePicksRevealed(standings.revealed_weeks, selected);
 
   return (
     <div className="space-y-4 text-left">
@@ -188,12 +191,34 @@ export default function StandingsTab(props: Props) {
                     key={week}
                     className="text-center whitespace-nowrap"
                   >
-                    <div>{t("SurvivorWeekLabel", { week })}</div>
-                    {entry !== null ? (
-                      <div className="text-muted-foreground text-[10px] font-normal">
-                        {entry.pick_date}
-                      </div>
-                    ) : null}
+                    {/*
+                    The header is the handle for that date's pick stats. A
+                    button rather than the plain text it was, because the
+                    column is where somebody already is when they wonder how
+                    the field split.
+                    */}
+                    <WeekStatsDialog
+                      week={week}
+                      pickDate={entry?.pick_date ?? null}
+                      rows={standings.rows}
+                      trigger={
+                        <button
+                          type="button"
+                          className="hover:text-foreground focus-visible:ring-ring -mx-1 cursor-pointer rounded px-1 focus-visible:ring-2 focus-visible:outline-none"
+                          aria-label={t("SurvivorWeekStatsTitle", { week })}
+                        >
+                          <span className="flex items-center gap-1">
+                            {t("SurvivorWeekLabel", { week })}
+                            <ChartColumnBig className="size-3 opacity-60" />
+                          </span>
+                          {entry !== null ? (
+                            <span className="text-muted-foreground block text-[10px] font-normal">
+                              {entry.pick_date}
+                            </span>
+                          ) : null}
+                        </button>
+                      }
+                    />
                   </TableHead>
                 );
               })}

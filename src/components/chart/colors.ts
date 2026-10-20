@@ -1,4 +1,5 @@
 import { Position } from "@/data/pool/model";
+import { PickOutcome } from "@/data/survivor/model";
 
 /*
 Chart palettes, kept apart from `utils.tsx` on purpose.
@@ -18,6 +19,16 @@ export const POSITION_COLORS: Record<Position, string> = {
   [Position.F]: "var(--chart-1)",
   [Position.D]: "var(--chart-3)",
   [Position.G]: "var(--chart-5)",
+};
+
+/*
+How a survivor pick's outcome is filled on a chart.
+*/
+export const SURVIVOR_OUTCOME_COLORS: Record<PickOutcome, string> = {
+  [PickOutcome.Won]: "var(--chart-3)",
+  [PickOutcome.Lost]: "var(--chart-5)",
+  [PickOutcome.Void]: "var(--muted-foreground)",
+  [PickOutcome.Pending]: "var(--chart-1)",
 };
 
 // Colors used to give each pool participant a stable identity across every

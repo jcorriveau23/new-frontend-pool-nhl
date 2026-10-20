@@ -7,11 +7,16 @@ Three tabs: the pick screen, the standings, and the owner's controls. Which
 date is in view is the page's one piece of shared state — the pick screen acts
 on it and the standings is read against it — so it lives here rather than in
 either tab.
+
+Which tab is open lives in the URL, as `activeTab`, the same way the roster
+pool holds it. That is what makes the standings a link somebody can send, and
+what keeps a reload on the page you were reading.
 */
 
 import * as React from "react";
 import { CalendarCheck, ListOrdered, Settings2, Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -33,6 +38,7 @@ import FavoritePoolButton from "@/components/favorite-pool-button";
 import SharePoolButton from "@/components/share-pool-button";
 import ExportButton from "@/components/export-button";
 import SurvivorParticipantLinkInvitation from "@/components/survivor-participant-link-invitation";
+import { usePathname, useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
 import {
@@ -118,8 +124,27 @@ function JoinCard({
   );
 }
 
+/*
+The tabs, as the URL names them.
+
+A value the URL does not hold is one the page falls back to the pick screen
+for, so a hand-edited or stale link lands somewhere rather than on a blank
+panel. `admin` is in here whether or not the caller may see it: the tab itself
+is only rendered for somebody who can administer the pool, so Base UI simply
+finds no panel for the value and the page comes up on nothing — which is why
+the fallback below checks the tab is one actually on screen.
+*/
+enum SurvivorTab {
+  PICK = "pick",
+  STANDINGS = "standings",
+  ADMIN = "admin",
+}
+
 export default function SurvivorPoolPage(props: Props) {
   const t = useTranslations();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const userData = useUser();
   const [pool, setPool] = React.useState<SurvivorPool>(props.pool);
   const [standings, setStandings] = React.useState<SurvivorStandings | null>(
@@ -132,6 +157,43 @@ export default function SurvivorPoolPage(props: Props) {
   const userId = userData.info?.id;
   const participant = participantOf(pool, userId);
   const canAdminister = hasSurvivorPrivilege(pool, userId);
+
+  /*
+  The open tab, read straight off the URL rather than mirrored into state:
+  `useSearchParams` already re-renders on a back or forward navigation, so an
+  entry that names no tab falls back to the pick screen instead of leaving the
+  previous one showing.
+
+  The settings tab is only a tab for somebody who can administer the pool, so a
+  link to it opened by anybody else lands on the pick screen rather than on an
+  empty panel. `canAdminister` turns true a moment after mount, once the user
+  has resolved, and the URL is not rewritten in the meantime — the fallback is
+  what is rendered, and the real tab appears when the answer arrives.
+  */
+  const requestedTab = searchParams.get("activeTab");
+  const activeTab =
+    requestedTab === SurvivorTab.STANDINGS ||
+    (requestedTab === SurvivorTab.ADMIN && canAdminister)
+      ? requestedTab
+      : SurvivorTab.PICK;
+
+  const openTab = (value: string) => {
+    const queryParams = new URLSearchParams(searchParams.toString());
+    queryParams.set("activeTab", value);
+    /*
+    `replace` and no scroll, the way the roster pool does it: a tab is a view
+    of the same page, so it should neither jump back to the top nor cost a
+    history entry the Back button has to walk through.
+
+    The path comes from `usePathname` rather than being rebuilt from
+    `pool.name`: the [name] segment reaches this page percent-encoded and
+    `pool.name` is the decoded form, so a hand-built path would have to
+    re-encode it and would get a pool named "my pool" wrong. next-intl's own
+    hook is the one that answers without the locale prefix, which its router
+    puts back.
+    */
+    router.replace(`${pathname}?${queryParams.toString()}`, { scroll: false });
+  };
 
   const loadStandings = React.useCallback(async () => {
     const res = await fetchSurvivorStandings(pool.name);
@@ -229,19 +291,19 @@ export default function SurvivorPoolPage(props: Props) {
         </div>
       ) : null}
 
-      <Tabs defaultValue="pick">
+      <Tabs value={activeTab} onValueChange={openTab}>
         <div className="flex flex-wrap items-center gap-2">
           <TabsList>
-            <TabsTrigger value="pick">
+            <TabsTrigger value={SurvivorTab.PICK}>
               <CalendarCheck className="size-4" />
               {t("SurvivorPickTab")}
             </TabsTrigger>
-            <TabsTrigger value="standings">
+            <TabsTrigger value={SurvivorTab.STANDINGS}>
               <ListOrdered className="size-4" />
               {t("SurvivorStandingsTab")}
             </TabsTrigger>
             {canAdminister ? (
-              <TabsTrigger value="admin">
+              <TabsTrigger value={SurvivorTab.ADMIN}>
                 <Settings2 className="size-4" />
                 {t("Settings")}
               </TabsTrigger>
@@ -270,7 +332,7 @@ export default function SurvivorPoolPage(props: Props) {
           </Select>
         </div>
 
-        <TabsContent value="pick" className="pt-4">
+        <TabsContent value={SurvivorTab.PICK} className="pt-4">
           {week === null ? (
             <p className="text-muted-foreground text-sm">
               {t("SurvivorNoWeeks")}
@@ -280,7 +342,7 @@ export default function SurvivorPoolPage(props: Props) {
           )}
         </TabsContent>
 
-        <TabsContent value="standings" className="pt-4">
+        <TabsContent value={SurvivorTab.STANDINGS} className="pt-4">
           {standings === null ? (
             <TableSkeleton />
           ) : (
@@ -293,7 +355,7 @@ export default function SurvivorPoolPage(props: Props) {
         </TabsContent>
 
         {canAdminister ? (
-          <TabsContent value="admin" className="pt-4">
+          <TabsContent value={SurvivorTab.ADMIN} className="pt-4">
             <AdminTab pool={pool} onPoolChange={applyPool} />
           </TabsContent>
         ) : null}
