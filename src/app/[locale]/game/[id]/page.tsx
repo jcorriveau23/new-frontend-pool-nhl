@@ -6,7 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageTitle from "@/components/page-title";
 import { getTranslations } from "next-intl/server";
 
-export default async function Game(props: { params: Promise<{ id: string }> }) {
+export default async function Game(props: {
+  params: Promise<{ id: string; locale: string }>;
+}) {
   const params = await props.params;
   const t = await getTranslations();
   return (
@@ -18,7 +20,7 @@ export default async function Game(props: { params: Promise<{ id: string }> }) {
           <TabsTrigger value="boxscore">{t("Boxscore")}</TabsTrigger>
         </TabsList>
         <TabsContent value="summary">
-          <GameSummary gameId={params.id} />
+          <GameSummary gameId={params.id} locale={params.locale} />
         </TabsContent>
         <TabsContent value="boxscore">
           <GameBoxscore gameId={params.id} />

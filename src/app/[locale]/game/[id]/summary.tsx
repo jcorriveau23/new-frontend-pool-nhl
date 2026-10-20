@@ -35,9 +35,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import GameInfoCard from "./game-info-card";
 import GamePreview from "./game-preview";
+import GoalClip from "@/components/goal-clip";
 
 interface Props {
   gameId: string;
+  locale: string;
 }
 
 enum GoalSituation {
@@ -75,80 +77,103 @@ export default async function GameSummary(props: Props) {
     }
   }
 
+  /*
+  Which Brightcove clip to play. `discreteClip` is the short cut of the goal
+  alone, which suits an inline player better than `highlightClip` and its
+  commentary, so it wins when both exist. A French page prefers the French
+  call and falls back to the English clip when only that one is published.
+  */
+  function goalClipId(goal: Goal): number | null {
+    const french =
+      props.locale === "fr" ? goal.discreteClipFr || goal.highlightClipFr : 0;
+    return french || goal.discreteClip || goal.highlightClip || null;
+  }
+
+  function goalSharingUrl(goal: Goal): string | undefined {
+    const french = props.locale === "fr" ? goal.highlightClipSharingUrlFr : "";
+    return french || goal.highlightClipSharingUrl || undefined;
+  }
+
   function GoalCard({ goal }: { goal: Goal }) {
+    const clipId = goalClipId(goal);
+    const sharingUrl = goalSharingUrl(goal);
     return (
       <Card>
-        <CardContent className="flex items-center space-x-4 p-4">
-          <div className="grow">
-            <div className="flex justify-between items-center">
+        <CardContent className="flex flex-col gap-3 p-4">
+          <div className="flex items-center space-x-4">
+            <div className="grow">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                  <TeamLogo
+                    teamId={abbrevToTeamId[goal.teamAbbrev.default]}
+                    width={40}
+                    height={40}
+                  />
+                  <span className="text-lg font-semibold">
+                    {goal.timeInPeriod}
+                  </span>
+                </div>
+                {Object.values(GoalSituation).includes(
+                  goal.situationCode as GoalSituation,
+                ) ? (
+                  <Badge variant="destructive">
+                    {getSituationCodeFormatedName(
+                      goal.situationCode as GoalSituation,
+                    )}
+                  </Badge>
+                ) : null}
+              </div>
               <div className="flex items-center space-x-2">
-                <TeamLogo
-                  teamId={abbrevToTeamId[goal.teamAbbrev.default]}
-                  width={40}
-                  height={40}
-                />
-                <span className="text-lg font-semibold">
-                  {goal.timeInPeriod}
+                <Avatar>
+                  <AvatarImage src={goal.headshot} />
+                  <AvatarFallback className="text-xs">
+                    {starInitials(
+                      `${goal.firstName.default} ${goal.lastName.default}`,
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <span>
+                  <PlayerLink
+                    name={`${goal.firstName.default} ${goal.lastName.default} (${goal.goalsToDate})`}
+                    id={goal.playerId}
+                    textStyle={null}
+                  />
+                  {goal.assists.length > 0 ? (
+                    goal.assists.map((assistInfo) => (
+                      <PlayerLink
+                        key={assistInfo.playerId}
+                        name={`${assistInfo.firstName.default} ${assistInfo.lastName.default} (${assistInfo.assistsToDate})`}
+                        id={assistInfo.playerId}
+                        textStyle={"text-sm text-muted-foreground"}
+                      />
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      {t("Unassisted")}
+                    </span>
+                  )}
                 </span>
               </div>
-              {Object.values(GoalSituation).includes(
-                goal.situationCode as GoalSituation,
-              ) ? (
-                <Badge variant="destructive">
-                  {getSituationCodeFormatedName(
-                    goal.situationCode as GoalSituation,
-                  )}
-                </Badge>
-              ) : null}
             </div>
-            <div className="flex items-center space-x-2">
-              <Avatar>
-                <AvatarImage src={goal.headshot} />
-                <AvatarFallback className="text-xs">
-                  {starInitials(
-                    `${goal.firstName.default} ${goal.lastName.default}`,
-                  )}
-                </AvatarFallback>
-              </Avatar>
-              <span>
-                <PlayerLink
-                  name={`${goal.firstName.default} ${goal.lastName.default} (${goal.goalsToDate})`}
-                  id={goal.playerId}
-                  textStyle={null}
-                />
-                {goal.assists.length > 0 ? (
-                  goal.assists.map((assistInfo) => (
-                    <PlayerLink
-                      key={assistInfo.playerId}
-                      name={`${assistInfo.firstName.default} ${assistInfo.lastName.default} (${assistInfo.assistsToDate})`}
-                      id={assistInfo.playerId}
-                      textStyle={"text-sm text-muted-foreground"}
-                    />
-                  ))
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    {t("Unassisted")}
-                  </span>
-                )}
+            <div className="shrink-0">
+              <span className="text-lg font-bold">
+                {goal.awayScore} - {goal.homeScore}
               </span>
             </div>
           </div>
-          <div className="flex flex-col shrink-0 gap-3">
-            <span className="text-lg font-bold">
-              {goal.awayScore} - {goal.homeScore}
-            </span>
-            {goal.highlightClipSharingUrl ? (
-              <a
-                href={goal.highlightClipSharingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center text-primary"
-              >
-                <ExternalLink size={16} className="mr-1" />
-                {t("Watch")}
-              </a>
-            ) : null}
-          </div>
+          {clipId ? (
+            <GoalClip clipId={clipId} sharingUrl={sharingUrl} />
+          ) : sharingUrl ? (
+            <a
+              href={sharingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary flex items-center justify-center text-sm"
+            >
+              <ExternalLink size={16} className="mr-1" />
+              {t("Watch")}
+            </a>
+          ) : null}
         </CardContent>
       </Card>
     );
