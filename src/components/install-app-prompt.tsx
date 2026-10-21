@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { detectInAppBrowser } from "@/lib/in-app-browser";
 
 // Chrome fires this instead of showing its own install UI once we call
 // preventDefault(). It is not in lib.dom yet.
@@ -53,6 +54,10 @@ export default function InstallAppPrompt() {
   React.useEffect(() => {
     // Already installed, or the user closed the banner before: stay quiet.
     if (isStandalone() || localStorage.getItem(DISMISSED_KEY) === "true") {
+      return;
+    }
+
+    if (detectInAppBrowser(window.navigator.userAgent) !== null) {
       return;
     }
 
