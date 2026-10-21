@@ -9,6 +9,33 @@ import { DailyGoalie, DailySkater } from "@/data/dailyLeaders/model";
 import { TeamLogo } from "@/components/team-logo";
 import PlayerLink from "@/components/player-link";
 import { PoolerName } from "@/components/pooler-name";
+import { GameStatus, Matchup } from "@/components/game-status";
+import { Game } from "@/data/nhl/game";
+
+/*
+What the roster tables need beyond the day's stat line: the pool, to turn a
+player id into a name and a team, and the night's schedule, to say who that
+team is up against. A pooler reading a half-played night wants both — a zero
+means something different when the player is on at 22:00 than when their team
+is not on the schedule at all.
+*/
+export interface DailyPlayerTableProps {
+  poolInfo: Pool;
+  gameByTeam: Record<number, Game>;
+}
+
+const getPlayerTeam = (
+  player: SkaterDailyInfo | GoalieDailyInfo,
+  poolInfo: Pool,
+) => poolInfo.context?.players[player.id]?.team ?? null;
+
+const getPlayerGame = (
+  player: SkaterDailyInfo | GoalieDailyInfo,
+  props: DailyPlayerTableProps,
+): Game | null => {
+  const team = getPlayerTeam(player, props.poolInfo);
+  return team === null ? null : (props.gameByTeam[team] ?? null);
+};
 
 const getPlayerCell = (
   player: SkaterDailyInfo | GoalieDailyInfo,
@@ -34,21 +61,63 @@ const getTeamCell = (
   />
 );
 
+/*
+The matchup and the clock, in the shape both roster tables use them. Declared
+once rather than twice: the skater table and the goalie table differ in their
+stat lines, not in the night their players are playing.
+*/
+function matchupColumns<
+  TData extends SkaterDailyInfo | GoalieDailyInfo,
+>(): ColumnDef<TData>[] {
+  // Neither sorts: the opponent and the clock both live on the night's
+  // schedule, which an accessor cannot reach from a row alone.
+  return [
+    {
+      id: "opponent",
+      enableSorting: false,
+      header: ({ table }) => table.options.meta?.t("Opponent"),
+      cell: ({ row, table }) => {
+        const props = table.options.meta?.props as DailyPlayerTableProps;
+        return (
+          <Matchup
+            game={getPlayerGame(row.original, props)}
+            teamId={getPlayerTeam(row.original, props.poolInfo)}
+          />
+        );
+      },
+    },
+    {
+      id: "gameStatus",
+      enableSorting: false,
+      header: ({ table }) => table.options.meta?.t("Game"),
+      cell: ({ row, table }) => {
+        const props = table.options.meta?.props as DailyPlayerTableProps;
+        return <GameStatus game={getPlayerGame(row.original, props)} />;
+      },
+    },
+  ];
+}
+
 export const SkaterDailyColumn: ColumnDef<SkaterDailyInfo>[] = [
   {
     accessorKey: "player",
     header: "Player",
     cell: ({ row, table }) => {
-      return getPlayerCell(row.original, table.options.meta?.props as Pool);
+      const props = table.options.meta?.props as DailyPlayerTableProps;
+      return getPlayerCell(row.original, props.poolInfo);
     },
   },
   {
     accessorKey: "team",
-    header: "",
+    // Named rather than blank: the column picker lists it by its header, and
+    // an unlabelled entry there is one the pooler cannot put back.
+    header: ({ table }) => table.options.meta?.t("T"),
     cell: ({ row, table }) => {
-      return getTeamCell(row.original, table.options.meta?.props as Pool);
+      const props = table.options.meta?.props as DailyPlayerTableProps;
+      return getTeamCell(row.original, props.poolInfo);
     },
   },
+  ...matchupColumns<SkaterDailyInfo>(),
   {
     accessorKey: "goals",
     header: "G",
@@ -86,16 +155,21 @@ export const GoaliesColumn: ColumnDef<GoalieDailyInfo>[] = [
     accessorKey: "player",
     header: "Player",
     cell: ({ row, table }) => {
-      return getPlayerCell(row.original, table.options.meta?.props as Pool);
+      const props = table.options.meta?.props as DailyPlayerTableProps;
+      return getPlayerCell(row.original, props.poolInfo);
     },
   },
   {
     accessorKey: "team",
-    header: "",
+    // Named rather than blank: the column picker lists it by its header, and
+    // an unlabelled entry there is one the pooler cannot put back.
+    header: ({ table }) => table.options.meta?.t("T"),
     cell: ({ row, table }) => {
-      return getTeamCell(row.original, table.options.meta?.props as Pool);
+      const props = table.options.meta?.props as DailyPlayerTableProps;
+      return getTeamCell(row.original, props.poolInfo);
     },
   },
+  ...matchupColumns<GoalieDailyInfo>(),
   {
     accessorKey: "goals",
     header: "G",

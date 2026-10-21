@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/routing";
 import { TeamLogo } from "./team-logo";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { GameStatus } from "./game-status";
 
 interface Props {
   game: Game;
@@ -16,12 +17,6 @@ export default function GameItem(props: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const getGameTime = (startTimeUTC: string) =>
-    new Date(Date.parse(startTimeUTC)).toLocaleString(navigator.language, {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
   const isLive =
     props.game.gameState === GameState.LIVE ||
     props.game.gameState === GameState.CRIT;
@@ -29,36 +24,6 @@ export default function GameItem(props: Props) {
   const isFinal =
     props.game.gameState === GameState.OFF ||
     props.game.gameState === GameState.FINAL;
-
-  const renderGameState = (status: GameState) => {
-    /*
-    Render the game status.
-    */
-
-    switch (status) {
-      case GameState.LIVE:
-      case GameState.CRIT: {
-        return props.game && props.game.period && props.game.clock ? (
-          <span className="text-destructive inline-flex items-center justify-center gap-1 font-medium">
-            <span className="bg-destructive inline-flex size-1.5 animate-pulse rounded-full" />
-            P{props.game.period} - {props.game.clock.timeRemaining}
-          </span>
-        ) : (
-          getGameTime(props.game.startTimeUTC)
-        );
-      }
-      case GameState.PPD: {
-        return "PPD";
-      }
-      case GameState.OFF:
-      case GameState.FINAL: {
-        return props.game.periodDescriptor?.periodType ?? "";
-      }
-      default: {
-        return getGameTime(props.game.startTimeUTC);
-      }
-    }
-  };
 
   const awayScore = props.game.awayTeam.score ?? 0;
   const homeScore = props.game.homeTeam.score ?? 0;
@@ -89,7 +54,7 @@ export default function GameItem(props: Props) {
       }
     >
       <div className="text-muted-foreground text-center text-xs">
-        {renderGameState(props.game.gameState)}
+        <GameStatus game={props.game} />
       </div>
       {teamRow(props.game.awayTeam, isFinal && awayScore > homeScore)}
       {teamRow(props.game.homeTeam, isFinal && homeScore > awayScore)}
