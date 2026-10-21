@@ -69,6 +69,9 @@ interface Props {
   selectedWeek: number | null;
 }
 
+const NAME_CELL = "sticky left-0 z-[1] max-w-[40vw] sm:max-w-xs";
+const NAME_CELL_BG = "bg-background group-hover:bg-muted/50";
+
 // How an outcome reads in a cell. A date still to be settled and a game that
 // never produced a result are both "nothing came of it", and are kept apart
 // because they are not the same thing to a participant.
@@ -170,97 +173,88 @@ export default function StandingsTab(props: Props) {
         </p>
       ) : null}
 
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="sticky left-0 bg-inherit">
-                {t("Pooler")}
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className={cn(NAME_CELL, "bg-background")}>
+              {t("Pooler")}
+            </TableHead>
+            {pool.settings.strikes_allowed > 0 ? (
+              <TableHead className="text-center">
+                {t("SurvivorStrikes")}
               </TableHead>
-              {pool.settings.strikes_allowed > 0 ? (
-                <TableHead className="text-center">
-                  {t("SurvivorStrikes")}
-                </TableHead>
-              ) : null}
-              <TableHead className="text-center">{t("SurvivorWins")}</TableHead>
-              {columns.map((week) => {
-                // The number alone does not say which Saturday it was.
-                const entry = weekByNumber(pool, week);
-                return (
-                  <TableHead
-                    key={week}
-                    className="text-center whitespace-nowrap"
-                  >
-                    {/*
-                    The header is the handle for that date's pick stats. A
-                    button rather than the plain text it was, because the
-                    column is where somebody already is when they wonder how
-                    the field split.
-                    */}
-                    <WeekStatsDialog
-                      week={week}
-                      pickDate={entry?.pick_date ?? null}
-                      rows={standings.rows}
-                      trigger={
-                        <button
-                          type="button"
-                          className="hover:text-foreground focus-visible:ring-ring -mx-1 cursor-pointer rounded px-1 focus-visible:ring-2 focus-visible:outline-none"
-                          aria-label={t("SurvivorWeekStatsTitle", { week })}
-                        >
-                          <span className="flex items-center gap-1">
-                            {t("SurvivorWeekLabel", { week })}
-                            <ChartColumnBig className="size-3 opacity-60" />
-                          </span>
-                          {entry !== null ? (
-                            <span className="text-muted-foreground block text-[10px] font-normal">
-                              {entry.pick_date}
-                            </span>
-                          ) : null}
-                        </button>
-                      }
-                    />
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {standings.rows.map((row) => {
-              const isOut = row.status === ParticipantStatus.Eliminated;
+            ) : null}
+            <TableHead className="text-center">{t("SurvivorWins")}</TableHead>
+            {columns.map((week) => {
+              // The number alone does not say which Saturday it was.
+              const entry = weekByNumber(pool, week);
               return (
-                <TableRow
-                  key={row.participant_id}
-                  className={cn(isOut && "text-muted-foreground")}
-                >
-                  <TableCell className="sticky left-0 bg-inherit font-medium">
-                    <span className="flex items-center gap-1.5">
-                      {winners.has(row.participant_id) ? (
-                        <Trophy className="size-4 text-amber-500" />
-                      ) : null}
-                      {isOut ? <Skull className="size-3.5" /> : null}
-                      <span className="truncate">{row.name}</span>
-                      {isOut && row.eliminated_week !== null ? (
-                        <span className="text-xs">
-                          {t("SurvivorOutInWeek", {
-                            week: row.eliminated_week,
-                          })}
+                <TableHead key={week} className="text-center whitespace-nowrap">
+                  <WeekStatsDialog
+                    week={week}
+                    pickDate={entry?.pick_date ?? null}
+                    rows={standings.rows}
+                    trigger={
+                      <button
+                        type="button"
+                        className="hover:text-foreground focus-visible:ring-ring -mx-1 cursor-pointer rounded px-1 focus-visible:ring-2 focus-visible:outline-none"
+                        aria-label={t("SurvivorWeekStatsTitle", { week })}
+                      >
+                        <span className="flex items-center gap-1">
+                          {t("SurvivorWeekLabel", { week })}
+                          <ChartColumnBig className="size-3 opacity-60" />
                         </span>
-                      ) : null}
-                    </span>
-                  </TableCell>
-                  {pool.settings.strikes_allowed > 0 ? (
-                    <TableCell className="text-center">{row.strikes}</TableCell>
-                  ) : null}
-                  <TableCell className="text-center">{row.wins}</TableCell>
-                  {columns.map((week) => (
-                    <PickCell key={week} row={row} week={week} />
-                  ))}
-                </TableRow>
+                        {entry !== null ? (
+                          <span className="text-muted-foreground block text-[10px] font-normal">
+                            {entry.pick_date}
+                          </span>
+                        ) : null}
+                      </button>
+                    }
+                  />
+                </TableHead>
               );
             })}
-          </TableBody>
-        </Table>
-      </div>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {standings.rows.map((row) => {
+            const isOut = row.status === ParticipantStatus.Eliminated;
+            return (
+              <TableRow
+                key={row.participant_id}
+                className={cn("group", isOut && "text-muted-foreground")}
+              >
+                <TableCell
+                  className={cn(NAME_CELL, NAME_CELL_BG, "font-medium")}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {winners.has(row.participant_id) ? (
+                      <Trophy className="size-4 shrink-0 text-amber-500" />
+                    ) : null}
+                    {isOut ? <Skull className="size-3.5 shrink-0" /> : null}
+                    <span className="min-w-0 truncate">{row.name}</span>
+                    {isOut && row.eliminated_week !== null ? (
+                      <span className="shrink-0 text-xs whitespace-nowrap">
+                        {t("SurvivorOutInWeek", {
+                          week: row.eliminated_week,
+                        })}
+                      </span>
+                    ) : null}
+                  </span>
+                </TableCell>
+                {pool.settings.strikes_allowed > 0 ? (
+                  <TableCell className="text-center">{row.strikes}</TableCell>
+                ) : null}
+                <TableCell className="text-center">{row.wins}</TableCell>
+                {columns.map((week) => (
+                  <PickCell key={week} row={row} week={week} />
+                ))}
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }

@@ -225,13 +225,23 @@ export default function SurvivorPoolPage(props: Props) {
   );
 
   const statusBadge = (() => {
+    const className = "shrink-0 whitespace-nowrap";
+
     if (pool.status === SurvivorState.Final) {
-      return <Badge variant="secondary">{t("SurvivorPoolOver")}</Badge>;
+      return (
+        <Badge variant="secondary" className={className}>
+          {t("SurvivorPoolOver")}
+        </Badge>
+      );
     }
     if (pool.status === SurvivorState.Created) {
-      return <Badge variant="outline">{t("SurvivorPoolOpenToJoin")}</Badge>;
+      return (
+        <Badge variant="outline" className={className}>
+          {t("SurvivorPoolOpenToJoin")}
+        </Badge>
+      );
     }
-    return <Badge>{t("PoolInProgressState")}</Badge>;
+    return <Badge className={className}>{t("PoolInProgressState")}</Badge>;
   })();
 
   const winnerNames = (pool.winners ?? [])
@@ -293,22 +303,28 @@ export default function SurvivorPoolPage(props: Props) {
 
       <Tabs value={activeTab} onValueChange={openTab}>
         <div className="flex flex-wrap items-center gap-2">
-          <TabsList>
-            <TabsTrigger value={SurvivorTab.PICK}>
-              <CalendarCheck className="size-4" />
-              {t("SurvivorPickTab")}
-            </TabsTrigger>
-            <TabsTrigger value={SurvivorTab.STANDINGS}>
-              <ListOrdered className="size-4" />
-              {t("SurvivorStandingsTab")}
-            </TabsTrigger>
-            {canAdminister ? (
-              <TabsTrigger value={SurvivorTab.ADMIN}>
-                <Settings2 className="size-4" />
-                {t("Settings")}
+          {/* Three labelled tabs with an icon each are wider than a narrow
+              window. Left alone the strip stretches the whole page sideways,
+              so it scrolls on its own instead — the same wrapper the NHL
+              standings use for the same reason. */}
+          <div className="min-w-0 overflow-x-auto">
+            <TabsList>
+              <TabsTrigger value={SurvivorTab.PICK}>
+                <CalendarCheck className="size-4" />
+                {t("SurvivorPickTab")}
               </TabsTrigger>
-            ) : null}
-          </TabsList>
+              <TabsTrigger value={SurvivorTab.STANDINGS}>
+                <ListOrdered className="size-4" />
+                {t("SurvivorStandingsTab")}
+              </TabsTrigger>
+              {canAdminister ? (
+                <TabsTrigger value={SurvivorTab.ADMIN}>
+                  <Settings2 className="size-4" />
+                  {t("Settings")}
+                </TabsTrigger>
+              ) : null}
+            </TabsList>
+          </div>
 
           {/*
           `items` is what makes the closed trigger read "Week 3 — 2026-10-17"
