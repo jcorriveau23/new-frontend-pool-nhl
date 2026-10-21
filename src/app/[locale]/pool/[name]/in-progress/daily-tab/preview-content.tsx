@@ -4,7 +4,8 @@ import { useGamesNightContext } from "@/context/games-night-context";
 import { Game } from "@/data/nhl/game";
 import { Player } from "@/data/pool/model";
 import React from "react";
-import { GameTime, PlayerPreviewColumn } from "./preview-columns";
+import { PlayerPreviewColumn } from "./preview-columns";
+import { GameTime } from "@/components/game-status";
 import {
   Accordion,
   AccordionContent,
@@ -19,24 +20,17 @@ import { cn } from "@/lib/utils";
 
 export class PreviewPlayer {
   constructor(player: Player, gameByTeam: Record<number, Game>) {
-    const game = player.team ? (gameByTeam[player.team] ?? null) : null;
-
     this.name = player.name;
     this.id = player.id;
     this.team = player.team;
-    this.playingAgainst = game
-      ? game.homeTeam.id === player.team
-        ? game.awayTeam.id
-        : game.homeTeam.id
-      : null;
-    this.isHome = game ? game.homeTeam.id === player.team : null;
-    this.startTimeUTC = game?.startTimeUTC ?? null;
+    this.game = player.team ? (gameByTeam[player.team] ?? null) : null;
+    this.startTimeUTC = this.game?.startTimeUTC ?? null;
   }
   name: string;
   id: number;
   team: number | null;
-  playingAgainst: number | null;
-  isHome: boolean | null;
+  // The game their team plays on the selected date, if any.
+  game: Game | null;
   startTimeUTC: string | null;
 }
 
@@ -59,7 +53,7 @@ export class PreviewTotal {
 }
 
 const countPlaying = (players: PreviewPlayer[]) =>
-  players.filter((p) => p.playingAgainst !== null).length;
+  players.filter((player) => player.game !== null).length;
 
 /*
 The order a pooler reads the evening in: whoever is in action first, earliest
@@ -196,7 +190,7 @@ export default function DailyPreviewContent() {
         // A player with no game tonight is still on the roster, but nothing
         // they do can move the pooler's night — so they read as background.
         getRowStyles: (row: Row<PreviewPlayer>) =>
-          row.original.playingAgainst === null ? "text-muted-foreground" : null,
+          row.original.game === null ? "text-muted-foreground" : null,
         onRowClick: () => null,
         t: t,
       }}

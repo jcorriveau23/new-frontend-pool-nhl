@@ -6,29 +6,7 @@ import PlayerLink from "@/components/player-link";
 import { PoolerName } from "@/components/pooler-name";
 import { GameStatePopover } from "@/components/game-state-popover";
 import { GamesNightStatus } from "@/context/games-night-context";
-import { useLocale } from "next-intl";
-
-/*
-The puck drop in the reader's own time zone. The preview only ever mounts on
-the client (the night's games come from a query), so reading the browser's
-zone here cannot disagree with server markup.
-*/
-export function GameTime({ startTimeUTC }: { startTimeUTC: string | null }) {
-  const locale = useLocale();
-
-  if (startTimeUTC === null) {
-    return null;
-  }
-
-  return (
-    <span className="tabular-nums whitespace-nowrap">
-      {new Date(startTimeUTC).toLocaleTimeString(locale, {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}
-    </span>
-  );
-}
+import { GameStatus, Matchup, opponentOf } from "@/components/game-status";
 
 export const TotalPreviewColumn: ColumnDef<PreviewTotal>[] = [
   {
@@ -109,29 +87,16 @@ export const PlayerPreviewColumn: ColumnDef<PreviewPlayer>[] = [
     },
   },
   {
-    accessorKey: "playingAgainst",
+    accessorKey: "opponent",
     header: ({ table }) => table.options.meta?.t("Opponent"),
-    cell: ({ row, table }) =>
-      row.original.playingAgainst === null ? (
-        <span className="text-muted-foreground text-xs">
-          {table.options.meta?.t("PreviewNotPlaying")}
-        </span>
-      ) : (
-        <span className="flex items-center gap-1.5 whitespace-nowrap">
-          <span className="text-muted-foreground w-4 shrink-0 text-xs">
-            {row.original.isHome ? "vs" : "@"}
-          </span>
-          <TeamLogo
-            teamId={row.original.playingAgainst}
-            width={22}
-            height={22}
-          />
-        </span>
-      ),
+    accessorFn: (row) => opponentOf(row.game, row.team),
+    cell: ({ row }) => (
+      <Matchup game={row.original.game} teamId={row.original.team} />
+    ),
   },
   {
     accessorKey: "startTimeUTC",
-    header: ({ table }) => table.options.meta?.t("Time"),
-    cell: ({ row }) => <GameTime startTimeUTC={row.original.startTimeUTC} />,
+    header: ({ table }) => table.options.meta?.t("Game"),
+    cell: ({ row }) => <GameStatus game={row.original.game} />,
   },
 ];

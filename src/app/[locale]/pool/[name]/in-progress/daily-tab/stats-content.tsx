@@ -32,7 +32,10 @@ import { Row } from "@tanstack/react-table";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useDailyLeaders } from "@/hooks/use-daily-leaders";
 import { GameStatePopover } from "@/components/game-state-popover";
-import { GamesNightStatus } from "@/context/games-night-context";
+import {
+  GamesNightStatus,
+  useGamesNightContext,
+} from "@/context/games-night-context";
 
 /*
 Pool point settings carry fractions (half a point per assist, and so on), so a
@@ -53,6 +56,11 @@ export default function DailyStatsContent() {
     dailyPointsMade,
   } = usePoolContext();
   const { dailyLeaders, isDailyLeadersPending } = useDailyLeaders();
+  const { gameByTeam } = useGamesNightContext();
+
+  // What the two roster tables below hand their columns: the pool, and the
+  // night's schedule the matchup columns read each player's game from.
+  const playerTableProps = { poolInfo, gameByTeam };
 
   /*
   The daily ranking already carries the selected pooler's per-position totals,
@@ -82,13 +90,14 @@ export default function DailyStatsContent() {
         columnPinning: { left: ["player"], right: ["poolPoints"] },
       }}
       meta={{
-        props: poolInfo,
+        props: playerTableProps,
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
       }}
       title={null}
       tableFooter={null}
+      columnsStorageKey={`${poolInfo.name}:daily-skaters`}
       footerCells={
         total
           ? {
@@ -124,13 +133,14 @@ export default function DailyStatsContent() {
         columnPinning: { left: ["player"], right: ["poolPoints"] },
       }}
       meta={{
-        props: poolInfo,
+        props: playerTableProps,
         getRowStyles: () => null,
         onRowClick: () => null,
         t: t,
       }}
       title={null}
       tableFooter={null}
+      columnsStorageKey={`${poolInfo.name}:daily-goalies`}
       footerCells={
         total
           ? {
