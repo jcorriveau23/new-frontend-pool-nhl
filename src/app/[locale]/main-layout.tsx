@@ -18,6 +18,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import LanguageSelector from "@/components/language-selector";
 import { Link, usePathname } from "@/i18n/routing";
 import InstallAppPrompt from "@/components/install-app-prompt";
+import OpenInBrowserBanner from "@/components/open-in-browser-banner";
 import { routePageReadsNhlData, routeShowsGameFeed } from "@/lib/app-chrome";
 import type { Versions } from "@/lib/version";
 
@@ -72,6 +73,9 @@ export default function MainLayout({
       <Separator />
       <Footer versions={versions} />
       <InstallAppPrompt />
+      {/* Takes the same bottom slot as the install banner, which stands
+          down inside a webview where installing is not offered anyway. */}
+      <OpenInBrowserBanner />
     </>
   );
 
