@@ -213,8 +213,20 @@ export interface SurvivorPickOptions {
   // same as having had nothing to pick, and only the second is forgiven.
   is_blocked: boolean;
   can_pick: boolean;
-  // True once every game of the date has started, so nothing is left to pick
-  // and the date's picks are public. Optional like `started_team_ids`.
+  /*
+  True once the date's first game has started, which is when its picks go
+  public.
+
+  With `pick_window_closed` still false it marks the middle of a date: the
+  field's picks are on show, your own is locked or not depending on whether
+  your team has taken the ice, and the teams yet to play are still open. The
+  screens say so rather than leaving somebody to work it out.
+
+  Optional like `started_team_ids`, for a backend older than the rule.
+  */
+  date_has_begun?: boolean;
+  // True once every game of the date has started, so nothing is left to pick.
+  // Optional like `started_team_ids`.
   pick_window_closed?: boolean;
   /*
   The date's games.
@@ -250,6 +262,23 @@ export interface SurvivorStandingRow {
   picks: Record<string, RevealedPick>;
 }
 
+/*
+The date being played, and how far the clock has got through it.
+
+Only one date can be part-way through at a time — every earlier one has been
+played out and every later one has not begun — so the grid needs this for one
+column, and it is what lets that column tell a pick that can no longer move
+from one its owner is still free to change.
+*/
+export interface CurrentDateClock {
+  week: number;
+  // Teams whose game has started. A pick on one of these is locked. Empty
+  // before the first puck drop, and empty when the league's feed could not be
+  // reached, in which case the grid marks nothing rather than calling a pick
+  // final before it is.
+  started_team_ids: number[];
+}
+
 export interface SurvivorStandings {
   pool_name: string;
   status: SurvivorState;
@@ -258,4 +287,7 @@ export interface SurvivorStandings {
   revealed_weeks: number[];
   rows: SurvivorStandingRow[];
   winners: string[] | null;
+  // Absent once every date has been settled, which is a pool that is over —
+  // and absent from a backend older than the locked marker.
+  current_date?: CurrentDateClock | null;
 }

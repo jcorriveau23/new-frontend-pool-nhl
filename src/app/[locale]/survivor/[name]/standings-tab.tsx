@@ -24,7 +24,7 @@ deadline already passed.
 */
 
 import * as React from "react";
-import { ChartColumnBig, Skull, Trophy } from "lucide-react";
+import { ChartColumnBig, Lock, Skull, Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +45,7 @@ import {
 import team_info from "@/lib/teams";
 import { cn } from "@/lib/utils";
 import {
+  CurrentDateClock,
   ParticipantStatus,
   PickOutcome,
   SurvivorPool,
@@ -56,6 +57,7 @@ import {
   PICK_OUTCOME_LABEL_KEY,
   arePicksRevealed,
   currentWeek,
+  isPickLocked,
   revealedWeeksUpTo,
   weekByNumber,
 } from "@/lib/survivor";
@@ -82,7 +84,15 @@ const OUTCOME_STYLE: Record<PickOutcome, string> = {
   [PickOutcome.Pending]: "",
 };
 
-function PickCell({ row, week }: { row: SurvivorStandingRow; week: number }) {
+function PickCell({
+  row,
+  week,
+  currentDate,
+}: {
+  row: SurvivorStandingRow;
+  week: number;
+  currentDate: CurrentDateClock | null | undefined;
+}) {
   const t = useTranslations();
   const pick = row.picks[String(week)];
 
@@ -94,19 +104,39 @@ function PickCell({ row, week }: { row: SurvivorStandingRow; week: number }) {
   }
 
   const name = team_info[pick.team_id]?.fullName ?? `#${pick.team_id}`;
-  const outcome = t(PICK_OUTCOME_LABEL_KEY[pick.outcome]);
+
+  /*
+  On the date being played, whether this pick is still theirs to move.
+
+  The reveal comes with the date's first game and the deadline with its last,
+  so this column holds both at once all afternoon. A padlock is the shortest
+  way to say which — and the wording says it too, because an icon on its own
+  is not an answer for somebody reading this with a screen reader.
+  */
+  const isLocked = isPickLocked(currentDate, week, pick.team_id);
+  const state = isLocked
+    ? t("SurvivorPickLocked")
+    : currentDate?.week === week
+      ? t("SurvivorPickStillOpen")
+      : t(PICK_OUTCOME_LABEL_KEY[pick.outcome]);
 
   return (
     <TableCell className={cn("text-center", OUTCOME_STYLE[pick.outcome])}>
       <Tooltip>
         <TooltipTrigger
-          aria-label={`${name} — ${outcome}`}
-          className="inline-flex cursor-default"
+          aria-label={`${name} — ${state}`}
+          className="relative inline-flex cursor-default"
         >
           <TeamLogo teamId={pick.team_id} width={24} height={24} alt={name} />
+          {isLocked ? (
+            <Lock
+              aria-hidden="true"
+              className="text-muted-foreground bg-background absolute -right-1.5 -bottom-1 size-3 rounded-full p-px"
+            />
+          ) : null}
         </TooltipTrigger>
         <TooltipContent>
-          {name} — {outcome}
+          {name} — {state}
         </TooltipContent>
       </Tooltip>
     </TableCell>
@@ -126,13 +156,32 @@ export default function StandingsTab(props: Props) {
     selectedWeek === null ? null : weekByNumber(pool, selectedWeek);
   const selectedIsHidden =
     selected !== null && !arePicksRevealed(standings.revealed_weeks, selected);
-  // And the other way round: a date still taking picks whose picks are in the
-  // grid because this pool plays with them public. A date revealed by its own
-  // deadline is not this case — nothing is left to pick on it — so it is told
-  // apart by the pool's setting rather than by the week's status alone.
+  /*
+  The date being played, mid-flight: its first game has started so the grid is
+  showing everybody's pick, and its last has not, so the teams yet to play can
+  still be picked. The most common state on a Saturday afternoon, and the one
+  that most needs saying — a column of picks reads as a closed date otherwise.
+
+  Judged on `started_team_ids` rather than on the week's status, which stays
+  `Open` throughout: a date that has begun has teams in play, and one that has
+  not has none.
+  */
+  const selectedIsUnderWay =
+    selected !== null &&
+    standings.current_date?.week === selected.week &&
+    standings.current_date.started_team_ids.length > 0 &&
+    arePicksRevealed(standings.revealed_weeks, selected);
+
+  /*
+  And the other way round: a date whose first puck has yet to drop, whose picks
+  are in the grid anyway because this pool plays them public. Told apart by the
+  setting rather than by the week's status, since a date revealed by its own
+  first game is the case above.
+  */
   const selectedIsOpenAndPublic =
     selected !== null &&
     selected.status === WeekStatus.Open &&
+    !selectedIsUnderWay &&
     pool.settings.public_picks &&
     currentWeek(pool)?.week === selected.week &&
     arePicksRevealed(standings.revealed_weeks, selected);
@@ -164,6 +213,12 @@ export default function StandingsTab(props: Props) {
       {selectedIsHidden ? (
         <p className="text-muted-foreground text-sm">
           {t("SurvivorWeekStillOpen", { week: selected.week })}
+        </p>
+      ) : null}
+
+      {selectedIsUnderWay ? (
+        <p className="text-muted-foreground text-sm">
+          {t("SurvivorWeekUnderWay", { week: selected.week })}
         </p>
       ) : null}
 
@@ -248,7 +303,12 @@ export default function StandingsTab(props: Props) {
                 ) : null}
                 <TableCell className="text-center">{row.wins}</TableCell>
                 {columns.map((week) => (
-                  <PickCell key={week} row={row} week={week} />
+                  <PickCell
+                    key={week}
+                    row={row}
+                    week={week}
+                    currentDate={standings.current_date}
+                  />
                 ))}
               </TableRow>
             );

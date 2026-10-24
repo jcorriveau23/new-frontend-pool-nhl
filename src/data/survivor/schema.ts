@@ -117,6 +117,7 @@ export const survivorPickOptionsSchema = z.looseObject({
   // neither, and the screen reads an absent list as "no game has started" —
   // which is how it behaved when closing a date was the owner's button.
   started_team_ids: z.array(z.number()).optional(),
+  date_has_begun: z.boolean().optional(),
   pick_window_closed: z.boolean().optional(),
   current_pick: z.number().nullable(),
   is_blocked: z.boolean(),
@@ -144,6 +145,14 @@ export const survivorStandingsSchema = z.looseObject({
     }),
   ),
   winners: z.array(z.string()).nullable(),
+  // Absent on a pool that is over, and on a backend older than the locked
+  // marker. Required of nothing but the two fields the grid reads.
+  current_date: z
+    .looseObject({
+      week: z.number(),
+      started_team_ids: z.array(z.number()),
+    })
+    .nullish(),
 });
 
 /*

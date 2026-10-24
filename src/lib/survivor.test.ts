@@ -34,6 +34,7 @@ import {
   hasSurvivorPrivilege,
   isOwner,
   isParticipant,
+  isPickLocked,
   participantOf,
   pickBlockedReasonKey,
   PICK_OUTCOME_TONE,
@@ -436,6 +437,39 @@ describe("pickBlockedReasonKey", () => {
     expect(reason({ eligibleTeamIds: null, isBlocked: true })).toBe(
       "SurvivorNoTeamLeftThisWeek",
     );
+  });
+});
+
+describe("isPickLocked", () => {
+  const underWay = { week: 3, started_team_ids: [8, 10] };
+
+  it("locks a pick whose team is already on the ice", () => {
+    expect(isPickLocked(underWay, 3, 10)).toBe(true);
+  });
+
+  it("leaves a pick whose game has not started alone", () => {
+    // The whole point of the middle of a date: this one is still theirs to
+    // move, and the grid has to say so beside one that is not.
+    expect(isPickLocked(underWay, 3, 6)).toBe(false);
+  });
+
+  it("marks nothing on a date other than the one being played", () => {
+    /*
+    Every pick of an earlier date is locked, so flagging them all would put a
+    padlock on the whole grid and say nothing. The payload is scoped to the
+    date in play for that reason, and this refuses to apply it elsewhere even
+    when the team ids happen to match.
+    */
+    expect(isPickLocked(underWay, 2, 10)).toBe(false);
+    expect(isPickLocked(underWay, 4, 10)).toBe(false);
+  });
+
+  it("marks nothing when the pool is over or the backend sent no clock", () => {
+    // Also the answer when the league's feed could not be reached: calling a
+    // pick final before it is would be the wrong way to be wrong.
+    expect(isPickLocked(null, 3, 10)).toBe(false);
+    expect(isPickLocked(undefined, 3, 10)).toBe(false);
+    expect(isPickLocked({ week: 3, started_team_ids: [] }, 3, 10)).toBe(false);
   });
 });
 
