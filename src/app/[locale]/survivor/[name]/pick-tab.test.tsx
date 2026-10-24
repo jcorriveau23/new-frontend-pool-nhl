@@ -160,6 +160,7 @@ describe("PickTab deadline", () => {
     options: Partial<{
       available_team_ids: number[];
       started_team_ids: number[];
+      date_has_begun: boolean;
       pick_window_closed: boolean;
       can_pick: boolean;
       current_pick: number | null;
@@ -237,6 +238,74 @@ describe("PickTab deadline", () => {
     // telling somebody about a deadline that has already gone.
     expect(
       screen.queryByText("SurvivorPickDeadlineExplanation"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("tells a spot with no pick that they have not missed the date", async () => {
+    /*
+    The middle of a date, and the state somebody opening the page at 4pm lands
+    in: the first game has started so the field's picks are on show, some
+    teams have gone with it, and what is left is still a real choice. Without
+    this they would reasonably assume the date was over.
+    */
+    await loadWith({
+      started_team_ids: [STARTED_TEAM],
+      date_has_begun: true,
+    });
+
+    expect(
+      screen.getByText("SurvivorDateUnderWayCanStillPick"),
+    ).toBeInTheDocument();
+  });
+
+  it("does not say that to somebody who already has a pick in", async () => {
+    await loadWith({
+      started_team_ids: [STARTED_TEAM],
+      date_has_begun: true,
+      current_pick: OPEN_TEAM,
+    });
+
+    expect(
+      screen.queryByText("SurvivorDateUnderWayCanStillPick"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not say that once the whole date is shut", async () => {
+    // They did miss it, and the alert above already says so.
+    await loadWith({
+      started_team_ids: [STARTED_TEAM, OPEN_TEAM],
+      date_has_begun: true,
+      pick_window_closed: true,
+      can_pick: false,
+    });
+
+    expect(
+      screen.queryByText("SurvivorDateUnderWayCanStillPick"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("SurvivorPicksClosedForDate")).toBeInTheDocument();
+  });
+
+  it("marks their own pick as locked once its game has started", async () => {
+    await loadWith({
+      started_team_ids: [STARTED_TEAM],
+      date_has_begun: true,
+      current_pick: STARTED_TEAM,
+    });
+
+    expect(screen.getByText(/^SurvivorYourPickLocked:/)).toBeInTheDocument();
+  });
+
+  it("leaves their pick unmarked while its game is still to come", async () => {
+    // It can still be moved, so calling it locked would be wrong.
+    await loadWith({
+      started_team_ids: [STARTED_TEAM],
+      date_has_begun: true,
+      current_pick: OPEN_TEAM,
+    });
+
+    expect(screen.getByText(/^SurvivorYourPick:/)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/^SurvivorYourPickLocked:/),
     ).not.toBeInTheDocument();
   });
 

@@ -8,6 +8,7 @@ model; these decide what to render, never what is allowed.
 */
 
 import {
+  CurrentDateClock,
   ParticipantStatus,
   PickOutcome,
   SurvivorGame,
@@ -291,6 +292,31 @@ three of them look like "you cannot have this":
 the lasting reason and the one that answers "why can I never pick Toronto".
 */
 export type TeamPickState = "picked" | "open" | "used" | "started";
+
+/*
+Whether a pick in the standings grid can no longer be moved.
+
+A date reveals its picks at its first puck drop and keeps taking them until its
+last, so for the one date being played the grid holds a mix: picks whose team
+is already on the ice and picks their owner is still free to change. Saying
+which is which is most of what the reveal is worth before the games are over.
+
+Only that date is asked about. Every earlier one has been played out, so every
+pick on it is locked and marking them all would be noise down the whole grid;
+`current_date` is scoped to the date in play for that reason, and a backend
+that sends none — or one that could not reach the league's feed — marks
+nothing rather than calling a pick final before it is.
+*/
+export function isPickLocked(
+  currentDate: CurrentDateClock | null | undefined,
+  week: number,
+  teamId: number,
+): boolean {
+  if (!currentDate || currentDate.week !== week) {
+    return false;
+  }
+  return currentDate.started_team_ids.includes(teamId);
+}
 
 export function teamPickStates(options: {
   current_pick: number | null;

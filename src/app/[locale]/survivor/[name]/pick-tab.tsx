@@ -570,6 +570,28 @@ export default function PickTab(props: Props) {
   const tilesDisabled =
     !options.can_pick || blockedKey !== null || pickingTeam !== null;
 
+  // Their own pick, once its game has taken the ice. It is no longer theirs to
+  // move — see the refusal in `make_pick` — so the badge says so rather than
+  // leaving them to find out by tapping something else.
+  const myPickIsLocked =
+    options.current_pick !== null &&
+    (options.started_team_ids ?? []).includes(options.current_pick);
+
+  /*
+  Whether to tell this spot they have not missed the date.
+
+  Only when there is something left for them to do about it: the date is under
+  way, they have no pick on file, and the grid still has a team they could
+  take. `blockedKey` covers every reason they could not pick at all, so this
+  never argues with the alert above it.
+  */
+  const showCanStillPick =
+    options.date_has_begun === true &&
+    options.pick_window_closed !== true &&
+    options.current_pick === null &&
+    options.can_pick &&
+    blockedKey === null;
+
   // The games are shown as games when they account for exactly the teams the
   // backend called eligible, and as a plain grid when they cannot — an older
   // backend sends none, and a settled date's list comes from the pool document
@@ -620,8 +642,11 @@ export default function PickTab(props: Props) {
         </Badge>
         <span className="text-muted-foreground text-sm">{week.pick_date}</span>
         {options.current_pick !== null ? (
-          <Badge>
-            {t("SurvivorYourPick", { team: teamName(options.current_pick) })}
+          <Badge variant={myPickIsLocked ? "secondary" : "default"}>
+            {myPickIsLocked ? <Lock className="size-3" /> : null}
+            {t(myPickIsLocked ? "SurvivorYourPickLocked" : "SurvivorYourPick", {
+              team: teamName(options.current_pick),
+            })}
           </Badge>
         ) : null}
         <span className="text-muted-foreground ml-auto text-sm">
@@ -635,6 +660,24 @@ export default function PickTab(props: Props) {
         <Alert>
           <TriangleAlert className="size-4" />
           <AlertDescription>{t(blockedKey)}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {/*
+      The date is under way and this spot has not picked.
+
+      Worth interrupting for, because two things changed at once and neither is
+      obvious from the grid: the field's picks went public at the first puck
+      drop, and some of the teams below went out of reach with it. What is left
+      is still a real choice, and somebody who opened the page at 4pm would
+      otherwise assume they had missed the date entirely.
+      */}
+      {showCanStillPick ? (
+        <Alert>
+          <Clock className="size-4" />
+          <AlertDescription>
+            {t("SurvivorDateUnderWayCanStillPick")}
+          </AlertDescription>
         </Alert>
       ) : null}
 
