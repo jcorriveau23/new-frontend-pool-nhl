@@ -38,7 +38,7 @@ import {
 import { TeamLogo } from "@/components/team-logo";
 import { SurvivorOutcomeLegend } from "@/components/chart/survivor-outcome-legend";
 import { SurvivorWeekPicksChart } from "@/components/chart/lazy";
-import { SurvivorStandingRow } from "@/data/survivor/model";
+import { DateClock, SurvivorStandingRow } from "@/data/survivor/model";
 import { PICK_OUTCOME_LABEL_KEY } from "@/lib/survivor";
 import { outcomesPresent, survivorWeekStats } from "@/lib/survivor-week-stats";
 import team_info from "@/lib/teams";
@@ -49,6 +49,14 @@ interface Props {
   // a number.
   pickDate: string | null;
   rows: SurvivorStandingRow[];
+  /*
+  The date's clock, when it is one still waiting to be settled.
+
+  What it adds is the results of a date whose games are over and whose
+  settlement has not run: without it every team here would read as "not
+  settled" while the grid this opens from shows who won.
+  */
+  clock: DateClock | null;
   trigger: React.ReactElement;
 }
 
@@ -86,6 +94,7 @@ export default function WeekStatsDialog({
   week,
   pickDate,
   rows,
+  clock,
   trigger,
 }: Props) {
   const t = useTranslations();
@@ -97,10 +106,21 @@ export default function WeekStatsDialog({
   array each time.
   */
   const stats = React.useMemo(
-    () => survivorWeekStats(rows, week),
-    [rows, week],
+    () => survivorWeekStats(rows, week, clock),
+    [rows, week, clock],
   );
   const outcomes = React.useMemo(() => outcomesPresent(stats), [stats]);
+
+  /*
+  Whether what is on screen is a result the settlement has not recorded.
+
+  Said here as well as in the grid, because this opens over it: the counts
+  below would otherwise read as a date that had been settled, while its
+  eliminated tile sits at nought.
+  */
+  const isNotSettledYet =
+    clock !== null &&
+    (clock.won_team_ids ?? []).length + (clock.lost_team_ids ?? []).length > 0;
 
   /*
   A week the whole field was on one team opens as the table.
@@ -127,6 +147,12 @@ export default function WeekStatsDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {isNotSettledYet ? (
+            <p className="text-muted-foreground text-sm">
+              {t("SurvivorWeekResultsNotSettled", { week })}
+            </p>
+          ) : null}
+
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <StatTile
               label={t("SurvivorWeekPicksMade")}

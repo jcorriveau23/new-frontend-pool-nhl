@@ -48,7 +48,9 @@ import {
 } from "@/data/survivor/model";
 import {
   canJoin,
+  dateClocks,
   defaultWeek,
+  hasDateInPlay,
   hasSurvivorPrivilege,
   participantOf,
   spotsLeft,
@@ -140,6 +142,15 @@ enum SurvivorTab {
   ADMIN = "admin",
 }
 
+/*
+How often the standings is refetched while a date is being played.
+
+The same three minutes the pick screen uses, and for the same reason: it is
+matched to the backend's cache for a day in play, so polling faster would only
+add requests answered from the same cached copy.
+*/
+const LIVE_REFRESH_MS = 3 * 60 * 1000;
+
 export default function SurvivorPoolPage(props: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -195,18 +206,62 @@ export default function SurvivorPoolPage(props: Props) {
     router.replace(`${pathname}?${queryParams.toString()}`, { scroll: false });
   };
 
-  const loadStandings = React.useCallback(async () => {
-    const res = await fetchSurvivorStandings(pool.name);
-    if (!res.ok) {
-      toast.error(t("SurvivorCouldNotLoadStandings", { error: res.error }));
-      return;
-    }
-    setStandings(res.data);
-  }, [pool.name, t]);
+  /*
+  Load the standings.
+
+  `silent` is for the refresh that follows a date in play, and it is silent for
+  the same two reasons the pick screen's is: the grid is already filled in, and
+  a refetch that failed is not worth interrupting somebody over — the next tick
+  will have it.
+  */
+  const loadStandings = React.useCallback(
+    async ({ silent }: { silent?: boolean } = {}) => {
+      const res = await fetchSurvivorStandings(pool.name);
+      if (!res.ok) {
+        if (silent !== true) {
+          toast.error(t("SurvivorCouldNotLoadStandings", { error: res.error }));
+        }
+        return;
+      }
+      setStandings(res.data);
+    },
+    [pool.name, t],
+  );
 
   React.useEffect(() => {
     void loadStandings();
   }, [loadStandings]);
+
+  /*
+  Keep a date that is being played up to date.
+
+  The standings is the page people sit on all Saturday evening, and what they
+  are waiting for is a result: a game ending now changes a cell from "locked
+  in" to won or lost, hours before anybody settles the date. Fetched once, the
+  grid would still be showing the afternoon as it stood when the tab was
+  opened.
+
+  The interval matches the backend's own cache for a day in play, so a tick
+  either finds a fresh answer or causes exactly one upstream read shared by
+  everybody watching. It stops on its own once every game of every unsettled
+  date is over — there is nothing further to learn until a settlement — and
+  never starts for a date that has not begun.
+  */
+  const watchingDateInPlay = hasDateInPlay(
+    standings === null ? [] : dateClocks(standings),
+  );
+
+  React.useEffect(() => {
+    if (!watchingDateInPlay) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      void loadStandings({ silent: true });
+    }, LIVE_REFRESH_MS);
+
+    return () => clearInterval(timer);
+  }, [watchingDateInPlay, loadStandings]);
 
   // A pool change that came from a mutation (a settlement, a join) moves the
   // standings too, so they are refetched rather than left stale.
@@ -354,7 +409,12 @@ export default function SurvivorPoolPage(props: Props) {
               {t("SurvivorNoWeeks")}
             </p>
           ) : (
-            <PickTab pool={pool} week={week} participant={participant} />
+            <PickTab
+              pool={pool}
+              week={week}
+              participant={participant}
+              onPickFiled={() => void loadStandings({ silent: true })}
+            />
           )}
         </TabsContent>
 

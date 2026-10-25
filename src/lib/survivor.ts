@@ -8,9 +8,10 @@ model; these decide what to render, never what is allowed.
 */
 
 import {
-  CurrentDateClock,
+  DateClock,
   ParticipantStatus,
   PickOutcome,
+  RevealedPick,
   SurvivorGame,
   SurvivorGameState,
   SurvivorPool,
@@ -294,28 +295,138 @@ the lasting reason and the one that answers "why can I never pick Toronto".
 export type TeamPickState = "picked" | "open" | "used" | "started";
 
 /*
-Whether a pick in the standings grid can no longer be moved.
+The clocks the standings carries, one per revealed date still waiting to be
+settled.
+
+Read through here rather than off the payload, because there are two shapes to
+read: a backend newer than the per-date clocks sends `date_clocks`, and one
+older sends a single `current_date` for the first unsettled date. The second is
+the deploy window and nothing more, but a frontend that ignored it would stop
+marking locked picks for the length of it.
+*/
+export function dateClocks(standings: {
+  date_clocks?: DateClock[];
+  current_date?: DateClock | null;
+}): DateClock[] {
+  if (standings.date_clocks !== undefined) {
+    return standings.date_clocks;
+  }
+  return standings.current_date ? [standings.current_date] : [];
+}
+
+/*
+The clock for one date, or null when it has none.
+
+A date with no clock is one of three things, and none of them wants marking: it
+has been settled, so its picks carry the outcome the settlement wrote; its
+picks are not public, so it has no column at all; or the league's feed could
+not be reached, in which case nothing is known and nothing is claimed.
+*/
+export function clockForWeek(
+  clocks: DateClock[],
+  week: number,
+): DateClock | null {
+  return clocks.find((clock) => clock.week === week) ?? null;
+}
+
+/*
+How a pick reads in the standings grid.
 
 A date reveals its picks at its first puck drop and keeps taking them until its
-last, so for the one date being played the grid holds a mix: picks whose team
-is already on the ice and picks their owner is still free to change. Saying
-which is which is most of what the reveal is worth before the games are over.
+last, so a date being played holds a mix: picks whose team is already on the
+ice and picks their owner is still free to change. Saying which is which is
+most of what the reveal is worth before the games are over, and saying what the
+finished games did is the rest of it.
 
-Only that date is asked about. Every earlier one has been played out, so every
-pick on it is locked and marking them all would be noise down the whole grid;
-`current_date` is scoped to the date in play for that reason, and a backend
-that sends none — or one that could not reach the league's feed — marks
-nothing rather than calling a pick final before it is.
+Only an unsettled date is asked about. Every settled one has been played out,
+so every pick on it is locked and marking them all would be noise down the
+whole grid — which is why only those dates have a clock at all.
+
+Four states, and the one this was written for is `provisional`: a Saturday's
+games are over hours before anybody presses settle, and until the date carried
+its results the grid showed a column of picks with nothing to say about any of
+them.
+
+  - `settled`     — the date has been settled and the pick carries what it
+                    cost. The outcome is the one on the pick itself.
+  - `provisional`  — the game is over and the league has a winner, but the date
+                    has not been settled. The result is real; what it costs is
+                    not recorded yet, and the screen says so.
+  - `locked`      — the team is on the ice and the game has not produced a
+                    result. The pick is in and nothing is known yet.
+  - `open`        — the date is being played and this pick can still be moved.
+
+`provisional` is checked before `locked` where both fit: a finished game has
+started by definition, and the result is the more useful of the two things to
+say. A pick whose own outcome is already recorded is `settled` whatever the
+clock says — the settlement is the authority, and a feed that has since changed
+its mind about a game does not get to rewrite it in the grid.
 */
-export function isPickLocked(
-  currentDate: CurrentDateClock | null | undefined,
+export type PickCellState =
+  | { kind: "settled"; outcome: PickOutcome }
+  | { kind: "provisional"; outcome: PickOutcome.Won | PickOutcome.Lost }
+  | { kind: "locked" }
+  | { kind: "open" };
+
+export function pickCellState(
+  pick: RevealedPick,
   week: number,
-  teamId: number,
-): boolean {
-  if (!currentDate || currentDate.week !== week) {
-    return false;
+  clocks: DateClock[],
+): PickCellState {
+  if (pick.outcome !== PickOutcome.Pending) {
+    return { kind: "settled", outcome: pick.outcome };
   }
-  return currentDate.started_team_ids.includes(teamId);
+
+  const clock = clockForWeek(clocks, week);
+  if (clock === null) {
+    // No clock, and the pick is pending: a date whose results nothing has
+    // reported. Reads as it did before any of this existed.
+    return { kind: "settled", outcome: PickOutcome.Pending };
+  }
+
+  if (clock.won_team_ids?.includes(pick.team_id)) {
+    return { kind: "provisional", outcome: PickOutcome.Won };
+  }
+  if (clock.lost_team_ids?.includes(pick.team_id)) {
+    return { kind: "provisional", outcome: PickOutcome.Lost };
+  }
+
+  return clock.started_team_ids.includes(pick.team_id)
+    ? { kind: "locked" }
+    : { kind: "open" };
+}
+
+/*
+Whether any date on the board is still moving, and so worth refetching.
+
+What the standings polls on, and it has to be read off the clocks because the
+payload carries no games: a date is in play when its first puck has dropped
+and either more games are still to start, or one of the games that has started
+has yet to produce a result.
+
+Both halves matter. Without the first, a Saturday evening stops refreshing the
+moment the afternoon games are final and never picks up the late ones; without
+the second, a date whose last game is still being played is read as finished.
+And a date that has begun, closed and decided everything is left alone — there
+is nothing more to learn about it until somebody settles it.
+
+False for a date that has not begun, which is what keeps a pool with public
+picks from polling all week over a Saturday that has not arrived.
+*/
+export function hasDateInPlay(clocks: DateClock[]): boolean {
+  return clocks.some((clock) => {
+    if (clock.started_team_ids.length === 0) {
+      return false;
+    }
+    if (clock.pick_window_closed !== true) {
+      return true;
+    }
+    const decided = new Set([
+      ...(clock.won_team_ids ?? []),
+      ...(clock.lost_team_ids ?? []),
+    ]);
+    return clock.started_team_ids.some((teamId) => !decided.has(teamId));
+  });
 }
 
 export function teamPickStates(options: {

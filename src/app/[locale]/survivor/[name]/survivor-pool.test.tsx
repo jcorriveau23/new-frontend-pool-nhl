@@ -14,17 +14,20 @@ one render even for the owner, while the signed-in user is still resolving.
 */
 
 import * as React from "react";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  DateClock,
   ParticipantStatus,
   SurvivorPool,
   SurvivorState,
+  SurvivorStandings,
   SurvivorUser,
   WeekStatus,
 } from "@/data/survivor/model";
+import { fetchSurvivorStandings } from "@/lib/survivor-api";
 import { routerMock } from "../../../../../vitest.setup";
 import SurvivorPoolPage from "./survivor-pool";
 
@@ -48,28 +51,42 @@ vi.mock("@/context/useSessionData", () => ({
 }));
 
 vi.mock("@/lib/survivor-api", () => ({
-  // Enough of a board for the standings tab to render rather than sit on its
-  // skeleton; the tab itself is mocked below, so none of it is read.
-  fetchSurvivorStandings: vi.fn().mockResolvedValue({
-    ok: true,
-    data: {
-      pool_name: "survivor",
-      status: "InProgress",
-      alive_count: 1,
-      eliminated_count: 0,
-      revealed_weeks: [],
-      rows: [],
-      winners: null,
-    },
-  }),
+  fetchSurvivorStandings: vi.fn(),
   joinSurvivorPool: vi.fn(),
 }));
+
+/*
+Enough of a board for the standings tab to render rather than sit on its
+skeleton; the tab itself is mocked below, so none of it is read. What the tests
+below do read is `date_clocks`, which is what decides whether the page keeps
+looking for results.
+*/
+const standings = (date_clocks: DateClock[] = []): SurvivorStandings => ({
+  pool_name: "survivor",
+  status: SurvivorState.InProgress,
+  alive_count: 1,
+  eliminated_count: 0,
+  revealed_weeks: [],
+  rows: [],
+  winners: null,
+  date_clocks,
+});
+
+const answerWith = (date_clocks: DateClock[] = []) =>
+  vi
+    .mocked(fetchSurvivorStandings)
+    .mockResolvedValue({ ok: true, data: standings(date_clocks) });
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 // The tabs' own content, so this file is about the routing between them.
+// The pick screen, with its one message back to the page: a pick was filed.
 vi.mock("./pick-tab", () => ({
-  default: () => <div>the pick screen</div>,
+  default: ({ onPickFiled }: { onPickFiled: () => void }) => (
+    <button type="button" onClick={onPickFiled}>
+      the pick screen
+    </button>
+  ),
 }));
 vi.mock("./standings-tab", () => ({
   default: () => <div>the standings</div>,
@@ -122,7 +139,17 @@ beforeEach(() => {
   searchParams = new URLSearchParams();
   userId = "owner";
   routerMock.replace.mockReset();
+  vi.mocked(fetchSurvivorStandings).mockReset();
+  answerWith();
 });
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+// The interval the page refetches a date in play on, matched to the backend's
+// own cache for a day being played.
+const LIVE_REFRESH_MS = 3 * 60 * 1000;
 
 describe("SurvivorPoolPage tabs", () => {
   it("opens on the pick screen when the URL names no tab", () => {
@@ -199,5 +226,119 @@ describe("SurvivorPoolPage tabs", () => {
     render(<SurvivorPoolPage pool={POOL} />);
 
     expect(screen.getByText("the pick screen")).toBeInTheDocument();
+  });
+});
+
+describe("SurvivorPoolPage, watching a date in play", () => {
+  /*
+  Render and wait for the first load to land.
+
+  `shouldAdvanceTime` so the promises the load is made of still settle while
+  the clock is held: without it the first fetch never resolves and there is no
+  clock to poll on.
+  */
+  const renderAndSettle = async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<SurvivorPoolPage pool={POOL} />);
+    await waitFor(() =>
+      expect(fetchSurvivorStandings).toHaveBeenCalledTimes(1),
+    );
+    /*
+    And let that answer land in state before the clock below moves.
+
+    The interval is registered by an effect that depends on the clocks the
+    answer carries, so a test that advanced time on the strength of the fetch
+    alone would sometimes find no interval to fire — which it did, in the suite
+    but not on its own.
+    */
+    await act(async () => {});
+  };
+
+  const tick = async () => {
+    await act(async () => {
+      vi.advanceTimersByTime(LIVE_REFRESH_MS);
+    });
+  };
+
+  it("refetches the standings while a date is being played", async () => {
+    /*
+    What the page is for on a Saturday evening: a game ending now turns a cell
+    from "locked in" into won or lost, hours before anybody settles the date.
+    Fetched once, the grid would still show the afternoon as it stood when the
+    tab was opened.
+    */
+    answerWith([
+      {
+        week: 1,
+        started_team_ids: [8, 10],
+        won_team_ids: [10],
+        lost_team_ids: [],
+        pick_window_closed: true,
+      },
+    ]);
+
+    await renderAndSettle();
+    await tick();
+
+    expect(fetchSurvivorStandings).toHaveBeenCalledTimes(2);
+  });
+
+  it("stops once every game of the date is decided", async () => {
+    // Nothing further to learn until somebody settles it, so the interval does
+    // not sit there polling a payload that cannot change.
+    answerWith([
+      {
+        week: 1,
+        started_team_ids: [8, 10],
+        won_team_ids: [10],
+        lost_team_ids: [8],
+        pick_window_closed: true,
+      },
+    ]);
+
+    await renderAndSettle();
+    await tick();
+
+    expect(fetchSurvivorStandings).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not poll a date that has not begun", async () => {
+    // A pool with public picks has a clock on the date being played before its
+    // first puck drops. Watching that would poll all week.
+    answerWith([{ week: 1, started_team_ids: [] }]);
+
+    await renderAndSettle();
+    await tick();
+
+    expect(fetchSurvivorStandings).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not poll a pool with no date waiting to be settled", async () => {
+    await renderAndSettle();
+    await tick();
+
+    expect(fetchSurvivorStandings).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("SurvivorPoolPage, keeping the standings current", () => {
+  it("refetches the standings when a pick has been filed", async () => {
+    /*
+    The standings belong to the page, and a pick changes them: on a date whose
+    picks are public, your own cell appears the moment you file it. Before
+    this the grid kept whatever it was fetched with until a reload.
+    */
+    render(<SurvivorPoolPage pool={POOL} />);
+    await waitFor(() =>
+      expect(fetchSurvivorStandings).toHaveBeenCalledTimes(1),
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "the pick screen" }),
+    );
+
+    await waitFor(() =>
+      expect(fetchSurvivorStandings).toHaveBeenCalledTimes(2),
+    );
   });
 });

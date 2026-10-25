@@ -45,7 +45,7 @@ import {
 import team_info from "@/lib/teams";
 import { cn } from "@/lib/utils";
 import {
-  CurrentDateClock,
+  DateClock,
   ParticipantStatus,
   PickOutcome,
   SurvivorPool,
@@ -55,9 +55,12 @@ import {
 } from "@/data/survivor/model";
 import {
   PICK_OUTCOME_LABEL_KEY,
+  PickCellState,
   arePicksRevealed,
+  clockForWeek,
   currentWeek,
-  isPickLocked,
+  dateClocks,
+  pickCellState,
   revealedWeeksUpTo,
   weekByNumber,
 } from "@/lib/survivor";
@@ -74,9 +77,9 @@ interface Props {
 const NAME_CELL = "sticky left-0 z-[1] max-w-[40vw] sm:max-w-xs";
 const NAME_CELL_BG = "bg-background group-hover:bg-muted/50";
 
-// How an outcome reads in a cell. A date still to be settled and a game that
-// never produced a result are both "nothing came of it", and are kept apart
-// because they are not the same thing to a participant.
+// How a settled outcome reads in a cell. A date still to be settled and a game
+// that never produced a result are both "nothing came of it", and are kept
+// apart because they are not the same thing to a participant.
 const OUTCOME_STYLE: Record<PickOutcome, string> = {
   [PickOutcome.Won]: "bg-emerald-500/15",
   [PickOutcome.Lost]: "bg-destructive/15",
@@ -84,14 +87,61 @@ const OUTCOME_STYLE: Record<PickOutcome, string> = {
   [PickOutcome.Pending]: "",
 };
 
+/*
+How a result the games have produced but the settlement has not recorded reads.
+
+The same two colours as a settled outcome, outlined rather than filled: it is
+the same result, and it is not on the board yet. Filling it identically would
+say the strike had been counted when the standings' own numbers say it has
+not; leaving it blank is what this whole thing is fixing.
+*/
+const PROVISIONAL_STYLE: Record<PickOutcome.Won | PickOutcome.Lost, string> = {
+  [PickOutcome.Won]: "bg-emerald-500/5 ring-1 ring-emerald-500/40 ring-inset",
+  [PickOutcome.Lost]: "bg-destructive/5 ring-1 ring-destructive/40 ring-inset",
+};
+
+const cellStyle = (state: PickCellState): string => {
+  switch (state.kind) {
+    case "settled":
+      return OUTCOME_STYLE[state.outcome];
+    case "provisional":
+      return PROVISIONAL_STYLE[state.outcome];
+    default:
+      return "";
+  }
+};
+
+/*
+What the cell says, in words.
+
+The wording is not decoration: the colour and the padlock are both channels a
+reader may not have, so whatever the cell shows is also in the label and the
+tooltip. A provisional result says both halves — what happened, and that it has
+not been counted yet.
+*/
+const cellStateKey = (state: PickCellState): string => {
+  switch (state.kind) {
+    case "settled":
+      return PICK_OUTCOME_LABEL_KEY[state.outcome];
+    case "provisional":
+      return state.outcome === PickOutcome.Won
+        ? "SurvivorPickWonUnsettled"
+        : "SurvivorPickLostUnsettled";
+    case "locked":
+      return "SurvivorPickLocked";
+    default:
+      return "SurvivorPickStillOpen";
+  }
+};
+
 function PickCell({
   row,
   week,
-  currentDate,
+  clocks,
 }: {
   row: SurvivorStandingRow;
   week: number;
-  currentDate: CurrentDateClock | null | undefined;
+  clocks: DateClock[];
 }) {
   const t = useTranslations();
   const pick = row.picks[String(week)];
@@ -106,29 +156,28 @@ function PickCell({
   const name = team_info[pick.team_id]?.fullName ?? `#${pick.team_id}`;
 
   /*
-  On the date being played, whether this pick is still theirs to move.
+  What this pick has come to, which on an unsettled date is four different
+  things — see `pickCellState`. The reveal comes with the date's first game,
+  the deadline with its last, and the results with each game as it ends, so one
+  column holds picks that can still move, picks that are in, and picks the
+  games have already decided.
 
-  The reveal comes with the date's first game and the deadline with its last,
-  so this column holds both at once all afternoon. A padlock is the shortest
-  way to say which — and the wording says it too, because an icon on its own
-  is not an answer for somebody reading this with a screen reader.
+  A padlock marks the middle of those three. The one thing it is not put on is
+  a decided pick: its game being over is what the colour is saying, and a
+  padlock there would read as the only thing worth knowing about it.
   */
-  const isLocked = isPickLocked(currentDate, week, pick.team_id);
-  const state = isLocked
-    ? t("SurvivorPickLocked")
-    : currentDate?.week === week
-      ? t("SurvivorPickStillOpen")
-      : t(PICK_OUTCOME_LABEL_KEY[pick.outcome]);
+  const state = pickCellState(pick, week, clocks);
+  const stateLabel = t(cellStateKey(state));
 
   return (
-    <TableCell className={cn("text-center", OUTCOME_STYLE[pick.outcome])}>
+    <TableCell className={cn("text-center", cellStyle(state))}>
       <Tooltip>
         <TooltipTrigger
-          aria-label={`${name} — ${state}`}
+          aria-label={`${name} — ${stateLabel}`}
           className="relative inline-flex cursor-default"
         >
           <TeamLogo teamId={pick.team_id} width={24} height={24} alt={name} />
-          {isLocked ? (
+          {state.kind === "locked" ? (
             <Lock
               aria-hidden="true"
               className="text-muted-foreground bg-background absolute -right-1.5 -bottom-1 size-3 rounded-full p-px"
@@ -136,7 +185,7 @@ function PickCell({
           ) : null}
         </TooltipTrigger>
         <TooltipContent>
-          {name} — {state}
+          {name} — {stateLabel}
         </TooltipContent>
       </Tooltip>
     </TableCell>
@@ -149,6 +198,9 @@ export default function StandingsTab(props: Props) {
 
   const winners = new Set(standings.winners ?? []);
   const columns = revealedWeeksUpTo(standings.revealed_weeks, selectedWeek);
+  // One clock per revealed date still waiting to be settled, which is what
+  // every column reads itself against.
+  const clocks = dateClocks(standings);
 
   // The date in view when its picks are not public yet, which is the question
   // the grid otherwise leaves somebody asking.
@@ -156,21 +208,43 @@ export default function StandingsTab(props: Props) {
     selectedWeek === null ? null : weekByNumber(pool, selectedWeek);
   const selectedIsHidden =
     selected !== null && !arePicksRevealed(standings.revealed_weeks, selected);
+  const selectedClock =
+    selected === null ? null : clockForWeek(clocks, selected.week);
+  const selectedIsRevealed =
+    selected !== null && arePicksRevealed(standings.revealed_weeks, selected);
   /*
   The date being played, mid-flight: its first game has started so the grid is
   showing everybody's pick, and its last has not, so the teams yet to play can
   still be picked. The most common state on a Saturday afternoon, and the one
   that most needs saying — a column of picks reads as a closed date otherwise.
 
-  Judged on `started_team_ids` rather than on the week's status, which stays
-  `Open` throughout: a date that has begun has teams in play, and one that has
-  not has none.
+  Judged on the clock rather than on the week's status, which stays `Open`
+  throughout: a date that has begun has teams in play, and one that has not has
+  none. `pick_window_closed` is what keeps the second half of the sentence
+  honest — once every game has started there are no teams left yet to play, and
+  the line below this one has the right thing to say about that date instead.
   */
   const selectedIsUnderWay =
-    selected !== null &&
-    standings.current_date?.week === selected.week &&
-    standings.current_date.started_team_ids.length > 0 &&
-    arePicksRevealed(standings.revealed_weeks, selected);
+    selectedIsRevealed &&
+    selectedClock !== null &&
+    selectedClock.started_team_ids.length > 0 &&
+    selectedClock.pick_window_closed !== true;
+
+  /*
+  The date in view has results the settlement has not recorded.
+
+  The gap this grid used to show nothing in: the games are over, everybody can
+  see who went out, and the standings' own counts — the wins column, the
+  losses, the skulls — do not move until somebody settles the date. Both halves
+  have to be said, or the colours read as a board that has already been
+  updated.
+  */
+  const selectedHasProvisionalResults =
+    selectedIsRevealed &&
+    selectedClock !== null &&
+    (selectedClock.won_team_ids ?? []).length +
+      (selectedClock.lost_team_ids ?? []).length >
+      0;
 
   /*
   And the other way round: a date whose first puck has yet to drop, whose picks
@@ -182,9 +256,10 @@ export default function StandingsTab(props: Props) {
     selected !== null &&
     selected.status === WeekStatus.Open &&
     !selectedIsUnderWay &&
+    !selectedHasProvisionalResults &&
     pool.settings.public_picks &&
     currentWeek(pool)?.week === selected.week &&
-    arePicksRevealed(standings.revealed_weeks, selected);
+    selectedIsRevealed;
 
   return (
     <div className="space-y-4 text-left">
@@ -222,6 +297,12 @@ export default function StandingsTab(props: Props) {
         </p>
       ) : null}
 
+      {selectedHasProvisionalResults ? (
+        <p className="text-muted-foreground text-sm">
+          {t("SurvivorWeekResultsNotSettled", { week: selected.week })}
+        </p>
+      ) : null}
+
       {selectedIsOpenAndPublic ? (
         <p className="text-muted-foreground text-sm">
           {t("SurvivorWeekPicksArePublic", { week: selected.week })}
@@ -249,6 +330,7 @@ export default function StandingsTab(props: Props) {
                     week={week}
                     pickDate={entry?.pick_date ?? null}
                     rows={standings.rows}
+                    clock={clockForWeek(clocks, week)}
                     trigger={
                       <button
                         type="button"
@@ -303,12 +385,7 @@ export default function StandingsTab(props: Props) {
                 ) : null}
                 <TableCell className="text-center">{row.wins}</TableCell>
                 {columns.map((week) => (
-                  <PickCell
-                    key={week}
-                    row={row}
-                    week={week}
-                    currentDate={standings.current_date}
-                  />
+                  <PickCell key={week} row={row} week={week} clocks={clocks} />
                 ))}
               </TableRow>
             );

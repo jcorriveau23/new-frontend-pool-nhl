@@ -86,6 +86,15 @@ interface Props {
   pool: SurvivorPool;
   week: SurvivorWeek;
   participant: SurvivorUser | null;
+  /*
+  Called when a pick has been filed.
+
+  The standings are the page's, not this screen's, and a pick changes them —
+  on a date whose picks are public, your own cell appears or moves the moment
+  you file it. Without this the grid kept whatever it was fetched with and only
+  caught up on a reload.
+  */
+  onPickFiled: () => void;
 }
 
 const teamName = (teamId: number) =>
@@ -348,7 +357,7 @@ function MatchupRow({
 }
 
 export default function PickTab(props: Props) {
-  const { pool, week, participant } = props;
+  const { pool, week, participant, onPickFiled } = props;
   const t = useTranslations();
   const userSession = useSession();
   const jwt = userSession.info?.jwt;
@@ -437,7 +446,15 @@ export default function PickTab(props: Props) {
       }
       setOptions(res.data);
     },
-    [jwt, isSessionResolved, pool.name, week.week, pickingFor, t],
+    [
+      jwt,
+      isSessionResolved,
+      pool.name,
+      pool.date_updated,
+      week.week,
+      pickingFor,
+      t,
+    ],
   );
 
   React.useEffect(() => {
@@ -512,6 +529,7 @@ export default function PickTab(props: Props) {
 
     setOptions(res.data);
     toast.success(t("SurvivorPickSaved", { team: teamName(teamId) }));
+    onPickFiled();
   };
 
   // The teams playing come from the pick endpoint, which resolves them against

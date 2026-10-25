@@ -34,7 +34,9 @@ import {
   hasSurvivorPrivilege,
   isOwner,
   isParticipant,
-  isPickLocked,
+  dateClocks,
+  hasDateInPlay,
+  pickCellState,
   participantOf,
   pickBlockedReasonKey,
   PICK_OUTCOME_TONE,
@@ -440,36 +442,199 @@ describe("pickBlockedReasonKey", () => {
   });
 });
 
-describe("isPickLocked", () => {
-  const underWay = { week: 3, started_team_ids: [8, 10] };
+describe("dateClocks", () => {
+  const clock = { week: 3, started_team_ids: [8] };
 
-  it("locks a pick whose team is already on the ice", () => {
-    expect(isPickLocked(underWay, 3, 10)).toBe(true);
+  it("reads the clocks the standings carries", () => {
+    expect(dateClocks({ date_clocks: [clock] })).toEqual([clock]);
   });
 
-  it("leaves a pick whose game has not started alone", () => {
-    // The whole point of the middle of a date: this one is still theirs to
-    // move, and the grid has to say so beside one that is not.
-    expect(isPickLocked(underWay, 3, 6)).toBe(false);
-  });
-
-  it("marks nothing on a date other than the one being played", () => {
+  it("reads the single clock an older backend sends in their place", () => {
     /*
-    Every pick of an earlier date is locked, so flagging them all would put a
-    padlock on the whole grid and say nothing. The payload is scoped to the
-    date in play for that reason, and this refuses to apply it elsewhere even
-    when the team ids happen to match.
+    The deploy window, and the reason this is a function rather than a field
+    read: a frontend that went out first would otherwise stop marking locked
+    picks until the backend caught up.
     */
-    expect(isPickLocked(underWay, 2, 10)).toBe(false);
-    expect(isPickLocked(underWay, 4, 10)).toBe(false);
+    expect(dateClocks({ current_date: clock })).toEqual([clock]);
   });
 
-  it("marks nothing when the pool is over or the backend sent no clock", () => {
-    // Also the answer when the league's feed could not be reached: calling a
-    // pick final before it is would be the wrong way to be wrong.
-    expect(isPickLocked(null, 3, 10)).toBe(false);
-    expect(isPickLocked(undefined, 3, 10)).toBe(false);
-    expect(isPickLocked({ week: 3, started_team_ids: [] }, 3, 10)).toBe(false);
+  it("answers with nothing when there is no date waiting to be settled", () => {
+    expect(dateClocks({ date_clocks: [] })).toEqual([]);
+    expect(dateClocks({ current_date: null })).toEqual([]);
+    expect(dateClocks({})).toEqual([]);
+  });
+
+  it("prefers the list over the single clock when both are sent", () => {
+    // A backend sending both is one mid-rollout; the list is the one that can
+    // describe two dates waiting at once.
+    expect(dateClocks({ date_clocks: [], current_date: clock })).toEqual([]);
+  });
+});
+
+describe("pickCellState", () => {
+  const pick = (team_id: number, outcome: PickOutcome) => ({
+    team_id,
+    outcome,
+  });
+
+  const underWay = [
+    {
+      week: 3,
+      // 8 and 10 have played, 12 is on the ice, 14 has yet to start.
+      started_team_ids: [8, 10, 12],
+      won_team_ids: [8],
+      lost_team_ids: [10],
+      pick_window_closed: false,
+    },
+  ];
+
+  it("shows a settled pick as what the settlement recorded", () => {
+    expect(pickCellState(pick(8, PickOutcome.Won), 1, [])).toEqual({
+      kind: "settled",
+      outcome: PickOutcome.Won,
+    });
+    expect(pickCellState(pick(8, PickOutcome.Void), 1, [])).toEqual({
+      kind: "settled",
+      outcome: PickOutcome.Void,
+    });
+  });
+
+  it("shows a decided game as a result before the date is settled", () => {
+    // The gap this was written for: the games are over hours before anybody
+    // presses settle, and the grid used to have nothing to say about them.
+    expect(pickCellState(pick(8, PickOutcome.Pending), 3, underWay)).toEqual({
+      kind: "provisional",
+      outcome: PickOutcome.Won,
+    });
+    expect(pickCellState(pick(10, PickOutcome.Pending), 3, underWay)).toEqual({
+      kind: "provisional",
+      outcome: PickOutcome.Lost,
+    });
+  });
+
+  it("shows a pick whose game is on as locked rather than decided", () => {
+    // A team two goals up at the second intermission has won nothing.
+    expect(pickCellState(pick(12, PickOutcome.Pending), 3, underWay)).toEqual({
+      kind: "locked",
+    });
+  });
+
+  it("shows a pick whose game has not started as still movable", () => {
+    expect(pickCellState(pick(14, PickOutcome.Pending), 3, underWay)).toEqual({
+      kind: "open",
+    });
+  });
+
+  it("lets the settlement outrank a feed that changed its mind", () => {
+    /*
+    What a pick cost is decided once. A feed that now reports the other side
+    of a game the pool has already settled does not get to rewrite the grid —
+    the standings' own numbers were counted from the settlement.
+    */
+    expect(pickCellState(pick(10, PickOutcome.Won), 3, underWay)).toEqual({
+      kind: "settled",
+      outcome: PickOutcome.Won,
+    });
+  });
+
+  it("reads each waiting date against its own clock", () => {
+    /*
+    The organiser who is a week behind: two dates are waiting at once, and a
+    team that has played on one has not on the other. A single clock for "the
+    current date" could not say that, which is why there is one per date.
+    */
+    const twoWaiting = [
+      { week: 3, started_team_ids: [8], won_team_ids: [8] },
+      { week: 4, started_team_ids: [] },
+    ];
+
+    expect(pickCellState(pick(8, PickOutcome.Pending), 3, twoWaiting)).toEqual({
+      kind: "provisional",
+      outcome: PickOutcome.Won,
+    });
+    expect(pickCellState(pick(8, PickOutcome.Pending), 4, twoWaiting)).toEqual({
+      kind: "open",
+    });
+  });
+
+  it("claims nothing for a date with no clock", () => {
+    // An unreachable feed, or a backend older than the results. Reads as the
+    // grid did before any of this existed.
+    expect(pickCellState(pick(8, PickOutcome.Pending), 3, [])).toEqual({
+      kind: "settled",
+      outcome: PickOutcome.Pending,
+    });
+    expect(
+      pickCellState(pick(8, PickOutcome.Pending), 3, [
+        { week: 3, started_team_ids: [8] },
+      ]),
+    ).toEqual({ kind: "locked" });
+  });
+});
+
+describe("hasDateInPlay", () => {
+  it("watches a date with games still to start", () => {
+    // The afternoon games are final and the evening ones have not begun: the
+    // page has to keep looking, or it never sees the late results at all.
+    expect(
+      hasDateInPlay([
+        {
+          week: 3,
+          started_team_ids: [8, 10],
+          won_team_ids: [8],
+          lost_team_ids: [10],
+          pick_window_closed: false,
+        },
+      ]),
+    ).toBe(true);
+  });
+
+  it("watches a date whose last game has not produced a result", () => {
+    expect(
+      hasDateInPlay([
+        {
+          week: 3,
+          started_team_ids: [8, 10, 12, 14],
+          won_team_ids: [8],
+          lost_team_ids: [10],
+          pick_window_closed: true,
+        },
+      ]),
+    ).toBe(true);
+  });
+
+  it("leaves a date alone once every game of it is decided", () => {
+    // Nothing further to learn until somebody settles it, so the interval
+    // stops rather than polling a payload that cannot change.
+    expect(
+      hasDateInPlay([
+        {
+          week: 3,
+          started_team_ids: [8, 10],
+          won_team_ids: [8],
+          lost_team_ids: [10],
+          pick_window_closed: true,
+        },
+      ]),
+    ).toBe(false);
+  });
+
+  it("leaves a date that has not begun alone", () => {
+    /*
+    A pool with public picks has a clock on the date being played before its
+    first puck drops. Watching that would poll all week for a Saturday that
+    has not arrived.
+    */
+    expect(
+      hasDateInPlay([{ week: 3, started_team_ids: [], won_team_ids: [] }]),
+    ).toBe(false);
+    expect(hasDateInPlay([])).toBe(false);
+  });
+
+  it("watches a date an older backend described without a deadline", () => {
+    // No `pick_window_closed`, so whether more games are coming is unknown.
+    // Looking again is the harmless way to be wrong.
+    expect(hasDateInPlay([{ week: 3, started_team_ids: [8] }])).toBe(true);
   });
 });
 

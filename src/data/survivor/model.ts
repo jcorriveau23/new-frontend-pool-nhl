@@ -263,20 +263,47 @@ export interface SurvivorStandingRow {
 }
 
 /*
-The date being played, and how far the clock has got through it.
+A date whose picks are public but whose results have not been applied, and how
+far the clock has got through it.
 
-Only one date can be part-way through at a time — every earlier one has been
-played out and every later one has not begun — so the grid needs this for one
-column, and it is what lets that column tell a pick that can no longer move
-from one its owner is still free to change.
+One per such date rather than one for the pool. Usually that is one — the
+Saturday being played — but settling is a button somebody has to press, and an
+organiser a week behind leaves two: the date nobody settled and the date being
+played. Keyed by week so the grid marks each column for itself.
+
+What it carries is everything about a column the pool document cannot answer,
+because it comes from the league's schedule: which picks can still move, and
+which of them the games have already decided.
 */
-export interface CurrentDateClock {
+export interface DateClock {
   week: number;
   // Teams whose game has started. A pick on one of these is locked. Empty
   // before the first puck drop, and empty when the league's feed could not be
   // reached, in which case the grid marks nothing rather than calling a pick
   // final before it is.
   started_team_ids: number[];
+  /*
+  Teams that have won their game on this date, and teams that have lost it, as
+  the league's feed reads now.
+
+  This is the result *before* the settlement, and it is what the grid shows on
+  a date the owner has yet to settle — a Saturday's games are over hours
+  before anybody presses the button. A team in neither list has not finished
+  its game, or finished it without a result the feed could be read from.
+
+  Display only. What a pick cost — a strike, an elimination, a win in the
+  standings — is the settlement's to decide, so none of the counts move until
+  it runs.
+
+  Optional for the usual reason: a backend older than the rule sends neither,
+  and absent reads as "nothing decided", which is how the grid behaved before.
+  */
+  won_team_ids?: number[];
+  lost_team_ids?: number[];
+  // Whether every game of the date has started, so nothing is left to pick.
+  // Read by the page deciding whether the date is still moving and so worth
+  // refetching, not by the cells.
+  pick_window_closed?: boolean;
 }
 
 export interface SurvivorStandings {
@@ -287,7 +314,20 @@ export interface SurvivorStandings {
   revealed_weeks: number[];
   rows: SurvivorStandingRow[];
   winners: string[] | null;
-  // Absent once every date has been settled, which is a pool that is over —
-  // and absent from a backend older than the locked marker.
-  current_date?: CurrentDateClock | null;
+  /*
+  The revealed dates still waiting to be settled, in week order.
+
+  Empty once every revealed date has been settled, and empty for a pool that is
+  over. Everything a column of the grid shows beyond the pick itself comes from
+  here — read through `dateClocks`, which is also what reads the single
+  `current_date` a backend older than this sent in its place.
+  */
+  date_clocks?: DateClock[];
+  /*
+  What `date_clocks` replaced: one clock, for the first unsettled date.
+
+  Still read, so a frontend deployed ahead of the backend keeps marking the
+  picks that can no longer move. Nothing but `dateClocks` should look at it.
+  */
+  current_date?: DateClock | null;
 }

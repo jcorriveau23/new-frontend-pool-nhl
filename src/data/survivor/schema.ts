@@ -124,6 +124,14 @@ export const survivorPickOptionsSchema = z.looseObject({
   can_pick: z.boolean(),
 });
 
+const dateClockSchema = z.looseObject({
+  week: z.number(),
+  started_team_ids: z.array(z.number()),
+  won_team_ids: z.array(z.number()).optional(),
+  lost_team_ids: z.array(z.number()).optional(),
+  pick_window_closed: z.boolean().optional(),
+});
+
 export const survivorStandingsSchema = z.looseObject({
   pool_name: z.string(),
   status: z.enum(SurvivorState),
@@ -145,14 +153,16 @@ export const survivorStandingsSchema = z.looseObject({
     }),
   ),
   winners: z.array(z.string()).nullable(),
-  // Absent on a pool that is over, and on a backend older than the locked
-  // marker. Required of nothing but the two fields the grid reads.
-  current_date: z
-    .looseObject({
-      week: z.number(),
-      started_team_ids: z.array(z.number()),
-    })
-    .nullish(),
+  /*
+  A date's clock. Required of nothing but the week it is for and the teams in
+  play: the results and the deadline flag are both carried by a backend newer
+  than the rule, and a clock missing them reads as a date that has decided
+  nothing — which is how the grid behaved before it showed results at all.
+  */
+  date_clocks: z.array(dateClockSchema).optional(),
+  // The single clock `date_clocks` replaced, still accepted so a frontend
+  // deployed ahead of the backend keeps marking locked picks.
+  current_date: dateClockSchema.nullish(),
 });
 
 /*

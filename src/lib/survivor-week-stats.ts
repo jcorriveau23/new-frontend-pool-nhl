@@ -12,6 +12,7 @@ rendering is not. The chart decides nothing about who was in the field.
 */
 
 import {
+  DateClock,
   ParticipantStatus,
   PickOutcome,
   SurvivorStandingRow,
@@ -66,23 +67,44 @@ function wasInTheField(row: SurvivorStandingRow, week: number): boolean {
 }
 
 /*
-The outcome to show for a team, given every pick that backed it.
+The outcome to show for a team, given every pick that backed it and the date's
+own clock.
 
-They agree in practice — settling a date writes one result per team across all
-of its picks — so this only has to decide what to show in the window between a
-date being revealed and being settled. A decided outcome wins over `Pending`,
-so a half-written settlement reads as the result rather than as unsettled.
+The picks agree with each other in practice — settling a date writes one result
+per team across all of its picks — so what this really decides is what to show
+before the settlement has run. In order: a recorded outcome wins, so a
+half-written settlement reads as the result rather than as unsettled; then the
+clock, which is the league's own answer for a game that is over on a date
+nobody has settled; and `Pending` only when neither has anything to say.
+
+The clock half is why this takes one at all. Without it the dialog would say
+"not settled" about every team on a date whose results the grid behind it is
+already showing — the same screen contradicting itself.
 */
-function outcomeOf(picks: PickOutcome[]): PickOutcome {
-  return (
-    picks.find((outcome) => outcome !== PickOutcome.Pending) ??
-    PickOutcome.Pending
-  );
+function outcomeOf(
+  picks: PickOutcome[],
+  teamId: number,
+  clock: DateClock | null,
+): PickOutcome {
+  const recorded = picks.find((outcome) => outcome !== PickOutcome.Pending);
+  if (recorded !== undefined) {
+    return recorded;
+  }
+  if (clock?.won_team_ids?.includes(teamId)) {
+    return PickOutcome.Won;
+  }
+  if (clock?.lost_team_ids?.includes(teamId)) {
+    return PickOutcome.Lost;
+  }
+  return PickOutcome.Pending;
 }
 
 export function survivorWeekStats(
   rows: SurvivorStandingRow[],
   week: number,
+  // The date's clock, when it is one still waiting to be settled. Null for a
+  // settled date, whose picks carry their own outcome.
+  clock: DateClock | null = null,
 ): SurvivorWeekStats {
   const field = rows.filter((row) => wasInTheField(row, week));
 
@@ -111,7 +133,7 @@ export function survivorWeekStats(
       teamId,
       count: outcomes.length,
       share: outcomes.length / picks.length,
-      outcome: outcomeOf(outcomes),
+      outcome: outcomeOf(outcomes, teamId, clock),
     }))
     // Most picked first — the popularity story is what the chart is for. Ties
     // break on the team id so the bars keep their order between renders

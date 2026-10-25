@@ -13,7 +13,7 @@ reasons a tile cannot be tapped at the same time.
 */
 
 import * as React from "react";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -88,12 +88,25 @@ const POOL = {
 
 const skeletons = () => document.querySelectorAll('[data-slot="skeleton"]');
 
-function renderTab() {
-  return render(<PickTab pool={POOL} week={WEEK} participant={PARTICIPANT} />);
+const onPickFiled = vi.fn();
+
+function renderTab({
+  pool,
+  participant,
+}: { pool?: SurvivorPool; participant?: SurvivorUser | null } = {}) {
+  return render(
+    <PickTab
+      pool={pool ?? POOL}
+      week={WEEK}
+      participant={participant === undefined ? PARTICIPANT : participant}
+      onPickFiled={onPickFiled}
+    />,
+  );
 }
 
 beforeEach(() => {
   fetchPickOptions.mockReset();
+  onPickFiled.mockReset();
   session.info = { jwt: "" };
   session.isResolved = false;
 });
@@ -320,5 +333,106 @@ describe("PickTab deadline", () => {
     ).not.toBeInTheDocument();
     expect(closedTile("SurvivorTeamStartedLabel")).toBeNull();
     expect(screen.getByRole("button", { name: OPEN_TEAM_NAME })).toBeEnabled();
+  });
+});
+
+describe("PickTab, keeping up with the pool", () => {
+  /*
+  Joining from this page.
+
+  Somebody who was not a participant when the screen loaded had their pick
+  request refused, so the grid said they were not in the pool. Joining changes
+  the pool document, and before this the screen kept the refusal until a
+  reload.
+  */
+  it("loads again when the pool document has changed", async () => {
+    session.info = { jwt: "a-jwt" };
+    session.isResolved = true;
+    fetchPickOptions.mockResolvedValue({
+      ok: false,
+      error: "not a participant",
+    });
+
+    const { rerender } = render(
+      <PickTab
+        pool={POOL}
+        week={WEEK}
+        participant={null}
+        onPickFiled={onPickFiled}
+      />,
+    );
+
+    await waitFor(() => expect(fetchPickOptions).toHaveBeenCalledTimes(1));
+
+    // The pool as it comes back from the join: a new version stamp, and the
+    // caller is in it now.
+    const joined = {
+      ...POOL,
+      date_updated: POOL.date_updated + 1,
+      participants: [...POOL.participants, PARTICIPANT],
+    };
+    fetchPickOptions.mockResolvedValue({
+      ok: true,
+      data: {
+        week: WEEK.week,
+        pick_date: WEEK.pick_date,
+        eligible_team_ids: [10],
+        available_team_ids: [10],
+        used_team_ids: [],
+        started_team_ids: [],
+        current_pick: null,
+        is_blocked: false,
+        can_pick: true,
+      },
+    });
+
+    rerender(
+      <PickTab
+        pool={joined}
+        week={WEEK}
+        participant={PARTICIPANT}
+        onPickFiled={onPickFiled}
+      />,
+    );
+
+    await waitFor(() => expect(fetchPickOptions).toHaveBeenCalledTimes(2));
+  });
+
+  it("does not load again when the user resolves under it", async () => {
+    /*
+    The other half of the rule, and the reason this depends on the version
+    stamp rather than on the participant: `participant` turns from null into
+    somebody a moment after mount, on every visit, and reloading for that
+    would cost a second request for an answer that has not changed.
+    */
+    session.info = { jwt: "a-jwt" };
+    session.isResolved = true;
+    fetchPickOptions.mockResolvedValue({
+      ok: false,
+      error: "not a participant",
+    });
+
+    const { rerender } = render(
+      <PickTab
+        pool={POOL}
+        week={WEEK}
+        participant={null}
+        onPickFiled={onPickFiled}
+      />,
+    );
+
+    await waitFor(() => expect(fetchPickOptions).toHaveBeenCalledTimes(1));
+
+    rerender(
+      <PickTab
+        pool={POOL}
+        week={WEEK}
+        participant={PARTICIPANT}
+        onPickFiled={onPickFiled}
+      />,
+    );
+
+    await act(async () => {});
+    expect(fetchPickOptions).toHaveBeenCalledTimes(1);
   });
 });
