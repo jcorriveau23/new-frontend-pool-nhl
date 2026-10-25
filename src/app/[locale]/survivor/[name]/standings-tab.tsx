@@ -24,10 +24,19 @@ deadline already passed.
 */
 
 import * as React from "react";
-import { ChartColumnBig, Lock, Skull, Trophy } from "lucide-react";
+import {
+  ChartColumnBig,
+  Crosshair,
+  Lock,
+  Search,
+  Skull,
+  Trophy,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -54,16 +63,18 @@ import {
   WeekStatus,
 } from "@/data/survivor/model";
 import {
-  PICK_OUTCOME_LABEL_KEY,
   PickCellState,
   arePicksRevealed,
   clockForWeek,
   currentWeek,
   dateClocks,
   pickCellState,
+  pickCellStateLabelKey,
   revealedWeeksUpTo,
+  rowsMatching,
   weekByNumber,
 } from "@/lib/survivor";
+import ParticipantHistoryDialog from "./participant-history-dialog";
 import WeekStatsDialog from "./week-stats-dialog";
 
 interface Props {
@@ -72,10 +83,36 @@ interface Props {
   // The date in view, shared with the pick screen. The grid stops there, so
   // reading back through the season is a matter of moving the selector.
   selectedWeek: number | null;
+  /*
+  The caller's own spot, when they have one.
+
+  Marks their row and is what "find me" scrolls to. A pool built for hundreds
+  of people sorts the field by how it is doing, which puts the person reading
+  it wherever they happen to be — and on a phone that is a column of names they
+  have to scroll looking for themselves.
+  */
+  ownParticipantId?: string | null;
 }
 
 const NAME_CELL = "sticky left-0 z-[1] max-w-[40vw] sm:max-w-xs";
 const NAME_CELL_BG = "bg-background group-hover:bg-muted/50";
+/*
+The same, for the caller's own row.
+
+The name column is sticky, so it paints its own background over the cells
+scrolling beneath it — which means the row's tint has to be repeated here or it
+would stop at the first column.
+*/
+const NAME_CELL_BG_OWN = "bg-primary/5 group-hover:bg-muted/50";
+
+/*
+How many rows before the grid offers a search box and a jump.
+
+A pool of a few friends is read in one glance and the controls would be
+furniture over it; a pool of two hundred is the case they exist for. Twelve is
+about where a phone stops showing the whole field at once.
+*/
+const SEARCHABLE_FROM = 12;
 
 // How a settled outcome reads in a cell. A date still to be settled and a game
 // that never produced a result are both "nothing came of it", and are kept
@@ -119,21 +156,6 @@ reader may not have, so whatever the cell shows is also in the label and the
 tooltip. A provisional result says both halves — what happened, and that it has
 not been counted yet.
 */
-const cellStateKey = (state: PickCellState): string => {
-  switch (state.kind) {
-    case "settled":
-      return PICK_OUTCOME_LABEL_KEY[state.outcome];
-    case "provisional":
-      return state.outcome === PickOutcome.Won
-        ? "SurvivorPickWonUnsettled"
-        : "SurvivorPickLostUnsettled";
-    case "locked":
-      return "SurvivorPickLocked";
-    default:
-      return "SurvivorPickStillOpen";
-  }
-};
-
 function PickCell({
   row,
   week,
@@ -167,7 +189,7 @@ function PickCell({
   padlock there would read as the only thing worth knowing about it.
   */
   const state = pickCellState(pick, week, clocks);
-  const stateLabel = t(cellStateKey(state));
+  const stateLabel = t(pickCellStateLabelKey(state));
 
   return (
     <TableCell className={cn("text-center", cellStyle(state))}>
@@ -193,10 +215,26 @@ function PickCell({
 }
 
 export default function StandingsTab(props: Props) {
-  const { pool, standings, selectedWeek } = props;
+  const { pool, standings, selectedWeek, ownParticipantId } = props;
   const t = useTranslations();
+  const [search, setSearch] = React.useState("");
+  /*
+  The caller's own row, for the jump.
+
+  A ref on the row rather than an id and a `getElementById`: the grid is
+  rendered more than once on a page with two pools open in the same tab, and an
+  id would be shared between them.
+  */
+  const ownRow = React.useRef<HTMLTableRowElement | null>(null);
+
+  const jumpToMe = () => {
+    ownRow.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  };
 
   const winners = new Set(standings.winners ?? []);
+  // Filtered, never reordered: the backend sorted the field by how it is doing
+  // and a search that resorted it would lose the one thing the board is for.
+  const visibleRows = rowsMatching(standings.rows, search);
   const columns = revealedWeeksUpTo(standings.revealed_weeks, selectedWeek);
   // One clock per revealed date still waiting to be settled, which is what
   // every column reads itself against.
@@ -309,6 +347,43 @@ export default function StandingsTab(props: Props) {
         </p>
       ) : null}
 
+      {/*
+      Finding yourself, and finding anybody else.
+
+      Only once the pool is big enough for it to be a question — a pool of six
+      friends is read in one glance, and a search box over it is furniture. The
+      jump is a separate control from the box because they answer different
+      questions: "where am I" needs no typing.
+      */}
+      {standings.rows.length > SEARCHABLE_FROM ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-0 flex-1 sm:max-w-xs">
+            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t("SurvivorFindParticipant")}
+              aria-label={t("SurvivorFindParticipant")}
+              className="pl-8"
+            />
+          </div>
+          {ownParticipantId ? (
+            <Button variant="outline" size="sm" onClick={jumpToMe}>
+              <Crosshair className="size-4" />
+              {t("SurvivorJumpToMe")}
+            </Button>
+          ) : null}
+          {search.trim().length > 0 ? (
+            <span className="text-muted-foreground text-sm">
+              {t("SurvivorFindCount", {
+                count: visibleRows.length,
+                total: standings.rows.length,
+              })}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -355,30 +430,68 @@ export default function StandingsTab(props: Props) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {standings.rows.map((row) => {
+          {visibleRows.map((row) => {
             const isOut = row.status === ParticipantStatus.Eliminated;
+            const isMe = row.participant_id === ownParticipantId;
             return (
               <TableRow
                 key={row.participant_id}
-                className={cn("group", isOut && "text-muted-foreground")}
+                ref={isMe ? ownRow : undefined}
+                className={cn(
+                  "group",
+                  isOut && "text-muted-foreground",
+                  // Your own row, marked down the whole of it rather than
+                  // beside your name: the name column is sticky and the rest
+                  // scrolls under it, so a marker on the name alone is lost
+                  // the moment somebody reads across the season.
+                  isMe && "bg-primary/5",
+                )}
               >
                 <TableCell
-                  className={cn(NAME_CELL, NAME_CELL_BG, "font-medium")}
+                  className={cn(
+                    NAME_CELL,
+                    isMe ? NAME_CELL_BG_OWN : NAME_CELL_BG,
+                    "font-medium",
+                  )}
                 >
-                  <span className="flex items-center gap-1.5">
-                    {winners.has(row.participant_id) ? (
-                      <Trophy className="size-4 shrink-0 text-amber-500" />
-                    ) : null}
-                    {isOut ? <Skull className="size-3.5 shrink-0" /> : null}
-                    <span className="min-w-0 truncate">{row.name}</span>
-                    {isOut && row.eliminated_week !== null ? (
-                      <span className="shrink-0 text-xs whitespace-nowrap">
-                        {t("SurvivorOutInWeek", {
-                          week: row.eliminated_week,
-                        })}
-                      </span>
-                    ) : null}
-                  </span>
+                  {/*
+                  The name opens that participant's season.
+
+                  A button rather than a link: it is a dialog over the same
+                  page, and everything it shows is already in the payload the
+                  grid was rendered from.
+                  */}
+                  <ParticipantHistoryDialog
+                    pool={pool}
+                    row={row}
+                    revealedWeeks={columns}
+                    clocks={clocks}
+                    trigger={
+                      <button
+                        type="button"
+                        aria-label={t("SurvivorHistoryFor", { name: row.name })}
+                        className="focus-visible:ring-ring -mx-1 flex min-w-0 max-w-full cursor-pointer items-center gap-1.5 rounded px-1 text-left hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                      >
+                        {winners.has(row.participant_id) ? (
+                          <Trophy className="size-4 shrink-0 text-amber-500" />
+                        ) : null}
+                        {isOut ? <Skull className="size-3.5 shrink-0" /> : null}
+                        <span className="min-w-0 truncate">{row.name}</span>
+                        {isMe ? (
+                          <span className="text-primary shrink-0 text-xs whitespace-nowrap">
+                            {t("SurvivorYouMarker")}
+                          </span>
+                        ) : null}
+                        {isOut && row.eliminated_week !== null ? (
+                          <span className="shrink-0 text-xs whitespace-nowrap">
+                            {t("SurvivorOutInWeek", {
+                              week: row.eliminated_week,
+                            })}
+                          </span>
+                        ) : null}
+                      </button>
+                    }
+                  />
                 </TableCell>
                 {pool.settings.strikes_allowed > 0 ? (
                   <TableCell className="text-center">{row.strikes}</TableCell>

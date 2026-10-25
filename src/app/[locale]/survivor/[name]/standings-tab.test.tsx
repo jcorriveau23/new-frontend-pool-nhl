@@ -13,6 +13,7 @@ Recharts behind a lazy import.
 
 import * as React from "react";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -28,6 +29,10 @@ import {
 import StandingsTab from "./standings-tab";
 
 vi.mock("./week-stats-dialog", () => ({
+  default: ({ trigger }: { trigger: React.ReactElement }) => trigger,
+}));
+
+vi.mock("./participant-history-dialog", () => ({
   default: ({ trigger }: { trigger: React.ReactElement }) => trigger,
 }));
 
@@ -244,6 +249,85 @@ describe("StandingsTab, a date played but not settled", () => {
 
     expect(
       screen.getByLabelText("Toronto Maple Leafs — SurvivorOutcomeLost"),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("StandingsTab, finding somebody", () => {
+  // A field big enough for the controls to be worth showing: under the
+  // threshold the grid is read in one glance and a search box is furniture.
+  const CROWD: SurvivorStandings = {
+    ...STANDINGS,
+    rows: Array.from({ length: 14 }, (_, index) =>
+      index === 3
+        ? { ...row("me", {}), name: "Jean-François" }
+        : row(`p${index}`, {}),
+    ),
+  };
+
+  const renderCrowd = (ownParticipantId?: string) =>
+    render(
+      <StandingsTab
+        pool={POOL}
+        standings={CROWD}
+        selectedWeek={2}
+        ownParticipantId={ownParticipantId ?? null}
+      />,
+    );
+
+  it("offers no search box for a pool read in one glance", () => {
+    renderTab();
+
+    expect(
+      screen.queryByLabelText("SurvivorFindParticipant"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("filters the rows to what was typed", async () => {
+    renderCrowd();
+
+    await userEvent.type(
+      screen.getByLabelText("SurvivorFindParticipant"),
+      "jean",
+    );
+
+    expect(screen.getByText("Jean-François")).toBeInTheDocument();
+    expect(screen.queryByText("p0")).not.toBeInTheDocument();
+    // And says how much of the field is left, so a search that matched one
+    // person does not read as a pool of one.
+    expect(
+      screen.getByText('SurvivorFindCount:{"count":1,"total":14}'),
+    ).toBeInTheDocument();
+  });
+
+  it("marks the caller's own row and offers to find it", () => {
+    renderCrowd("me");
+
+    expect(screen.getByText("SurvivorYouMarker")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /SurvivorJumpToMe/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers no jump to somebody who is not in the pool", () => {
+    // Nothing to jump to, so the control would do nothing.
+    renderCrowd();
+
+    expect(
+      screen.queryByRole("button", { name: /SurvivorJumpToMe/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("SurvivorYouMarker")).not.toBeInTheDocument();
+  });
+
+  it("opens a participant's season from their name", () => {
+    // The trigger is what the mocked dialog renders, so this asserts the grid
+    // hands every name one.
+    renderTab();
+
+    expect(
+      screen.getByRole("button", {
+        name: 'SurvivorHistoryFor:{"name":"locked-pick"}',
+      }),
     ).toBeInTheDocument();
   });
 });

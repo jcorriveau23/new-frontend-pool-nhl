@@ -21,13 +21,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DateClock,
   ParticipantStatus,
+  PickOutcome,
+  SurvivorPickView,
   SurvivorPool,
   SurvivorState,
   SurvivorStandings,
   SurvivorUser,
   WeekStatus,
 } from "@/data/survivor/model";
-import { fetchSurvivorStandings } from "@/lib/survivor-api";
+import { fetchMyPicks, fetchSurvivorStandings } from "@/lib/survivor-api";
 import { routerMock } from "../../../../../vitest.setup";
 import SurvivorPoolPage from "./survivor-pool";
 
@@ -52,6 +54,7 @@ vi.mock("@/context/useSessionData", () => ({
 
 vi.mock("@/lib/survivor-api", () => ({
   fetchSurvivorStandings: vi.fn(),
+  fetchMyPicks: vi.fn(),
   joinSurvivorPool: vi.fn(),
 }));
 
@@ -76,6 +79,11 @@ const answerWith = (date_clocks: DateClock[] = []) =>
   vi
     .mocked(fetchSurvivorStandings)
     .mockResolvedValue({ ok: true, data: standings(date_clocks) });
+
+// The caller's own picks, which is how the page knows whether they still owe
+// one. Empty is somebody who has not picked for the date being played.
+const myPicks = (picks: SurvivorPickView[] = []) =>
+  vi.mocked(fetchMyPicks).mockResolvedValue({ ok: true, data: picks });
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
@@ -140,7 +148,17 @@ beforeEach(() => {
   userId = "owner";
   routerMock.replace.mockReset();
   vi.mocked(fetchSurvivorStandings).mockReset();
+  vi.mocked(fetchMyPicks).mockReset();
   answerWith();
+  // A pick already on file, so the nudge is off unless a test asks for it.
+  myPicks([
+    {
+      participant_id: "owner",
+      week: 1,
+      team_id: 10,
+      outcome: PickOutcome.Pending,
+    },
+  ]);
 });
 
 afterEach(() => {
@@ -340,5 +358,91 @@ describe("SurvivorPoolPage, keeping the standings current", () => {
     await waitFor(() =>
       expect(fetchSurvivorStandings).toHaveBeenCalledTimes(2),
     );
+  });
+});
+
+describe("SurvivorPoolPage, what it tells the person reading it", () => {
+  it("marks the pick tab when they still owe a pick for the date being played", async () => {
+    /*
+    The one nudge the app has. Missing a date is what eliminates most people in
+    a survivor pool, and nothing anywhere said so unless you opened the screen
+    and read the grid.
+    */
+    myPicks([]);
+
+    render(<SurvivorPoolPage pool={POOL} />);
+
+    expect(
+      await screen.findByLabelText("SurvivorYouHaveNotPicked"),
+    ).toBeInTheDocument();
+  });
+
+  it("says nothing once the pick is in", async () => {
+    render(<SurvivorPoolPage pool={POOL} />);
+    await waitFor(() => expect(fetchMyPicks).toHaveBeenCalled());
+
+    expect(
+      screen.queryByLabelText("SurvivorYouHaveNotPicked"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("says nothing to somebody who is not in the pool", async () => {
+    // No spot, nothing owed. The badge is about you, so a visitor reading a
+    // pool they are not in is nudged about nothing.
+    userId = "a-visitor";
+    myPicks([]);
+
+    render(<SurvivorPoolPage pool={POOL} />);
+    await act(async () => {});
+
+    expect(
+      screen.queryByLabelText("SurvivorYouHaveNotPicked"),
+    ).not.toBeInTheDocument();
+    expect(fetchMyPicks).not.toHaveBeenCalled();
+  });
+
+  it("tells somebody who has been eliminated, and what did it", async () => {
+    // Previously a skull in the standings, seen next time they happened to
+    // look. The team is named because "which pick did it" is the first thing
+    // anybody asks.
+    const out: SurvivorPool = {
+      ...POOL,
+      participants: [
+        {
+          ...OWNER,
+          status: ParticipantStatus.Eliminated,
+          eliminated_week: 1,
+        },
+      ],
+    };
+    vi.mocked(fetchSurvivorStandings).mockResolvedValue({
+      ok: true,
+      data: {
+        ...standings(),
+        revealed_weeks: [1],
+        rows: [
+          {
+            participant_id: "owner",
+            name: "jf",
+            status: ParticipantStatus.Eliminated,
+            strikes: 0,
+            eliminated_week: 1,
+            wins: 0,
+            picks: { "1": { team_id: 10, outcome: PickOutcome.Lost } },
+          },
+        ],
+      },
+    });
+
+    render(<SurvivorPoolPage pool={out} />);
+
+    expect(
+      await screen.findByText('SurvivorYouWereEliminated:{"week":1}'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/SurvivorYouWereEliminatedBy/)).toBeInTheDocument();
+    // And no nudge: there is nothing left for them to pick.
+    expect(
+      screen.queryByLabelText("SurvivorYouHaveNotPicked"),
+    ).not.toBeInTheDocument();
   });
 });

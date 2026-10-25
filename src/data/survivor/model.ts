@@ -211,6 +211,11 @@ export interface SurvivorPickOptions {
   // True when nothing is open to them, in which case the date costs them
   // nothing. The used-team rule only: having let the deadline pass is not the
   // same as having had nothing to pick, and only the second is forgiven.
+  /*
+  How many of the league's teams are still open to this participant in the pass
+  through it they are on.
+  */
+  teams_left_in_cycle?: number;
   is_blocked: boolean;
   can_pick: boolean;
   /*

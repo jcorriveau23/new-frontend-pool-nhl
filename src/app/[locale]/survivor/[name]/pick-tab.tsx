@@ -446,20 +446,12 @@ export default function PickTab(props: Props) {
       }
       setOptions(res.data);
     },
-    [
-      jwt,
-      isSessionResolved,
-      pool.name,
-      pool.date_updated,
-      week.week,
-      pickingFor,
-      t,
-    ],
+    [jwt, isSessionResolved, pool.name, week.week, pickingFor, t],
   );
 
   React.useEffect(() => {
     void loadOptions();
-  }, [loadOptions]);
+  }, [loadOptions, pool.date_updated]);
 
   /*
   Keep a date with a game on it up to date.
@@ -667,6 +659,17 @@ export default function PickTab(props: Props) {
             })}
           </Badge>
         ) : null}
+        {options.teams_left_in_cycle === undefined ? null : (
+          <Badge
+            variant={
+              options.teams_left_in_cycle <= 5 ? "destructive" : "outline"
+            }
+          >
+            {t("SurvivorTeamsLeftInCycle", {
+              count: options.teams_left_in_cycle,
+            })}
+          </Badge>
+        )}
         <span className="text-muted-foreground ml-auto text-sm">
           {t("SurvivorTeamsLeft", {
             count: options.eligible_team_ids.length - used.length,

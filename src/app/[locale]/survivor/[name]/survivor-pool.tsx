@@ -14,7 +14,13 @@ what keeps a reload on the page you were reading.
 */
 
 import * as React from "react";
-import { CalendarCheck, ListOrdered, Settings2, Trophy } from "lucide-react";
+import {
+  CalendarCheck,
+  ListOrdered,
+  Settings2,
+  Skull,
+  Trophy,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -34,6 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import PageTitle from "@/components/page-title";
+import team_info from "@/lib/teams";
 import FavoritePoolButton from "@/components/favorite-pool-button";
 import SharePoolButton from "@/components/share-pool-button";
 import ExportButton from "@/components/export-button";
@@ -42,6 +49,7 @@ import { usePathname, useRouter } from "@/i18n/routing";
 import { useSession } from "@/context/useSessionData";
 import { useUser } from "@/context/useUserData";
 import {
+  SurvivorPickView,
   SurvivorPool,
   SurvivorStandings,
   SurvivorState,
@@ -50,15 +58,21 @@ import {
   canJoin,
   dateClocks,
   defaultWeek,
+  eliminationNotice,
   hasDateInPlay,
   hasSurvivorPrivilege,
+  owesAPick,
   participantOf,
   spotsLeft,
   weekByNumber,
   weekOptions,
 } from "@/lib/survivor";
 import { buildSurvivorExport } from "@/lib/survivor-export";
-import { fetchSurvivorStandings, joinSurvivorPool } from "@/lib/survivor-api";
+import {
+  fetchMyPicks,
+  fetchSurvivorStandings,
+  joinSurvivorPool,
+} from "@/lib/survivor-api";
 import AdminTab from "./admin-tab";
 import PickTab from "./pick-tab";
 import StandingsTab from "./standings-tab";
@@ -157,6 +171,7 @@ export default function SurvivorPoolPage(props: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const userData = useUser();
+  const userSession = useSession();
   const [pool, setPool] = React.useState<SurvivorPool>(props.pool);
   const [standings, setStandings] = React.useState<SurvivorStandings | null>(
     null,
@@ -164,10 +179,22 @@ export default function SurvivorPoolPage(props: Props) {
   const [selectedWeek, setSelectedWeek] = React.useState<number | null>(
     defaultWeek(props.pool)?.week ?? null,
   );
+  /*
+  The caller's own picks across the season, which is how the page knows whether
+  they still owe one for the date being played.
+
+  Null until they are in, so the badge below says nothing rather than
+  flickering onto the tab on every page load before the answer arrives.
+  */
+  const [myPicks, setMyPicks] = React.useState<SurvivorPickView[] | null>(null);
 
   const userId = userData.info?.id;
   const participant = participantOf(pool, userId);
   const canAdminister = hasSurvivorPrivilege(pool, userId);
+  const jwt = userSession.info?.jwt;
+  // Read as a boolean rather than through `participant`, so the load below
+  // re-runs when the caller joins and not every time the object identity moves.
+  const isParticipating = participant !== null;
 
   /*
   The open tab, read straight off the URL rather than mirrored into state:
@@ -263,11 +290,35 @@ export default function SurvivorPoolPage(props: Props) {
     return () => clearInterval(timer);
   }, [watchingDateInPlay, loadStandings]);
 
+  /*
+  The caller's own picks.
+
+  Authenticated and per participant, so it only runs for somebody signed in and
+  in the pool. A visitor, or somebody reading a pool they are not in, has no
+  pick to owe and is asked nothing.
+  */
+  const loadMyPicks = React.useCallback(async () => {
+    if (!jwt || !isParticipating) {
+      setMyPicks(null);
+      return;
+    }
+    const res = await fetchMyPicks(pool.name, jwt);
+    // Silent: this only decides whether a badge appears, and a toast about it
+    // would be the loudest thing on a page that loaded correctly.
+    setMyPicks(res.ok ? res.data : null);
+  }, [jwt, isParticipating, pool.name]);
+
+  React.useEffect(() => {
+    void loadMyPicks();
+  }, [loadMyPicks]);
+
   // A pool change that came from a mutation (a settlement, a join) moves the
-  // standings too, so they are refetched rather than left stale.
+  // standings too, so they are refetched rather than left stale. A join also
+  // makes the caller somebody who owes a pick.
   const applyPool = (updated: SurvivorPool) => {
     setPool(updated);
     void loadStandings();
+    void loadMyPicks();
   };
 
   const week = selectedWeek === null ? null : weekByNumber(pool, selectedWeek);
@@ -298,6 +349,22 @@ export default function SurvivorPoolPage(props: Props) {
     }
     return <Badge className={className}>{t("PoolInProgressState")}</Badge>;
   })();
+
+  /*
+  Whether to nudge the caller, and what to tell somebody who is out.
+
+  Both are about the person reading the page rather than about the pool, which
+  is why they sit above the tabs: the badge is on the tab strip because that is
+  where somebody looks before deciding whether to open the pick screen at all,
+  and the elimination notice is the one thing a participant would want said
+  plainly rather than inferred from a skull in a table.
+  */
+  const needsAPick = owesAPick({ pool, participant, myPicks });
+  const eliminated = eliminationNotice({
+    pool,
+    participant,
+    rows: standings?.rows ?? [],
+  });
 
   const winnerNames = (pool.winners ?? [])
     .map((id) => pool.participants.find((person) => person.id === id)?.name)
@@ -348,6 +415,33 @@ export default function SurvivorPoolPage(props: Props) {
         </Alert>
       ) : null}
 
+      {/*
+      Going out is the most consequential thing that happens to a participant,
+      and the only sign of it used to be a skull in the standings next time
+      they happened to look. The team is named when the date's picks are in the
+      payload, since "which pick did it" is the first thing anybody asks.
+      */}
+      {eliminated !== null ? (
+        <Alert variant="destructive" className="mb-4 text-left">
+          <Skull className="size-4" />
+          <AlertTitle>
+            {t("SurvivorYouWereEliminated", { week: eliminated.week })}
+          </AlertTitle>
+          <AlertDescription>
+            {eliminated.teamId === null
+              ? t("SurvivorYouWereEliminatedOnDate", {
+                  date: eliminated.pickDate ?? "",
+                })
+              : t("SurvivorYouWereEliminatedBy", {
+                  team:
+                    team_info[eliminated.teamId]?.fullName ??
+                    `#${eliminated.teamId}`,
+                  date: eliminated.pickDate ?? "",
+                })}
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       <SurvivorParticipantLinkInvitation pool={pool} onPoolChange={setPool} />
 
       {canJoin(pool, userId) ? (
@@ -367,6 +461,24 @@ export default function SurvivorPoolPage(props: Props) {
               <TabsTrigger value={SurvivorTab.PICK}>
                 <CalendarCheck className="size-4" />
                 {t("SurvivorPickTab")}
+                {/*
+                You have not picked for the date being played.
+
+                The one nudge the app has. Missing a date is what eliminates
+                most people in a survivor pool — more than a bad pick — and
+                until this there was nothing anywhere that said so unless you
+                opened the screen and read the grid. A dot rather than a count,
+                because there is only ever one date to answer for, and
+                labelled for anybody who cannot see it.
+                */}
+                {needsAPick ? (
+                  <span
+                    role="status"
+                    aria-label={t("SurvivorYouHaveNotPicked")}
+                    title={t("SurvivorYouHaveNotPicked")}
+                    className="bg-destructive ml-0.5 size-2 shrink-0 rounded-full"
+                  />
+                ) : null}
               </TabsTrigger>
               <TabsTrigger value={SurvivorTab.STANDINGS}>
                 <ListOrdered className="size-4" />
@@ -426,6 +538,7 @@ export default function SurvivorPoolPage(props: Props) {
               pool={pool}
               standings={standings}
               selectedWeek={selectedWeek}
+              ownParticipantId={participant?.id ?? null}
             />
           )}
         </TabsContent>
