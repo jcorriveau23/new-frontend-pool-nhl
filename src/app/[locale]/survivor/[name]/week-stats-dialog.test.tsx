@@ -15,6 +15,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  DateClock,
   ParticipantStatus,
   PickOutcome,
   RevealedPick,
@@ -64,16 +65,35 @@ const SETTLED_WEEK = [
   row("d", {}),
 ];
 
-const open = async (rows: SurvivorStandingRow[]) => {
+const open = async (
+  rows: SurvivorStandingRow[],
+  // The date's clock, for a date still waiting to be settled. Null is the
+  // settled date every test below but the last two reads.
+  clock: DateClock | null = null,
+) => {
   render(
     <WeekStatsDialog
       week={1}
       pickDate="2026-10-17"
       rows={rows}
+      clock={clock}
       trigger={<button type="button">week 1</button>}
     />,
   );
   await userEvent.click(screen.getByRole("button", { name: "week 1" }));
+};
+
+/*
+Switch to the table and hand it back.
+
+Scoped reads go through it because the legend above carries the same outcome
+words, so an unscoped `getByText` would match either.
+*/
+const openTable = async () => {
+  await userEvent.click(
+    screen.getByRole("button", { name: /SurvivorWeekShowTable/ }),
+  );
+  return screen.getByRole("table");
 };
 
 describe("WeekStatsDialog", () => {
@@ -138,9 +158,11 @@ describe("WeekStatsDialog", () => {
     expect(leafsRow).toHaveTextContent("SurvivorOutcomeWon");
   });
 
-  it("reads a revealed date that is not settled yet as pending", async () => {
-    // The window between the last puck drop and the owner settling, where the
-    // chart is pure distribution and nothing has a result.
+  it("reads a date nothing has reported a result for as pending", async () => {
+    // No clock: a date whose games the league's feed could not be read for, or
+    // a backend older than the results. The chart is pure distribution and
+    // nothing has an outcome — which is how every unsettled date read before
+    // the clock carried one.
     await open([row("a", { "1": pick(10) }), row("b", { "1": pick(8) })]);
 
     expect(screen.getByText("SurvivorOutcomePending")).toBeInTheDocument();
@@ -167,6 +189,66 @@ describe("WeekStatsDialog", () => {
     expect(screen.getByText("0/2")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /SurvivorWeekShowTable/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  /*
+  A date whose games are over and whose settlement has not run.
+
+  Every pick is still `Pending` — the settlement is what writes an outcome — so
+  without the clock the dialog would name every team "not settled" while the
+  grid it opens over shows who won.
+  */
+  const UNSETTLED_WEEK = [
+    row("a", { "1": pick(10) }),
+    row("b", { "1": pick(10) }),
+    row("c", { "1": pick(8) }),
+  ];
+
+  const DECIDED: DateClock = {
+    week: 1,
+    started_team_ids: [8, 10],
+    won_team_ids: [10],
+    lost_team_ids: [8],
+    pick_window_closed: true,
+  };
+
+  it("names what the games did on a date nobody has settled", async () => {
+    await open(UNSETTLED_WEEK, DECIDED);
+
+    const table = await openTable();
+    expect(within(table).getByText("SurvivorOutcomeWon")).toBeInTheDocument();
+    expect(within(table).getByText("SurvivorOutcomeLost")).toBeInTheDocument();
+    expect(
+      within(table).queryByText("SurvivorOutcomePending"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("says those results have not been counted yet", async () => {
+    // The eliminated tile beside them reads nought, and correctly: nothing is
+    // applied until the date is settled.
+    await open(UNSETTLED_WEEK, DECIDED);
+
+    expect(
+      screen.getByText('SurvivorWeekResultsNotSettled:{"week":1}'),
+    ).toBeInTheDocument();
+    const eliminated = screen.getByText("SurvivorWeekEliminated").parentElement;
+    expect(eliminated).toHaveTextContent("0");
+  });
+
+  it("says nothing about results a date has not produced", async () => {
+    // Mid-afternoon: the picks are public, no game is over, and there is
+    // nothing to explain away.
+    await open(UNSETTLED_WEEK, {
+      week: 1,
+      started_team_ids: [10],
+      won_team_ids: [],
+      lost_team_ids: [],
+      pick_window_closed: false,
+    });
+
+    expect(
+      screen.queryByText(/SurvivorWeekResultsNotSettled/),
     ).not.toBeInTheDocument();
   });
 });

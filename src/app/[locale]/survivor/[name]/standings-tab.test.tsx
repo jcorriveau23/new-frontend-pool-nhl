@@ -1,11 +1,11 @@
 /*
-What the standings grid says about the date being played.
+What the standings grid says about a date that is still waiting to be settled.
 
-A date reveals its picks at its first puck drop and keeps taking them until its
-last, so for one column the grid holds both at once: picks that can no longer
-move and picks their owner is still free to change. Telling those apart is most
-of what the reveal is worth before the games are over, and it is the only thing
-in the grid that is not simply "what they picked".
+Such a date holds three things at once, and saying which is which is the only
+part of the grid that is not simply "what they picked": picks their owner is
+still free to change, picks that are in and undecided, and picks the games have
+already decided. The last of those arrives hours before anybody presses settle,
+and the column has to show the result without claiming it has been counted.
 
 The week's stats dialog is mocked out — it is covered in its own file and pulls
 Recharts behind a lazy import.
@@ -87,7 +87,30 @@ const STANDINGS: SurvivorStandings = {
     row("open-pick", { "2": { team_id: 6, outcome: PickOutcome.Pending } }),
   ],
   winners: null,
-  current_date: { week: 2, started_team_ids: [10] },
+  date_clocks: [
+    {
+      week: 2,
+      started_team_ids: [10],
+      won_team_ids: [],
+      lost_team_ids: [],
+      pick_window_closed: false,
+    },
+  ],
+};
+
+// The same date with its games over: Toronto won, Boston lost, and nobody has
+// settled it.
+const DECIDED: SurvivorStandings = {
+  ...STANDINGS,
+  date_clocks: [
+    {
+      week: 2,
+      started_team_ids: [6, 10],
+      won_team_ids: [10],
+      lost_team_ids: [6],
+      pick_window_closed: true,
+    },
+  ],
 };
 
 const renderTab = (standings: SurvivorStandings = STANDINGS) =>
@@ -129,7 +152,7 @@ describe("StandingsTab, mid-date", () => {
     renderTab({
       ...STANDINGS,
       revealed_weeks: [1],
-      current_date: { week: 2, started_team_ids: [] },
+      date_clocks: [{ week: 2, started_team_ids: [] }],
     });
 
     expect(
@@ -140,10 +163,87 @@ describe("StandingsTab, mid-date", () => {
 
   it("marks nothing on a backend that sends no clock", () => {
     // Calling a pick final before it is would be the wrong way to be wrong.
-    renderTab({ ...STANDINGS, current_date: null });
+    renderTab({ ...STANDINGS, date_clocks: [] });
 
     expect(
       screen.queryByLabelText(/SurvivorPickLocked/),
     ).not.toBeInTheDocument();
+  });
+
+  it("still reads the single clock an older backend sends", () => {
+    // The deploy window: the list is absent, and the one date it described is
+    // marked exactly as before.
+    renderTab({
+      ...STANDINGS,
+      date_clocks: undefined,
+      current_date: { week: 2, started_team_ids: [10] },
+    });
+
+    expect(
+      screen.getByLabelText("Toronto Maple Leafs — SurvivorPickLocked"),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("StandingsTab, a date played but not settled", () => {
+  it("shows who won and who lost", () => {
+    // The whole point: the games are over, so the grid says what happened
+    // instead of sitting on a column of picks until somebody presses settle.
+    renderTab(DECIDED);
+
+    expect(
+      screen.getByLabelText("Toronto Maple Leafs — SurvivorPickWonUnsettled"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Boston Bruins — SurvivorPickLostUnsettled"),
+    ).toBeInTheDocument();
+  });
+
+  it("says the results have not been counted yet", () => {
+    /*
+    Both halves of it. The colours would otherwise read as a board that has
+    been updated, while the wins column beside them still says zero — which is
+    correct, and inexplicable without this line.
+    */
+    renderTab(DECIDED);
+
+    expect(
+      screen.getByText('SurvivorWeekResultsNotSettled:{"week":2}'),
+    ).toBeInTheDocument();
+  });
+
+  it("stops calling the date under way once nothing is left to pick", () => {
+    // "The teams yet to play can still be picked" is false once every game
+    // has started, so that line gives way to the one above.
+    renderTab(DECIDED);
+
+    expect(screen.queryByText(/SurvivorWeekUnderWay/)).not.toBeInTheDocument();
+  });
+
+  it("puts no padlock on a pick its game has decided", () => {
+    // A decided pick is locked too, but the result is the thing worth saying
+    // about it — a padlock there reads as the only thing worth knowing.
+    renderTab(DECIDED);
+
+    expect(
+      screen.queryByLabelText(/SurvivorPickLocked/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("leaves a pick the settlement has already recorded alone", () => {
+    // What a pick cost is decided once. A feed that has since changed its mind
+    // does not get to rewrite a settled cell.
+    renderTab({
+      ...DECIDED,
+      rows: [
+        row("settled-pick", {
+          "2": { team_id: 10, outcome: PickOutcome.Lost },
+        }),
+      ],
+    });
+
+    expect(
+      screen.getByLabelText("Toronto Maple Leafs — SurvivorOutcomeLost"),
+    ).toBeInTheDocument();
   });
 });
