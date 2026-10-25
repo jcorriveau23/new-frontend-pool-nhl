@@ -120,6 +120,8 @@ export const survivorPickOptionsSchema = z.looseObject({
   date_has_begun: z.boolean().optional(),
   pick_window_closed: z.boolean().optional(),
   current_pick: z.number().nullable(),
+  // Optional: a backend older than the chip does not send it.
+  teams_left_in_cycle: z.number().optional(),
   is_blocked: z.boolean(),
   can_pick: z.boolean(),
 });

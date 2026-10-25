@@ -35,8 +35,12 @@ import {
   isOwner,
   isParticipant,
   dateClocks,
+  eliminationNotice,
   hasDateInPlay,
+  owesAPick,
+  participantHistory,
   pickCellState,
+  rowsMatching,
   participantOf,
   pickBlockedReasonKey,
   PICK_OUTCOME_TONE,
@@ -1128,5 +1132,239 @@ describe("revealedWeeksUpTo", () => {
     // Week 3 is open, so the backend left it out of the payload entirely.
     // Selecting it must not conjure a column.
     expect(revealedWeeksUpTo([1, 2], 3)).toEqual([1, 2]);
+  });
+});
+
+describe("owesAPick", () => {
+  // Week 1 is settled, week 2 is the date being played.
+  const playing = pool({
+    weeks: [week(1, WeekStatus.Settled), week(2)],
+  });
+
+  const pick = (weekNumber: number) => ({
+    participant_id: "me",
+    week: weekNumber,
+    team_id: 10,
+    outcome: PickOutcome.Pending,
+  });
+
+  it("nudges somebody with no pick for the date being played", () => {
+    expect(
+      owesAPick({ pool: playing, participant: participant("me"), myPicks: [] }),
+    ).toBe(true);
+    // A pick on a settled date is not a pick on this one.
+    expect(
+      owesAPick({
+        pool: playing,
+        participant: participant("me"),
+        myPicks: [pick(1)],
+      }),
+    ).toBe(true);
+  });
+
+  it("says nothing once the pick is in", () => {
+    expect(
+      owesAPick({
+        pool: playing,
+        participant: participant("me"),
+        myPicks: [pick(2)],
+      }),
+    ).toBe(false);
+  });
+
+  it("says nothing while the picks are still being read", () => {
+    // A badge that flashed on every page load before the answer arrived would
+    // train people to ignore it.
+    expect(
+      owesAPick({
+        pool: playing,
+        participant: participant("me"),
+        myPicks: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("says nothing to somebody out of the pool, or not in it", () => {
+    expect(owesAPick({ pool: playing, participant: null, myPicks: [] })).toBe(
+      false,
+    );
+    expect(
+      owesAPick({
+        pool: playing,
+        participant: participant("me", {
+          status: ParticipantStatus.Eliminated,
+        }),
+        myPicks: [],
+      }),
+    ).toBe(false);
+  });
+
+  it("says nothing when every date has been settled", () => {
+    // A finished pool owes nobody a pick.
+    const over = pool({ weeks: [week(1, WeekStatus.Settled)] });
+    expect(
+      owesAPick({ pool: over, participant: participant("me"), myPicks: [] }),
+    ).toBe(false);
+  });
+});
+
+describe("rowsMatching", () => {
+  const named = (id: string, name: string) => ({
+    ...standingRow(id, ParticipantStatus.Alive),
+    name,
+  });
+
+  const rows = [
+    named("a", "Jean-François"),
+    named("b", "marc"),
+    named("c", "Marc-Antoine"),
+  ];
+
+  it("answers with every row for an empty search", () => {
+    expect(rowsMatching(rows, "")).toHaveLength(3);
+    expect(rowsMatching(rows, "   ")).toHaveLength(3);
+  });
+
+  it("matches part of a name, whatever the case", () => {
+    // A pool of hundreds is searched by half-remembering a name.
+    expect(rowsMatching(rows, "MARC").map((row) => row.participant_id)).toEqual(
+      ["b", "c"],
+    );
+    expect(rowsMatching(rows, "ois").map((row) => row.participant_id)).toEqual([
+      "a",
+    ]);
+  });
+
+  it("keeps the order the backend sorted them into", () => {
+    // Still standing first, then by dates survived. A search that reordered
+    // the board would lose the one thing the board is for.
+    expect(rowsMatching(rows, "a").map((row) => row.participant_id)).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
+  });
+
+  it("answers with nothing when nobody matches", () => {
+    expect(rowsMatching(rows, "zzz")).toEqual([]);
+  });
+});
+
+describe("eliminationNotice", () => {
+  const settled = pool({
+    weeks: [week(1, WeekStatus.Settled), week(2, WeekStatus.Settled)],
+  });
+
+  const out = participant("me", {
+    status: ParticipantStatus.Eliminated,
+    strikes: 1,
+    eliminated_week: 2,
+  });
+
+  it("names the date and the pick that did it", () => {
+    const row = {
+      ...standingRow("me", ParticipantStatus.Eliminated),
+      picks: { "2": { team_id: 10, outcome: PickOutcome.Lost } },
+    };
+
+    expect(
+      eliminationNotice({ pool: settled, participant: out, rows: [row] }),
+    ).toEqual({ week: 2, pickDate: week(2).pick_date, teamId: 10 });
+  });
+
+  it("names the date alone when the standings carries no pick", () => {
+    // Somebody who went out by missing the date rather than by losing it.
+    expect(
+      eliminationNotice({ pool: settled, participant: out, rows: [] }),
+    ).toEqual({ week: 2, pickDate: week(2).pick_date, teamId: null });
+  });
+
+  it("says nothing about somebody still in the pool", () => {
+    expect(
+      eliminationNotice({
+        pool: settled,
+        participant: participant("me"),
+        rows: [],
+      }),
+    ).toBeNull();
+    expect(
+      eliminationNotice({ pool: settled, participant: null, rows: [] }),
+    ).toBeNull();
+  });
+
+  it("says nothing when the pool cannot name the date", () => {
+    // An older document carries no `eliminated_week`, and there is nothing to
+    // say about a date nobody can name.
+    expect(
+      eliminationNotice({
+        pool: settled,
+        participant: participant("me", {
+          status: ParticipantStatus.Eliminated,
+        }),
+        rows: [],
+      }),
+    ).toBeNull();
+  });
+});
+
+describe("participantHistory", () => {
+  const season = pool({
+    weeks: [week(1, WeekStatus.Settled), week(2, WeekStatus.Settled), week(3)],
+  });
+
+  const row = {
+    ...standingRow("me", ParticipantStatus.Alive),
+    picks: {
+      "1": { team_id: 10, outcome: PickOutcome.Won },
+      "3": { team_id: 6, outcome: PickOutcome.Pending },
+    },
+  };
+
+  it("walks the revealed dates in order, naming each date", () => {
+    const history = participantHistory({
+      pool: season,
+      row,
+      revealedWeeks: [3, 1],
+      clocks: [],
+    });
+
+    expect(history.map((entry) => entry.week)).toEqual([1, 3]);
+    expect(history[0].pickDate).toBe(week(1).pick_date);
+  });
+
+  it("keeps a date they let go by, with no pick on it", () => {
+    // "You missed week 2" is part of a season; a list that skipped it would
+    // read as a season of nothing but picks.
+    const history = participantHistory({
+      pool: season,
+      row,
+      revealedWeeks: [1, 2],
+      clocks: [],
+    });
+
+    expect(history[1]).toEqual({
+      week: 2,
+      pickDate: week(2).pick_date,
+      teamId: null,
+      state: null,
+    });
+  });
+
+  it("resolves a pending pick through the date's own clock", () => {
+    /*
+    So a row here says what the cell it was opened from says. Without the
+    clock this read "not settled" beside a grid showing the game as won.
+    */
+    const history = participantHistory({
+      pool: season,
+      row,
+      revealedWeeks: [3],
+      clocks: [{ week: 3, started_team_ids: [6], won_team_ids: [6] }],
+    });
+
+    expect(history[0].state).toEqual({
+      kind: "provisional",
+      outcome: PickOutcome.Won,
+    });
   });
 });

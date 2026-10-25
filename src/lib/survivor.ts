@@ -10,6 +10,7 @@ model; these decide what to render, never what is allowed.
 import {
   DateClock,
   ParticipantStatus,
+  SurvivorPickView,
   PickOutcome,
   RevealedPick,
   SurvivorGame,
@@ -720,6 +721,184 @@ export function pickingForOptions(
         label: participantLabel(t, person),
       })),
   ];
+}
+
+/*
+How a cell's state is worded, wherever it is named.
+
+One list, for the reason `PICK_OUTCOME_LABEL_KEY` is one list: the grid and the
+history behind a participant's name show the same pick, and a pick worded two
+ways in one screen reads as two different things. It is also the channel that
+carries what the colour and the padlock say, for a reader neither reaches.
+*/
+export function pickCellStateLabelKey(state: PickCellState): string {
+  switch (state.kind) {
+    case "settled":
+      return PICK_OUTCOME_LABEL_KEY[state.outcome];
+    case "provisional":
+      return state.outcome === PickOutcome.Won
+        ? "SurvivorPickWonUnsettled"
+        : "SurvivorPickLostUnsettled";
+    case "locked":
+      return "SurvivorPickLocked";
+    default:
+      return "SurvivorPickStillOpen";
+  }
+}
+
+/*
+Whether this participant still owes a pick for the date being played.
+
+What the badge on the tab strip is for. Missing a date is what eliminates most
+people in a survivor pool — far more than a bad pick — and until this there was
+nothing anywhere in the app that said "you have not picked yet" unless you
+opened the pick screen and read the grid.
+
+Judged on the date being played rather than the one in view, so browsing back
+through the season does not light up the badge for a Saturday that is long
+settled. Four things have to hold, and each of them is somebody who should not
+be nudged:
+
+  - they are in the pool, and still in it;
+  - there is a date still to be settled;
+  - that date has not been settled (which `currentWeek` already guarantees, and
+    is restated here because the badge must never appear on a finished pool);
+  - and they have no pick on file for it.
+
+It takes the picks rather than fetching them so the rule stays testable, and
+answers false while they are still being loaded — a badge that flashed on every
+page load before the answer arrived would train people to ignore it.
+*/
+export function owesAPick(args: {
+  pool: SurvivorPool;
+  participant: SurvivorUser | null;
+  // The caller's own picks, or null while they are still being read.
+  myPicks: SurvivorPickView[] | null;
+}): boolean {
+  const { pool, participant, myPicks } = args;
+
+  if (participant === null || myPicks === null) {
+    return false;
+  }
+  if (participant.status === ParticipantStatus.Eliminated) {
+    return false;
+  }
+
+  const week = currentWeek(pool);
+  if (week === null || week.status === WeekStatus.Settled) {
+    return false;
+  }
+
+  return !myPicks.some((pick) => pick.week === week.week);
+}
+
+/*
+How the date that eliminated somebody reads, for the notice on their own page.
+
+Going out is the most consequential thing that happens to a participant and the
+only sign of it was a skull in the standings, next time they happened to look.
+This is what the page needs to say so: the date, and the pick that did it when
+the standings carries one.
+
+Null for somebody still in the pool, and null when the pool does not say which
+date took them out — an older document carries no `eliminated_week`, and there
+is nothing to say about a date nobody can name.
+*/
+export interface EliminationNotice {
+  week: number;
+  pickDate: string | null;
+  // The team they were backing, when the date's picks are in the standings.
+  teamId: number | null;
+}
+
+export function eliminationNotice(args: {
+  pool: SurvivorPool;
+  participant: SurvivorUser | null;
+  rows: SurvivorStandingRow[];
+}): EliminationNotice | null {
+  const { pool, participant, rows } = args;
+
+  if (
+    participant === null ||
+    participant.status !== ParticipantStatus.Eliminated ||
+    participant.eliminated_week === null
+  ) {
+    return null;
+  }
+
+  const week = participant.eliminated_week;
+  const row = rows.find(
+    (candidate) => candidate.participant_id === participant.id,
+  );
+
+  return {
+    week,
+    pickDate: weekByNumber(pool, week)?.pick_date ?? null,
+    teamId: row?.picks[String(week)]?.team_id ?? null,
+  };
+}
+
+/*
+The standings rows that match what somebody typed.
+
+Trimmed and case-insensitive, because a pool of hundreds is searched by
+half-remembering a name rather than by spelling it. An empty box is not a
+filter: it answers with every row, which is what the grid shows by default.
+
+The order is the one the backend sorted them into — still standing first, then
+by dates survived — because a search that reordered the board would lose the
+one thing the board is for.
+*/
+export function rowsMatching(
+  rows: SurvivorStandingRow[],
+  search: string,
+): SurvivorStandingRow[] {
+  const needle = search.trim().toLowerCase();
+  if (needle.length === 0) {
+    return rows;
+  }
+  return rows.filter((row) => row.name.toLowerCase().includes(needle));
+}
+
+/*
+One participant's season, for the history behind their name.
+
+Every revealed date in order, with what they were on and how it went — and
+`Pending` resolved through the date's own clock, so a row here says the same
+thing as the cell in the grid it was opened from rather than "not settled"
+beside a green tick.
+
+A date they let go by is in the list with no pick rather than left out: "you
+missed week 4" is part of a season, and a list that skipped it would read as a
+season of nothing but picks.
+*/
+export interface ParticipantHistoryEntry {
+  week: number;
+  pickDate: string | null;
+  teamId: number | null;
+  state: PickCellState | null;
+}
+
+export function participantHistory(args: {
+  pool: SurvivorPool;
+  row: SurvivorStandingRow;
+  revealedWeeks: number[];
+  clocks: DateClock[];
+}): ParticipantHistoryEntry[] {
+  const { pool, row, revealedWeeks, clocks } = args;
+
+  return [...revealedWeeks]
+    .sort((left, right) => left - right)
+    .map((week) => {
+      const pick = row.picks[String(week)];
+
+      return {
+        week,
+        pickDate: weekByNumber(pool, week)?.pick_date ?? null,
+        teamId: pick?.team_id ?? null,
+        state: pick === undefined ? null : pickCellState(pick, week, clocks),
+      };
+    });
 }
 
 /*
